@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Review.Mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    </head>
+    <body>
+        <section class="header header-search">
+            <nav>
+                <a href="index.html" class="top-logo"><span class="logo-text">review.mnl</span></a>
+                <div class="nav-links">
+                    <ul>
+                        <li><a href="index.html">HOME</a></li>
+                        <li><a href="search.html">VIEW REVIEW CENTERS</a></li>
+                        <li><a href="contact.html">CONTACT</a></li>
+                        <li><a href="search.html">SEARCH</a></li>
+                    </ul>
+                </div>
+                <div class="profile-wrapper" style="position:relative;">
+                    <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#fff;">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <div id="profileDropdown" class="profile-dropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">
+                        <a href="userdashboard.html" style="display:block;padding:12px 16px;color:#0a4cff;text-decoration:none;border-bottom:1px solid #eee;">My Profile</a>
+                        <button id="logoutBtn" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;">Logout</button>
+                    </div>
+                </div>
+            </nav>
+            <form class="search-form">
+                <div class="search">
+                    <input type="text" name="search" placeholder="Search review centers..." autocomplete="off">
+                    <span class="material-symbols-outlined search-icon">search</span>
+                </div>
+            </form>
+        </section>
+    <section class="body">
+        <div>
+            <div class="section" onclick="toggleFilters()">
+                <p>Filter</p>
+                <span class="material-symbols-outlined arrow-icon" id="filterArrow">keyboard_arrow_down</span>
+            </div>
+            <div class="filter-container" id="filterContainer" style="display: none;">
+            <div class="filter-section">
+                <h2>Category</h2>
+                <div class="filter-options">
+                    <button class="filter-btn"><span class="radio-circle"></span>Civil Engineering</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Mechanical Engineering</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Electrical Engineering</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Electronics Engineering</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Chemical Engineering</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Architecture</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Law</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Medicine</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Nursing</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>Pharmacy</button>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h2>Ratings</h2>
+                <div class="filter-options">
+                    <button class="filter-btn"><span class="radio-circle"></span>5 ★★★★★</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>4 ★★★★</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>3 ★★★</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>2 ★★</button>
+                    <button class="filter-btn"><span class="radio-circle"></span>1 ★</button>
+                </div>
+            </div>
+
+            <div class="filter-apply-row">
+                <button class="clear-filters-btn" id="clearFiltersBtn">Clear</button>
+                <button class="apply-filters-btn" id="applyFiltersBtn">Apply Filters</button>
+            </div>
+        </div>
+
+        <!-- Filter Applied Popup -->
+        <div id="filterPopup" class="filter-popup" style="display:none;">
+            <div class="filter-popup-inner">
+                <h3>Applied Filters</h3>
+                <div id="filterPopupContent"></div>
+                <button class="filter-popup-close" id="filterPopupClose">Close</button>
+            </div>
+        </div>
+
+        <section class="results-section">
+            <div class="results-header">
+                <h2>Results</h2>
+            </div>
+
+            <div class="results-container">
+                <!-- Result Card 1 -->
+                <div class="result-card" data-category="Civil Engineering" data-rating="5">
+                    <div class="result-image"></div>
+                    <div class="result-content">
+                        <h3>Review Center Name</h3>
+                        <p class="result-location">Location</p>
+                        <p class="result-description">Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
+                        <div class="result-rating">★★★★★</div>
+                    </div>
+                </div>
+
+                <!-- Result Card 2 -->
+                <div class="result-card" data-category="Medicine" data-rating="4">
+                    <div class="result-image"></div>
+                    <div class="result-content">
+                        <h3>Review Center Name</h3>
+                        <p class="result-location">Location</p>
+                        <p class="result-description">Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
+                        <div class="result-rating">★★★★★</div>
+                    </div>
+                </div>
+
+                <!-- Result Card 3 -->
+                <div class="result-card" data-category="Law" data-rating="3">
+                    <div class="result-image"></div>
+                    <div class="result-content">
+                        <h3>Review Center Name</h3>
+                        <p class="result-location">Location</p>
+                        <p class="result-description">Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
+                        <div class="result-rating">★★★★★</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pagination">
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">4</button>
+                <span class="page-dots">...</span>
+            </div>
+        </section>
+
+        <section class="gap1"></section>
+
+        <section class="footer">
+        <div class="footer-container">
+                <div class="footer-left">
+                <h2>review.mnl</h2>
+                <p>Manila, Philippines</p>
+            </div>
+            
+                <div class="footer-center">
+                <div class="footer-column">
+                    <a href="index.html">Home</a>
+                    <a href="viewcenter.html">Review Centers</a>
+                    <a href="contact.html">Contact</a>
+                </div>
+                <div class="footer-column">
+                    <a href="search.html">Search</a>
+                    <a href="userdashboard.html">Dashboard</a>
+                </div>
+            </div>
+            
+            <div class="footer-right">
+                <a href="#" class="social-icon">f</a>
+                <a href="#" class="social-icon">in</a>
+                <a href="#" class="social-icon">▶</a>
+                <a href="#" class="social-icon">✉</a>
+            </div>
+        </div>
+
+
+            <div class = "results">
+                <p>Results</p>
+                <div class = "resultsbox">
+                    
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function toggleFilters() {
+            const filterContainer = document.getElementById('filterContainer');
+            const arrow = document.getElementById('filterArrow');
+            
+            if (filterContainer.style.display === 'none') {
+                filterContainer.style.display = 'block';
+                arrow.textContent = 'keyboard_arrow_up';
+            } else {
+                filterContainer.style.display = 'none';
+                arrow.textContent = 'keyboard_arrow_down';
+            }
+        }
+    </script>
+    <script>
+        (function(){
+            const btn = document.getElementById('profileBtn');
+            const dd = document.getElementById('profileDropdown');
+            const logout = document.getElementById('logoutBtn');
+            if(!btn || !dd) return;
+            btn.addEventListener('click', function(e){
+                e.stopPropagation();
+                const isOpen = dd.style.display === 'block';
+                dd.style.display = isOpen ? 'none' : 'block';
+                btn.setAttribute('aria-expanded', String(!isOpen));
+            });
+            logout.addEventListener('click', function(){ window.location.href = 'index.html'; });
+            document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+        })();
+    </script>
+    <script src="search.js"></script>
+    </body>
+</html>
+

@@ -16,10 +16,9 @@
 <!-- Overlay -->
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-        <!-- Dashboard Toggle Button -->
+<!-- Dashboard Toggle Button -->
 <div class="dashboard-toggle" onclick="toggleSidebar()">
-    <span>Dashboard</span>
-    <span class="material-symbols-outlined">chevron_right</span>
+    <span>Messages</span>
 </div>
 
 <!-- Sidebar Panel -->
@@ -29,22 +28,86 @@
         <h3>Name</h3>
     </div>
 
-    <ul class="sidebar-menu">
-        <li><span class="dot"></span> <a href="loggedin.html" style="text-decoration:none;color:inherit;">Home</a></li>
-        <li><span class="dot"></span> <a href="userdashboard.html" style="text-decoration:none;color:inherit;">Saved Centers</a></li>
-        <li><span class="dot"></span> <a href="userdashboard.html" style="text-decoration:none;color:inherit;">Edit Profile</a></li>
-        <li><span class="dot"></span> <a href="userdashboard.html" style="text-decoration:none;color:inherit;">Messages</a></li>
-        <li><span class="dot"></span> <a href="userdashboard.html" style="text-decoration:none;color:inherit;">Settings</a></li>
-    </ul>
+    <div class="messages-panel" id="msgList">
+        <h4 class="messages-panel-title">Messages</h4>
 
-    <div class="sidebar-footer">
-        <a href="index.html">Logout</a>
+        <div class="message-thread" onclick="openConv('Review Center A','Your enrollment has been confirmed...')">
+            <div class="message-avatar"></div>
+            <div class="message-info">
+                <span class="message-sender">Review Center A</span>
+                <p class="message-preview">Your enrollment has been confirmed...</p>
+            </div>
+            <span class="message-time">2m</span>
+        </div>
+
+        <div class="message-thread" onclick="openConv('Review Center B','Please check your schedule for next week.')">
+            <div class="message-avatar"></div>
+            <div class="message-info">
+                <span class="message-sender">Review Center B</span>
+                <p class="message-preview">Please check your schedule for next week.</p>
+            </div>
+            <span class="message-time">1h</span>
+        </div>
+
+        <div class="message-thread" onclick="openConv('Review Center C','Thank you for your review!')">
+            <div class="message-avatar"></div>
+            <div class="message-info">
+                <span class="message-sender">Review Center C</span>
+                <p class="message-preview">Thank you for your review!</p>
+            </div>
+            <span class="message-time">3h</span>
+        </div>
+
+        <div class="message-thread" onclick="openConv('Review Center D','New module materials are now available.')">
+            <div class="message-avatar"></div>
+            <div class="message-info">
+                <span class="message-sender">Review Center D</span>
+                <p class="message-preview">New module materials are now available.</p>
+            </div>
+            <span class="message-time">1d</span>
+        </div>
     </div>
+
+    <!-- Conversation View -->
+    <div class="conversation-panel" id="convPanel" style="display:none;">
+        <div class="conv-header">
+            <button class="conv-back-btn" onclick="closeConv()">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div class="message-avatar" style="width:32px;height:32px;"></div>
+            <span class="conv-name" id="convName"></span>
+        </div>
+        <div class="conv-messages" id="convMessages">
+            <div class="conv-bubble incoming" id="convFirstMsg"></div>
+        </div>
+        <!-- Attachment preview bar -->
+        <div class="conv-preview-bar" id="convPreviewBar" style="display:none;">
+            <div class="conv-preview-content" id="convPreviewContent"></div>
+            <div class="conv-preview-actions">
+                <button class="conv-preview-cancel" onclick="cancelAttachment()">Cancel</button>
+                <button class="conv-preview-send" onclick="sendAttachment()">Send</button>
+            </div>
+        </div>
+        <div class="conv-input-row">
+            <label class="conv-attach-btn" title="Attach image">
+                <span class="material-symbols-outlined">image</span>
+                <input type="file" id="convImageInput" accept="image/*" style="display:none;" onchange="attachImage(this)">
+            </label>
+            <button class="conv-attach-btn" title="Attach link" onclick="attachLink()">
+                <span class="material-symbols-outlined">link</span>
+            </button>
+            <input type="text" id="convInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+            <button class="conv-send-btn" onclick="sendMsg()">
+                <span class="material-symbols-outlined">send</span>
+            </button>
+        </div>
+    </div>
+
 </div>
 
         <section class="header header-userdashboard">
             <nav>
-                <a href="loggedin.html" class="top-logo"><span class="logo-text">review.mnl</span></a>
+                <a href="loggedin.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
                 <div class="nav-links">
                     <ul>
                         <li><a href="loggedin.html">HOME</a></li>
@@ -64,13 +127,25 @@
                 </div>
             </nav>
             <div class="textbox">
-                <h1>User Dashboard</h1>
-                <p>Manage Your Account</p>
+                <h1>Welcome, <span id="welcomeName">Juan Dela Cruz</span>!</h1>
             </div>
         </section>
 
         <section class="dashboard">
     <div class="dashboard-container">
+
+        <!-- User Profile Card -->
+        <div class="user-profile-card">
+            <div class="user-profile-avatar" id="userAvatarPreview"></div>
+            <div class="user-profile-info">
+                <div class="user-profile-name-row">
+                    <h2 id="userNameDisplay">Juan Dela Cruz</h2>
+                    <button class="edit-btn-small" onclick="openUserModal()">Edit Profile</button>
+                </div>
+                <p id="userEmailDisplay">juan.delacruz@email.com</p>
+                <p id="userBioDisplay" style="color:#888;font-size:12px;margin-top:4px;">Student | review.mnl member</p>
+            </div>
+        </div>
 
         <!-- Top Cards -->
         <div class="dashboard-top">
@@ -114,77 +189,79 @@
                     <h3>Saved Centers</h3>
                     <span class="material-symbols-outlined">arrow_forward_ios</span>
                 </div>
-
-                <div class="saved-item">
-                    <div class="review-avatar"></div>
-                    <div class="review-info">
-                        <h4>Name of Review Center</h4>
-                        <p>Location</p>
-                    </div>
-                    <div class="saved-buttons">
-                        <button class="btn-delete">Delete</button>
-                        <a href="viewcenter.html" class="btn-view">View</a>
-                    </div>
-                </div>
-
-                <div class="saved-item">
-                    <div class="review-avatar"></div>
-                    <div class="review-info">
-                        <h4>Name of Review Center</h4>
-                        <p>Location</p>
-                    </div>
-                    <div class="saved-buttons">
-                        <button class="btn-delete">Delete</button>
-                        <a href="viewcenter.html" class="btn-view">View</a>
-                    </div>
-                </div>
-
-                <div class="saved-item">
-                    <div class="review-avatar"></div>
-                    <div class="review-info">
-                        <h4>Name of Review Center</h4>
-                        <p>Location</p>
-                    </div>
-                    <div class="saved-buttons">
-                        <button class="btn-delete">Delete</button>
-                        <a href="viewcenter.html" class="btn-view">View</a>
-                    </div>
-                </div>
+                <div id="savedCentersList"></div>
             </div>
+            <script>
+                (function(){
+                    const STORAGE_KEY = 'rmnl_saved_centers';
+                    function getSaved() {
+                        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
+                    }
+                    function renderSaved() {
+                        const list = document.getElementById('savedCentersList');
+                        const saved = getSaved();
+                        if (!list) return;
+                        if (saved.length === 0) {
+                            list.innerHTML = '<p style="color:#6b7280;font-size:0.85rem;padding:8px 0;">No saved centers yet. Browse and save review centers to see them here.</p>';
+                            return;
+                        }
+                        list.innerHTML = saved.map(function(c) {
+                            return '<div class="saved-item">'
+                                + '<div class="review-avatar"></div>'
+                                + '<div class="review-info"><h4>' + c.name + '</h4><p>' + c.location + '</p></div>'
+                                + '<div class="saved-buttons">'
+                                + '<button class="btn-delete" onclick="deleteSaved(\'' + c.id + '\')" >Delete</button>'
+                                + '<a href="viewcenter.html" class="btn-view">View</a>'
+                                + '</div></div>';
+                        }).join('');
+                    }
+                    window.deleteSaved = function(id) {
+                        let saved = getSaved().filter(function(c){ return c.id !== id; });
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                        renderSaved();
+                    };
+                    renderSaved();
+                })();
+            </script>
 
         </div>
 
 
-        <!-- Recently Viewed -->
+        <!-- Enrolled Review Centers -->
         <div class="recent-section">
             <div class="card-header">
-                <h3>Recently Viewed</h3>
+                <h3>Enrolled Review Centers</h3>
                 <span class="material-symbols-outlined">arrow_forward_ios</span>
             </div>
+            <p style="font-size:0.85rem;color:#6b7280;margin:-4px 0 14px 0;">Review centers you've scheduled a review with will appear here.</p>
 
             <div class="recent-grid">
                 <div class="recent-card">
                     <div class="recent-img"></div>
                     <h4>Review Center Name</h4>
-                    <p>Location</p>
+                    <p>Program Enrolled</p>
+                    <span style="font-size:0.75rem;color:#0a4cff;font-weight:600;">Scheduled</span>
                 </div>
 
                 <div class="recent-card">
                     <div class="recent-img"></div>
                     <h4>Review Center Name</h4>
-                    <p>Location</p>
+                    <p>Program Enrolled</p>
+                    <span style="font-size:0.75rem;color:#0a4cff;font-weight:600;">Scheduled</span>
                 </div>
 
                 <div class="recent-card">
                     <div class="recent-img"></div>
                     <h4>Review Center Name</h4>
-                    <p>Location</p>
+                    <p>Program Enrolled</p>
+                    <span style="font-size:0.75rem;color:#0a4cff;font-weight:600;">Scheduled</span>
                 </div>
 
                 <div class="recent-card">
                     <div class="recent-img"></div>
                     <h4>Review Center Name</h4>
-                    <p>Location</p>
+                    <p>Program Enrolled</p>
+                    <span style="font-size:0.75rem;color:#0a4cff;font-weight:600;">Scheduled</span>
                 </div>
             </div>
         </div>
@@ -192,6 +269,30 @@
     </div>
 </section>
 
+        <!-- Modal: Edit User Profile -->
+        <div class="modal-overlay" id="userProfileModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Edit Profile</h3>
+                    <button class="modal-close" onclick="closeUserModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label>Full Name</label>
+                    <input type="text" id="userNameInput" placeholder="Juan Dela Cruz">
+                    <label>Email Address</label>
+                    <input type="email" id="userEmailInput" placeholder="juan.delacruz@email.com">
+                    <label>Bio / Short Info</label>
+                    <input type="text" id="userBioInput" placeholder="Student | review.mnl member">
+                    <label>Profile Photo</label>
+                    <input type="file" id="userImageInput" accept="image/*">
+                    <div class="modal-img-preview" id="userImgPreview"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeUserModal()">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveUserProfile()">Save Changes</button>
+                </div>
+            </div>
+        </div>
         <section class="footer">
             <div class="footer-container">
                 <div class="footer-left">
@@ -232,10 +333,163 @@
                         btn.setAttribute('aria-expanded', String(!isOpen));
                     });
                     logout.addEventListener('click', function(){
+                        localStorage.removeItem('rmnl_role');
                         window.location.href = 'index.html';
                     });
                     document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
                 })();
+                function toggleSidebar() {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                }
+                function openConv(name, firstMsg) {
+                    document.getElementById('convName').textContent = name;
+                    document.getElementById('convFirstMsg').textContent = firstMsg;
+                    const msgs = document.getElementById('convMessages');
+                    // Remove any sent bubbles from previous conversation
+                    msgs.querySelectorAll('.conv-bubble.outgoing').forEach(function(el){ el.remove(); });
+                    document.getElementById('msgList').style.display = 'none';
+                    document.getElementById('convPanel').style.display = 'flex';
+                    msgs.scrollTop = msgs.scrollHeight;
+                }
+                function closeConv() {
+                    document.getElementById('convPanel').style.display = 'none';
+                    document.getElementById('msgList').style.display = 'block';
+                    document.getElementById('convInput').value = '';
+                }
+                function sendMsg() {
+                    const input = document.getElementById('convInput');
+                    const text = input.value.trim();
+                    if (!text) return;
+                    const msgs = document.getElementById('convMessages');
+                    const bubble = document.createElement('div');
+                    bubble.className = 'conv-bubble outgoing';
+                    bubble.textContent = text;
+                    msgs.appendChild(bubble);
+                    input.value = '';
+                    msgs.scrollTop = msgs.scrollHeight;
+                }
+                function attachImage(input) {
+                    const file = input.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        window._pendingAttachment = { type: 'image', src: e.target.result };
+                        const preview = document.getElementById('convPreviewContent');
+                        preview.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.style.cssText = 'max-height:80px;border-radius:8px;display:block;';
+                        const label = document.createElement('span');
+                        label.textContent = file.name;
+                        label.style.cssText = 'font-size:12px;color:#555;margin-left:8px;';
+                        preview.appendChild(img);
+                        preview.appendChild(label);
+                        document.getElementById('convPreviewBar').style.display = 'flex';
+                    };
+                    reader.readAsDataURL(file);
+                    input.value = '';
+                }
+                function attachLink() {
+                    const url = prompt('Enter a URL to share:');
+                    if (!url || !url.trim()) return;
+                    window._pendingAttachment = { type: 'link', url: url.trim() };
+                    const preview = document.getElementById('convPreviewContent');
+                    preview.innerHTML = '';
+                    const icon = document.createElement('span');
+                    icon.className = 'material-symbols-outlined';
+                    icon.textContent = 'link';
+                    icon.style.cssText = 'font-size:18px;color:#0a4cff;';
+                    const span = document.createElement('span');
+                    span.textContent = url.trim();
+                    span.style.cssText = 'font-size:12px;color:#0a4cff;word-break:break-all;margin-left:6px;';
+                    preview.appendChild(icon);
+                    preview.appendChild(span);
+                    document.getElementById('convPreviewBar').style.display = 'flex';
+                }
+                function cancelAttachment() {
+                    window._pendingAttachment = null;
+                    document.getElementById('convPreviewBar').style.display = 'none';
+                    document.getElementById('convPreviewContent').innerHTML = '';
+                }
+                function sendAttachment() {
+                    const att = window._pendingAttachment;
+                    if (!att) return;
+                    const msgs = document.getElementById('convMessages');
+                    const bubble = document.createElement('div');
+                    if (att.type === 'image') {
+                        bubble.className = 'conv-bubble outgoing conv-bubble-img';
+                        const img = document.createElement('img');
+                        img.src = att.src;
+                        img.style.cssText = 'max-width:100%;border-radius:10px;display:block;';
+                        bubble.appendChild(img);
+                    } else {
+                        bubble.className = 'conv-bubble outgoing';
+                        const a = document.createElement('a');
+                        a.href = att.url;
+                        a.textContent = att.url;
+                        a.target = '_blank';
+                        a.rel = 'noopener';
+                        a.style.cssText = 'color:#cce0ff;word-break:break-all;';
+                        bubble.appendChild(a);
+                    }
+                    msgs.appendChild(bubble);
+                    msgs.scrollTop = msgs.scrollHeight;
+                    cancelAttachment();
+                }
+
+                function openUserModal() {
+                    document.getElementById('userNameInput').placeholder = document.getElementById('userNameDisplay').textContent;
+                    document.getElementById('userEmailInput').placeholder = document.getElementById('userEmailDisplay').textContent;
+                    document.getElementById('userBioInput').placeholder = document.getElementById('userBioDisplay').textContent;
+                    document.getElementById('userNameInput').value = '';
+                    document.getElementById('userEmailInput').value = '';
+                    document.getElementById('userBioInput').value = '';
+                    document.getElementById('userProfileModal').style.display = 'flex';
+                }
+                function closeUserModal() {
+                    document.getElementById('userProfileModal').style.display = 'none';
+                }
+                function saveUserProfile() {
+                    const name = document.getElementById('userNameInput').value.trim();
+                    const email = document.getElementById('userEmailInput').value.trim();
+                    const bio = document.getElementById('userBioInput').value.trim();
+                    const file = document.getElementById('userImageInput').files[0];
+                    if (name) {
+                        document.getElementById('userNameDisplay').textContent = name;
+                        document.getElementById('welcomeName').textContent = name;
+                    }
+                    if (email) document.getElementById('userEmailDisplay').textContent = email;
+                    if (bio) document.getElementById('userBioDisplay').textContent = bio;
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const avatar = document.getElementById('userAvatarPreview');
+                            avatar.style.backgroundImage = 'url(' + e.target.result + ')';
+                            avatar.style.backgroundSize = 'cover';
+                            avatar.style.backgroundPosition = 'center';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                    closeUserModal();
+                }
+                document.getElementById('userImageInput').addEventListener('change', function() {
+                    const file = this.files[0];
+                    const preview = document.getElementById('userImgPreview');
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.style.backgroundImage = 'url(' + e.target.result + ')';
+                            preview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                document.getElementById('userProfileModal').addEventListener('click', function(e) {
+                    if (e.target === this) closeUserModal();
+                });
             </script>
     </body>
 </html>

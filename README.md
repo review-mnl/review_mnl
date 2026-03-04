@@ -4,6 +4,18 @@
 
 ---
 
+## Project Structure
+- `frontend/` - Contains all user interface and client-side code.
+- `backend/` - Contains server-side logic, APIs, and routes.
+- `database/` - Contains database scripts, schemas, and authentication logic.
+
+## Setup Instructions
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Zvk1/review.mnl.git
+
+---
+
 ## Features
 
 - **Browse by Category** — Find review centers for Civil Engineering, Mechanical Engineering, Electrical Engineering, Electronics Engineering, Chemical Engineering, Architecture, Law, Medicine, Nursing, Pharmacy, and more.

@@ -12,7 +12,7 @@
     <body>
         <section class="header header-loggedin">
             <nav>
-                <a href="index.html" class="top-logo"><span class="logo-text">review.mnl</span></a>
+                <a href="loggedin.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
                 <div class="nav-links">
                     <ul>
                         <li><a href="loggedin.html">HOME</a></li>
@@ -41,43 +41,43 @@
     <section class="body">
         <div class="category-section">
             <div class="category-grid">
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Civil+Engineering" class="category-card">
                     <span class="material-symbols-outlined">engineering</span>
                     Civil Engineering
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Mechanical+Engineering" class="category-card">
                     <span class="material-symbols-outlined">precision_manufacturing</span>
                     Mechanical Engineering
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Electrical+Engineering" class="category-card">
                     <span class="material-symbols-outlined">bolt</span>
                     Electrical Engineering
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Electronics+Engineering" class="category-card">
                     <span class="material-symbols-outlined">developer_board</span>
                     Electronics Engineering
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Chemical+Engineering" class="category-card">
                     <span class="material-symbols-outlined">science</span>
                     Chemical Engineering
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Architecture" class="category-card">
                     <span class="material-symbols-outlined">architecture</span>
                     Architecture
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Law" class="category-card">
                     <span class="material-symbols-outlined">gavel</span>
                     Law
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Medicine" class="category-card">
                     <span class="material-symbols-outlined">stethoscope</span>
                     Medicine
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Nursing" class="category-card">
                     <span class="material-symbols-outlined">medication</span>
                     Nursing
                 </a>
-                <a href="search.html" class="category-card">
+                <a href="search.html?category=Pharmacy" class="category-card">
                     <span class="material-symbols-outlined">biotech</span>
                     Pharmacy
                 </a>
@@ -91,9 +91,7 @@
             <!-- LEFT TEXT -->
             <div class="featured-text">
             <h2>Featured</h2>
-            <p>Description Description Description</p>
-            <p>Description Description Description</p>
-            <p>Description Description Description</p>
+            <p>Here are some of the featured review centers on review.mnl — trusted by students for their quality programs and high passing rates.</p>
 
             <a href="search.html" class="view-all-btn">
                 View All Review Centers →
@@ -107,8 +105,8 @@
             <div class="review-card">
                 <div class="card-image"></div>
 
-                <h3>Review Center Name</h3>
-                <span class="location">Location</span>
+                <h3>ERC Review Center</h3>
+                <span class="location">Sampaloc, Manila</span>
 
                 <div class="card-footer">
                 <div class="stars">★★★★★</div>
@@ -120,8 +118,8 @@
             <div class="review-card">
                 <div class="card-image"></div>
 
-                <h3>Review Center Name</h3>
-                <span class="location">Location</span>
+                <h3>Metro Review Center</h3>
+                <span class="location">Ermita, Manila</span>
 
                 <div class="card-footer">
                 <div class="stars">★★★★★</div>
@@ -132,7 +130,7 @@
             </div>
 
             <!-- SLIDER ARROW -->
-            <button class="arrow-btn">❯</button>
+            <a href="search.html" class="arrow-btn">❯</a>
         </div>
         </section>
     <script>
@@ -149,6 +147,7 @@
             });
             logout.addEventListener('click', function(){
                 // Simple logout: redirect to home
+                localStorage.removeItem('rmnl_role');
                 window.location.href = 'index.html';
             });
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });

@@ -12,10 +12,10 @@
     <body>
         <section class="header header-search">
             <nav>
-                <a href="index.html" class="top-logo"><span class="logo-text">review.mnl</span></a>
+                <a href="loggedin.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
                 <div class="nav-links">
                     <ul>
-                        <li><a href="index.html">HOME</a></li>
+                        <li><a href="loggedin.html">HOME</a></li>
                         <li><a href="search.html">VIEW REVIEW CENTERS</a></li>
                         <li><a href="contact.html">CONTACT</a></li>
                         <li><a href="search.html">SEARCH</a></li>
@@ -147,8 +147,8 @@
             
                 <div class="footer-center">
                 <div class="footer-column">
-                    <a href="index.html">Home</a>
-                    <a href="viewcenter.html">Review Centers</a>
+                    <a href="loggedin.html">Home</a>
+                    <a href="search.html">Review Centers</a>
                     <a href="contact.html">Contact</a>
                 </div>
                 <div class="footer-column">
@@ -201,7 +201,7 @@
                 dd.style.display = isOpen ? 'none' : 'block';
                 btn.setAttribute('aria-expanded', String(!isOpen));
             });
-            logout.addEventListener('click', function(){ window.location.href = 'index.html'; });
+            logout.addEventListener('click', function(){ localStorage.removeItem('rmnl_role'); window.location.href = 'index.html'; });
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
         })();
     </script>

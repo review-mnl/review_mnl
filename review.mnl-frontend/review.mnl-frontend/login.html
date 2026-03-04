@@ -126,12 +126,12 @@
 
             .login-btn {
                 width: 100%;
-                padding: 16px;
+                padding: 11px;
                 background-color: #0043CF;
                 color: #fff;
                 border: none;
                 border-radius: 50px;
-                font-size: 20px;
+                font-size: 14px;
                 font-weight: 600;
                 cursor: pointer;
                 font-family: 'Poppins', sans-serif;
@@ -201,19 +201,54 @@
             .signup-link a:hover {
                 text-decoration: underline;
             }
+
+            .role-tabs {
+                display: flex;
+                border-radius: 50px;
+                background: #f0f4ff;
+                padding: 4px;
+                margin-bottom: 28px;
+                gap: 4px;
+            }
+
+            .role-tab {
+                flex: 1;
+                padding: 9px 0;
+                border: none;
+                background: transparent;
+                border-radius: 50px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 11px;
+                font-weight: 600;
+                color: #888;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .role-tab.active {
+                background: #0043CF;
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(0,67,207,0.25);
+            }
         </style>
     </head>
     <body>
         <div class="login-page">
             <nav class="login-nav">
-                <a href="index.html" class="top-logo"><span class="logo-text">review.mnl</span></a>
+                <a href="index.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
                 <div></div>
             </nav>
 
             <div class="login-container">
-                <form class="login-form">
+                <form class="login-form" id="loginForm">
                     <h1>Login</h1>
                     <p>Welcome back to review.mnl</p>
+
+                    <div class="role-tabs">
+                        <button type="button" class="role-tab active" onclick="switchRole('student', this)">Student</button>
+                        <button type="button" class="role-tab" onclick="switchRole('admin', this)">Review Center</button>
+                    </div>
+                    <input type="hidden" id="loginRole" name="role" value="student">
 
                     <div class="social-login">
                         <button type="button" class="social-btn" title="Login with Google"><i class="fab fa-google"></i></button>
@@ -249,5 +284,19 @@
                 </form>
             </div>
         </div>
+        <script>
+            function switchRole(role, btn) {
+                document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('loginRole').value = role;
+            }
+
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const role = document.getElementById('loginRole').value;
+                localStorage.setItem('rmnl_role', role);
+                window.location.href = role === 'admin' ? 'admindashboard.html' : 'loggedin.html';
+            });
+        </script>
     </body>
 </html>

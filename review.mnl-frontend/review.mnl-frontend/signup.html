@@ -196,19 +196,135 @@
                 text-decoration: none;
                 font-weight: 500;
             }
+
+            .role-tabs {
+                display: flex;
+                border-radius: 50px;
+                background: #f0f4ff;
+                padding: 4px;
+                margin-bottom: 28px;
+                gap: 4px;
+            }
+
+            .role-tab {
+                flex: 1;
+                padding: 9px 0;
+                border: none;
+                background: transparent;
+                border-radius: 50px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 11px;
+                font-weight: 600;
+                color: #888;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .role-tab.active {
+                background: #0043CF;
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(0,67,207,0.25);
+            }
+
+            /* Document upload section */
+            .doc-upload-section {
+                display: none;
+                margin-bottom: 20px;
+                border: 1.5px solid #e0e8ff;
+                border-radius: 14px;
+                overflow: hidden;
+            }
+            .doc-upload-header {
+                background: #f0f4ff;
+                padding: 10px 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .doc-upload-header span { font-size: 15px; }
+            .doc-upload-header p {
+                font-size: 10px;
+                color: #0043CF;
+                font-weight: 600;
+                margin: 0;
+            }
+            .doc-upload-header small {
+                font-size: 9px;
+                color: #888;
+                display: block;
+                font-weight: 400;
+            }
+            .doc-upload-body {
+                padding: 14px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .doc-field label {
+                display: block;
+                color: #0043CF;
+                font-weight: 500;
+                font-size: 10px;
+                margin-bottom: 6px;
+            }
+            .doc-drop-zone {
+                border: 2px dashed #c0cef0;
+                border-radius: 10px;
+                padding: 14px 12px;
+                text-align: center;
+                cursor: pointer;
+                transition: border-color 0.2s, background 0.2s;
+                position: relative;
+                background: #fafcff;
+            }
+            .doc-drop-zone:hover {
+                border-color: #0043CF;
+                background: #f0f4ff;
+            }
+            .doc-drop-zone input[type=file] {
+                position: absolute;
+                inset: 0;
+                opacity: 0;
+                cursor: pointer;
+                width: 100%;
+                height: 100%;
+            }
+            .doc-drop-icon { font-size: 22px; margin-bottom: 4px; }
+            .doc-drop-text { font-size: 10px; color: #888; }
+            .doc-drop-text strong { color: #0043CF; }
+            .doc-file-name {
+                font-size: 10px;
+                color: #0043CF;
+                margin-top: 6px;
+                display: none;
+                text-align: center;
+                font-weight: 500;
+            }
+            .doc-note {
+                font-size: 9.5px;
+                color: #aaa;
+                text-align: center;
+                margin-top: 4px;
+            }
         </style>
     </head>
     <body>
         <div class="signup-page">
             <nav class="signup-nav">
-                <a href="index.html" class="top-logo"><span class="logo-text">review.mnl</span></a>
+                <a href="index.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
                 <div></div>
             </nav>
 
             <div class="signup-container">
-                <form class="signup-form">
+                <form class="signup-form" id="signupForm">
                     <h2>Sign Up</h2>
                     <p>Create your review.mnl account</p>
+
+                    <div class="role-tabs">
+                        <button type="button" class="role-tab active" onclick="switchRole('student', this)">Student</button>
+                        <button type="button" class="role-tab" onclick="switchRole('admin', this)">Review Center</button>
+                    </div>
+                    <input type="hidden" id="signupRole" name="role" value="student">
 
                     <div class="social-login">
                         <button type="button" class="social-btn" title="Sign up with Google"><i class="fab fa-google"></i></button>
@@ -219,9 +335,52 @@
                         <span>OR</span>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="fieldFullname">
                         <label for="fullname">Full Name</label>
                         <input type="text" id="fullname" name="fullname" placeholder="Enter your full name" required>
+                    </div>
+
+                    <div class="form-group" id="fieldCenterName" style="display:none;">
+                        <label for="centername">Review Center Name</label>
+                        <input type="text" id="centername" name="centername" placeholder="Enter your review center name">
+                    </div>
+
+                    <!-- Document uploads (Review Center only) -->
+                    <div class="doc-upload-section" id="docUploadSection">
+                        <div class="doc-upload-header">
+                            <span>📋</span>
+                            <div>
+                                <p>Verification Documents Required
+                                    <small>Upload official documents to verify your review center.</small>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="doc-upload-body">
+
+                            <div class="doc-field">
+                                <label>Business Permit <span style="color:#d32f2f;">*</span></label>
+                                <div class="doc-drop-zone" id="permitZone">
+                                    <input type="file" id="businessPermit" name="businessPermit" accept=".pdf,.jpg,.jpeg,.png" onchange="showFileName('businessPermit','permitName','permitZone')">
+                                    <div class="doc-drop-icon">🏛️</div>
+                                    <div class="doc-drop-text"><strong>Click to upload</strong> or drag & drop</div>
+                                    <div class="doc-drop-text">PDF, JPG, PNG accepted</div>
+                                </div>
+                                <div class="doc-file-name" id="permitName"></div>
+                            </div>
+
+                            <div class="doc-field">
+                                <label>DTI / SEC Registration <span style="color:#d32f2f;">*</span></label>
+                                <div class="doc-drop-zone" id="dtiZone">
+                                    <input type="file" id="dtiDoc" name="dtiDoc" accept=".pdf,.jpg,.jpeg,.png" onchange="showFileName('dtiDoc','dtiName','dtiZone')">
+                                    <div class="doc-drop-icon">📄</div>
+                                    <div class="doc-drop-text"><strong>Click to upload</strong> or drag & drop</div>
+                                    <div class="doc-drop-text">PDF, JPG, PNG accepted</div>
+                                </div>
+                                <div class="doc-file-name" id="dtiName"></div>
+                            </div>
+
+                            <p class="doc-note">⚠️ Documents will be reviewed by the team before your center is activated. You will be notified via email.</p>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -240,8 +399,9 @@
                     </div>
 
                     <div class="terms-check">
-                        <input type="checkbox" name="terms" required> I agree to the <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>
+                        <input type="checkbox" id="termsCheckbox" name="terms"> I agree to the <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>
                     </div>
+                    <p id="termsError" style="display:none; color:#d32f2f; font-size:10px; margin-bottom:12px;">You must agree to the Terms of Service and Privacy Policy to create an account.</p>
 
                     <button type="submit" class="signup-btn">CREATE ACCOUNT</button>
 
@@ -251,5 +411,48 @@
                 </form>
             </div>
         </div>
+        <script>
+            function switchRole(role, btn) {
+                document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('signupRole').value = role;
+
+                const isAdmin = role === 'admin';
+                document.getElementById('fieldFullname').style.display = isAdmin ? 'none' : '';
+                document.getElementById('fieldCenterName').style.display = isAdmin ? '' : 'none';
+                document.getElementById('docUploadSection').style.display = isAdmin ? '' : 'none';
+                document.getElementById('fullname').required = !isAdmin;
+                document.getElementById('centername').required = isAdmin;
+            }
+
+            function showFileName(inputId, labelId, zoneId) {
+                const file = document.getElementById(inputId).files[0];
+                const label = document.getElementById(labelId);
+                const zone = document.getElementById(zoneId);
+                if (file) {
+                    label.textContent = '✅ ' + file.name;
+                    label.style.display = 'block';
+                    zone.style.borderColor = '#0043CF';
+                    zone.style.background = '#f0f4ff';
+                }
+            }
+
+            document.getElementById('signupForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const termsChecked = document.getElementById('termsCheckbox').checked;
+                const termsError = document.getElementById('termsError');
+                if (!termsChecked) {
+                    termsError.style.display = 'block';
+                    return;
+                }
+                termsError.style.display = 'none';
+                const role = document.getElementById('signupRole').value;
+                window.location.href = role === 'admin' ? 'admindashboard.html' : 'loggedin.html';
+            });
+
+            document.getElementById('termsCheckbox').addEventListener('change', function() {
+                if (this.checked) document.getElementById('termsError').style.display = 'none';
+            });
+        </script>
     </body>
 </html>

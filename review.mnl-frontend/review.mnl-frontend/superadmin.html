@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin — Review.MNL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: #0a0e1a; color: #e0e6f0; min-height: 100vh; }
+
+        /* ── LOGIN GATE ── */
+        #loginGate {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, #060b18 0%, #0a1640 60%, #0a4cff22 100%);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .gate-box {
+            background: #0d1533; border: 1px solid #1e2d5a;
+            border-radius: 20px; padding: 48px 44px; width: 100%; max-width: 420px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .gate-logo { font-size: 1.1rem; font-weight: 700; color: #4d7fff; letter-spacing: 1px; margin-bottom: 6px; }
+        .gate-title { font-size: 1.55rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+        .gate-sub { font-size: 0.8rem; color: #6b7fa8; margin-bottom: 32px; }
+        .gate-field { margin-bottom: 18px; text-align: left; }
+        .gate-field label { display: block; font-size: 0.75rem; font-weight: 600; color: #8898c4; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+        .gate-field input {
+            width: 100%; padding: 12px 16px; background: #141c38; border: 1.5px solid #1e2d5a;
+            border-radius: 10px; color: #e0e6f0; font-family: Poppins, sans-serif; font-size: 0.9rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .gate-field input:focus { border-color: #0a4cff; }
+        .gate-field input.invalid { border-color: #e53935; }
+        .gate-error { font-size: 0.8rem; color: #e53935; margin-bottom: 14px; display: none; }
+        .gate-btn {
+            width: 100%; padding: 13px; background: #0a4cff; color: #fff;
+            border: none; border-radius: 10px; font-family: Poppins, sans-serif;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .gate-btn:hover { background: #0043cf; }
+        .gate-warn { font-size: 0.73rem; color: #3a4a6b; margin-top: 22px; }
+
+        /* ── DASHBOARD SHELL ── */
+        #dashboard { display: none; min-height: 100vh; }
+
+        /* Topbar */
+        .sa-topbar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            background: #0d1533; border-bottom: 1px solid #1e2d5a;
+            padding: 0 32px; height: 60px;
+        }
+        .sa-topbar-logo { font-size: 1rem; font-weight: 700; color: #4d7fff; letter-spacing: 1px; }
+        .sa-topbar-logo span { color: #fff; }
+        .sa-topbar-right { display: flex; align-items: center; gap: 16px; }
+        .sa-badge { background: #e53935; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+        .sa-logout-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: none; border: 1.5px solid #1e3a6e; color: #8898c4;
+            padding: 6px 14px; border-radius: 8px; font-family: Poppins, sans-serif;
+            font-size: 0.8rem; cursor: pointer; transition: border-color 0.2s, color 0.2s;
+        }
+        .sa-logout-btn:hover { border-color: #e53935; color: #e53935; }
+
+        /* Layout */
+        .sa-layout { display: flex; min-height: calc(100vh - 60px); }
+
+        /* Sidebar nav */
+        .sa-nav {
+            width: 220px; flex-shrink: 0;
+            background: #0d1533; border-right: 1px solid #1e2d5a;
+            padding: 24px 0; position: sticky; top: 60px; height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+        .sa-nav-section { font-size: 0.68rem; font-weight: 700; color: #3a4a6b; letter-spacing: 1px; text-transform: uppercase; padding: 0 20px 8px; margin-top: 18px; }
+        .sa-nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 20px; cursor: pointer; font-size: 0.85rem; color: #8898c4;
+            border-left: 3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .sa-nav-item:hover { background: #131e40; color: #ccd6f6; }
+        .sa-nav-item.active { background: #0a4cff18; color: #4d7fff; border-left-color: #0a4cff; font-weight: 600; }
+        .sa-nav-item .material-symbols-outlined { font-size: 20px; }
+
+        /* Main content */
+        .sa-main { flex: 1; padding: 32px; overflow-x: hidden; }
+
+        /* Section panels */
+        .sa-panel { display: none; }
+        .sa-panel.active { display: block; }
+
+        .sa-page-title { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+        .sa-page-sub { font-size: 0.83rem; color: #6b7fa8; margin-bottom: 28px; }
+
+        /* Stat cards */
+        .sa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin-bottom: 32px; }
+        .sa-stat-card {
+            background: #0d1533; border: 1px solid #1e2d5a; border-radius: 14px;
+            padding: 22px 24px;
+        }
+        .sa-stat-label { font-size: 0.75rem; color: #6b7fa8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .sa-stat-value { font-size: 2rem; font-weight: 700; color: #fff; }
+        .sa-stat-note { font-size: 0.72rem; color: #3a5a9a; margin-top: 4px; }
+
+        /* Table */
+        .sa-table-card { background: #0d1533; border: 1px solid #1e2d5a; border-radius: 14px; overflow: hidden; margin-bottom: 28px; }
+        .sa-table-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #1e2d5a; }
+        .sa-table-header h3 { font-size: 0.95rem; font-weight: 600; color: #ccd6f6; }
+        .sa-search-input {
+            padding: 8px 14px; background: #141c38; border: 1.5px solid #1e2d5a;
+            border-radius: 8px; color: #e0e6f0; font-family: Poppins, sans-serif; font-size: 0.8rem; outline: none;
+            width: 220px; transition: border-color 0.2s;
+        }
+        .sa-search-input:focus { border-color: #0a4cff; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { font-size: 0.72rem; font-weight: 700; color: #3a4a6b; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; text-align: left; border-bottom: 1px solid #1e2d5a; background: #0a0e1a; }
+        tbody tr { border-bottom: 1px solid #131e40; transition: background 0.12s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #131e40; }
+        tbody td { padding: 13px 16px; font-size: 0.83rem; color: #c0cadf; vertical-align: middle; }
+        .sa-status { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+        .sa-status.active   { background: #0a2a0a; color: #4caf50; }
+        .sa-status.pending  { background: #2a1a02; color: #ff9800; }
+        .sa-status.suspended{ background: #2a0a0a; color: #e53935; }
+        .sa-action-btn {
+            background: none; border: 1.5px solid #1e2d5a; color: #8898c4;
+            padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-family: Poppins, sans-serif;
+            cursor: pointer; transition: all 0.15s; margin-right: 4px;
+        }
+        .sa-action-btn:hover { border-color: #0a4cff; color: #4d7fff; }
+        .sa-action-btn.danger:hover { border-color: #e53935; color: #e53935; }
+        .sa-action-btn.approve:hover { border-color: #4caf50; color: #4caf50; }
+
+        /* Document viewer modal */
+        .sa-doc-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 2000;
+            background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+        }
+        .sa-doc-modal-overlay.open { display: flex; }
+        .sa-doc-modal-box {
+            background: #0d1533; border: 1px solid #1e2d5a; border-radius: 16px;
+            padding: 0; max-width: 560px; width: 94%; overflow: hidden;
+        }
+        .sa-doc-modal-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 24px; border-bottom: 1px solid #1e2d5a;
+        }
+        .sa-doc-modal-head h3 { font-size: 0.95rem; font-weight: 600; color: #ccd6f6; }
+        .sa-doc-modal-close { background: none; border: none; color: #6b7fa8; font-size: 1.4rem; cursor: pointer; }
+        .sa-doc-modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .sa-doc-info-row { display: flex; gap: 12px; }
+        .sa-doc-info-item { flex: 1; background: #141c38; border-radius: 10px; padding: 14px 16px; }
+        .sa-doc-info-label { font-size: 0.68rem; color: #3a4a6b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .sa-doc-info-value { font-size: 0.85rem; color: #ccd6f6; font-weight: 600; }
+        .sa-doc-file-row { background: #141c38; border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+        .sa-doc-file-icon { font-size: 2rem; flex-shrink: 0; }
+        .sa-doc-file-info { flex: 1; }
+        .sa-doc-file-name { font-size: 0.85rem; color: #ccd6f6; font-weight: 600; }
+        .sa-doc-file-meta { font-size: 0.72rem; color: #6b7fa8; margin-top: 2px; }
+        .sa-doc-file-badge { padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: #0a4cff22; color: #4d7fff; }
+        .sa-doc-modal-actions { padding: 16px 24px; border-top: 1px solid #1e2d5a; display: flex; gap: 10px; justify-content: flex-end; }
+
+        /* Activity log */
+        .sa-log-list { padding: 8px 0; }
+        .sa-log-item { display: flex; gap: 14px; padding: 13px 24px; border-bottom: 1px solid #131e40; align-items: flex-start; }
+        .sa-log-item:last-child { border-bottom: none; }
+        .sa-log-icon { width: 34px; height: 34px; border-radius: 50%; background: #141c38; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sa-log-icon .material-symbols-outlined { font-size: 16px; color: #4d7fff; }
+        .sa-log-text { font-size: 0.82rem; color: #c0cadf; line-height: 1.5; }
+        .sa-log-time { font-size: 0.72rem; color: #3a4a6b; margin-top: 2px; }
+
+        /* Confirm modal */
+        .sa-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
+        }
+        .sa-modal-overlay.open { display: flex; }
+        .sa-modal-box {
+            background: #0d1533; border: 1px solid #1e2d5a; border-radius: 16px;
+            padding: 32px; max-width: 420px; width: 90%; text-align: center;
+        }
+        .sa-modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .sa-modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .sa-modal-msg { font-size: 0.85rem; color: #6b7fa8; margin-bottom: 24px; line-height: 1.6; }
+        .sa-modal-actions { display: flex; gap: 12px; justify-content: center; }
+        .sa-modal-cancel { padding: 10px 24px; background: none; border: 1.5px solid #1e2d5a; color: #8898c4; border-radius: 8px; font-family: Poppins, sans-serif; font-size: 0.85rem; cursor: pointer; transition: border-color 0.2s; }
+        .sa-modal-cancel:hover { border-color: #aaa; color: #ccc; }
+        .sa-modal-confirm { padding: 10px 24px; background: #e53935; color: #fff; border: none; border-radius: 8px; font-family: Poppins, sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .sa-modal-confirm:hover { background: #c62828; }
+        .sa-modal-confirm.green { background: #388e3c; }
+        .sa-modal-confirm.green:hover { background: #2e7d32; }
+
+        /* Toast */
+        #saToast {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+            background: #182040; border: 1px solid #1e2d5a; color: #ccd6f6;
+            padding: 12px 24px; border-radius: 10px; font-size: 0.85rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none; z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN GATE
+═══════════════════════════════════════════ -->
+<div id="loginGate">
+    <div class="gate-box">
+        <div class="gate-logo">review.mnl</div>
+        <div class="gate-title">Super Admin Access</div>
+        <div class="gate-sub">Restricted area — authorized personnel only</div>
+
+        <div class="gate-field">
+            <label>Username</label>
+            <input type="text" id="gateUser" placeholder="Enter username" autocomplete="off">
+        </div>
+        <div class="gate-field">
+            <label>Password</label>
+            <input type="password" id="gatePass" placeholder="Enter password">
+        </div>
+        <div class="gate-error" id="gateError">Invalid credentials. Access denied.</div>
+        <button class="gate-btn" onclick="attemptLogin()">Access Dashboard</button>
+        <p class="gate-warn">⚠️ Unauthorized access attempts are logged.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD
+═══════════════════════════════════════════ -->
+<div id="dashboard">
+
+    <!-- Topbar -->
+    <div class="sa-topbar">
+        <div class="sa-topbar-logo">review<span>.mnl</span> &nbsp;<span style="color:#e53935;font-size:0.7rem;font-weight:700;background:#2a0a0a;padding:2px 10px;border-radius:20px;vertical-align:middle;">SUPER ADMIN</span></div>
+        <div class="sa-topbar-right">
+            <span style="font-size:0.8rem;color:#6b7fa8;">Logged in as <strong style="color:#ccd6f6;">superadmin</strong></span>
+            <button class="sa-logout-btn" onclick="saLogout()">
+                <span class="material-symbols-outlined" style="font-size:16px;">logout</span> Logout
+            </button>
+        </div>
+    </div>
+
+    <div class="sa-layout">
+
+        <!-- Sidebar -->
+        <nav class="sa-nav">
+            <div class="sa-nav-section">Overview</div>
+            <div class="sa-nav-item active" onclick="showPanel('overview', this)">
+                <span class="material-symbols-outlined">dashboard</span> Dashboard
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('activity', this)">
+                <span class="material-symbols-outlined">history</span> Activity Log
+            </div>
+
+            <div class="sa-nav-section">Management</div>
+            <div class="sa-nav-item" onclick="showPanel('centers', this)">
+                <span class="material-symbols-outlined">school</span> Review Centers
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('students', this)">
+                <span class="material-symbols-outlined">person</span> Students
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('admins', this)">
+                <span class="material-symbols-outlined">manage_accounts</span> Admins
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('docs', this)">
+                <span class="material-symbols-outlined">folder_open</span> Document Submissions
+            </div>
+
+            <div class="sa-nav-section">Content</div>
+            <div class="sa-nav-item" onclick="showPanel('reports', this)">
+                <span class="material-symbols-outlined">flag</span> Reports
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('settings', this)">
+                <span class="material-symbols-outlined">settings</span> Site Settings
+            </div>
+        </nav>
+
+        <!-- Main -->
+        <main class="sa-main">
+
+            <!-- ── OVERVIEW ── -->
+            <div class="sa-panel active" id="panel-overview">
+                <div class="sa-page-title">Dashboard Overview</div>
+                <div class="sa-page-sub">Welcome back. Here's a summary of Review.MNL.</div>
+
+                <div class="sa-stats">
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Review Centers</div>
+                        <div class="sa-stat-value" id="statCenters">12</div>
+                        <div class="sa-stat-note">3 pending approval</div>
+                    </div>
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Students</div>
+                        <div class="sa-stat-value" id="statStudents">248</div>
+                        <div class="sa-stat-note">+14 this week</div>
+                    </div>
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Admins</div>
+                        <div class="sa-stat-value" id="statAdmins">12</div>
+                        <div class="sa-stat-note">All active</div>
+                    </div>
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Active Reports</div>
+                        <div class="sa-stat-value" id="statReports">5</div>
+                        <div class="sa-stat-note">2 need review</div>
+                    </div>
+                </div>
+
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>Pending Center Approvals</h3>
+                        <span style="font-size:0.78rem;color:#6b7fa8;">Review Centers awaiting activation</span>
+                    </div>
+                    <table>
+                        <thead><tr><th>Center Name</th><th>Location</th><th>Programs</th><th>Submitted</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>PRC Manila Review</td><td>Sampaloc, Manila</td><td>Civil, Nursing</td><td>Mar 3, 2026</td>
+                                <td>
+                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','PRC Manila Review')">Approve</button>
+                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','PRC Manila Review')">Reject</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Legarda Review Hub</td><td>Legarda, Manila</td><td>Medicine, Pharmacy</td><td>Mar 4, 2026</td>
+                                <td>
+                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','Legarda Review Hub')">Approve</button>
+                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','Legarda Review Hub')">Reject</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Quiapo Bar Review</td><td>Quiapo, Manila</td><td>Law</td><td>Mar 5, 2026</td>
+                                <td>
+                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','Quiapo Bar Review')">Approve</button>
+                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','Quiapo Bar Review')">Reject</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── ACTIVITY LOG ── -->
+            <div class="sa-panel" id="panel-activity">
+                <div class="sa-page-title">Activity Log</div>
+                <div class="sa-page-sub">All system actions are recorded here.</div>
+                <div class="sa-table-card">
+                    <div class="sa-log-list" id="activityLog">
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">check_circle</span></div><div><div class="sa-log-text">Review center <strong>ERC Manila</strong> was approved.</div><div class="sa-log-time">Mar 5, 2026 — 10:22 AM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">person_add</span></div><div><div class="sa-log-text">New student <strong>Juan Dela Cruz</strong> registered.</div><div class="sa-log-time">Mar 5, 2026 — 9:48 AM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">flag</span></div><div><div class="sa-log-text">Report filed against <strong>Metro Review Center</strong> for misleading description.</div><div class="sa-log-time">Mar 4, 2026 — 4:15 PM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">block</span></div><div><div class="sa-log-text">Student <strong>Maria Santos</strong> account suspended.</div><div class="sa-log-time">Mar 4, 2026 — 2:30 PM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">settings</span></div><div><div class="sa-log-text">Site settings updated by <strong>superadmin</strong>.</div><div class="sa-log-time">Mar 3, 2026 — 11:00 AM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">school</span></div><div><div class="sa-log-text">Review center <strong>Legarda Review Hub</strong> submitted for approval.</div><div class="sa-log-time">Mar 3, 2026 — 8:55 AM</div></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── REVIEW CENTERS ── -->
+            <div class="sa-panel" id="panel-centers">
+                <div class="sa-page-title">Review Centers</div>
+                <div class="sa-page-sub">Manage all registered review centers.</div>
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>All Centers</h3>
+                        <input class="sa-search-input" placeholder="Search centers..." oninput="filterTable('centersTable', this.value)">
+                    </div>
+                    <table id="centersTable">
+                        <thead><tr><th>Center Name</th><th>Location</th><th>Programs</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>ERC Review Center</td><td>Sampaloc, Manila</td><td>Civil, Arch, Nursing</td><td>★★★★★</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing ERC Review Center...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','ERC Review Center')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','ERC Review Center')">Delete</button></td></tr>
+                            <tr><td>Metro Review Center</td><td>Ermita, Manila</td><td>Medicine, Law</td><td>★★★★☆</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Metro Review Center...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Metro Review Center')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Metro Review Center')">Delete</button></td></tr>
+                            <tr><td>PRC Manila Review</td><td>Sampaloc, Manila</td><td>Civil, Nursing</td><td>—</td><td><span class="sa-status pending">Pending</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('approve','PRC Manila Review')">Approve</button><button class="sa-action-btn danger" onclick="confirmAction('reject','PRC Manila Review')">Reject</button></td></tr>
+                            <tr><td>Legarda Review Hub</td><td>Legarda, Manila</td><td>Medicine, Pharmacy</td><td>—</td><td><span class="sa-status pending">Pending</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('approve','Legarda Review Hub')">Approve</button><button class="sa-action-btn danger" onclick="confirmAction('reject','Legarda Review Hub')">Reject</button></td></tr>
+                            <tr><td>Quiapo Bar Review</td><td>Quiapo, Manila</td><td>Law</td><td>—</td><td><span class="sa-status pending">Pending</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('approve','Quiapo Bar Review')">Approve</button><button class="sa-action-btn danger" onclick="confirmAction('reject','Quiapo Bar Review')">Reject</button></td></tr>
+                            <tr><td>Old Manila Review</td><td>Intramuros, Manila</td><td>Law, Accountancy</td><td>★★★☆☆</td><td><span class="sa-status suspended">Suspended</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('restore','Old Manila Review')">Restore</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Old Manila Review')">Delete</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── STUDENTS ── -->
+            <div class="sa-panel" id="panel-students">
+                <div class="sa-page-title">Students</div>
+                <div class="sa-page-sub">Manage all registered student accounts.</div>
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>All Students</h3>
+                        <input class="sa-search-input" placeholder="Search students..." oninput="filterTable('studentsTable', this.value)">
+                    </div>
+                    <table id="studentsTable">
+                        <thead><tr><th>Name</th><th>Email</th><th>Enrolled Centers</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>Juan Dela Cruz</td><td>juan@email.com</td><td>2</td><td>Jan 10, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Juan Dela Cruz...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Juan Dela Cruz')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Juan Dela Cruz')">Delete</button></td></tr>
+                            <tr><td>Maria Santos</td><td>maria@email.com</td><td>1</td><td>Feb 3, 2026</td><td><span class="sa-status suspended">Suspended</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('restore','Maria Santos')">Restore</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Maria Santos')">Delete</button></td></tr>
+                            <tr><td>Carlo Reyes</td><td>carlo@email.com</td><td>3</td><td>Feb 14, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Carlo Reyes...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Carlo Reyes')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Carlo Reyes')">Delete</button></td></tr>
+                            <tr><td>Ana Lim</td><td>ana@email.com</td><td>0</td><td>Mar 1, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Ana Lim...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Ana Lim')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Ana Lim')">Delete</button></td></tr>
+                            <tr><td>Pedro Garcia</td><td>pedro@email.com</td><td>1</td><td>Mar 2, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Pedro Garcia...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Pedro Garcia')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Pedro Garcia')">Delete</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── ADMINS ── -->
+            <div class="sa-panel" id="panel-admins">
+                <div class="sa-page-title">Admins</div>
+                <div class="sa-page-sub">Manage review center admin accounts.</div>
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>All Admins</h3>
+                        <input class="sa-search-input" placeholder="Search admins..." oninput="filterTable('adminsTable', this.value)">
+                    </div>
+                    <table id="adminsTable">
+                        <thead><tr><th>Name</th><th>Email</th><th>Manages</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>ERC Admin</td><td>admin@erc.com</td><td>ERC Review Center</td><td>Jan 5, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing ERC Admin...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','ERC Admin')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','ERC Admin')">Delete</button></td></tr>
+                            <tr><td>Metro Admin</td><td>admin@metro.com</td><td>Metro Review Center</td><td>Jan 18, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Metro Admin...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Metro Admin')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Metro Admin')">Delete</button></td></tr>
+                            <tr><td>Old Manila Admin</td><td>admin@oldmnl.com</td><td>Old Manila Review</td><td>Nov 12, 2025</td><td><span class="sa-status suspended">Suspended</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('restore','Old Manila Admin')">Restore</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Old Manila Admin')">Delete</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── DOCUMENT SUBMISSIONS ── -->
+            <div class="sa-panel" id="panel-docs">
+                <div class="sa-page-title">Document Submissions</div>
+                <div class="sa-page-sub">Review uploaded business permits and DTI/SEC documents from center applicants.</div>
+
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>Pending Document Reviews</h3>
+                        <input class="sa-search-input" placeholder="Search submissions..." oninput="filterTable('docsTable', this.value)">
+                    </div>
+                    <table id="docsTable">
+                        <thead><tr><th>Center Name</th><th>Submitted By</th><th>Date</th><th>Business Permit</th><th>DTI / SEC</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>PRC Manila Review</td><td>prc@manila.com</td><td>Mar 3, 2026</td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('PRC Manila Review','prc@manila.com','Mar 3, 2026','Business Permit','business_permit_prc.pdf')">📄 View</button></td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('PRC Manila Review','prc@manila.com','Mar 3, 2026','DTI Registration','dti_prc.pdf')">📄 View</button></td>
+                                <td><span class="sa-status pending">Pending</span></td>
+                                <td>
+                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','PRC Manila Review')">Approve</button>
+                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','PRC Manila Review')">Reject</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Legarda Review Hub</td><td>legarda@review.com</td><td>Mar 4, 2026</td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('Legarda Review Hub','legarda@review.com','Mar 4, 2026','Business Permit','business_permit_legarda.jpg')">📄 View</button></td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('Legarda Review Hub','legarda@review.com','Mar 4, 2026','DTI Registration','dti_legarda.pdf')">📄 View</button></td>
+                                <td><span class="sa-status pending">Pending</span></td>
+                                <td>
+                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','Legarda Review Hub')">Approve</button>
+                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','Legarda Review Hub')">Reject</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Quiapo Bar Review</td><td>quiapo@bar.com</td><td>Mar 5, 2026</td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('Quiapo Bar Review','quiapo@bar.com','Mar 5, 2026','Business Permit','business_permit_quiapo.pdf')">📄 View</button></td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('Quiapo Bar Review','quiapo@bar.com','Mar 5, 2026','SEC Certificate','sec_quiapo.pdf')">📄 View</button></td>
+                                <td><span class="sa-status pending">Pending</span></td>
+                                <td>
+                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','Quiapo Bar Review')">Approve</button>
+                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','Quiapo Bar Review')">Reject</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>ERC Review Center</td><td>admin@erc.com</td><td>Jan 5, 2026</td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('ERC Review Center','admin@erc.com','Jan 5, 2026','Business Permit','business_permit_erc.pdf')">📄 View</button></td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('ERC Review Center','admin@erc.com','Jan 5, 2026','DTI Registration','dti_erc.pdf')">📄 View</button></td>
+                                <td><span class="sa-status active">Approved</span></td>
+                                <td><span style="font-size:0.78rem;color:#3a4a6b;">—</span></td>
+                            </tr>
+                            <tr>
+                                <td>Metro Review Center</td><td>admin@metro.com</td><td>Jan 18, 2026</td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('Metro Review Center','admin@metro.com','Jan 18, 2026','Business Permit','business_permit_metro.jpg')">📄 View</button></td>
+                                <td><button class="sa-action-btn" onclick="viewDoc('Metro Review Center','admin@metro.com','Jan 18, 2026','SEC Certificate','sec_metro.pdf')">📄 View</button></td>
+                                <td><span class="sa-status active">Approved</span></td>
+                                <td><span style="font-size:0.78rem;color:#3a4a6b;">—</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── REPORTS ── -->
+            <div class="sa-panel" id="panel-reports">
+                <div class="sa-page-title">Reports</div>
+                <div class="sa-page-sub">User-submitted reports and flagged content.</div>
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>Active Reports</h3>
+                        <input class="sa-search-input" placeholder="Search reports..." oninput="filterTable('reportsTable', this.value)">
+                    </div>
+                    <table id="reportsTable">
+                        <thead><tr><th>Reported By</th><th>Against</th><th>Reason</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>Juan Dela Cruz</td><td>Metro Review Center</td><td>Misleading description</td><td>Mar 4, 2026</td><td><span class="sa-status pending">Open</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('resolve','this report')">Resolve</button><button class="sa-action-btn danger" onclick="confirmAction('dismiss','this report')">Dismiss</button></td></tr>
+                            <tr><td>Ana Lim</td><td>ERC Review Center</td><td>Incorrect program info</td><td>Mar 3, 2026</td><td><span class="sa-status pending">Open</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('resolve','this report')">Resolve</button><button class="sa-action-btn danger" onclick="confirmAction('dismiss','this report')">Dismiss</button></td></tr>
+                            <tr><td>Carlo Reyes</td><td>Old Manila Review</td><td>Fake achievements listed</td><td>Feb 28, 2026</td><td><span class="sa-status active">Resolved</span></td><td><button class="sa-action-btn" onclick="saToast('Report already resolved.')">View</button></td></tr>
+                            <tr><td>Maria Santos</td><td>Legarda Review Hub</td><td>No response from admin</td><td>Feb 25, 2026</td><td><span class="sa-status active">Resolved</span></td><td><button class="sa-action-btn" onclick="saToast('Report already resolved.')">View</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── SETTINGS ── -->
+            <div class="sa-panel" id="panel-settings">
+                <div class="sa-page-title">Site Settings</div>
+                <div class="sa-page-sub">Global configuration for Review.MNL.</div>
+                <div class="sa-table-card" style="padding: 28px 32px; display: flex; flex-direction: column; gap: 22px;">
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Site Name</label>
+                        <input type="text" value="Review.MNL" style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:360px;outline:none;" onfocus="this.style.borderColor='#0a4cff'" onblur="this.style.borderColor='#1e2d5a'">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Maintenance Mode</label>
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                            <option>Off</option>
+                            <option>On</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">New Center Registrations</label>
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                            <option>Open</option>
+                            <option>Closed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Student Signups</label>
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                            <option>Open</option>
+                            <option>Closed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="saToast('Settings saved successfully.')" style="padding:11px 28px;background:#0a4cff;color:#fff;border:none;border-radius:10px;font-family:Poppins,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Doc Viewer Modal -->
+<div class="sa-doc-modal-overlay" id="saDocModal">
+    <div class="sa-doc-modal-box">
+        <div class="sa-doc-modal-head">
+            <h3 id="docModalTitle">Document Details</h3>
+            <button class="sa-doc-modal-close" onclick="closeDocModal()">&times;</button>
+        </div>
+        <div class="sa-doc-modal-body">
+            <div class="sa-doc-info-row">
+                <div class="sa-doc-info-item">
+                    <div class="sa-doc-info-label">Review Center</div>
+                    <div class="sa-doc-info-value" id="docCenterName">—</div>
+                </div>
+                <div class="sa-doc-info-item">
+                    <div class="sa-doc-info-label">Submitted By</div>
+                    <div class="sa-doc-info-value" id="docEmail">—</div>
+                </div>
+                <div class="sa-doc-info-item">
+                    <div class="sa-doc-info-label">Date</div>
+                    <div class="sa-doc-info-value" id="docDate">—</div>
+                </div>
+            </div>
+            <div class="sa-doc-file-row">
+                <div class="sa-doc-file-icon" id="docFileIcon">📄</div>
+                <div class="sa-doc-file-info">
+                    <div class="sa-doc-file-name" id="docFileName">—</div>
+                    <div class="sa-doc-file-meta" id="docFileType">—</div>
+                </div>
+                <div class="sa-doc-file-badge" id="docFileBadge">PDF</div>
+            </div>
+            <p style="font-size:0.78rem;color:#3a4a6b;line-height:1.6;">🔗 In production, clicking <strong style="color:#ccd6f6;">Download / Preview</strong> below will open the actual uploaded file from the server. Currently showing file metadata only (frontend demo).</p>
+        </div>
+        <div class="sa-doc-modal-actions">
+            <button class="sa-modal-cancel" onclick="closeDocModal()">Close</button>
+            <button class="sa-modal-confirm green" onclick="saToast('In production, file download would start here.'); closeDocModal();">Download / Preview</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="sa-modal-overlay" id="saConfirmModal">
+    <div class="sa-modal-box">
+        <div class="sa-modal-icon" id="saModalIcon">⚠️</div>
+        <div class="sa-modal-title" id="saModalTitle">Are you sure?</div>
+        <div class="sa-modal-msg" id="saModalMsg">This action cannot be undone.</div>
+        <div class="sa-modal-actions">
+            <button class="sa-modal-cancel" onclick="closeConfirm()">Cancel</button>
+            <button class="sa-modal-confirm" id="saModalConfirmBtn" onclick="executeAction()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="saToast"></div>
+
+<script>
+    // ── Doc viewer ──
+    function viewDoc(center, email, date, docType, filename) {
+        document.getElementById('docModalTitle').textContent = docType;
+        document.getElementById('docCenterName').textContent = center;
+        document.getElementById('docEmail').textContent = email;
+        document.getElementById('docDate').textContent = date;
+        document.getElementById('docFileName').textContent = filename;
+        document.getElementById('docFileType').textContent = docType;
+        var ext = filename.split('.').pop().toUpperCase();
+        document.getElementById('docFileBadge').textContent = ext;
+        document.getElementById('docFileIcon').textContent = ext === 'PDF' ? '📄' : '🖼️';
+        document.getElementById('saDocModal').classList.add('open');
+    }
+    function closeDocModal() {
+        document.getElementById('saDocModal').classList.remove('open');
+    }
+    document.getElementById('saDocModal').addEventListener('click', function(e){ if (e.target === this) closeDocModal(); });
+
+    // ── Credentials (creator-only) ──
+    const SA_USER = 'rmnl_superadmin';
+    const SA_PASS = 'Creator@rmnl2026!';
+    const SA_SESSION_KEY = 'rmnl_sa_session';
+
+    // ── Auto-login if session exists ──
+    if (sessionStorage.getItem(SA_SESSION_KEY) === 'granted') {
+        document.getElementById('loginGate').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+    }
+
+    function attemptLogin() {
+        const u = document.getElementById('gateUser').value.trim();
+        const p = document.getElementById('gatePass').value;
+        const err = document.getElementById('gateError');
+        document.getElementById('gateUser').classList.remove('invalid');
+        document.getElementById('gatePass').classList.remove('invalid');
+        if (u === SA_USER && p === SA_PASS) {
+            sessionStorage.setItem(SA_SESSION_KEY, 'granted');
+            document.getElementById('loginGate').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        } else {
+            err.style.display = 'block';
+            document.getElementById('gateUser').classList.add('invalid');
+            document.getElementById('gatePass').classList.add('invalid');
+            document.getElementById('gatePass').value = '';
+        }
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && document.getElementById('loginGate').style.display !== 'none') attemptLogin();
+    });
+
+    function saLogout() {
+        sessionStorage.removeItem(SA_SESSION_KEY);
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('loginGate').style.display = 'flex';
+        document.getElementById('gateUser').value = '';
+        document.getElementById('gatePass').value = '';
+        document.getElementById('gateError').style.display = 'none';
+    }
+
+    // ── Panel navigation ──
+    function showPanel(id, el) {
+        document.querySelectorAll('.sa-panel').forEach(function(p){ p.classList.remove('active'); });
+        document.querySelectorAll('.sa-nav-item').forEach(function(n){ n.classList.remove('active'); });
+        document.getElementById('panel-' + id).classList.add('active');
+        el.classList.add('active');
+    }
+
+    // ── Table live filter ──
+    function filterTable(tableId, query) {
+        const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+        const q = query.toLowerCase().trim();
+        rows.forEach(function(row) {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    // ── Confirm modal ──
+    var _pendingAction = null;
+    var _pendingTarget = null;
+    var actionConfig = {
+        approve:  { icon: '✅', title: 'Approve?',  msg: 'This will activate {t} on the platform.', btnClass: 'green', btnText: 'Approve' },
+        reject:   { icon: '❌', title: 'Reject?',   msg: 'This will reject the application of {t}.', btnClass: '', btnText: 'Reject' },
+        suspend:  { icon: '🚫', title: 'Suspend?',  msg: 'This will suspend {t}. They will lose access.', btnClass: '', btnText: 'Suspend' },
+        restore:  { icon: '🔓', title: 'Restore?',  msg: 'This will restore access for {t}.', btnClass: 'green', btnText: 'Restore' },
+        delete:   { icon: '🗑️', title: 'Delete?',   msg: 'This will permanently delete {t}. This cannot be undone.', btnClass: '', btnText: 'Delete' },
+        resolve:  { icon: '✅', title: 'Resolve?',  msg: 'Mark {t} as resolved and close it.', btnClass: 'green', btnText: 'Resolve' },
+        dismiss:  { icon: '🗑️', title: 'Dismiss?',  msg: 'Dismiss {t} without action.', btnClass: '', btnText: 'Dismiss' },
+    };
+    function confirmAction(action, target) {
+        _pendingAction = action;
+        _pendingTarget = target;
+        const cfg = actionConfig[action] || { icon: '⚠️', title: 'Confirm?', msg: 'Proceed with {t}?', btnClass: '', btnText: 'Confirm' };
+        document.getElementById('saModalIcon').textContent = cfg.icon;
+        document.getElementById('saModalTitle').textContent = cfg.title;
+        document.getElementById('saModalMsg').textContent = cfg.msg.replace('{t}', target);
+        var btn = document.getElementById('saModalConfirmBtn');
+        btn.className = 'sa-modal-confirm' + (cfg.btnClass ? ' ' + cfg.btnClass : '');
+        btn.textContent = cfg.btnText;
+        document.getElementById('saConfirmModal').classList.add('open');
+    }
+    function closeConfirm() {
+        document.getElementById('saConfirmModal').classList.remove('open');
+    }
+    function executeAction() {
+        closeConfirm();
+        var messages = {
+            approve:  _pendingTarget + ' has been approved.',
+            reject:   _pendingTarget + ' has been rejected.',
+            suspend:  _pendingTarget + ' has been suspended.',
+            restore:  _pendingTarget + ' has been restored.',
+            delete:   _pendingTarget + ' has been deleted.',
+            resolve:  'Report resolved.',
+            dismiss:  'Report dismissed.',
+        };
+        saToast(messages[_pendingAction] || 'Action completed.');
+        logActivity(_pendingAction, _pendingTarget);
+    }
+    document.getElementById('saConfirmModal').addEventListener('click', function(e){
+        if (e.target === this) closeConfirm();
+    });
+
+    // ── Toast ──
+    var _toastTimer = null;
+    function saToast(msg) {
+        var t = document.getElementById('saToast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(function(){ t.style.display = 'none'; }, 3000);
+    }
+
+    // ── Activity log ──
+    var actionLabels = { approve:'approved', reject:'rejected', suspend:'suspended', restore:'restored', delete:'deleted', resolve:'resolved report for', dismiss:'dismissed report for' };
+    function logActivity(action, target) {
+        var log = document.getElementById('activityLog');
+        var now = new Date();
+        var timeStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + ' — '
+            + now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+        var item = document.createElement('div');
+        item.className = 'sa-log-item';
+        item.innerHTML = '<div class="sa-log-icon"><span class="material-symbols-outlined">admin_panel_settings</span></div>'
+            + '<div><div class="sa-log-text">Superadmin <strong>' + (actionLabels[action]||action) + '</strong> <strong>' + target + '</strong>.</div>'
+            + '<div class="sa-log-time">' + timeStr + '</div></div>';
+        log.insertBefore(item, log.firstChild);
+    }
+</script>
+</body>
+</html>

@@ -24,8 +24,11 @@ const registerStudent = async (req, res) => {
     await sendVerificationEmail(email, token, first_name);
     res.status(201).json({ message: 'Account created! Please check your email to verify.' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error. Please try again.' });
+    console.error('Register error:', err);
+    if (err.message === 'Email service not configured') {
+      return res.status(503).json({ message: 'Email service not available. Please contact support.' });
+    }
+    res.status(500).json({ message: err.message || 'Server error. Please try again.' });
   }
 };
 
@@ -116,8 +119,11 @@ const forgotPassword = async (req, res) => {
     await sendPasswordResetEmail(email, token, rows[0].first_name);
     res.json({ message: 'Password reset link sent to your email.' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error.' });
+    console.error('Forgot password error:', err);
+    if (err.message === 'Email service not configured') {
+      return res.status(503).json({ message: 'Email service not available. Please contact support.' });
+    }
+    res.status(500).json({ message: err.message || 'Server error.' });
   }
 };
 
@@ -134,8 +140,11 @@ const resendVerification = async (req, res) => {
     await sendVerificationEmail(email, token, rows[0].first_name);
     res.json({ message: 'Verification email resent! Please check your inbox.' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error.' });
+    console.error('Resend verification error:', err);
+    if (err.message === 'Email service not configured') {
+      return res.status(503).json({ message: 'Email service not available. Please contact support.' });
+    }
+    res.status(500).json({ message: err.message || 'Server error.' });
   }
 };
 

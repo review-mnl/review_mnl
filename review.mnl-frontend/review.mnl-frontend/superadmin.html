@@ -316,29 +316,9 @@
                         <span style="font-size:0.78rem;color:#6b7fa8;">Review Centers awaiting activation</span>
                     </div>
                     <table>
-                        <thead><tr><th>Center Name</th><th>Location</th><th>Programs</th><th>Submitted</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Center Name</th><th>Owner</th><th>Email</th><th>Submitted</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr>
-                                <td>PRC Manila Review</td><td>Sampaloc, Manila</td><td>Civil, Nursing</td><td>Mar 3, 2026</td>
-                                <td>
-                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','PRC Manila Review')">Approve</button>
-                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','PRC Manila Review')">Reject</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Legarda Review Hub</td><td>Legarda, Manila</td><td>Medicine, Pharmacy</td><td>Mar 4, 2026</td>
-                                <td>
-                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','Legarda Review Hub')">Approve</button>
-                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','Legarda Review Hub')">Reject</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Quiapo Bar Review</td><td>Quiapo, Manila</td><td>Law</td><td>Mar 5, 2026</td>
-                                <td>
-                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','Quiapo Bar Review')">Approve</button>
-                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','Quiapo Bar Review')">Reject</button>
-                                </td>
-                            </tr>
+                            <tr><td colspan="5" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -370,14 +350,9 @@
                         <input class="sa-search-input" placeholder="Search centers..." oninput="filterTable('centersTable', this.value)">
                     </div>
                     <table id="centersTable">
-                        <thead><tr><th>Center Name</th><th>Location</th><th>Programs</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Center Name</th><th>Owner</th><th>Email</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr><td>ERC Review Center</td><td>Sampaloc, Manila</td><td>Civil, Arch, Nursing</td><td>★★★★★</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing ERC Review Center...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','ERC Review Center')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','ERC Review Center')">Delete</button></td></tr>
-                            <tr><td>Metro Review Center</td><td>Ermita, Manila</td><td>Medicine, Law</td><td>★★★★☆</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Metro Review Center...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Metro Review Center')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Metro Review Center')">Delete</button></td></tr>
-                            <tr><td>PRC Manila Review</td><td>Sampaloc, Manila</td><td>Civil, Nursing</td><td>—</td><td><span class="sa-status pending">Pending</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('approve','PRC Manila Review')">Approve</button><button class="sa-action-btn danger" onclick="confirmAction('reject','PRC Manila Review')">Reject</button></td></tr>
-                            <tr><td>Legarda Review Hub</td><td>Legarda, Manila</td><td>Medicine, Pharmacy</td><td>—</td><td><span class="sa-status pending">Pending</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('approve','Legarda Review Hub')">Approve</button><button class="sa-action-btn danger" onclick="confirmAction('reject','Legarda Review Hub')">Reject</button></td></tr>
-                            <tr><td>Quiapo Bar Review</td><td>Quiapo, Manila</td><td>Law</td><td>—</td><td><span class="sa-status pending">Pending</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('approve','Quiapo Bar Review')">Approve</button><button class="sa-action-btn danger" onclick="confirmAction('reject','Quiapo Bar Review')">Reject</button></td></tr>
-                            <tr><td>Old Manila Review</td><td>Intramuros, Manila</td><td>Law, Accountancy</td><td>★★★☆☆</td><td><span class="sa-status suspended">Suspended</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('restore','Old Manila Review')">Restore</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Old Manila Review')">Delete</button></td></tr>
+                            <tr><td colspan="6" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -393,13 +368,9 @@
                         <input class="sa-search-input" placeholder="Search students..." oninput="filterTable('studentsTable', this.value)">
                     </div>
                     <table id="studentsTable">
-                        <thead><tr><th>Name</th><th>Email</th><th>Enrolled Centers</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr><td>Juan Dela Cruz</td><td>juan@email.com</td><td>2</td><td>Jan 10, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Juan Dela Cruz...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Juan Dela Cruz')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Juan Dela Cruz')">Delete</button></td></tr>
-                            <tr><td>Maria Santos</td><td>maria@email.com</td><td>1</td><td>Feb 3, 2026</td><td><span class="sa-status suspended">Suspended</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('restore','Maria Santos')">Restore</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Maria Santos')">Delete</button></td></tr>
-                            <tr><td>Carlo Reyes</td><td>carlo@email.com</td><td>3</td><td>Feb 14, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Carlo Reyes...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Carlo Reyes')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Carlo Reyes')">Delete</button></td></tr>
-                            <tr><td>Ana Lim</td><td>ana@email.com</td><td>0</td><td>Mar 1, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Ana Lim...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Ana Lim')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Ana Lim')">Delete</button></td></tr>
-                            <tr><td>Pedro Garcia</td><td>pedro@email.com</td><td>1</td><td>Mar 2, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Pedro Garcia...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Pedro Garcia')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Pedro Garcia')">Delete</button></td></tr>
+                            <tr><td colspan="5" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -778,6 +749,185 @@
             + '<div class="sa-log-time">' + timeStr + '</div></div>';
         log.insertBefore(item, log.firstChild);
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // REAL DATA LOADING FROM API
+    // ══════════════════════════════════════════════════════════════════════════
+    
+    var allCenters = [];
+    var allStudents = [];
+
+    function loadDashboardData() {
+        loadCenters();
+        loadStudents();
+    }
+
+    function loadCenters() {
+        AdminAPI.getAllCenters().then(function(centers) {
+            allCenters = centers;
+            renderCentersTable(centers);
+            renderPendingCenters(centers.filter(c => c.status === 'pending'));
+            updateStats();
+        }).catch(function(err) {
+            console.error('Failed to load centers:', err);
+            saToast('Failed to load centers: ' + err.message);
+        });
+    }
+
+    function loadStudents() {
+        AdminAPI.getStudents().then(function(students) {
+            allStudents = students;
+            renderStudentsTable(students);
+            updateStats();
+        }).catch(function(err) {
+            console.error('Failed to load students:', err);
+            saToast('Failed to load students: ' + err.message);
+        });
+    }
+
+    function updateStats() {
+        document.getElementById('statCenters').textContent = allCenters.length;
+        document.getElementById('statPending').textContent = allCenters.filter(c => c.status === 'pending').length;
+        document.getElementById('statStudents').textContent = allStudents.length;
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '—';
+        var d = new Date(dateStr);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function renderPendingCenters(centers) {
+        var tbody = document.querySelector('#panel-dashboard .sa-table-card tbody');
+        if (!tbody) return;
+        if (centers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7fa8;">No pending approvals</td></tr>';
+            return;
+        }
+        tbody.innerHTML = centers.map(function(c) {
+            return '<tr data-center-id="' + c.id + '">' +
+                '<td>' + c.business_name + '</td>' +
+                '<td>' + c.owner_first + ' ' + c.owner_last + '</td>' +
+                '<td>' + c.email + '</td>' +
+                '<td>' + formatDate(c.created_at) + '</td>' +
+                '<td>' +
+                    '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
+                    '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>' +
+                '</td></tr>';
+        }).join('');
+    }
+
+    function renderCentersTable(centers) {
+        var tbody = document.querySelector('#centersTable tbody');
+        if (!tbody) return;
+        if (centers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No review centers found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = centers.map(function(c) {
+            var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
+            var actions = '';
+            if (c.status === 'pending') {
+                actions = '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
+                          '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>';
+            } else {
+                actions = '<button class="sa-action-btn danger" onclick="deleteCenterConfirm(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Delete</button>';
+            }
+            return '<tr data-center-id="' + c.id + '">' +
+                '<td>' + c.business_name + '</td>' +
+                '<td>' + c.owner_first + ' ' + c.owner_last + '</td>' +
+                '<td>' + c.email + '</td>' +
+                '<td>' + formatDate(c.created_at) + '</td>' +
+                '<td><span class="sa-status ' + statusClass + '">' + (c.status.charAt(0).toUpperCase() + c.status.slice(1)) + '</span></td>' +
+                '<td>' + actions + '</td></tr>';
+        }).join('');
+    }
+
+    function renderStudentsTable(students) {
+        var tbody = document.querySelector('#studentsTable tbody');
+        if (!tbody) return;
+        if (students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No students found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = students.map(function(s) {
+            var statusClass = s.is_verified ? 'active' : 'pending';
+            var statusText = s.is_verified ? 'Verified' : 'Unverified';
+            return '<tr data-user-id="' + s.id + '">' +
+                '<td>' + s.first_name + ' ' + s.last_name + '</td>' +
+                '<td>' + s.email + '</td>' +
+                '<td>' + formatDate(s.created_at) + '</td>' +
+                '<td><span class="sa-status ' + statusClass + '">' + statusText + '</span></td>' +
+                '<td>' +
+                    '<button class="sa-action-btn danger" onclick="deleteStudentConfirm(' + s.id + ', \'' + (s.first_name + ' ' + s.last_name).replace(/'/g, "\\'") + '\')">Delete</button>' +
+                '</td></tr>';
+        }).join('');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ACTION FUNCTIONS CONNECTED TO API
+    // ══════════════════════════════════════════════════════════════════════════
+
+    function approveCenter(id, name) {
+        if (!confirm('Approve ' + name + '?')) return;
+        AdminAPI.updateCenterStatus(id, 'approved').then(function() {
+            saToast(name + ' has been approved!');
+            logActivity('approve', name);
+            loadCenters();
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    function rejectCenter(id, name) {
+        if (!confirm('Reject ' + name + '? This will deny their application.')) return;
+        AdminAPI.updateCenterStatus(id, 'rejected').then(function() {
+            saToast(name + ' has been rejected.');
+            logActivity('reject', name);
+            loadCenters();
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    function deleteCenterConfirm(id, name) {
+        if (!confirm('DELETE ' + name + '? This action cannot be undone!')) return;
+        AdminAPI.deleteCenter(id).then(function() {
+            saToast(name + ' has been deleted.');
+            logActivity('delete', name);
+            loadCenters();
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    function deleteStudentConfirm(id, name) {
+        if (!confirm('DELETE student ' + name + '? This action cannot be undone!')) return;
+        AdminAPI.deleteUser(id).then(function() {
+            saToast(name + ' has been deleted.');
+            logActivity('delete', name);
+            loadStudents();
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    // Load data when dashboard becomes visible
+    var originalSaveSession = saveSession;
+    saveSession = function(data) {
+        originalSaveSession(data);
+        setTimeout(loadDashboardData, 100);
+    };
+
+    // Also load on page load if already logged in
+    (function() {
+        var token = localStorage.getItem('rmnl_token');
+        var user = null;
+        try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
+        if (token && user && user.role === 'superadmin') {
+            setTimeout(loadDashboardData, 100);
+        }
+    })();
 </script>
 </body>
 </html>

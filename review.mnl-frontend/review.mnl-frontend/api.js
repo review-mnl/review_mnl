@@ -110,6 +110,9 @@ const AdminAPI = {
     updateCenterStatus: (id, status) =>
         apiRequest('PUT', '/api/admin/centers/' + id + '/status', { status }),
 
+    deleteCenter: (id) =>
+        apiRequest('DELETE', '/api/admin/centers/' + id),
+
     getStudents: () =>
         apiRequest('GET', '/api/admin/students'),
 

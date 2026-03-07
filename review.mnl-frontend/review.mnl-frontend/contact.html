@@ -369,6 +369,7 @@
             </div>
         </section>
 
+        <script src="api.js"></script>
         <script>
             // Real-time form validation — enable button only when all fields are valid
             (function() {
@@ -444,7 +445,7 @@
                 const lb = document.getElementById('contactLogoutBtn');
                 if (lb) {
                     lb.addEventListener('click', function() {
-                        localStorage.removeItem('rmnl_role');
+                        clearSession();
                         window.location.href = 'index.html';
                     });
                 }

@@ -403,6 +403,7 @@
                     </div>
                     <p id="termsError" style="display:none; color:#d32f2f; font-size:10px; margin-bottom:12px;">You must agree to the Terms of Service and Privacy Policy to create an account.</p>
 
+                    <p id="signupError" style="display:none;color:#d32f2f;font-size:11px;margin-bottom:10px;"></p>
                     <button type="submit" class="signup-btn">CREATE ACCOUNT</button>
 
                     <div class="login-link">
@@ -411,6 +412,7 @@
                 </form>
             </div>
         </div>
+        <script src="api.js"></script>
         <script>
             function switchRole(role, btn) {
                 document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
@@ -437,17 +439,63 @@
                 }
             }
 
-            document.getElementById('signupForm').addEventListener('submit', function(e) {
+            document.getElementById('signupForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const termsChecked = document.getElementById('termsCheckbox').checked;
                 const termsError = document.getElementById('termsError');
-                if (!termsChecked) {
-                    termsError.style.display = 'block';
+                if (!termsChecked) { termsError.style.display = 'block'; return; }
+                termsError.style.display = 'none';
+
+                const role     = document.getElementById('signupRole').value;
+                const email    = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const confirm  = document.getElementById('confirm-password').value;
+                const errEl    = document.getElementById('signupError');
+                errEl.style.display = 'none';
+
+                if (password !== confirm) {
+                    errEl.textContent = 'Passwords do not match.';
+                    errEl.style.display = 'block';
                     return;
                 }
-                termsError.style.display = 'none';
-                const role = document.getElementById('signupRole').value;
-                window.location.href = role === 'admin' ? 'admindashboard.html' : 'loggedin.html';
+
+                const btn = document.querySelector('.signup-btn');
+                btn.disabled = true;
+                btn.textContent = 'Creating account...';
+
+                try {
+                    if (role === 'admin') {
+                        // Review Center registration — multipart/form-data
+                        const fd = new FormData();
+                        fd.append('name',   document.getElementById('centername').value.trim());
+                        fd.append('email',  email);
+                        fd.append('password', password);
+                        const bpFile = document.getElementById('businessPermit').files[0];
+                        const dtiFile = document.getElementById('dtiDoc').files[0];
+                        if (!bpFile || !dtiFile) {
+                            errEl.textContent = 'Please upload both verification documents.';
+                            errEl.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'CREATE ACCOUNT';
+                            return;
+                        }
+                        fd.append('business_permit', bpFile);
+                        fd.append('dti_sec_reg',     dtiFile);
+                        await AuthAPI.registerCenter(fd);
+                        alert('Application submitted! Please check your email to verify your account. Your center will be reviewed before activation.');
+                        window.location.href = 'login.html';
+                    } else {
+                        const name = document.getElementById('fullname').value.trim();
+                        await AuthAPI.registerStudent(name, email, password);
+                        alert('Account created! Please check your email to verify your account before logging in.');
+                        window.location.href = 'login.html';
+                    }
+                } catch (err) {
+                    errEl.textContent = err.message || 'Registration failed. Please try again.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'CREATE ACCOUNT';
+                }
             });
 
             document.getElementById('termsCheckbox').addEventListener('change', function() {

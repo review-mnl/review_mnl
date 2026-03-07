@@ -320,6 +320,7 @@
                 </div>
             </div>
         </section>
+            <script src="api.js"></script>
             <script>
                 (function(){
                     const btn = document.getElementById('profileBtn');
@@ -333,7 +334,7 @@
                         btn.setAttribute('aria-expanded', String(!isOpen));
                     });
                     logout.addEventListener('click', function(){
-                        localStorage.removeItem('rmnl_role');
+                        clearSession();
                         window.location.href = 'index.html';
                     });
                     document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });

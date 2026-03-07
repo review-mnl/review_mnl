@@ -276,6 +276,7 @@
                         <a href="forgotpassword.html">Forgot password?</a>
                     </div>
 
+                    <p id="loginError" style="display:none;color:#d32f2f;font-size:11px;margin-bottom:10px;"></p>
                     <button type="submit" class="login-btn">LOGIN</button>
 
                     <div class="signup-link">
@@ -284,6 +285,7 @@
                 </form>
             </div>
         </div>
+        <script src="api.js"></script>
         <script>
             function switchRole(role, btn) {
                 document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
@@ -291,11 +293,30 @@
                 document.getElementById('loginRole').value = role;
             }
 
-            document.getElementById('loginForm').addEventListener('submit', function(e) {
+            document.getElementById('loginForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                const role = document.getElementById('loginRole').value;
-                localStorage.setItem('rmnl_role', role);
-                window.location.href = role === 'admin' ? 'admindashboard.html' : 'loggedin.html';
+                const email    = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const btn      = document.querySelector('.login-btn');
+                const errEl    = document.getElementById('loginError');
+                errEl.style.display = 'none';
+                btn.disabled = true;
+                btn.textContent = 'Logging in...';
+                try {
+                    const data = await AuthAPI.login(email, password);
+                    saveSession(data);
+                    const role = data.user.role;
+                    if (role === 'admin' || role === 'review_center') {
+                        window.location.href = 'admindashboard.html';
+                    } else {
+                        window.location.href = 'loggedin.html';
+                    }
+                } catch (err) {
+                    errEl.textContent = err.message || 'Login failed. Please try again.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'LOGIN';
+                }
             });
         </script>
     </body>

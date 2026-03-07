@@ -136,42 +136,138 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <h3>Total Students Enrolled</h3>
-                            <button class="arrow-circle-btn">
+                            <button class="arrow-circle-btn" onclick="window.location.href='managestudents.html'">
                                 <span class="material-symbols-outlined">arrow_forward_ios</span>
                             </button>
                         </div>
-                        <div class="stat-number">20</div>
-                        <p class="stat-date">As of January 2026</p>
+                        <div class="stat-number" id="statStudents">—</div>
+                        <p class="stat-date" id="statDate">Loading...</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <h3>Pending Center Applications</h3>
+                            <button class="arrow-circle-btn" id="pendingArrow">
+                                <span class="material-symbols-outlined">arrow_forward_ios</span>
+                            </button>
+                        </div>
+                        <div class="stat-number" id="statPending">—</div>
+                        <p class="stat-date">Awaiting your review</p>
                     </div>
                 </div>
 
-                <!-- Recent Activities -->
-                <div class="activities-section">
-                    <h3>Recent Activities</h3>
-                    <ul class="activities-list">
-                        <li>
-                            <span class="activity-dot"></span>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                        </li>
-                        <li>
-                            <span class="activity-dot"></span>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                        </li>
-                        <li>
-                            <span class="activity-dot"></span>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                        </li>
-                        <li>
-                            <span class="activity-dot"></span>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                        </li>
-                    </ul>
+                <!-- Pending Centers Section -->
+                <div class="activities-section" id="pendingSection" style="display:none;">
+                    <h3>Pending Center Applications</h3>
+                    <div id="pendingList"></div>
+                </div>
+
+                <!-- Pending Testimonials Section -->
+                <div class="activities-section" id="testiSection" style="display:none;">
+                    <h3>Pending Reviews</h3>
+                    <div id="testiList"></div>
                 </div>
 
             </div>
         </section>
 
+        <script src="api.js"></script>
         <script>
+        // ── Load admin dashboard data ──────────────────────────────────────
+        (async function loadDashboard() {
+            try {
+                const [students, pending, testimonials] = await Promise.all([
+                    AdminAPI.getStudents(),
+                    AdminAPI.getPendingCenters(),
+                    AdminAPI.getPendingTestimonials()
+                ]);
+
+                // Student count
+                const studentList = Array.isArray(students) ? students : (students.students || []);
+                document.getElementById('statStudents').textContent = studentList.length;
+                document.getElementById('statDate').textContent = 'As of ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+                // Pending centers
+                const pendingList = Array.isArray(pending) ? pending : (pending.centers || []);
+                document.getElementById('statPending').textContent = pendingList.length;
+                if (pendingList.length > 0) {
+                    const sec  = document.getElementById('pendingSection');
+                    const list = document.getElementById('pendingList');
+                    sec.style.display = '';
+                    pendingList.forEach(function(c) {
+                        const item = document.createElement('div');
+                        item.style.cssText = 'background:#f9fafb;border-radius:10px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+                        item.innerHTML =
+                            '<div>' +
+                                '<strong style="color:#0d1b4b;">' + escHtml(c.name) + '</strong>' +
+                                '<p style="color:#666;font-size:13px;margin:2px 0 0;">' + escHtml(c.email || '') + '</p>' +
+                            '</div>' +
+                            '<div style="display:flex;gap:8px;">' +
+                                '<button onclick="updateCenter(' + c.id + ',\'approved\',this)" style="padding:7px 14px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>' +
+                                '<button onclick="updateCenter(' + c.id + ',\'rejected\',this)" style="padding:7px 14px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>' +
+                            '</div>';
+                        list.appendChild(item);
+                    });
+                    document.getElementById('pendingArrow').addEventListener('click', function(){
+                        sec.style.display = sec.style.display === 'none' ? '' : 'none';
+                    });
+                }
+
+                // Pending testimonials
+                const testiArr = Array.isArray(testimonials) ? testimonials : (testimonials.testimonials || []);
+                if (testiArr.length > 0) {
+                    const tSec  = document.getElementById('testiSection');
+                    const tList = document.getElementById('testiList');
+                    tSec.style.display = '';
+                    testiArr.forEach(function(t) {
+                        const item = document.createElement('div');
+                        item.id = 'testi-' + t.id;
+                        item.style.cssText = 'background:#f9fafb;border-radius:10px;padding:14px 18px;margin-bottom:10px;';
+                        item.innerHTML =
+                            '<p style="color:#555;font-size:13px;margin:0 0 8px;">"' + escHtml(t.content) + '"</p>' +
+                            '<p style="color:#888;font-size:11px;margin:0 0 8px;">By ' + escHtml(t.student_name || 'Student') + ' — ' + escHtml(t.center_name || '') + '</p>' +
+                            '<div style="display:flex;gap:8px;">' +
+                                '<button onclick="approveTesti(' + t.id + ')" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>' +
+                                '<button onclick="deleteTesti(' + t.id + ')" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Delete</button>' +
+                            '</div>';
+                        tList.appendChild(item);
+                    });
+                }
+            } catch(err) {
+                console.error('Dashboard load error:', err);
+            }
+        })();
+
+        async function updateCenter(id, status, btn) {
+            btn.disabled = true;
+            try {
+                await AdminAPI.updateCenterStatus(id, status);
+                btn.closest('div[style]').innerHTML = '<em style="color:#555;font-size:13px;">' + (status === 'approved' ? '✅ Approved' : '❌ Rejected') + '</em>';
+                const cur = parseInt(document.getElementById('statPending').textContent) || 0;
+                document.getElementById('statPending').textContent = Math.max(0, cur - 1);
+            } catch(err) { alert(err.message); btn.disabled = false; }
+        }
+
+        async function approveTesti(id) {
+            try {
+                await AdminAPI.approveTestimonial(id);
+                const el = document.getElementById('testi-' + id);
+                if (el) el.innerHTML = '<em style="color:#2e7d32;font-size:13px;">✅ Approved</em>';
+            } catch(err) { alert(err.message); }
+        }
+
+        async function deleteTesti(id) {
+            if (!confirm('Delete this review?')) return;
+            try {
+                await AdminAPI.deleteTestimonial(id);
+                const el = document.getElementById('testi-' + id);
+                if (el) el.remove();
+            } catch(err) { alert(err.message); }
+        }
+
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
         (function(){
             const btn = document.getElementById('profileBtn');
             const dd = document.getElementById('profileDropdown');
@@ -183,7 +279,7 @@
                 dd.style.display = isOpen ? 'none' : 'block';
                 btn.setAttribute('aria-expanded', String(!isOpen));
             });
-            logout.addEventListener('click', function(){ localStorage.removeItem('rmnl_role'); window.location.href = 'index.html'; });
+            logout.addEventListener('click', function(){ clearSession(); window.location.href = 'index.html'; });
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
         })();
         function toggleSidebar() {

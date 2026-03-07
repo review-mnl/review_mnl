@@ -133,6 +133,7 @@
             <a href="search.html" class="arrow-btn">❯</a>
         </div>
         </section>
+    <script src="api.js"></script>
     <script>
         (function(){
             const btn = document.getElementById('profileBtn');
@@ -146,8 +147,7 @@
                 btn.setAttribute('aria-expanded', String(!isOpen));
             });
             logout.addEventListener('click', function(){
-                // Simple logout: redirect to home
-                localStorage.removeItem('rmnl_role');
+                clearSession();
                 window.location.href = 'index.html';
             });
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });

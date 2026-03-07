@@ -92,47 +92,8 @@
                 <h2>Results</h2>
             </div>
 
-            <div class="results-container">
-                <!-- Result Card 1 -->
-                <div class="result-card" data-category="Civil Engineering" data-rating="5">
-                    <div class="result-image"></div>
-                    <div class="result-content">
-                        <h3>Review Center Name</h3>
-                        <p class="result-location">Location</p>
-                        <p class="result-description">Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
-                        <div class="result-rating">★★★★★</div>
-                    </div>
-                </div>
-
-                <!-- Result Card 2 -->
-                <div class="result-card" data-category="Medicine" data-rating="4">
-                    <div class="result-image"></div>
-                    <div class="result-content">
-                        <h3>Review Center Name</h3>
-                        <p class="result-location">Location</p>
-                        <p class="result-description">Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
-                        <div class="result-rating">★★★★★</div>
-                    </div>
-                </div>
-
-                <!-- Result Card 3 -->
-                <div class="result-card" data-category="Law" data-rating="3">
-                    <div class="result-image"></div>
-                    <div class="result-content">
-                        <h3>Review Center Name</h3>
-                        <p class="result-location">Location</p>
-                        <p class="result-description">Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
-                        <div class="result-rating">★★★★★</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="pagination">
-                <button class="page-btn active">1</button>
-                <button class="page-btn">2</button>
-                <button class="page-btn">3</button>
-                <button class="page-btn">4</button>
-                <span class="page-dots">...</span>
+            <div class="results-container" id="resultsContainer">
+                <p id="loadingMsg" style="color:#6b7280;font-size:0.95rem;padding:24px 0;text-align:center;width:100%;">Loading centers...</p>
             </div>
         </section>
 
@@ -201,10 +162,11 @@
                 dd.style.display = isOpen ? 'none' : 'block';
                 btn.setAttribute('aria-expanded', String(!isOpen));
             });
-            logout.addEventListener('click', function(){ localStorage.removeItem('rmnl_role'); window.location.href = 'index.html'; });
+            logout.addEventListener('click', function(){ clearSession(); window.location.href = 'index.html'; });
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
         })();
     </script>
+    <script src="api.js"></script>
     <script src="search.js"></script>
     </body>
 </html>

@@ -68,7 +68,7 @@
                     dd.style.display = isOpen ? 'none' : 'block';
                     btn.setAttribute('aria-expanded', String(!isOpen));
                 });
-                logout.addEventListener('click', function(){ localStorage.removeItem('rmnl_role'); window.location.href = 'index.html'; });
+                logout.addEventListener('click', function(){ clearSession(); window.location.href = 'index.html'; });
                 document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
             })();
         </script>
@@ -127,11 +127,19 @@
         <script>
             (function(){
                 const STORAGE_KEY = 'rmnl_saved_centers';
-                // Center data for this page (in a real app this would be dynamic)
+                // Center data — updated dynamically once API response arrives
                 const CENTER = {
-                    id: 'center_1',
-                    name: document.querySelector('.center-header-content h1') ? document.querySelector('.center-header-content h1').textContent : 'Review Center',
-                    location: 'Manila, Philippines'
+                    id: new URLSearchParams(window.location.search).get('id') || 'center_unknown',
+                    name: 'Review Center',
+                    location: ''
+                };
+
+                // Allow the API loader to update center details for accurate save data
+                window._updateSaveCenterId = function(id, name, location) {
+                    CENTER.id = id;
+                    CENTER.name = name;
+                    CENTER.location = location;
+                    updateBtn();
                 };
 
                 function getSaved() {
@@ -179,7 +187,6 @@
                     }
                     updateBtn();
                 };
-                // Set initial state when page loads
                 document.addEventListener('DOMContentLoaded', updateBtn);
                 updateBtn();
             })();
@@ -586,7 +593,7 @@
         }
         </script>
 
-		<section class="footer">
+        <section class="footer">
 			<div class="footer-container">
 				<div class="footer-left">
 					<h2>review.mnl</h2>
@@ -611,5 +618,133 @@
 				</div>
 			</div>
 		</section>
+
+        <script src="api.js"></script>
+        <script>
+        // ── Load center data from API ──────────────────────────────────────
+        (async function loadCenter() {
+            const params = new URLSearchParams(window.location.search);
+            const centerId = params.get('id');
+            if (!centerId) return; // no ID, leave placeholder content
+
+            try {
+                const center = await CentersAPI.getById(centerId);
+
+                // Header info
+                const h1 = document.querySelector('.center-header-content h1');
+                const desc = document.querySelector('.center-header-content .center-description');
+                const ratingSpan = document.querySelector('.center-header-content .stars');
+                const ratingCount = document.querySelector('.center-header-content .rating-count');
+                if (h1) h1.textContent = center.name || '';
+                if (desc) desc.textContent = center.description || '';
+                if (ratingSpan) {
+                    const r = Math.round(center.average_rating || 0);
+                    ratingSpan.textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
+                }
+                if (ratingCount) {
+                    ratingCount.textContent = (center.average_rating
+                        ? Number(center.average_rating).toFixed(1) : 'No ratings') +
+                        (center.review_count ? ' (' + center.review_count + ')' : '');
+                }
+
+                // About section
+                const aboutP = document.querySelector('.about-section p');
+                if (aboutP) aboutP.textContent = center.description || '';
+
+                // Programs / category tags
+                const programTags = document.querySelector('.program-tags');
+                if (programTags && center.category) {
+                    programTags.innerHTML = '';
+                    String(center.category).split(',').forEach(function(cat) {
+                        const btn = document.createElement('button');
+                        btn.className = 'program-tag';
+                        btn.textContent = cat.trim();
+                        programTags.appendChild(btn);
+                    });
+                }
+
+                // Testimonials
+                if (center.testimonials && center.testimonials.length) {
+                    let testiSection = document.querySelector('.testimonials-section');
+                    if (!testiSection) {
+                        testiSection = document.createElement('section');
+                        testiSection.className = 'testimonials-section gap1';
+                        testiSection.style.cssText = 'padding:40px 6%;max-width:900px;margin:0 auto;';
+                        const gapSection = document.querySelector('.gap1');
+                        if (gapSection) gapSection.parentNode.insertBefore(testiSection, gapSection);
+                    }
+                    testiSection.innerHTML = '<h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews</h2>';
+                    center.testimonials.forEach(function(t) {
+                        const r = Math.round(t.rating || 0);
+                        const card = document.createElement('div');
+                        card.style.cssText = 'background:#f9fafb;border-radius:12px;padding:16px 20px;margin-bottom:14px;';
+                        card.innerHTML =
+                            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+                                '<strong style="color:#0d1b4b;">' + escHtml(t.student_name || 'Anonymous') + '</strong>' +
+                                '<span style="color:#f59e0b;">' + '★'.repeat(r) + '☆'.repeat(5 - r) + '</span>' +
+                            '</div>' +
+                            '<p style="color:#555;font-size:0.9rem;margin:0;">' + escHtml(t.content || '') + '</p>';
+                        testiSection.appendChild(card);
+                    });
+
+                    // Add testimonial form for logged-in students
+                    const user = getUser();
+                    if (user && user.role === 'student') {
+                        const formDiv = document.createElement('div');
+                        formDiv.style.cssText = 'margin-top:24px;background:#f0f4ff;border-radius:12px;padding:20px;';
+                        formDiv.innerHTML =
+                            '<h3 style="color:#0d1b4b;margin-bottom:12px;font-size:1rem;">Leave a Review</h3>' +
+                            '<p id="testiError" style="display:none;color:#d32f2f;font-size:12px;margin-bottom:8px;"></p>' +
+                            '<p id="testiSuccess" style="display:none;color:#2e7d32;font-size:12px;margin-bottom:8px;"></p>' +
+                            '<select id="testiRating" style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;margin-bottom:10px;">' +
+                                '<option value="">Select rating...</option>' +
+                                '<option value="5">★★★★★ — Excellent</option>' +
+                                '<option value="4">★★★★ — Good</option>' +
+                                '<option value="3">★★★ — Average</option>' +
+                                '<option value="2">★★ — Poor</option>' +
+                                '<option value="1">★ — Very Poor</option>' +
+                            '</select>' +
+                            '<textarea id="testiContent" rows="3" placeholder="Share your experience..." style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;margin-bottom:10px;"></textarea>' +
+                            '<button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Review</button>';
+                        testiSection.appendChild(formDiv);
+
+                        document.getElementById('testiSubmitBtn').addEventListener('click', async function() {
+                            const content = document.getElementById('testiContent').value.trim();
+                            const rating  = document.getElementById('testiRating').value;
+                            const errEl   = document.getElementById('testiError');
+                            const okEl    = document.getElementById('testiSuccess');
+                            errEl.style.display = 'none';
+                            okEl.style.display  = 'none';
+                            if (!content || !rating) {
+                                errEl.textContent = 'Please select a rating and write a review.';
+                                errEl.style.display = 'block';
+                                return;
+                            }
+                            try {
+                                await CentersAPI.postTestimonial(centerId, content, parseInt(rating));
+                                okEl.textContent = 'Review submitted for approval. Thank you!';
+                                okEl.style.display = 'block';
+                                document.getElementById('testiContent').value = '';
+                                document.getElementById('testiRating').value  = '';
+                            } catch (err) {
+                                errEl.textContent = err.message || 'Failed to submit review.';
+                                errEl.style.display = 'block';
+                            }
+                        });
+                    }
+                }
+
+                // Update save button center ID
+                if (window._updateSaveCenterId) window._updateSaveCenterId(String(centerId), center.name, center.address || '');
+
+            } catch (err) {
+                console.error('Failed to load center:', err);
+            }
+        })();
+
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        </script>
 	</body>
 </html>

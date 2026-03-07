@@ -67,6 +67,9 @@ const AuthAPI = {
     forgotPassword: (email) =>
         apiRequest('POST', '/api/auth/forgot-password', { email }),
 
+    resetPassword: (token, password) =>
+        apiRequest('POST', '/api/auth/reset-password', { token, password }),
+
     verifyEmail: (token) =>
         apiRequest('GET', '/api/auth/verify-email?token=' + encodeURIComponent(token)),
 

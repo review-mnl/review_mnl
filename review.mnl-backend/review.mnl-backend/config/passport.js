@@ -42,27 +42,29 @@ passport.use(new GoogleStrategy(
     }
 ));
 
-// ── Facebook Strategy ────────────────────────────────────────────────────────
-passport.use(new FacebookStrategy(
-    {
-        clientID:      process.env.FACEBOOK_APP_ID,
-        clientSecret:  process.env.FACEBOOK_APP_SECRET,
-        callbackURL:   '/api/auth/facebook/callback',
-        profileFields: ['id', 'emails', 'name'],
-    },
-    async (accessToken, refreshToken, profile, done) => {
-        try {
-            const email = profile.emails?.[0]?.value;
-            if (!email) return done(null, false, { message: 'Facebook did not provide an email address. Please ensure your Facebook account has a verified email.' });
-            const first = profile.name?.givenName  || 'User';
-            const last  = profile.name?.familyName || '';
-            const user  = await findOrCreateOAuthUser(email, first, last);
-            return done(null, user);
-        } catch (err) {
-            return done(err);
+// ── Facebook Strategy (only register if credentials are configured) ──────────
+if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
+    passport.use(new FacebookStrategy(
+        {
+            clientID:      process.env.FACEBOOK_APP_ID,
+            clientSecret:  process.env.FACEBOOK_APP_SECRET,
+            callbackURL:   '/api/auth/facebook/callback',
+            profileFields: ['id', 'emails', 'name'],
+        },
+        async (accessToken, refreshToken, profile, done) => {
+            try {
+                const email = profile.emails?.[0]?.value;
+                if (!email) return done(null, false, { message: 'Facebook did not provide an email address. Please ensure your Facebook account has a verified email.' });
+                const first = profile.name?.givenName  || 'User';
+                const last  = profile.name?.familyName || '';
+                const user  = await findOrCreateOAuthUser(email, first, last);
+                return done(null, user);
+            } catch (err) {
+                return done(err);
+            }
         }
-    }
-));
+    ));
+}
 
 // Minimal session serialization — only stores user ID in session during the OAuth redirect
 passport.serializeUser((user, done) => done(null, user.id));

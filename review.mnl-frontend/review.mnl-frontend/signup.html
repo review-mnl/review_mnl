@@ -407,7 +407,7 @@
                     <button type="submit" class="signup-btn">CREATE ACCOUNT</button>
 
                     <div class="login-link">
-                        Already have an account? <a href="login.html" id="loginLink">Login here</a>
+                        Already have an account? <a href="login.html">Login here</a>
                     </div>
                 </form>
             </div>
@@ -425,16 +425,6 @@
                 document.getElementById('docUploadSection').style.display = isAdmin ? '' : 'none';
                 document.getElementById('fullname').required = !isAdmin;
                 document.getElementById('centername').required = isAdmin;
-
-                // Update login link based on role
-                const loginLink = document.getElementById('loginLink');
-                if (isAdmin) {
-                    loginLink.href = 'centerlogin.html';
-                    loginLink.textContent = 'Login here (Review Center)';
-                } else {
-                    loginLink.href = 'login.html';
-                    loginLink.textContent = 'Login here';
-                }
             }
 
             function showFileName(inputId, labelId, zoneId) {
@@ -493,7 +483,7 @@
                         fd.append('dti_sec_reg',     dtiFile);
                         await AuthAPI.registerCenter(fd);
                         alert('Application submitted! Please check your email to verify your account. Your center will be reviewed before activation.');
-                        window.location.href = 'centerlogin.html';
+                        window.location.href = 'login.html';
                     } else {
                         const name = document.getElementById('fullname').value.trim();
                         await AuthAPI.registerStudent(name, email, password);

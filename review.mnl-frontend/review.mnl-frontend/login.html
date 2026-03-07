@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Student Login - Review.Mnl</title>
+        <title>Login - Review.Mnl</title>
         <link rel="stylesheet" href="style.css">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -241,8 +241,14 @@
 
             <div class="login-container">
                 <form class="login-form" id="loginForm">
-                    <h1>Student Login</h1>
+                    <h1>Login</h1>
                     <p>Welcome back to review.mnl</p>
+
+                    <div class="role-tabs">
+                        <button type="button" class="role-tab active" onclick="switchRole('student', this)">Student</button>
+                        <button type="button" class="role-tab" onclick="switchRole('admin', this)">Review Center</button>
+                    </div>
+                    <input type="hidden" id="loginRole" name="role" value="student">
 
                     <div class="social-login">
                         <button type="button" class="social-btn" title="Login with Google"><i class="fab fa-google"></i></button>
@@ -276,14 +282,17 @@
                     <div class="signup-link">
                         Don't have an account? <a href="signup.html">Sign up here</a>
                     </div>
-                    <div class="signup-link" style="margin-top:10px;">
-                        Review center? <a href="centerlogin.html">Login here</a>
-                    </div>
                 </form>
             </div>
         </div>
         <script src="api.js"></script>
         <script>
+            function switchRole(role, btn) {
+                document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('loginRole').value = role;
+            }
+
             document.getElementById('loginForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const email    = document.getElementById('email').value.trim();
@@ -295,18 +304,15 @@
                 btn.textContent = 'Logging in...';
                 try {
                     const data = await AuthAPI.login(email, password);
-                    const role = data.user.role;
-                    if (role !== 'student') {
-                        errEl.textContent = role === 'superadmin'
-                            ? 'Use the superadmin portal to log in.'
-                            : 'This login is for students only. Review centers use a separate portal.';
-                        errEl.style.display = 'block';
-                        btn.disabled = false;
-                        btn.textContent = 'LOGIN';
-                        return;
-                    }
                     saveSession(data);
-                    window.location.href = 'loggedin.html';
+                    const role = data.user.role;
+                    if (role === 'superadmin') {
+                        window.location.href = 'superadmin.html';
+                    } else if (role === 'admin' || role === 'review_center') {
+                        window.location.href = 'admindashboard.html';
+                    } else {
+                        window.location.href = 'loggedin.html';
+                    }
                 } catch (err) {
                     errEl.textContent = err.message || 'Login failed. Please try again.';
                     errEl.style.display = 'block';

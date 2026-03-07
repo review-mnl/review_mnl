@@ -3,9 +3,15 @@ require('dotenv').config();
 
 let pool;
 
-// Railway injects MYSQL_URL automatically — use it if available
-if (process.env.MYSQL_URL) {
-  pool = mysql.createPool(process.env.MYSQL_URL + '?ssl={"rejectUnauthorized":false}');
+// Railway injects DATABASE_URL or MYSQL_URL as a connection string
+const connectionString = process.env.DATABASE_URL || process.env.MYSQL_URL;
+
+if (connectionString) {
+  // Append SSL disable for Railway (their MySQL doesn't require strict TLS)
+  const urlWithSsl = connectionString.includes('?')
+    ? connectionString + '&ssl={"rejectUnauthorized":false}'
+    : connectionString + '?ssl={"rejectUnauthorized":false}';
+  pool = mysql.createPool(urlWithSsl);
 } else {
   // Local development fallback
   pool = mysql.createPool({

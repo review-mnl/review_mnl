@@ -1,15 +1,12 @@
-const express  = require('express');
-const cors     = require('cors');
-const path     = require('path');
-const session  = require('express-session');
-const passport = require('./config/passport');
+const express = require('express');
+const cors    = require('cors');
+const path    = require('path');
 require('dotenv').config();
 
 const app = express();
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
-  'https://reviewmnl.netlify.app',
   'http://localhost:5500',
   'http://127.0.0.1:5500',
   'http://localhost:5501',
@@ -29,17 +26,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Session — used only during the brief OAuth redirect flow (not for API auth)
-app.use(session({
-    secret: process.env.JWT_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false, maxAge: 10 * 60 * 1000 }, // 10-minute lifetime
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth',    require('./routes/auth'));

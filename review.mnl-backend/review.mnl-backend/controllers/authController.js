@@ -148,4 +148,23 @@ const resendVerification = async (req, res) => {
   }
 };
 
-module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resendVerification };
+const resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    return res.status(400).json({ message: 'Token and password are required.' });
+  }
+  try {
+    const [rows] = await db.query('SELECT id FROM users WHERE verify_token = ?', [token]);
+    if (rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired reset link.' });
+    }
+    const hashed = await bcrypt.hash(password, 10);
+    await db.query('UPDATE users SET password = ?, verify_token = NULL WHERE id = ?', [hashed, rows[0].id]);
+    res.json({ message: 'Password reset successfully! You can now log in.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resendVerification, resetPassword };

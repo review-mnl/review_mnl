@@ -10,7 +10,8 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendVerificationEmail = async (toEmail, token, name) => {
-  const link = `${process.env.CLIENT_URL}/verifyemail.html?token=${token}`;
+  const baseUrl = process.env.CLIENT_URL || 'https://reviewmnl.netlify.app';
+  const link = `${baseUrl}/verifyemail.html?token=${token}`;
   await transporter.sendMail({
     from: `"REVIEW.MNL" <${process.env.MAIL_USER}>`,
     to: toEmail,
@@ -29,7 +30,8 @@ const sendVerificationEmail = async (toEmail, token, name) => {
 };
 
 const sendPasswordResetEmail = async (toEmail, token, name) => {
-  const link = `${process.env.CLIENT_URL}/resetpassword.html?token=${token}`;
+  const baseUrl = process.env.CLIENT_URL || 'https://reviewmnl.netlify.app';
+  const link = `${baseUrl}/resetpassword.html?token=${token}`;
   await transporter.sendMail({
     from: `"REVIEW.MNL" <${process.env.MAIL_USER}>`,
     to: toEmail,

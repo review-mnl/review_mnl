@@ -417,10 +417,10 @@
         <script>
             // ── OAuth buttons ───────────────────────────────────────────────
             document.getElementById('googleSignupBtn').addEventListener('click', function () {
-                window.location.href = 'http://localhost:5000/api/auth/google';
+                window.location.href = API_BASE + '/api/auth/google';
             });
             document.getElementById('facebookSignupBtn').addEventListener('click', function () {
-                window.location.href = 'http://localhost:5000/api/auth/facebook';
+                window.location.href = API_BASE + '/api/auth/facebook';
             });
 
             function switchRole(role, btn) {

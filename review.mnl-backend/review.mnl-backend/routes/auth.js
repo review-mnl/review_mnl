@@ -20,6 +20,7 @@ router.post('/resend-verification', resendVerification);
 
 // ── OAuth helper — generates JWT and redirects back to the frontend ────────────
 function oauthSuccess(req, res) {
+    const FRONTEND_URL = 'https://reviewmnl.netlify.app';
     const user  = req.user;
     const token = jwt.sign(
         { id: user.id, role: user.role, email: user.email },
@@ -32,7 +33,7 @@ function oauthSuccess(req, res) {
         email: user.email,
         role:  user.role,
     }));
-    res.redirect(`${process.env.CLIENT_URL}/login.html?token=${token}&user=${userStr}`);
+    res.redirect(`${FRONTEND_URL}/login.html?token=${token}&user=${userStr}`);
 }
 
 // ── Google OAuth ─────────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ router.get('/google',
     passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback',
     passport.authenticate('google', {
-        failureRedirect: `${process.env.CLIENT_URL}/login.html?error=google_failed`,
+        failureRedirect: 'https://reviewmnl.netlify.app/login.html?error=google_failed',
     }),
     oauthSuccess
 );
@@ -50,7 +51,7 @@ router.get('/facebook',
     passport.authenticate('facebook', { scope: ['email'] }));
 router.get('/facebook/callback',
     passport.authenticate('facebook', {
-        failureRedirect: `${process.env.CLIENT_URL}/login.html?error=fb_failed`,
+        failureRedirect: 'https://reviewmnl.netlify.app/login.html?error=fb_failed',
     }),
     oauthSuccess
 );

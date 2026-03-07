@@ -323,10 +323,10 @@
             }
 
             document.querySelector('.social-btn[title="Login with Google"]').addEventListener('click', function () {
-                window.location.href = 'http://localhost:5000/api/auth/google';
+                window.location.href = API_BASE + '/api/auth/google';
             });
             document.querySelector('.social-btn[title="Login with Facebook"]').addEventListener('click', function () {
-                window.location.href = 'http://localhost:5000/api/auth/facebook';
+                window.location.href = API_BASE + '/api/auth/facebook';
             });
 
             document.getElementById('resendLink').addEventListener('click', async function (e) {

@@ -6,17 +6,15 @@ const isMailConfigured = process.env.MAIL_USER && process.env.MAIL_PASS;
 
 const transporter = isMailConfigured ? nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // use SSL
+  port: 587,
+  secure: false, // use STARTTLS
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
-  connectionTimeout: 30000, // 30 seconds
+  connectionTimeout: 30000,
   greetingTimeout: 30000,
   socketTimeout: 30000,
-  logger: true,
-  debug: true,
 }) : null;
 
 const sendVerificationEmail = async (toEmail, token, name) => {

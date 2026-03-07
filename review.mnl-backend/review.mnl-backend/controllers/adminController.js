@@ -54,4 +54,20 @@ const getAllStudents = async (req, res) => {
   }
 };
 
-module.exports = { getPendingCenters, getAllCenters, updateCenterStatus, getAllStudents };
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.query('SELECT id, role FROM users WHERE id = ?', [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ message: 'User not found.' });
+    if (rows[0].role === 'superadmin')
+      return res.status(403).json({ message: 'Cannot delete superadmin.' });
+    await db.query('DELETE FROM users WHERE id = ?', [id]);
+    res.json({ message: 'User deleted successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getPendingCenters, getAllCenters, updateCenterStatus, getAllStudents, deleteUser };

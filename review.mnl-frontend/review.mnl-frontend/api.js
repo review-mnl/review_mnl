@@ -110,6 +110,9 @@ const AdminAPI = {
     getStudents: () =>
         apiRequest('GET', '/api/admin/students'),
 
+    deleteUser: (id) =>
+        apiRequest('DELETE', '/api/admin/users/' + id),
+
     getPendingTestimonials: () =>
         apiRequest('GET', '/api/admin/testimonials/pending'),
 

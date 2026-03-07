@@ -404,6 +404,7 @@
                     <p id="termsError" style="display:none; color:#d32f2f; font-size:10px; margin-bottom:12px;">You must agree to the Terms of Service and Privacy Policy to create an account.</p>
 
                     <p id="signupError" style="display:none;color:#d32f2f;font-size:11px;margin-bottom:10px;"></p>
+                    <p id="signupLoginHint" style="display:none;font-size:11px;margin-bottom:10px;">Already registered? <a href="login.html" style="color:#0043cf;font-weight:600;">Log in here</a></p>
                     <button type="submit" class="signup-btn">CREATE ACCOUNT</button>
 
                     <div class="login-link">
@@ -460,6 +461,8 @@
                 const confirm  = document.getElementById('confirm-password').value;
                 const errEl    = document.getElementById('signupError');
                 errEl.style.display = 'none';
+                document.getElementById('signupLoginHint').style.display = 'none';
+                document.getElementById('email').style.borderColor = '';
 
                 if (password !== confirm) {
                     errEl.textContent = 'Passwords do not match.';
@@ -499,8 +502,18 @@
                         window.location.href = 'login.html';
                     }
                 } catch (err) {
-                    errEl.textContent = err.message || 'Registration failed. Please try again.';
+                    const msg = err.message || 'Registration failed. Please try again.';
+                    errEl.textContent = msg;
                     errEl.style.display = 'block';
+                    const emailInput = document.getElementById('email');
+                    const loginHint  = document.getElementById('signupLoginHint');
+                    if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already in use')) {
+                        emailInput.style.borderColor = '#d32f2f';
+                        loginHint.style.display = 'block';
+                    } else {
+                        emailInput.style.borderColor = '';
+                        loginHint.style.display = 'none';
+                    }
                     btn.disabled = false;
                     btn.textContent = 'CREATE ACCOUNT';
                 }

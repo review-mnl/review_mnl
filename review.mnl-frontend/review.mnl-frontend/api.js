@@ -63,6 +63,12 @@ const AuthAPI = {
 
     forgotPassword: (email) =>
         apiRequest('POST', '/api/auth/forgot-password', { email }),
+
+    verifyEmail: (token) =>
+        apiRequest('GET', '/api/auth/verify-email?token=' + encodeURIComponent(token)),
+
+    resendVerification: (email) =>
+        apiRequest('POST', '/api/auth/resend-verification', { email }),
 };
 
 // ---------------------------------------------------------------------------

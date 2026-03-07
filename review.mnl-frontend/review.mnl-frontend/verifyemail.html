@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify Email - Review.Mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+            .verify-page {
+                min-height: 100vh;
+                background-image: url(images/bg.png);
+                background-position: center;
+                background-size: cover;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+
+            .verify-page::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 67, 207, 0.3);
+                z-index: 1;
+            }
+
+            .verify-nav {
+                padding: 2% 6%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: linear-gradient(rgba(0,0,0,0.2), transparent);
+                position: relative;
+                z-index: 2;
+            }
+
+            .verify-container {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 40px 20px;
+                position: relative;
+                z-index: 2;
+            }
+
+            .verify-card {
+                background: #fff;
+                border-radius: 20px;
+                padding: 60px 50px;
+                width: 100%;
+                max-width: 450px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }
+
+            .verify-icon {
+                font-size: 64px;
+                margin-bottom: 20px;
+            }
+
+            .verify-card h1 {
+                color: #0043CF;
+                font-size: 22px;
+                font-weight: 600;
+                margin-bottom: 12px;
+            }
+
+            .verify-card p {
+                color: #555;
+                font-size: 13px;
+                line-height: 1.6;
+                margin-bottom: 30px;
+            }
+
+            .verify-btn {
+                display: inline-block;
+                padding: 12px 32px;
+                background-color: #0043CF;
+                color: #fff;
+                text-decoration: none;
+                border-radius: 50px;
+                font-size: 14px;
+                font-weight: 600;
+                font-family: 'Poppins', sans-serif;
+                transition: background-color 0.3s ease;
+            }
+
+            .verify-btn:hover { background-color: #0035a3; }
+
+            .spinner {
+                width: 48px;
+                height: 48px;
+                border: 4px solid #e0e0e0;
+                border-top-color: #0043CF;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin: 0 auto 20px;
+            }
+
+            @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+    </head>
+    <body>
+        <div class="verify-page">
+            <nav class="verify-nav">
+                <a href="index.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
+                <div></div>
+            </nav>
+
+            <div class="verify-container">
+                <div class="verify-card" id="verifyCard">
+                    <!-- Loading state -->
+                    <div id="stateLoading">
+                        <div class="spinner"></div>
+                        <h1>Verifying your email...</h1>
+                        <p>Please wait a moment.</p>
+                    </div>
+
+                    <!-- Success state (hidden initially) -->
+                    <div id="stateSuccess" style="display:none;">
+                        <div class="verify-icon">✅</div>
+                        <h1>Email Verified!</h1>
+                        <p>Your account has been successfully verified. You can now log in to <strong>REVIEW.MNL</strong>.</p>
+                        <a href="login.html" class="verify-btn">Go to Login</a>
+                    </div>
+
+                    <!-- Error state (hidden initially) -->
+                    <div id="stateError" style="display:none;">
+                        <div class="verify-icon">❌</div>
+                        <h1>Verification Failed</h1>
+                        <p id="errorMsg">This verification link is invalid or has expired.</p>
+                        <a href="login.html" class="verify-btn">Back to Login</a>
+                    </div>
+
+                    <!-- No token state (hidden initially) -->
+                    <div id="stateNoToken" style="display:none;">
+                        <div class="verify-icon">✉️</div>
+                        <h1>Check Your Email</h1>
+                        <p>We sent a verification link to your email address. Click the link in the email to activate your account.</p>
+                        <a href="login.html" class="verify-btn">Back to Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="api.js"></script>
+        <script>
+            (async function () {
+                const params = new URLSearchParams(window.location.search);
+                const token  = params.get('token');
+
+                function show(stateId) {
+                    ['stateLoading', 'stateSuccess', 'stateError', 'stateNoToken'].forEach(function (id) {
+                        document.getElementById(id).style.display = (id === stateId) ? '' : 'none';
+                    });
+                }
+
+                if (!token) {
+                    show('stateNoToken');
+                    return;
+                }
+
+                try {
+                    await AuthAPI.verifyEmail(token);
+                    show('stateSuccess');
+                } catch (err) {
+                    document.getElementById('errorMsg').textContent =
+                        err.message || 'This verification link is invalid or has expired.';
+                    show('stateError');
+                }
+            })();
+        </script>
+    </body>
+</html>

@@ -2,7 +2,7 @@ const db      = require('../config/db');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const crypto   = require('crypto');
-const { sendVerificationEmail } = require('../config/mailer');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
 require('dotenv').config();
 
 const registerStudent = async (req, res) => {
@@ -113,12 +113,30 @@ const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'No account found with that email.' });
     const token = crypto.randomBytes(32).toString('hex');
     await db.query('UPDATE users SET verify_token = ? WHERE email = ?', [token, email]);
-    const link = `${process.env.CLIENT_URL}/resetpassword.html?token=${token}`;
-    const { sendVerificationEmail: sendEmail } = require('../config/mailer');
+    await sendPasswordResetEmail(email, token, rows[0].first_name);
     res.json({ message: 'Password reset link sent to your email.' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
 
-module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword };
+const resendVerification = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const [rows] = await db.query('SELECT id, first_name, is_verified FROM users WHERE email = ?', [email]);
+    if (rows.length === 0)
+      return res.status(404).json({ message: 'No account found with that email.' });
+    if (rows[0].is_verified)
+      return res.status(400).json({ message: 'This account is already verified. Please log in.' });
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.query('UPDATE users SET verify_token = ? WHERE id = ?', [token, rows[0].id]);
+    await sendVerificationEmail(email, token, rows[0].first_name);
+    res.json({ message: 'Verification email resent! Please check your inbox.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resendVerification };

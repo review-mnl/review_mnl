@@ -276,7 +276,10 @@
                         <a href="forgotpassword.html">Forgot password?</a>
                     </div>
 
-                    <p id="loginError" style="display:none;color:#d32f2f;font-size:11px;margin-bottom:10px;"></p>
+                    <p id="loginError" style="display:none;color:#d32f2f;font-size:11px;margin-bottom:6px;"></p>
+                    <p id="resendRow" style="display:none;font-size:11px;margin-bottom:10px;">
+                        Didn't get the email? <a href="#" id="resendLink" style="color:#0043CF;font-weight:600;">Resend verification email</a>
+                    </p>
                     <button type="submit" class="login-btn">LOGIN</button>
 
                     <div class="signup-link">
@@ -326,6 +329,24 @@
                 window.location.href = 'http://localhost:5000/api/auth/facebook';
             });
 
+            document.getElementById('resendLink').addEventListener('click', async function (e) {
+                e.preventDefault();
+                const email = document.getElementById('email').value.trim();
+                if (!email) { alert('Please enter your email address first.'); return; }
+                this.textContent = 'Sending...';
+                this.style.pointerEvents = 'none';
+                try {
+                    await AuthAPI.resendVerification(email);
+                    document.getElementById('loginError').textContent = 'Verification email sent! Please check your inbox.';
+                    document.getElementById('loginError').style.color = '#2e7d32';
+                    document.getElementById('resendRow').style.display = 'none';
+                } catch (err) {
+                    alert(err.message || 'Failed to resend verification email.');
+                    this.textContent = 'Resend verification email';
+                    this.style.pointerEvents = '';
+                }
+            });
+
             document.getElementById('loginForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const email    = document.getElementById('email').value.trim();
@@ -349,6 +370,13 @@
                 } catch (err) {
                     errEl.textContent = err.message || 'Login failed. Please try again.';
                     errEl.style.display = 'block';
+                    // Show resend link if their email is not verified
+                    const resendRow = document.getElementById('resendRow');
+                    if (err.message && err.message.toLowerCase().includes('verify your email')) {
+                        resendRow.style.display = 'block';
+                    } else {
+                        resendRow.style.display = 'none';
+                    }
                     btn.disabled = false;
                     btn.textContent = 'LOGIN';
                 }

@@ -3,7 +3,7 @@ const router   = express.Router();
 const passport = require('passport');
 const jwt      = require('jsonwebtoken');
 const upload   = require('../middleware/upload');
-const { registerStudent, registerCenter, verifyEmail, login, forgotPassword } = require('../controllers/authController');
+const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resendVerification } = require('../controllers/authController');
 
 router.post('/register/student', registerStudent);
 router.post('/register/center',
@@ -16,6 +16,7 @@ router.post('/register/center',
 router.get('/verify-email', verifyEmail);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
+router.post('/resend-verification', resendVerification);
 
 // ── OAuth helper — generates JWT and redirects back to the frontend ────────────
 function oauthSuccess(req, res) {

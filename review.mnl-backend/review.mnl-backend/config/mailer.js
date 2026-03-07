@@ -1,36 +1,27 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 require('dotenv').config();
 
-// Check if email credentials are configured
-const isMailConfigured = process.env.MAIL_USER && process.env.MAIL_PASS;
+// Check if Resend API key is configured
+const isMailConfigured = !!process.env.RESEND_API_KEY;
+const resend = isMailConfigured ? new Resend(process.env.RESEND_API_KEY) : null;
 
-const transporter = isMailConfigured ? nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // use STARTTLS
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-}) : null;
+const FRONTEND_URL = 'https://reviewmnl.netlify.app';
+// Use Resend's test domain or your verified domain
+const FROM_EMAIL = process.env.FROM_EMAIL || 'REVIEW.MNL <onboarding@resend.dev>';
 
 const sendVerificationEmail = async (toEmail, token, name) => {
-  if (!transporter) {
-    console.error('Mail not configured: MAIL_USER or MAIL_PASS missing');
+  if (!resend) {
+    console.error('Mail not configured: RESEND_API_KEY missing');
     throw new Error('Email service not configured');
   }
-  const FRONTEND_URL = 'https://reviewmnl.netlify.app';
   const link = `${FRONTEND_URL}/verifyemail.html?token=${token}`;
-  await transporter.sendMail({
-    from: `"REVIEW.MNL" <${process.env.MAIL_USER}>`,
+  await resend.emails.send({
+    from: FROM_EMAIL,
     to: toEmail,
     subject: 'Verify Your REVIEW.MNL Account',
     html: `
       <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:30px;border:1px solid #eee;border-radius:10px;">
-        <h2 style="color:#0043CF;">Hello, ${name}! 👋</h2>
+        <h2 style="color:#0043CF;">Hello, ${name}!</h2>
         <p>Thanks for signing up at <strong>REVIEW.MNL</strong>. Please verify your email to get started.</p>
         <a href="${link}" style="display:inline-block;margin:20px 0;padding:12px 28px;background:#0043CF;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;">
           Verify My Email
@@ -42,14 +33,13 @@ const sendVerificationEmail = async (toEmail, token, name) => {
 };
 
 const sendPasswordResetEmail = async (toEmail, token, name) => {
-  if (!transporter) {
-    console.error('Mail not configured: MAIL_USER or MAIL_PASS missing');
+  if (!resend) {
+    console.error('Mail not configured: RESEND_API_KEY missing');
     throw new Error('Email service not configured');
   }
-  const FRONTEND_URL = 'https://reviewmnl.netlify.app';
   const link = `${FRONTEND_URL}/resetpassword.html?token=${token}`;
-  await transporter.sendMail({
-    from: `"REVIEW.MNL" <${process.env.MAIL_USER}>`,
+  await resend.emails.send({
+    from: FROM_EMAIL,
     to: toEmail,
     subject: 'Reset Your REVIEW.MNL Password',
     html: `
@@ -66,21 +56,20 @@ const sendPasswordResetEmail = async (toEmail, token, name) => {
 };
 
 const sendCenterStatusEmail = async (toEmail, name, status) => {
-  if (!transporter) {
-    console.error('Mail not configured: MAIL_USER or MAIL_PASS missing');
+  if (!resend) {
+    console.error('Mail not configured: RESEND_API_KEY missing');
     throw new Error('Email service not configured');
   }
-  const FRONTEND_URL = 'https://reviewmnl.netlify.app';
   const isApproved = status === 'approved';
-  await transporter.sendMail({
-    from: `"REVIEW.MNL Admin" <${process.env.MAIL_USER}>`,
+  await resend.emails.send({
+    from: FROM_EMAIL,
     to: toEmail,
-    subject: `Your REVIEW.MNL Application has been ${isApproved ? 'Approved ✅' : 'Rejected ❌'}`,
+    subject: `Your REVIEW.MNL Application has been ${isApproved ? 'Approved' : 'Rejected'}`,
     html: `
       <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:30px;border:1px solid #eee;border-radius:10px;">
         <h2 style="color:#0d1b2a;">Hello, ${name}!</h2>
         ${isApproved
-          ? `<p>🎉 Your review center application has been <strong style="color:green;">approved</strong>. You can now log in!</p>
+          ? `<p>Your review center application has been <strong style="color:green;">approved</strong>. You can now log in!</p>
              <a href="${FRONTEND_URL}/login.html" style="display:inline-block;margin:20px 0;padding:12px 28px;background:#e8c468;color:#0d1b2a;text-decoration:none;border-radius:8px;font-weight:bold;">Go to Login</a>`
           : `<p>Unfortunately, your application has been <strong style="color:red;">rejected</strong>. Please ensure your documents are valid and resubmit.</p>`
         }

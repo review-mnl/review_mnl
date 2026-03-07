@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Student Login - Review.Mnl</title>
+        <title>Review Center Login - Review.Mnl</title>
         <link rel="stylesheet" href="style.css">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,10 +41,6 @@
                 z-index: 2;
             }
 
-            .login-nav img {
-                width: 150px;
-            }
-
             .login-container {
                 flex: 1;
                 display: flex;
@@ -64,12 +60,23 @@
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             }
 
-            .login-form h1,
-            .login-form h2 {
+            .login-form h1 {
                 color: #0043CF;
                 font-size: 21px;
-                margin-bottom: 10px;
+                margin-bottom: 4px;
                 font-weight: 600;
+            }
+
+            .login-form .center-badge {
+                display: inline-block;
+                background: #e8eeff;
+                color: #0043CF;
+                font-size: 10px;
+                font-weight: 700;
+                padding: 3px 10px;
+                border-radius: 20px;
+                margin-bottom: 10px;
+                letter-spacing: 0.5px;
             }
 
             .login-form p {
@@ -120,9 +127,7 @@
                 font-weight: 500;
             }
 
-            .remember-forgot a:hover {
-                text-decoration: underline;
-            }
+            .remember-forgot a:hover { text-decoration: underline; }
 
             .login-btn {
                 width: 100%;
@@ -139,52 +144,7 @@
                 margin-bottom: 15px;
             }
 
-            .login-btn:hover {
-                background-color: #0035a3;
-            }
-
-            .divider {
-                display: flex;
-                align-items: center;
-                margin: 25px 0;
-                color: #999;
-            }
-
-            .divider::before,
-            .divider::after {
-                content: '';
-                flex: 1;
-                height: 1px;
-                background: #e0e0e0;
-            }
-
-            .divider span {
-                margin: 0 10px;
-                font-size: 13px;
-            }
-
-            .social-login {
-                display: flex;
-                gap: 15px;
-                margin-bottom: 20px;
-            }
-
-            .social-btn {
-                flex: 1;
-                padding: 12px;
-                border: 2px solid #e0e0e0;
-                background: #f9f9f9;
-                border-radius: 12px;
-                cursor: pointer;
-                font-size: 24px;
-                transition: all 0.3s ease;
-                font-family: 'Poppins', sans-serif;
-            }
-
-            .social-btn:hover {
-                border-color: #0043CF;
-                background: #f0f5ff;
-            }
+            .login-btn:hover { background-color: #0035a3; }
 
             .signup-link {
                 text-align: center;
@@ -198,38 +158,7 @@
                 font-weight: 600;
             }
 
-            .signup-link a:hover {
-                text-decoration: underline;
-            }
-
-            .role-tabs {
-                display: flex;
-                border-radius: 50px;
-                background: #f0f4ff;
-                padding: 4px;
-                margin-bottom: 28px;
-                gap: 4px;
-            }
-
-            .role-tab {
-                flex: 1;
-                padding: 9px 0;
-                border: none;
-                background: transparent;
-                border-radius: 50px;
-                font-family: 'Poppins', sans-serif;
-                font-size: 11px;
-                font-weight: 600;
-                color: #888;
-                cursor: pointer;
-                transition: all 0.25s ease;
-            }
-
-            .role-tab.active {
-                background: #0043CF;
-                color: #fff;
-                box-shadow: 0 2px 8px rgba(0,67,207,0.25);
-            }
+            .signup-link a:hover { text-decoration: underline; }
         </style>
     </head>
     <body>
@@ -240,22 +169,14 @@
             </nav>
 
             <div class="login-container">
-                <form class="login-form" id="loginForm">
-                    <h1>Student Login</h1>
-                    <p>Welcome back to review.mnl</p>
-
-                    <div class="social-login">
-                        <button type="button" class="social-btn" title="Login with Google"><i class="fab fa-google"></i></button>
-                        <button type="button" class="social-btn" title="Login with Facebook"><i class="fab fa-facebook-f"></i></button>
-                    </div>
-
-                    <div class="divider">
-                        <span>OR</span>
-                    </div>
+                <form class="login-form" id="centerLoginForm">
+                    <h1>Review Center Login</h1>
+                    <span class="center-badge">REVIEW CENTER PORTAL</span>
+                    <p>Access your center dashboard on review.mnl</p>
 
                     <div class="form-group">
                         <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                        <input type="email" id="email" name="email" placeholder="Enter your center email" required>
                     </div>
 
                     <div class="form-group">
@@ -274,17 +195,17 @@
                     <button type="submit" class="login-btn">LOGIN</button>
 
                     <div class="signup-link">
-                        Don't have an account? <a href="signup.html">Sign up here</a>
+                        New review center? <a href="signup.html">Register here</a>
                     </div>
                     <div class="signup-link" style="margin-top:10px;">
-                        Review center? <a href="centerlogin.html">Login here</a>
+                        Student? <a href="login.html">Login here</a>
                     </div>
                 </form>
             </div>
         </div>
         <script src="api.js"></script>
         <script>
-            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            document.getElementById('centerLoginForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const email    = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
@@ -296,17 +217,17 @@
                 try {
                     const data = await AuthAPI.login(email, password);
                     const role = data.user.role;
-                    if (role !== 'student') {
+                    if (role !== 'review_center' && role !== 'admin') {
                         errEl.textContent = role === 'superadmin'
                             ? 'Use the superadmin portal to log in.'
-                            : 'This login is for students only. Review centers use a separate portal.';
+                            : 'This portal is for review centers only. Students use a separate login.';
                         errEl.style.display = 'block';
                         btn.disabled = false;
                         btn.textContent = 'LOGIN';
                         return;
                     }
                     saveSession(data);
-                    window.location.href = 'loggedin.html';
+                    window.location.href = 'admindashboard.html';
                 } catch (err) {
                     errEl.textContent = err.message || 'Login failed. Please try again.';
                     errEl.style.display = 'block';

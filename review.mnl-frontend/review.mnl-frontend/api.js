@@ -1,7 +1,10 @@
 // review.mnl — shared API helper
 // All fetch calls go through here so only one place needs updating for the base URL.
 
-const API_BASE = 'http://localhost:5000';
+// Uses production backend URL when deployed, falls back to localhost for development
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : 'https://review-mnl.up.railway.app';
 
 // ---------------------------------------------------------------------------
 // Auth helpers

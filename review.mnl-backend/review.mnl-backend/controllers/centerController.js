@@ -98,4 +98,23 @@ const updateCenterLocation = async (req, res) => {
   }
 };
 
-module.exports = { getApprovedCenters, getCenterById, getCentersNearby, searchCenters, updateCenterLocation };
+const getMyCenterProfile = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const [rows] = await db.query(
+      `SELECT rc.id, rc.business_name, rc.email, rc.address,
+              IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
+       FROM review_centers rc
+       LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
+       WHERE rc.user_id = ? GROUP BY rc.id`,
+      [userId]
+    );
+    if (rows.length === 0)
+      return res.status(404).json({ message: 'Center not found.' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getApprovedCenters, getCenterById, getCentersNearby, searchCenters, updateCenterLocation, getMyCenterProfile };

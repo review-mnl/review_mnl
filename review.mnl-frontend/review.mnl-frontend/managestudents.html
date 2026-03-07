@@ -989,24 +989,11 @@
 
         <script src="api.js"></script>
         <script>
-        // ── Sample data ──────────────────────────────────────────────────
-        // scheduleDays: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
-        const STUDENTS = [
-            { id: 1,  name: 'Maria Santos',     email: 'maria.santos@email.com',    program: 'Nursing Board Review',         schedule: 'Mon / Wed / Fri', scheduleDays:[1,3,5], status: 'Enrolled',   payment: 'Paid',       date: 'Jan 10, 2026', contact: '09171234567' },
-            { id: 2,  name: 'Juan dela Cruz',   email: 'juan.delacruz@email.com',   program: 'Civil Engineering Review',     schedule: 'Tue / Thu',       scheduleDays:[2,4],   status: 'Enrolled',   payment: 'Paid',       date: 'Jan 12, 2026', contact: '09281234567' },
-            { id: 3,  name: 'Ana Reyes',        email: 'ana.reyes@email.com',       program: 'Accountancy Board Review',     schedule: 'Sat – Sun',      scheduleDays:[6,0],   status: 'Scheduled',  payment: 'Unpaid',     date: 'Jan 15, 2026', contact: '09391234567' },
-            { id: 4,  name: 'Carlo Bautista',   email: 'carlo.bautista@email.com',  program: 'Medical Technology Review',    schedule: 'Mon / Wed / Fri', scheduleDays:[1,3,5], status: 'Enrolled',   payment: 'Processing', date: 'Jan 17, 2026', contact: '09501234567' },
-            { id: 5,  name: 'Liza Mendoza',     email: 'liza.mendoza@email.com',    program: 'Architecture Board Review',    schedule: 'Tue / Thu',       scheduleDays:[2,4],   status: 'Pending',    payment: 'Unpaid',     date: 'Jan 20, 2026', contact: '09611234567' },
-            { id: 6,  name: 'Rico Villanueva',  email: 'rico.villanueva@email.com', program: 'Nursing Board Review',         schedule: 'Sat – Sun',      scheduleDays:[6,0],   status: 'Enrolled',   payment: 'Paid',       date: 'Jan 22, 2026', contact: '09721234567' },
-            { id: 7,  name: 'Grace Tan',        email: 'grace.tan@email.com',       program: 'Civil Engineering Review',     schedule: 'Mon / Wed / Fri', scheduleDays:[1,3,5], status: 'Scheduled',  payment: 'Unpaid',     date: 'Jan 25, 2026', contact: '09831234567' },
-            { id: 8,  name: 'Mark Ocampo',      email: 'mark.ocampo@email.com',     program: 'Pharmacy Board Review',        schedule: 'Tue / Thu',       scheduleDays:[2,4],   status: 'Cancelled',  payment: 'Unpaid',     date: 'Jan 28, 2026', contact: '09941234567' },
-            { id: 9,  name: 'Diana Flores',     email: 'diana.flores@email.com',    program: 'Accountancy Board Review',     schedule: 'Sat – Sun',      scheduleDays:[6,0],   status: 'Enrolled',   payment: 'Paid',       date: 'Feb 2, 2026',  contact: '09151234567' },
-            { id: 10, name: 'Paolo Cruz',       email: 'paolo.cruz@email.com',      program: 'Architecture Board Review',    schedule: 'Mon / Wed / Fri', scheduleDays:[1,3,5], status: 'Pending',    payment: 'Unpaid',     date: 'Feb 5, 2026',  contact: '09261234567' },
-            { id: 11, name: 'Sophia Garcia',    email: 'sophia.garcia@email.com',   program: 'Nursing Board Review',         schedule: 'Tue / Thu',       scheduleDays:[2,4],   status: 'Enrolled',   payment: 'Paid',       date: 'Feb 8, 2026',  contact: '09371234567' },
-            { id: 12, name: 'Andrei Lim',       email: 'andrei.lim@email.com',      program: 'Medical Technology Review',    schedule: 'Sat – Sun',      scheduleDays:[6,0],   status: 'Scheduled',  payment: 'Processing', date: 'Feb 10, 2026', contact: '09481234567' },
-        ];
+        if (!localStorage.getItem('rmnl_token')) { window.location.href = 'login.html'; }
+        // ── Student data (populated from API) ────────────────────────────
+        var STUDENTS = [];
 
-        let _students = [...STUDENTS];
+        let _students = [];
         let _tabFilter  = 'all';
         let _searchQ    = '';
         let _statusF    = '';
@@ -1148,10 +1135,7 @@
         }
 
         // ── Init ──────────────────────────────────────────────────────────
-        (function init() {
-            updateSummary();
-            renderTable();
-            renderCalendar();
+        (async function init() {
             // Profile dropdown
             const btn = document.getElementById('profileBtn');
             const dd  = document.getElementById('profileDropdown');
@@ -1166,6 +1150,33 @@
                 document.addEventListener('click', function(){ dd.style.display='none'; });
             }
             if (lo) lo.addEventListener('click', function(){ clearSession(); window.location.href='index.html'; });
+
+            // Load students from API
+            try {
+                const rows = await AdminAPI.getStudents();
+                STUDENTS = rows.map(function(s) {
+                    var d = new Date(s.created_at);
+                    var dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+                    return {
+                        id: s.id,
+                        name: s.first_name + ' ' + s.last_name,
+                        email: s.email,
+                        program: 'N/A',
+                        schedule: 'N/A',
+                        scheduleDays: [],
+                        status: s.is_verified ? 'Enrolled' : 'Pending',
+                        payment: 'N/A',
+                        date: dateStr,
+                        contact: ''
+                    };
+                });
+                _students = STUDENTS.slice();
+            } catch(e) {
+                console.error('Failed to load students:', e);
+            }
+            updateSummary();
+            renderTable();
+            renderCalendar();
         })();
 
         function updateSummary() {

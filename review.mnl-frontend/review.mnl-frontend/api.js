@@ -80,6 +80,9 @@ const CentersAPI = {
 
     postTestimonial: (centerId, content, rating) =>
         apiRequest('POST', '/api/centers/' + centerId + '/testimonials', { content, rating }),
+
+    getMyProfile: () =>
+        apiRequest('GET', '/api/centers/me'),
 };
 
 // ---------------------------------------------------------------------------

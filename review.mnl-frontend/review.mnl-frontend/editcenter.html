@@ -54,6 +54,7 @@
         </section>
         <script src="api.js"></script>
         <script>
+            if (!localStorage.getItem('rmnl_token')) { window.location.href = 'login.html'; }
             (function(){
                 const btn = document.getElementById('profileBtn');
                 const dd = document.getElementById('profileDropdown');
@@ -70,6 +71,26 @@
                     window.location.href = 'index.html';
                 });
                 document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+            })();
+
+            // Load center profile from API
+            (async function(){
+                try {
+                    const center = await CentersAPI.getMyProfile();
+                    if (center.business_name) {
+                        document.getElementById('centerNameDisplay').textContent = center.business_name;
+                    }
+                    if (center.address) {
+                        document.getElementById('centerDescDisplay').textContent = center.address;
+                    }
+                    var rating = Math.round(center.avg_rating || 0);
+                    var starsEl = document.querySelector('.center-rating .stars');
+                    if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+                    var ratingCount = document.querySelector('.center-rating .rating-count');
+                    if (ratingCount) ratingCount.textContent = (center.avg_rating || 0).toFixed(1) + ' (' + (center.review_count || 0) + ')';
+                } catch(e) {
+                    // Not yet approved or no internet — display defaults are fine
+                }
             })();
         </script>
 

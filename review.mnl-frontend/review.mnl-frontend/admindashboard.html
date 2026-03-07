@@ -172,6 +172,7 @@
 
         <script src="api.js"></script>
         <script>
+        if (!localStorage.getItem('rmnl_token')) { window.location.href = 'login.html'; }
         // ── Load admin dashboard data ──────────────────────────────────────
         (async function loadDashboard() {
             try {

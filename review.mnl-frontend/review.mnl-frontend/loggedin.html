@@ -99,34 +99,8 @@
             </div>
 
             <!-- RIGHT CARDS -->
-            <div class="featured-cards">
-
-            <!-- CARD 1 -->
-            <div class="review-card">
-                <div class="card-image"></div>
-
-                <h3>ERC Review Center</h3>
-                <span class="location">Sampaloc, Manila</span>
-
-                <div class="card-footer">
-                <div class="stars">★★★★★</div>
-                <a href="viewcenter.html" class="view-btn">View →</a>
-                </div>
-            </div>
-
-            <!-- CARD 2 -->
-            <div class="review-card">
-                <div class="card-image"></div>
-
-                <h3>Metro Review Center</h3>
-                <span class="location">Ermita, Manila</span>
-
-                <div class="card-footer">
-                <div class="stars">★★★★★</div>
-                <a href="viewcenter.html" class="view-btn">View →</a>
-                </div>
-            </div>
-
+            <div class="featured-cards" id="featuredCards">
+            <p id="featuredLoading" style="color:#888;font-size:14px;padding:20px 0;">Loading featured centers...</p>
             </div>
 
             <!-- SLIDER ARROW -->
@@ -135,7 +109,7 @@
         </section>
     <script src="api.js"></script>
     <script>
-        (function(){
+        if (!localStorage.getItem('rmnl_token')) { window.location.href = 'login.html'; }
             const btn = document.getElementById('profileBtn');
             const dd = document.getElementById('profileDropdown');
             const logout = document.getElementById('logoutBtn');
@@ -151,6 +125,39 @@
                 window.location.href = 'index.html';
             });
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+        })();
+
+        // Load featured centers from API
+        (async function(){
+            try {
+                const centers = await CentersAPI.getAll();
+                const container = document.getElementById('featuredCards');
+                const loading = document.getElementById('featuredLoading');
+                if (loading) loading.remove();
+                const top = centers.slice(0, 3);
+                if (top.length === 0) {
+                    container.innerHTML = '<p style="color:#888;font-size:14px;">No review centers available yet.</p>';
+                    return;
+                }
+                top.forEach(function(c) {
+                    var stars = Math.round(c.avg_rating || 0);
+                    var starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+                    var card = document.createElement('div');
+                    card.className = 'review-card';
+                    card.innerHTML =
+                        '<div class="card-image"></div>'
+                        + '<h3>' + c.business_name + '</h3>'
+                        + '<span class="location">' + (c.address || 'Manila') + '</span>'
+                        + '<div class="card-footer">'
+                        + '<div class="stars">' + starStr + '</div>'
+                        + '<a href="viewcenter.html?id=' + c.id + '" class="view-btn">View &rarr;</a>'
+                        + '</div>';
+                    container.appendChild(card);
+                });
+            } catch(e) {
+                var loading = document.getElementById('featuredLoading');
+                if (loading) loading.textContent = 'Could not load featured centers.';
+            }
         })();
     </script>
     </section>

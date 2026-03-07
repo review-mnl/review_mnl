@@ -211,7 +211,7 @@
                                 + '<div class="review-info"><h4>' + c.name + '</h4><p>' + c.location + '</p></div>'
                                 + '<div class="saved-buttons">'
                                 + '<button class="btn-delete" onclick="deleteSaved(\'' + c.id + '\')" >Delete</button>'
-                                + '<a href="viewcenter.html" class="btn-view">View</a>'
+                                + '<a href="viewcenter.html?id=' + c.id + '" class="btn-view">View</a>'
                                 + '</div></div>';
                         }).join('');
                     }
@@ -322,6 +322,7 @@
         </section>
             <script src="api.js"></script>
             <script>
+                if (!localStorage.getItem('rmnl_token')) { window.location.href = 'login.html'; }
                 (function(){
                     const btn = document.getElementById('profileBtn');
                     const dd = document.getElementById('profileDropdown');
@@ -491,6 +492,17 @@
                 document.getElementById('userProfileModal').addEventListener('click', function(e) {
                     if (e.target === this) closeUserModal();
                 });
+
+                // Personalize from session
+                (function(){
+                    var user = getUser();
+                    if (!user) { window.location.href = 'login.html'; return; }
+                    document.getElementById('welcomeName').textContent = user.name;
+                    document.getElementById('userNameDisplay').textContent = user.name;
+                    document.getElementById('userEmailDisplay').textContent = user.email;
+                    var sidebarName = document.querySelector('.sidebar-header h3');
+                    if (sidebarName) sidebarName.textContent = user.name;
+                })();
             </script>
     </body>
 </html>

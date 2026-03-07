@@ -1,16 +1,22 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Support both Railway MySQL variable names and local .env names
-const pool = mysql.createPool({
-  host:     process.env.MYSQLHOST     || process.env.DB_HOST,
-  port:     process.env.MYSQLPORT     || process.env.DB_PORT || 3306,
-  user:     process.env.MYSQLUSER     || process.env.DB_USER,
-  password: process.env.MYSQL_ROOT_PASSWORD || process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
-  database: process.env.MYSQL_DATABASE || process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  ssl: process.env.MYSQLHOST ? { rejectUnauthorized: false } : undefined,
-});
+let pool;
+
+// Railway injects MYSQL_URL automatically — use it if available
+if (process.env.MYSQL_URL) {
+  pool = mysql.createPool(process.env.MYSQL_URL + '?ssl={"rejectUnauthorized":false}');
+} else {
+  // Local development fallback
+  pool = mysql.createPool({
+    host:     process.env.MYSQLHOST     || process.env.DB_HOST     || 'localhost',
+    port:     process.env.MYSQLPORT     || process.env.DB_PORT     || 3306,
+    user:     process.env.MYSQLUSER     || process.env.DB_USER     || 'root',
+    password: process.env.MYSQL_ROOT_PASSWORD || process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
+    database: process.env.MYSQL_DATABASE || process.env.DB_NAME   || 'reviewmnl_db',
+    waitForConnections: true,
+    connectionLimit: 10,
+  });
+}
 
 module.exports = pool;

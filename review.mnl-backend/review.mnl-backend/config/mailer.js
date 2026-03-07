@@ -50,7 +50,7 @@ const sendPasswordResetEmail = async (toEmail, token, name) => {
 const sendCenterStatusEmail = async (toEmail, name, status) => {
   const isApproved = status === 'approved';
   await transporter.sendMail({
-    from: `"REVIEW.MNL Admin" <${process.env.EMAIL_USER}>`,
+    from: `"REVIEW.MNL Admin" <${process.env.MAIL_USER}>`,
     to: toEmail,
     subject: `Your REVIEW.MNL Application has been ${isApproved ? 'Approved ✅' : 'Rejected ❌'}`,
     html: `

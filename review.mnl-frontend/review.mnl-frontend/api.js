@@ -56,7 +56,7 @@ const AuthAPI = {
         apiRequest('POST', '/api/auth/login', { email, password }),
 
     registerStudent: (name, email, password) =>
-        apiRequest('POST', '/api/auth/register/student', { name, email, password }),
+        apiRequest('POST', '/api/auth/register/student', { fullname: name, email, password }),
 
     registerCenter: (formData) =>
         apiRequest('POST', '/api/auth/register/center', formData, true),

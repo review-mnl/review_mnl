@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Uploads (user-uploaded files)
+review.mnl-backend/review.mnl-backend/uploads/*
+!review.mnl-backend/review.mnl-backend/uploads/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+*.log

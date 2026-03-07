@@ -113,12 +113,33 @@ const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'No account found with that email.' });
     const token = crypto.randomBytes(32).toString('hex');
     await db.query('UPDATE users SET verify_token = ? WHERE email = ?', [token, email]);
+    // For local development, just return the token in the response
+    // In production, you would send an email with the link
     const link = `${process.env.CLIENT_URL}/resetpassword.html?token=${token}`;
-    const { sendVerificationEmail: sendEmail } = require('../config/mailer');
-    res.json({ message: 'Password reset link sent to your email.' });
+    console.log('Password reset link:', link);
+    res.json({ message: 'Password reset link sent to your email.', resetLink: link });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }
 };
 
-module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword };
+const resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    return res.status(400).json({ message: 'Token and password are required.' });
+  }
+  try {
+    const [rows] = await db.query('SELECT id FROM users WHERE verify_token = ?', [token]);
+    if (rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired reset link.' });
+    }
+    const hashed = await bcrypt.hash(password, 10);
+    await db.query('UPDATE users SET password = ?, verify_token = NULL WHERE id = ?', [hashed, rows[0].id]);
+    res.json({ message: 'Password reset successfully! You can now log in.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword };

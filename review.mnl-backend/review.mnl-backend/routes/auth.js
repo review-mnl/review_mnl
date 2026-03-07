@@ -1,7 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const upload  = require('../middleware/upload');
-const { registerStudent, registerCenter, verifyEmail, login, forgotPassword } = require('../controllers/authController');
+const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword } = require('../controllers/authController');
 
 router.post('/register/student', registerStudent);
 router.post('/register/center',
@@ -14,5 +14,6 @@ router.post('/register/center',
 router.get('/verify-email', verifyEmail);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 module.exports = router;

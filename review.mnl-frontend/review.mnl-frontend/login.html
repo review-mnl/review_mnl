@@ -287,11 +287,44 @@
         </div>
         <script src="api.js"></script>
         <script>
+            // ── Handle OAuth redirect callback (token passed in URL by backend) ──
+            (function () {
+                const params  = new URLSearchParams(window.location.search);
+                const token   = params.get('token');
+                const userRaw = params.get('user');
+                if (token && userRaw) {
+                    try {
+                        const userData = JSON.parse(decodeURIComponent(userRaw));
+                        saveSession({ token, user: userData });
+                        window.history.replaceState({}, '', 'login.html');
+                        const role = userData.role;
+                        if (role === 'superadmin')                         window.location.href = 'superadmin.html';
+                        else if (role === 'admin' || role === 'review_center') window.location.href = 'admindashboard.html';
+                        else                                                   window.location.href = 'loggedin.html';
+                    } catch (e) { console.error('OAuth callback error', e); }
+                    return;
+                }
+                const error = params.get('error');
+                if (error) {
+                    window.addEventListener('DOMContentLoaded', function () {
+                        const el = document.getElementById('loginError');
+                        if (el) { el.textContent = 'Social login failed. Please try again.'; el.style.display = 'block'; }
+                    });
+                }
+            })();
+
             function switchRole(role, btn) {
                 document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById('loginRole').value = role;
             }
+
+            document.querySelector('.social-btn[title="Login with Google"]').addEventListener('click', function () {
+                window.location.href = 'http://localhost:5000/api/auth/google';
+            });
+            document.querySelector('.social-btn[title="Login with Facebook"]').addEventListener('click', function () {
+                window.location.href = 'http://localhost:5000/api/auth/facebook';
+            });
 
             document.getElementById('loginForm').addEventListener('submit', async function(e) {
                 e.preventDefault();

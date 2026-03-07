@@ -16,8 +16,15 @@ const protect = (req, res, next) => {
 };
 
 const adminOnly = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
+  if (req.user?.role !== 'admin' && req.user?.role !== 'superadmin') {
     return res.status(403).json({ message: 'Admin access required.' });
+  }
+  next();
+};
+
+const superAdminOnly = (req, res, next) => {
+  if (req.user?.role !== 'superadmin') {
+    return res.status(403).json({ message: 'Super admin access required.' });
   }
   next();
 };
@@ -29,4 +36,4 @@ const centerOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly, centerOnly };
+module.exports = { protect, adminOnly, superAdminOnly, centerOnly };

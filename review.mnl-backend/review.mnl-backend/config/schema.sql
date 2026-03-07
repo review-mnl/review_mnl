@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   last_name   VARCHAR(100) NOT NULL,
   email       VARCHAR(150) NOT NULL UNIQUE,
   password    VARCHAR(255) NOT NULL,
-  role        ENUM('student', 'review_center', 'admin') DEFAULT 'student',
+  role        ENUM('student', 'review_center', 'admin', 'superadmin') DEFAULT 'student',
   is_verified TINYINT(1) DEFAULT 0,
   verify_token VARCHAR(255),
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -45,4 +45,4 @@ CREATE TABLE IF NOT EXISTS testimonials (
 
 INSERT IGNORE INTO users (first_name, last_name, email, password, role, is_verified)
 VALUES ('Super', 'Admin', 'admin@reviewmnl.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHHC', 'admin', 1);
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHHC', 'superadmin', 1);

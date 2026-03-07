@@ -306,7 +306,9 @@
                     const data = await AuthAPI.login(email, password);
                     saveSession(data);
                     const role = data.user.role;
-                    if (role === 'admin' || role === 'review_center') {
+                    if (role === 'superadmin') {
+                        window.location.href = 'superadmin.html';
+                    } else if (role === 'admin' || role === 'review_center') {
                         window.location.href = 'admindashboard.html';
                     } else {
                         window.location.href = 'loggedin.html';

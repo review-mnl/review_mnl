@@ -215,8 +215,8 @@
         <div class="gate-sub">Restricted area — authorized personnel only</div>
 
         <div class="gate-field">
-            <label>Username</label>
-            <input type="text" id="gateUser" placeholder="Enter username" autocomplete="off">
+            <label>Email</label>
+            <input type="email" id="gateUser" placeholder="Enter email" autocomplete="off">
         </div>
         <div class="gate-field">
             <label>Password</label>
@@ -603,6 +603,7 @@
 <!-- Toast -->
 <div id="saToast"></div>
 
+<script src="api.js"></script>
 <script>
     // ── Doc viewer ──
     function viewDoc(center, email, date, docType, filename) {
@@ -623,39 +624,67 @@
     document.getElementById('saDocModal').addEventListener('click', function(e){ if (e.target === this) closeDocModal(); });
 
     // ── Credentials (creator-only) ──
-    const SA_USER = 'rmnl_superadmin';
-    const SA_PASS = 'Creator@rmnl2026!';
     const SA_SESSION_KEY = 'rmnl_sa_session';
 
-    // ── Auto-login if session exists ──
-    if (sessionStorage.getItem(SA_SESSION_KEY) === 'granted') {
-        document.getElementById('loginGate').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-    }
+    // ── Auto-login if session exists and role is superadmin ──
+    (function(){
+        var token = localStorage.getItem('rmnl_token');
+        var user = null;
+        try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
+        if (token && user && user.role === 'superadmin') {
+            document.getElementById('loginGate').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            var nameEl = document.querySelector('.sa-topbar span[style*="color:#ccd6f6"]');
+            if (nameEl) nameEl.textContent = user.name;
+        }
+    })();
 
     function attemptLogin() {
-        const u = document.getElementById('gateUser').value.trim();
+        const email = document.getElementById('gateUser').value.trim();
         const p = document.getElementById('gatePass').value;
         const err = document.getElementById('gateError');
         document.getElementById('gateUser').classList.remove('invalid');
         document.getElementById('gatePass').classList.remove('invalid');
-        if (u === SA_USER && p === SA_PASS) {
-            sessionStorage.setItem(SA_SESSION_KEY, 'granted');
+        err.style.display = 'none';
+
+        var btn = document.querySelector('.gate-btn');
+        btn.disabled = true;
+        btn.textContent = 'Authenticating...';
+
+        AuthAPI.login(email, p).then(function(data) {
+            if (data.user.role !== 'superadmin') {
+                err.textContent = 'Access denied. Superadmin account required.';
+                err.style.display = 'block';
+                document.getElementById('gateUser').classList.add('invalid');
+                document.getElementById('gatePass').classList.add('invalid');
+                document.getElementById('gatePass').value = '';
+                btn.disabled = false;
+                btn.textContent = 'Access Dashboard';
+                return;
+            }
+            saveSession(data);
             document.getElementById('loginGate').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-        } else {
+            var nameEl = document.querySelector('strong[style*="color:#ccd6f6"]');
+            if (nameEl) nameEl.textContent = data.user.name;
+            btn.disabled = false;
+            btn.textContent = 'Access Dashboard';
+        }).catch(function(e) {
+            err.textContent = e.message || 'Invalid credentials.';
             err.style.display = 'block';
             document.getElementById('gateUser').classList.add('invalid');
             document.getElementById('gatePass').classList.add('invalid');
             document.getElementById('gatePass').value = '';
-        }
+            btn.disabled = false;
+            btn.textContent = 'Access Dashboard';
+        });
     }
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && document.getElementById('loginGate').style.display !== 'none') attemptLogin();
     });
 
     function saLogout() {
-        sessionStorage.removeItem(SA_SESSION_KEY);
+        clearSession();
         document.getElementById('dashboard').style.display = 'none';
         document.getElementById('loginGate').style.display = 'flex';
         document.getElementById('gateUser').value = '';

@@ -31,6 +31,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve the frontend static files
+const frontendPath = path.join(__dirname, '..', '..', 'review.mnl-frontend', 'review.mnl-frontend');
+app.use(express.static(frontendPath));
+
 app.use('/api/auth',    require('./routes/auth'));
 app.use('/api/admin',   require('./routes/admin'));
 app.use('/api/centers', require('./routes/centers'));

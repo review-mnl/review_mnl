@@ -3,6 +3,7 @@ const cors    = require('cors');
 const path    = require('path');
 require('dotenv').config();
 
+
 const app = express();
 
 const allowedOrigins = [
@@ -14,9 +15,9 @@ const allowedOrigins = [
   'http://127.0.0.1:5501',
 ];
 
+// CORS middleware at the very top
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (file://, Postman, curl) or known origins
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -25,6 +26,19 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Global OPTIONS handler for CORS preflight
+app.options('*', cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

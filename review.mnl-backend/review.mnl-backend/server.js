@@ -15,27 +15,15 @@ const allowedOrigins = [
   'http://127.0.0.1:5501',
 ];
 
-// CORS middleware at the very top
+// TEMP: Allow all origins for debugging
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true
 }));
 
-// Global OPTIONS handler for CORS preflight
+// TEMP: Allow all origins for preflight
 app.options('*', cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true
 }));
 

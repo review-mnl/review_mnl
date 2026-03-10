@@ -2,7 +2,7 @@ const db      = require('../config/db');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const crypto   = require('crypto');
-const { sendVerificationEmail } = require('../config/mailer');
+const { sendVerificationEmail, sendPasswordResetEmail, sendOTPEmail } = require('../config/mailer');
 require('dotenv').config();
 
 const registerStudent = async (req, res) => {
@@ -112,13 +112,30 @@ const forgotPassword = async (req, res) => {
     if (rows.length === 0)
       return res.status(404).json({ message: 'No account found with that email.' });
     const token = crypto.randomBytes(32).toString('hex');
-    await db.query('UPDATE users SET verify_token = ? WHERE email = ?', [token, email]);
-    // For local development, just return the token in the response
-    // In production, you would send an email with the link
-    const link = `${process.env.CLIENT_URL}/resetpassword.html?token=${token}`;
-    console.log('Password reset link:', link);
-    res.json({ message: 'Password reset link sent to your email.', resetLink: link });
+    await db.query('UPDATE users SET verify_token = ? WHERE id = ?', [token, rows[0].id]);
+    await sendPasswordResetEmail(email, token, rows[0].first_name);
+    res.json({ message: 'Password reset link sent to your email.' });
   } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const resendVerification = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required.' });
+  try {
+    const [rows] = await db.query('SELECT id, first_name, is_verified FROM users WHERE email = ?', [email]);
+    if (rows.length === 0)
+      return res.status(404).json({ message: 'No account found with that email.' });
+    if (rows[0].is_verified)
+      return res.status(400).json({ message: 'This account is already verified.' });
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.query('UPDATE users SET verify_token = ? WHERE id = ?', [token, rows[0].id]);
+    await sendVerificationEmail(email, token, rows[0].first_name);
+    res.json({ message: 'Verification email resent. Please check your inbox.' });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -142,4 +159,54 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword };
+const googleCallback = async (req, res) => {
+  try {
+    const user = req.user;
+    const otp        = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpSession = crypto.randomBytes(32).toString('hex');
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+    await db.query(
+      'UPDATE users SET otp_code = ?, otp_expires_at = ?, otp_session = ? WHERE id = ?',
+      [otp, otpExpires, otpSession, user.id]
+    );
+    await sendOTPEmail(user.email, otp, user.first_name);
+    res.redirect(`/verifyotp.html?session=${otpSession}`);
+  } catch (err) {
+    console.error('Google OTP error:', err);
+    res.redirect('/login.html?error=oauth_failed');
+  }
+};
+
+const verifyOTP = async (req, res) => {
+  const { session, otp } = req.body;
+  if (!session || !otp)
+    return res.status(400).json({ message: 'Session and OTP are required.' });
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE otp_session = ?', [session]);
+    if (rows.length === 0)
+      return res.status(400).json({ message: 'Invalid or expired session. Please log in again.' });
+    const user = rows[0];
+    if (new Date() > new Date(user.otp_expires_at))
+      return res.status(400).json({ message: 'OTP has expired. Please log in again.' });
+    if (user.otp_code !== otp)
+      return res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
+    await db.query(
+      'UPDATE users SET otp_code = NULL, otp_expires_at = NULL, otp_session = NULL WHERE id = ?',
+      [user.id]
+    );
+    const token = jwt.sign(
+      { id: user.id, role: user.role, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+    res.json({
+      token,
+      user: { id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email, role: user.role },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification, googleCallback, verifyOTP };

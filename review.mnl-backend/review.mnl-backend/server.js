@@ -1,6 +1,8 @@
-const express = require('express');
-const cors    = require('cors');
-const path    = require('path');
+const express  = require('express');
+const cors     = require('cors');
+const path     = require('path');
+const session  = require('express-session');
+const passport = require('./config/passport');
 require('dotenv').config();
 
 
@@ -26,6 +28,14 @@ app.options('*', cors({
   origin: true,
   credentials: true
 }));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'rmnl_session_secret',
+  resave: false,
+  saveUninitialized: false,
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

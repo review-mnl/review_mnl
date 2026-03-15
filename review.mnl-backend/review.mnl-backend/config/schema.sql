@@ -10,6 +10,11 @@ CREATE TABLE IF NOT EXISTS users (
   role        ENUM('student', 'review_center', 'admin', 'superadmin') DEFAULT 'student',
   is_verified TINYINT(1) DEFAULT 0,
   verify_token VARCHAR(255),
+  reset_token  VARCHAR(255),
+  reset_token_expires DATETIME,
+  otp_code     VARCHAR(6) DEFAULT NULL,
+  otp_expires_at DATETIME DEFAULT NULL,
+  otp_session  VARCHAR(64) DEFAULT NULL,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

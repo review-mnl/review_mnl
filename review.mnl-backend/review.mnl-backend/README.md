@@ -34,7 +34,7 @@ npm install
 
 ### 2. Setup MySQL Database
 - Open MySQL Workbench or phpMyAdmin
-- Run the contents of `config/schema.sql`
+- Run the contents of `config/schema.sql` (creates the `reviewmnl_db` database and all tables)
 
 ### 3. Configure .env
 Fill in your `.env` file:
@@ -92,8 +92,20 @@ npm start
 
 ---
 
-## 🔐 Default Admin Account
-- **Email:** admin@reviewhub.com
+## 🔐 Default Superadmin Account
+- **Email:** admin@reviewmnl.com
 - **Password:** Admin@1234
 
 > Change this immediately after first login!
+
+---
+
+## 🔑 New Auth Routes (Google OAuth + OTP)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET  | `/api/auth/google` | Redirect to Google login |
+| GET  | `/api/auth/google/callback` | Google OAuth callback |
+| POST | `/api/auth/verify-otp` | Submit OTP after Google login |
+| POST | `/api/auth/forgot-password` | Send password reset email |
+| POST | `/api/auth/reset-password` | Reset password with token |
+| POST | `/api/auth/resend-verification` | Resend verification email |

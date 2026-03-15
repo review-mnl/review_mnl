@@ -170,10 +170,12 @@ const googleCallback = async (req, res) => {
       [otp, otpExpires, otpSession, user.id]
     );
     await sendOTPEmail(user.email, otp, user.first_name);
-    res.redirect(`/verifyotp.html?session=${otpSession}`);
+    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5500').replace(/\/$/, '');
+    res.redirect(`${clientUrl}/verifyotp.html?session=${otpSession}`);
   } catch (err) {
     console.error('Google OTP error:', err);
-    res.redirect('/login.html?error=oauth_failed');
+    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5500').replace(/\/$/, '');
+    res.redirect(`${clientUrl}/login.html?error=oauth_failed`);
   }
 };
 

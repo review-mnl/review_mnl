@@ -1,9 +1,22 @@
 const passport       = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const db     = require('./db');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+
+function hasRealGoogleOAuthConfig() {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) return false;
+    if (clientId === 'your_google_client_id.apps.googleusercontent.com') return false;
+    if (clientSecret === 'your_google_client_secret') return false;
+
+    return true;
+}
 
 // Find existing user by email or create a new student account for OAuth logins
 async function findOrCreateOAuthUser(email, firstName, lastName) {
@@ -21,26 +34,28 @@ async function findOrCreateOAuthUser(email, firstName, lastName) {
     return newUser[0];
 }
 
-// ── Google Strategy ──────────────────────────────────────────────────────────
-passport.use(new GoogleStrategy(
-    {
-        clientID:     process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL:  process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
-    },
-    async (accessToken, refreshToken, profile, done) => {
-        try {
-            const email = profile.emails?.[0]?.value;
-            if (!email) return done(null, false, { message: 'Google did not provide an email address.' });
-            const first = profile.name?.givenName  || profile.displayName || 'User';
-            const last  = profile.name?.familyName || '';
-            const user  = await findOrCreateOAuthUser(email, first, last);
-            return done(null, user);
-        } catch (err) {
-            return done(err);
+// ── Google Strategy (only register if credentials are configured) ───────────
+if (hasRealGoogleOAuthConfig()) {
+    passport.use(new GoogleStrategy(
+        {
+            clientID:     process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackURL:  process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+        },
+        async (accessToken, refreshToken, profile, done) => {
+            try {
+                const email = profile.emails?.[0]?.value;
+                if (!email) return done(null, false, { message: 'Google did not provide an email address.' });
+                const first = profile.name?.givenName  || profile.displayName || 'User';
+                const last  = profile.name?.familyName || '';
+                const user  = await findOrCreateOAuthUser(email, first, last);
+                return done(null, user);
+            } catch (err) {
+                return done(err);
+            }
         }
-    }
-));
+    ));
+}
 
 // ── Facebook Strategy (only register if credentials are configured) ──────────
 if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {

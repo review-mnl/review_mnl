@@ -4,6 +4,7 @@ const path     = require('path');
 const session  = require('express-session');
 require('dotenv').config();
 const passport = require('./config/passport');
+const { runMigration } = require('./config/migrate');
 
 
 const app = express();
@@ -57,4 +58,14 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+// Start server after running migrations
+(async () => {
+  try {
+    await runMigration();
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+})();

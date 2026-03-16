@@ -76,6 +76,9 @@ const AuthAPI = {
     resendVerification: (email) =>
         apiRequest('POST', '/api/auth/resend-verification', { email }),
 
+    resendOTP: (session) =>
+        apiRequest('POST', '/api/auth/resend-otp', { session }),
+
     verifyOTP: (session, otp) =>
         apiRequest('POST', '/api/auth/verify-otp', { session, otp }),
 };

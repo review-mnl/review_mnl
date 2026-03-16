@@ -49,5 +49,5 @@ CREATE TABLE IF NOT EXISTS testimonials (
 );
 
 INSERT IGNORE INTO users (first_name, last_name, email, password, role, is_verified)
-VALUES ('Super', 'Admin', 'admin@reviewmnl.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHHC', 'superadmin', 1);
+VALUES ('Super', 'Admin', 'review-mnlsuperadmin@gmail.com',
+  '$2a$10$mxJ/ChVcu3oEMlLT2ES4me/RklfyaXspADkkHLi.r8uHEqd.r3x0O', 'superadmin', 1);

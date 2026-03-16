@@ -205,7 +205,7 @@
         <script src="api.js"></script>
         <script>
             const params  = new URLSearchParams(window.location.search);
-            const session = params.get('session');
+            let session = params.get('session');
 
             if (!session) {
                 document.getElementById('stateNoSession').style.display = '';
@@ -254,19 +254,26 @@
             let seconds = 300;
             const timerEl   = document.getElementById('timer');
             const resendLink = document.getElementById('resendLink');
+            let countdown = null;
 
-            const countdown = setInterval(() => {
-                seconds--;
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
-                if (seconds <= 0) {
-                    clearInterval(countdown);
-                    timerEl.textContent = '0:00';
-                    resendLink.style.pointerEvents = '';
-                    resendLink.style.opacity = '';
-                }
-            }, 1000);
+            function startCountdown() {
+                if (countdown) clearInterval(countdown);
+                countdown = setInterval(() => {
+                    seconds--;
+                    const m = Math.floor(seconds / 60);
+                    const s = seconds % 60;
+                    timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                    if (seconds <= 0) {
+                        clearInterval(countdown);
+                        countdown = null;
+                        timerEl.textContent = '0:00';
+                        resendLink.style.pointerEvents = '';
+                        resendLink.style.opacity = '';
+                    }
+                }, 1000);
+            }
+
+            startCountdown();
 
             // ── Verify button ─────────────────────────────────────────────
             verifyBtn.addEventListener('click', async function () {
@@ -308,13 +315,30 @@
                 this.style.opacity = '0.4';
                 this.textContent = 'Sending...';
                 try {
-                    // Re-trigger Google OAuth to get a fresh OTP
-                    window.location.href = API_BASE + '/api/auth/google';
-                } catch (e) {
+                    const data = await AuthAPI.resendOTP(session);
+                    if (data.session) {
+                        session = data.session;
+                        const nextUrl = 'verifyotp.html?session=' + encodeURIComponent(session);
+                        window.history.replaceState({}, '', nextUrl);
+                    }
+                    inputs.forEach(i => {
+                        i.value = '';
+                        i.classList.remove('error');
+                    });
+                    inputs[0].focus();
+                    verifyBtn.disabled = true;
+                    errorMsg.style.display = 'none';
+                    seconds = 300;
+                    timerEl.textContent = '5:00';
+                    startCountdown();
                     this.textContent = 'Resend OTP';
-                    this.style.pointerEvents = '';
-                    this.style.opacity = '';
+                } catch (e) {
+                    errorMsg.textContent = e.message || 'Failed to resend OTP. Please log in again.';
+                    errorMsg.style.display = 'block';
+                    this.textContent = 'Resend OTP';
                 }
+                this.style.pointerEvents = 'none';
+                this.style.opacity = '0.4';
             });
         </script>
     </body>

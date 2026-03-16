@@ -5,6 +5,20 @@ const crypto   = require('crypto');
 const { sendVerificationEmail, sendPasswordResetEmail, sendOTPEmail } = require('../config/mailer');
 require('dotenv').config();
 
+async function issueLoginOTP(user) {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpSession = crypto.randomBytes(32).toString('hex');
+  const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+
+  await db.query(
+    'UPDATE users SET otp_code = ?, otp_expires_at = ?, otp_session = ? WHERE id = ?',
+    [otp, otpExpires, otpSession, user.id]
+  );
+
+  await sendOTPEmail(user.email, otp, user.first_name);
+  return otpSession;
+}
+
 const registerStudent = async (req, res) => {
   const { fullname, email, password } = req.body;
   const nameParts = fullname.trim().split(' ');
@@ -89,15 +103,27 @@ const login = async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match)
       return res.status(401).json({ message: 'Invalid email or password.' });
-    const token = jwt.sign(
-      { id: user.id, role: user.role, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
+
+    if (user.role === 'superadmin') {
+      const token = jwt.sign(
+        { id: user.id, role: user.role, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+
+      return res.json({
+        message: 'Login successful.',
+        token,
+        user: { id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email, role: user.role },
+      });
+    }
+
+    const otpSession = await issueLoginOTP(user);
+
     res.json({
-      message: 'Login successful.',
-      token,
-      user: { id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email, role: user.role },
+      message: 'OTP sent to your email. Please verify to continue.',
+      requiresOtp: true,
+      session: otpSession,
     });
   } catch (err) {
     console.error(err);
@@ -162,20 +188,35 @@ const resetPassword = async (req, res) => {
 const googleCallback = async (req, res) => {
   try {
     const user = req.user;
-    const otp        = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpSession = crypto.randomBytes(32).toString('hex');
-    const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
-    await db.query(
-      'UPDATE users SET otp_code = ?, otp_expires_at = ?, otp_session = ? WHERE id = ?',
-      [otp, otpExpires, otpSession, user.id]
-    );
-    await sendOTPEmail(user.email, otp, user.first_name);
+    const otpSession = await issueLoginOTP(user);
     const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5500').replace(/\/$/, '');
     res.redirect(`${clientUrl}/verifyotp.html?session=${otpSession}`);
   } catch (err) {
     console.error('Google OTP error:', err);
     const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5500').replace(/\/$/, '');
     res.redirect(`${clientUrl}/login.html?error=oauth_failed`);
+  }
+};
+
+const resendOTP = async (req, res) => {
+  const { session } = req.body;
+  if (!session)
+    return res.status(400).json({ message: 'Session is required.' });
+
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE otp_session = ?', [session]);
+    if (rows.length === 0)
+      return res.status(400).json({ message: 'Invalid or expired session. Please log in again.' });
+
+    const user = rows[0];
+    const otpSession = await issueLoginOTP(user);
+    res.json({
+      message: 'A new OTP has been sent to your email.',
+      session: otpSession,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
   }
 };
 
@@ -211,4 +252,4 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification, googleCallback, verifyOTP };
+module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification, googleCallback, verifyOTP, resendOTP };

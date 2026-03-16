@@ -104,6 +104,20 @@ const login = async (req, res) => {
     if (!match)
       return res.status(401).json({ message: 'Invalid email or password.' });
 
+    if (user.role === 'superadmin') {
+      const token = jwt.sign(
+        { id: user.id, role: user.role, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+
+      return res.json({
+        message: 'Login successful.',
+        token,
+        user: { id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email, role: user.role },
+      });
+    }
+
     const otpSession = await issueLoginOTP(user);
 
     res.json({

@@ -83,4 +83,35 @@ router.get('/google/callback',
 
 router.post('/verify-otp', verifyOTP);
 
+// ── Emergency Setup Endpoint (creates superadmin if doesn't exist) ──────────
+router.post('/setup', async (req, res) => {
+  try {
+    const db = require('../config/db');
+    const { action } = req.body;
+    
+    if (action === 'create-superadmin') {
+      // Check if superadmin already exists
+      const [existing] = await db.query('SELECT id FROM users WHERE email = ?', ['review-mnlsuperadmin@gmail.com']);
+      
+      if (existing.length > 0) {
+        return res.status(400).json({ message: 'Superadmin already exists.' });
+      }
+      
+      // Create superadmin
+      await db.query(
+        `INSERT INTO users (first_name, last_name, email, password, role, is_verified)
+         VALUES ('Super', 'Admin', 'review-mnlsuperadmin@gmail.com', 
+         '$2a$10$mxJ/ChVcu3oEMlLT2ES4me/RklfyaXspADkkHLi.r8uHEqd.r3x0O', 'superadmin', 1)`
+      );
+      
+      return res.json({ message: 'Superadmin created successfully!', email: 'review-mnlsuperadmin@gmail.com', password: 'Admin@1234' });
+    }
+    
+    res.status(400).json({ message: 'Invalid action.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Setup failed: ' + err.message });
+  }
+});
+
 module.exports = router;

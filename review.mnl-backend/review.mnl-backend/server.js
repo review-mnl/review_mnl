@@ -6,7 +6,7 @@ require('dotenv').config();
 const passport = require('./config/passport');
 const { runMigration } = require('./config/migrate');
 
-
+// Force migration on redeploy
 const app = express();
 
 const allowedOrigins = [

@@ -91,7 +91,8 @@ const login = async (req, res) => {
     if (rows.length === 0)
       return res.status(401).json({ message: 'Invalid email or password.' });
     const user = rows[0];
-    if (!user.is_verified)
+    // Skip email verification for superadmin only
+    if (!user.is_verified && user.role !== 'superadmin')
       return res.status(403).json({ message: 'Please verify your email first.' });
     if (user.role === 'review_center') {
       const [center] = await db.query('SELECT status FROM review_centers WHERE user_id = ?', [user.id]);

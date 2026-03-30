@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendVerificationEmail = async (toEmail, token, name) => {
-  const link = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
+  const link = `${process.env.CLIENT_URL}/verifyemail.html?token=${token}`;
   await transporter.sendMail({
     from: `"REVIEW.MNL" <${process.env.MAIL_FROM}>`,
     to: toEmail,
@@ -31,6 +31,8 @@ const sendVerificationEmail = async (toEmail, token, name) => {
 };
 
 const sendCenterStatusEmail = async (toEmail, name, status) => {
+  // If you have a password reset email function, ensure it uses:
+  // const link = `${process.env.CLIENT_URL}/resetpassword.html?token=${token}`;
   const isApproved = status === 'approved';
   await transporter.sendMail({
     from: `"REVIEW.MNL Admin" <${process.env.MAIL_FROM}>`,

@@ -9,7 +9,12 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Poppins', sans-serif; background: #0a0e1a; color: #e0e6f0; min-height: 100vh; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0a0e1a url('images/userdashboard.png') center center/cover no-repeat;
+            color: #e0e6f0;
+            min-height: 100vh;
+        }
 
         /* ── LOGIN GATE ── */
         #loginGate {
@@ -798,7 +803,12 @@
     }
 
     function renderPendingCenters(centers) {
-        var tbody = document.querySelector('#panel-dashboard .sa-table-card tbody');
+        // Find the Pending Center Approvals table in the Overview panel
+        var overviewPanel = document.getElementById('panel-overview');
+        if (!overviewPanel) return;
+        var tableCard = overviewPanel.querySelector('.sa-table-card');
+        if (!tableCard) return;
+        var tbody = tableCard.querySelector('tbody');
         if (!tbody) return;
         if (centers.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7fa8;">No pending approvals</td></tr>';
@@ -811,8 +821,8 @@
                 '<td>' + c.email + '</td>' +
                 '<td>' + formatDate(c.created_at) + '</td>' +
                 '<td>' +
-                    '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
-                    '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>' +
+                    '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
+                    '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>' +
                 '</td></tr>';
         }).join('');
     }

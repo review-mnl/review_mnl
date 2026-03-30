@@ -817,7 +817,7 @@
         tbody.innerHTML = centers.map(function(c) {
             return '<tr data-center-id="' + c.id + '">' +
                 '<td>' + c.business_name + '</td>' +
-                '<td>' + c.owner_first + ' ' + c.owner_last + '</td>' +
+                '<td></td>' +
                 '<td>' + c.email + '</td>' +
                 '<td>' + formatDate(c.created_at) + '</td>' +
                 '<td>' +
@@ -845,7 +845,7 @@
             }
             return '<tr data-center-id="' + c.id + '">' +
                 '<td>' + c.business_name + '</td>' +
-                '<td>' + c.owner_first + ' ' + c.owner_last + '</td>' +
+                '<td></td>' +
                 '<td>' + c.email + '</td>' +
                 '<td>' + formatDate(c.created_at) + '</td>' +
                 '<td><span class="sa-status ' + statusClass + '">' + (c.status.charAt(0).toUpperCase() + c.status.slice(1)) + '</span></td>' +

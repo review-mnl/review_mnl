@@ -490,10 +490,7 @@
                         // Review Center registration — multipart/form-data
                         const fd = new FormData();
                         fd.append('business_name', document.getElementById('centername').value.trim());
-                        // Use center name as both owner_first and owner_last (last blank)
-                        const centerName = document.getElementById('centername').value.trim();
-                        fd.append('owner_first', centerName);
-                        fd.append('owner_last', '');
+                        // No owner_first/owner_last needed anymore
                         fd.append('email',  email);
                         fd.append('password', password);
                         const bpFile = document.getElementById('businessPermit').files[0];

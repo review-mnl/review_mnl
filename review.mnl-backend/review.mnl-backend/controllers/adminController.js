@@ -4,7 +4,7 @@ const { sendCenterStatusEmail } = require('../config/mailer');
 const getPendingCenters = async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT id, business_name, owner_first, owner_last, email, business_permit, dti_sec_reg, status, created_at
+      `SELECT id, business_name, email, business_permit, dti_sec_reg, status, created_at
        FROM review_centers WHERE status = 'pending' ORDER BY created_at DESC`
     );
     res.json(rows);
@@ -16,7 +16,7 @@ const getPendingCenters = async (req, res) => {
 const getAllCenters = async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT id, business_name, owner_first, owner_last, email, status, created_at
+      `SELECT id, business_name, email, status, created_at
        FROM review_centers ORDER BY created_at DESC`
     );
     res.json(rows);
@@ -37,7 +37,7 @@ const updateCenterStatus = async (req, res) => {
     await db.query('UPDATE review_centers SET status = ? WHERE id = ?', [status, id]);
     // Try to send email notification but don't fail if it errors
     try {
-      await sendCenterStatusEmail(rows[0].email, rows[0].owner_first, status);
+      await sendCenterStatusEmail(rows[0].email, rows[0].business_name, status);
     } catch (emailErr) {
       console.log('Email notification skipped (not configured):', emailErr.message);
     }

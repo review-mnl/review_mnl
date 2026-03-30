@@ -228,7 +228,7 @@
 
             /* Document upload section */
             .doc-upload-section {
-                display: none;
+                display: block;
                 margin-bottom: 20px;
                 border: 1.5px solid #e0e8ff;
                 border-radius: 14px;
@@ -435,7 +435,7 @@
                 const isAdmin = role === 'admin';
                 document.getElementById('fieldFullname').style.display = isAdmin ? 'none' : '';
                 document.getElementById('fieldCenterName').style.display = isAdmin ? '' : 'none';
-                document.getElementById('docUploadSection').style.display = isAdmin ? '' : 'none';
+                document.getElementById('docUploadSection').style.display = isAdmin ? 'block' : 'none';
                 document.getElementById('fullname').required = !isAdmin;
                 document.getElementById('centername').required = isAdmin;
             }

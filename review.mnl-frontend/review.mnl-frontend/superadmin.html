@@ -306,7 +306,7 @@
                     <div class="sa-stat-card">
                         <div class="sa-stat-label">Review Centers</div>
                         <div class="sa-stat-value" id="statCenters">12</div>
-                        <div class="sa-stat-note">3 pending approval</div>
+                        <div class="sa-stat-note"><span id="statPending">3</span> pending approval</div>
                     </div>
                     <div class="sa-stat-card">
                         <div class="sa-stat-label">Students</div>
@@ -591,27 +591,6 @@
 
 <script src="api.js"></script>
 <script>
-    // Temporary debug wrapper: log AuthAPI.login responses and saved session
-    (function(){
-        try {
-            if (window.AuthAPI && typeof AuthAPI.login === 'function') {
-                var _origLogin = AuthAPI.login;
-                AuthAPI.login = function(email, password) {
-                    return _origLogin(email, password).then(function(res){
-                        console.log('DEBUG login response:', res);
-                        setTimeout(function(){
-                            console.log('DEBUG saved rmnl_token:', localStorage.getItem('rmnl_token'));
-                            console.log('DEBUG saved rmnl_user:', localStorage.getItem('rmnl_user'));
-                        }, 50);
-                        return res;
-                    }).catch(function(err){
-                        console.error('DEBUG login error:', err);
-                        throw err;
-                    });
-                };
-            }
-        } catch(e) { console.warn('debug wrapper failed', e); }
-    })();
     // View toggles: use ?sa_view=login to force the login gate,
     // or ?sa_view=dashboard to force the dashboard. Default behavior
     // remains: show login gate unless session exists.
@@ -627,29 +606,6 @@
                 document.getElementById('dashboard').style.display = 'none';
             }
         } catch(e){}
-    })();
-    // Debug stub: enable by adding ?sa_debug=1 to the page URL. This will
-    // temporarily override AuthAPI.login to return a successful superadmin
-    // session for testing without hitting the backend. Remove after testing.
-    (function(){
-        try {
-            var params = new URLSearchParams(window.location.search);
-            if (params.get('sa_debug') === '1') {
-                if (window.AuthAPI && typeof AuthAPI.login === 'function') {
-                    AuthAPI._orig_login = AuthAPI.login;
-                } else {
-                    window.AuthAPI = window.AuthAPI || {};
-                }
-                AuthAPI.login = function(email, password) {
-                    return new Promise(function(resolve) {
-                        setTimeout(function(){
-                            resolve({ token: 'debug-token', user: { role: 'superadmin', name: 'Super Admin (debug)' } });
-                        }, 150);
-                    });
-                };
-                console.info('AuthAPI.login stub enabled (sa_debug=1)');
-            }
-        } catch(e) { /* ignore in older browsers */ }
     })();
     // ── Doc viewer ──
     function viewDoc(center, email, date, docType, filename) {
@@ -690,12 +646,12 @@
     function inspectToken() {
         try {
             var t = localStorage.getItem('rmnl_token');
-            console.info('rmnl_token:', t);
+            // token inspection (silent in production)
             if (!t) return;
             var parts = t.split('.');
             if (parts.length < 2) return;
             var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
-            console.info('token payload:', payload);
+            // token payload parsed (silent in production)
             if (payload.exp && payload.exp < Date.now()/1000) {
                 console.warn('Token expired — clearing session');
                 clearSession();
@@ -881,9 +837,16 @@
     }
 
     function updateStats() {
-        document.getElementById('statCenters').textContent = allCenters.length;
-        document.getElementById('statPending').textContent = allCenters.filter(c => c.status === 'pending').length;
-        document.getElementById('statStudents').textContent = allStudents.length;
+        try {
+            var elCenters = document.getElementById('statCenters');
+            var elPending = document.getElementById('statPending');
+            var elStudents = document.getElementById('statStudents');
+            if (elCenters) elCenters.textContent = allCenters.length;
+            if (elPending) elPending.textContent = allCenters.filter(c => c.status === 'pending').length;
+            if (elStudents) elStudents.textContent = allStudents.length;
+        } catch (e) {
+            // suppressed debug: safe-guard prevents uncaught exceptions in older clients
+        }
     }
 
     function formatDate(dateStr) {

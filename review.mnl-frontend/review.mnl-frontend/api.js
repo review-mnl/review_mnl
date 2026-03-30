@@ -16,9 +16,32 @@ function authHeaders() {
 }
 
 function saveSession(data) {
-    localStorage.setItem('rmnl_token', data.token);
-    localStorage.setItem('rmnl_user',  JSON.stringify(data.user));
-    localStorage.setItem('rmnl_role',  data.user.role);
+    // Accept a few possible shapes for the login response to be defensive:
+    // - { token, user }
+    // - { accessToken, user }
+    // - { data: { token, user } }
+    // - raw token string
+    try {
+        let token = null;
+        let user = null;
+        if (!data) {
+            return;
+        }
+        if (typeof data === 'string') {
+            token = data;
+        } else {
+            token = data.token || data.accessToken || (data.data && (data.data.token || data.data.accessToken)) || null;
+            user  = data.user || (data.data && data.data.user) || null;
+        }
+        if (token) localStorage.setItem('rmnl_token', token);
+        if (user) {
+            try { localStorage.setItem('rmnl_user', JSON.stringify(user)); } catch(e) { localStorage.setItem('rmnl_user', null); }
+            if (user.role) localStorage.setItem('rmnl_role', user.role);
+        }
+        // (no debug logging) 
+    } catch (e) {
+        console.warn('saveSession failed', e);
+    }
 }
 
 function clearSession() {

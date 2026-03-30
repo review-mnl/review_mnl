@@ -1,8 +1,30 @@
+// Resend verification email
+const resendVerification = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const [rows] = await db.query('SELECT id, first_name, is_verified FROM users WHERE email = ?', [email]);
+    if (rows.length === 0)
+      return res.status(404).json({ message: 'No account found with that email.' });
+    if (rows[0].is_verified)
+      return res.status(400).json({ message: 'Account is already verified.' });
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.query('UPDATE users SET verify_token = ? WHERE email = ?', [token, email]);
+    await sendVerificationEmail(email, token, rows[0].first_name);
+    res.json({ message: 'Verification email resent.' });
+  } catch (err) {
+    console.error('Resend verification error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
 const db      = require('../config/db');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const crypto   = require('crypto');
+// Conflict marker removed
 const { sendVerificationEmail, sendPasswordResetEmail, sendOTPEmail } = require('../config/mailer');
+// Conflict marker removed
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
+// Conflict marker removed
 require('dotenv').config();
 
 async function issueLoginOTP(user) {
@@ -139,6 +161,7 @@ const forgotPassword = async (req, res) => {
     if (rows.length === 0)
       return res.status(404).json({ message: 'No account found with that email.' });
     const token = crypto.randomBytes(32).toString('hex');
+<<<<<<< HEAD
     await db.query('UPDATE users SET verify_token = ? WHERE id = ?', [token, rows[0].id]);
     await sendPasswordResetEmail(email, token, rows[0].first_name);
     res.json({ message: 'Password reset link sent to your email.' });
@@ -163,6 +186,13 @@ const resendVerification = async (req, res) => {
     res.json({ message: 'Verification email resent. Please check your inbox.' });
   } catch (err) {
     console.error(err);
+=======
+    await db.query('UPDATE users SET reset_token = ? WHERE email = ?', [token, email]);
+    await sendPasswordResetEmail(email, token, rows[0].first_name);
+    res.json({ message: 'Password reset link sent to your email.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+>>>>>>> a26df1f57db05daf2267d6580cb76f41b8cc0942
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -173,12 +203,12 @@ const resetPassword = async (req, res) => {
     return res.status(400).json({ message: 'Token and password are required.' });
   }
   try {
-    const [rows] = await db.query('SELECT id FROM users WHERE verify_token = ?', [token]);
+    const [rows] = await db.query('SELECT id FROM users WHERE reset_token = ?', [token]);
     if (rows.length === 0) {
       return res.status(400).json({ message: 'Invalid or expired reset link.' });
     }
     const hashed = await bcrypt.hash(password, 10);
-    await db.query('UPDATE users SET password = ?, verify_token = NULL WHERE id = ?', [hashed, rows[0].id]);
+    await db.query('UPDATE users SET password = ?, reset_token = NULL WHERE id = ?', [hashed, rows[0].id]);
     res.json({ message: 'Password reset successfully! You can now log in.' });
   } catch (err) {
     console.error('Reset password error:', err);
@@ -186,6 +216,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 const googleCallback = async (req, res) => {
   try {
     const user = req.user;

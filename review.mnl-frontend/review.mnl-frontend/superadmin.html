@@ -821,8 +821,8 @@
                 '<td>' + c.email + '</td>' +
                 '<td>' + formatDate(c.created_at) + '</td>' +
                 '<td>' +
-                    '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
-                    '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>' +
+                    '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + "\')">Approve</button>' +
+                    '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + "\')">Reject</button>' +
                 '</td></tr>';
         }).join('');
     }

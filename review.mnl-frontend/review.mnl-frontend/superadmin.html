@@ -80,11 +80,11 @@
         .sa-logout-btn:hover { border-color: #e53935; color: #e53935; }
 
         /* Layout */
-        .sa-layout { display: flex; min-height: calc(100vh - 60px); }
+        .sa-layout { display: flex; min-height: calc(100vh - 60px); padding: 20px 0; gap: 20px; }
 
         /* let the layout slightly reveal the background image */
         .sa-layout { background: linear-gradient(180deg, rgba(6,10,20,0.55) 0%, rgba(6,10,20,0.65) 100%); }
-        .sa-main { background: transparent; flex: 1; padding: 28px 36px; }
+        .sa-main { background: transparent; flex: 1; padding: 28px 36px; min-width: 0; }
 
         /* Sidebar nav */
         .sa-nav {
@@ -94,14 +94,27 @@
             border: 1px solid #1e2d5a;
             border-radius: 14px;
             padding: 22px 16px;
-            margin: 20px 24px 20px 24px;
+            margin: 0 24px 20px 24px;
             height: calc(100vh - 120px);
             overflow: auto;
+            position: relative;
+            top: 0; /* ensure nav sits below topbar in normal flow */
         }
         .sa-nav-section { font-size: 0.75rem; color: #6b7fa8; font-weight: 700; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.6px; }
         .sa-nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; color:#c0cadf; border-radius:8px; cursor:pointer; margin-bottom:8px; font-weight:600; }
         .sa-nav-item.active, .sa-nav-item:hover { background: rgba(77,127,255,0.05); color:#fff; }
         .sa-stat-label { font-size: 0.75rem; color: #6b7fa8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+        /* Dashboard stats layout */
+        .sa-stats { display:flex; gap:18px; flex-wrap:wrap; margin-bottom: 22px; }
+        .sa-stat-card { background: rgba(13,21,51,0.6); padding: 18px 20px; border-radius: 12px; min-width: 160px; flex: 0 0 200px; }
+        .sa-stat-card .sa-stat-value { font-size: 1.8rem; }
+
+        /* Center table card sizing to avoid overflow and overlap */
+        .sa-table-card { max-width: calc(100% - 40px); margin: 0 auto; }
+
+        /* Ensure topbar stays above everything */
+        .sa-topbar { z-index: 1100; }
         .sa-stat-value { font-size: 2rem; font-weight: 700; color: #fff; }
         .sa-stat-note { font-size: 0.72rem; color: #3a5a9a; margin-top: 4px; }
 

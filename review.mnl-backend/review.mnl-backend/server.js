@@ -13,6 +13,7 @@ const app = express();
 const allowedOrigins = [
   process.env.CLIENT_URL,
   'https://review-mnl.vercel.app',
+  'https://review-mnl-gamma.vercel.app',
   'http://localhost:5500',
   'http://127.0.0.1:5500',
   'http://localhost:5501',

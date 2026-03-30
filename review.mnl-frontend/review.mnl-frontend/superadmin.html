@@ -234,55 +234,12 @@
             <input type="email" id="gateUser" placeholder="Enter email" autocomplete="off">
         </div>
         <div class="gate-field">
-            <label>Password</label>
-            <input type="password" id="gatePass" placeholder="Enter password">
-        </div>
-        <div class="gate-error" id="gateError">Invalid credentials. Access denied.</div>
-        <button class="gate-btn" onclick="attemptLogin()">Access Dashboard</button>
-        <p class="gate-warn">⚠️ Unauthorized access attempts are logged.</p>
-    </div>
-</div>
-
-<!-- ═══════════════════════════════════════════
-     DASHBOARD
-═══════════════════════════════════════════ -->
-<div id="dashboard">
-
-    <!-- Topbar -->
-    <div class="sa-topbar">
-        <div class="sa-topbar-logo">review<span>.mnl</span> &nbsp;<span style="color:#e53935;font-size:0.7rem;font-weight:700;background:#2a0a0a;padding:2px 10px;border-radius:20px;vertical-align:middle;">SUPER ADMIN</span></div>
-        <div class="sa-topbar-right">
-            <span style="font-size:0.8rem;color:#6b7fa8;">Logged in as <strong style="color:#ccd6f6;">superadmin</strong></span>
-            <button class="sa-logout-btn" onclick="saLogout()">
-                <span class="material-symbols-outlined" style="font-size:16px;">logout</span> Logout
-            </button>
-        </div>
-    </div>
-
-    <div class="sa-layout">
-
-        <!-- Sidebar -->
-        <nav class="sa-nav">
-            <div class="sa-nav-section">Overview</div>
-            <div class="sa-nav-item active" onclick="showPanel('overview', this)">
-                <span class="material-symbols-outlined">dashboard</span> Dashboard
-            </div>
-            <div class="sa-nav-item" onclick="showPanel('activity', this)">
-                <span class="material-symbols-outlined">history</span> Activity Log
-            </div>
-
-            <div class="sa-nav-section">Management</div>
-            <div class="sa-nav-item" onclick="showPanel('centers', this)">
-                <span class="material-symbols-outlined">school</span> Review Centers
-            </div>
-            <div class="sa-nav-item" onclick="showPanel('students', this)">
-                <span class="material-symbols-outlined">person</span> Students
-            </div>
-            <div class="sa-nav-item" onclick="showPanel('admins', this)">
-                <span class="material-symbols-outlined">manage_accounts</span> Admins
-            </div>
-            <div class="sa-nav-item" onclick="showPanel('docs', this)">
-                <span class="material-symbols-outlined">folder_open</span> Document Submissions
+                    <table id="docsTable">
+                        <thead><tr><th>Center Name</th><th>Submitted By</th><th>Date</th><th>Business Permit</th><th>DTI / SEC</th><th>Status</th><th>Actions</th></thead>
+                        <tbody>
+                            <tr><td colspan="7" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                        </tbody>
+                    </table>
             </div>
 
             <div class="sa-nav-section">Content</div>
@@ -424,50 +381,7 @@
                     <table id="docsTable">
                         <thead><tr><th>Center Name</th><th>Submitted By</th><th>Date</th><th>Business Permit</th><th>DTI / SEC</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr>
-                                <td>PRC Manila Review</td><td>prc@manila.com</td><td>Mar 3, 2026</td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('PRC Manila Review','prc@manila.com','Mar 3, 2026','Business Permit','business_permit_prc.pdf')">📄 View</button></td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('PRC Manila Review','prc@manila.com','Mar 3, 2026','DTI Registration','dti_prc.pdf')">📄 View</button></td>
-                                <td><span class="sa-status pending">Pending</span></td>
-                                <td>
-                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','PRC Manila Review')">Approve</button>
-                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','PRC Manila Review')">Reject</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Legarda Review Hub</td><td>legarda@review.com</td><td>Mar 4, 2026</td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('Legarda Review Hub','legarda@review.com','Mar 4, 2026','Business Permit','business_permit_legarda.jpg')">📄 View</button></td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('Legarda Review Hub','legarda@review.com','Mar 4, 2026','DTI Registration','dti_legarda.pdf')">📄 View</button></td>
-                                <td><span class="sa-status pending">Pending</span></td>
-                                <td>
-                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','Legarda Review Hub')">Approve</button>
-                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','Legarda Review Hub')">Reject</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Quiapo Bar Review</td><td>quiapo@bar.com</td><td>Mar 5, 2026</td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('Quiapo Bar Review','quiapo@bar.com','Mar 5, 2026','Business Permit','business_permit_quiapo.pdf')">📄 View</button></td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('Quiapo Bar Review','quiapo@bar.com','Mar 5, 2026','SEC Certificate','sec_quiapo.pdf')">📄 View</button></td>
-                                <td><span class="sa-status pending">Pending</span></td>
-                                <td>
-                                    <button class="sa-action-btn approve" onclick="confirmAction('approve','Quiapo Bar Review')">Approve</button>
-                                    <button class="sa-action-btn danger" onclick="confirmAction('reject','Quiapo Bar Review')">Reject</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>ERC Review Center</td><td>admin@erc.com</td><td>Jan 5, 2026</td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('ERC Review Center','admin@erc.com','Jan 5, 2026','Business Permit','business_permit_erc.pdf')">📄 View</button></td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('ERC Review Center','admin@erc.com','Jan 5, 2026','DTI Registration','dti_erc.pdf')">📄 View</button></td>
-                                <td><span class="sa-status active">Approved</span></td>
-                                <td><span style="font-size:0.78rem;color:#3a4a6b;">—</span></td>
-                            </tr>
-                            <tr>
-                                <td>Metro Review Center</td><td>admin@metro.com</td><td>Jan 18, 2026</td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('Metro Review Center','admin@metro.com','Jan 18, 2026','Business Permit','business_permit_metro.jpg')">📄 View</button></td>
-                                <td><button class="sa-action-btn" onclick="viewDoc('Metro Review Center','admin@metro.com','Jan 18, 2026','SEC Certificate','sec_metro.pdf')">📄 View</button></td>
-                                <td><span class="sa-status active">Approved</span></td>
-                                <td><span style="font-size:0.78rem;color:#3a4a6b;">—</span></td>
-                            </tr>
+                            <tr><td colspan="7" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -568,7 +482,7 @@
         </div>
         <div class="sa-doc-modal-actions">
             <button class="sa-modal-cancel" onclick="closeDocModal()">Close</button>
-            <button class="sa-modal-confirm green" onclick="saToast('In production, file download would start here.'); closeDocModal();">Download / Preview</button>
+            <button class="sa-modal-confirm green" onclick="previewDoc()">Download / Preview</button>
         </div>
     </div>
 </div>
@@ -608,16 +522,18 @@
         } catch(e){}
     })();
     // ── Doc viewer ──
-    function viewDoc(center, email, date, docType, filename) {
+    var _currentDocUrl = null;
+    function viewDoc(center, email, date, docType, filename, fileUrl) {
         document.getElementById('docModalTitle').textContent = docType;
         document.getElementById('docCenterName').textContent = center;
         document.getElementById('docEmail').textContent = email;
         document.getElementById('docDate').textContent = date;
-        document.getElementById('docFileName').textContent = filename;
+        document.getElementById('docFileName').textContent = filename || (fileUrl ? fileUrl.split('/').pop() : '—');
         document.getElementById('docFileType').textContent = docType;
-        var ext = filename.split('.').pop().toUpperCase();
-        document.getElementById('docFileBadge').textContent = ext;
+        var ext = (document.getElementById('docFileName').textContent || '').split('.').pop().toUpperCase();
+        document.getElementById('docFileBadge').textContent = ext || '';
         document.getElementById('docFileIcon').textContent = ext === 'PDF' ? '📄' : '🖼️';
+        _currentDocUrl = fileUrl || null;
         document.getElementById('saDocModal').classList.add('open');
     }
     function closeDocModal() {
@@ -818,6 +734,7 @@
             allCenters = centers;
             renderCentersTable(centers);
             renderPendingCenters(centers.filter(c => c.status === 'pending'));
+            renderDocSubmissions(centers);
             updateStats();
         }).catch(function(err) {
             console.error('Failed to load centers:', err);
@@ -929,6 +846,48 @@
                     '<button class="sa-action-btn danger" onclick="deleteStudentConfirm(' + s.id + ', \'' + (s.first_name + ' ' + s.last_name).replace(/'/g, "\\'") + '\')">Delete</button>' +
                 '</td></tr>';
         }).join('');
+    }
+
+    // Render pending document submissions in the Documents table
+    function renderDocSubmissions(centers) {
+        var tbody = document.querySelector('#docsTable tbody');
+        if (!tbody) return;
+        var pending = (centers || []).filter(function(c){ return c.status === 'pending'; });
+        if (pending.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7fa8;">No pending submissions</td></tr>';
+            return;
+        }
+        tbody.innerHTML = pending.map(function(c) {
+            var bpUrl = c.business_permit || '';
+            var dtiUrl = c.dti_sec_reg || '';
+            var bpName = bpUrl ? bpUrl.split('/').pop() : '';
+            var dtiName = dtiUrl ? dtiUrl.split('/').pop() : '';
+            var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
+            var date = formatDate(c.created_at);
+            var safeName = (c.business_name || '').replace(/'/g, "\\'");
+            var bpBtn = bpUrl ? ('<button class="sa-action-btn" onclick="viewDoc(\'' + safeName + '\',\'' + (c.email||'') + '\',\'' + date + '\',\'Business Permit\',\'' + bpName + '\',\'' + bpUrl + '\')">📄 View</button>') : '&mdash;';
+            var dtiBtn = dtiUrl ? ('<button class="sa-action-btn" onclick="viewDoc(\'' + safeName + '\',\'' + (c.email||'') + '\',\'' + date + '\',\'DTI / SEC\',\'' + dtiName + '\',\'' + dtiUrl + '\')">📄 View</button>') : '&mdash;';
+            var actions = c.status === 'pending' ? ('<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'' + safeName + '\')">Approve</button> <button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'' + safeName + '\')">Reject</button>') : '<span style="font-size:0.78rem;color:#3a4a6b;">—</span>';
+            return '<tr data-center-id="' + c.id + '">' +
+                '<td>' + (c.business_name || '') + '</td>' +
+                '<td>' + (c.email || '') + '</td>' +
+                '<td>' + date + '</td>' +
+                '<td>' + bpBtn + '</td>' +
+                '<td>' + dtiBtn + '</td>' +
+                '<td><span class="sa-status ' + statusClass + '">' + (c.status.charAt(0).toUpperCase() + c.status.slice(1)) + '</span></td>' +
+                '<td>' + actions + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    function previewDoc() {
+        if (!_currentDocUrl) {
+            saToast('No file URL available.');
+            closeDocModal();
+            return;
+        }
+        try { window.open(_currentDocUrl, '_blank'); } catch(e) { saToast('Unable to open file.'); }
+        closeDocModal();
     }
 
     // ══════════════════════════════════════════════════════════════════════════

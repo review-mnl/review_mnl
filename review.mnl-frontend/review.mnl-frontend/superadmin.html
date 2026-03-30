@@ -626,6 +626,22 @@
                         }, 150);
                     });
                 };
+                // Also mock AdminAPI endpoints used by the dashboard so the
+                // page can load without a real backend when debugging.
+                (function(){
+                    var sampleCenters = [
+                        { id: 1, business_name: 'ERC Review Center', email: 'admin@erc.com', created_at: '2026-01-05T08:00:00Z', status: 'approved' },
+                        { id: 2, business_name: 'Legarda Review Hub', email: 'legarda@review.com', created_at: '2026-03-04T09:30:00Z', status: 'pending' },
+                        { id: 3, business_name: 'Metro Review Center', email: 'admin@metro.com', created_at: '2026-01-18T11:00:00Z', status: 'approved' }
+                    ];
+                    var sampleStudents = [
+                        { id: 101, first_name: 'Juan', last_name: 'Dela Cruz', email: 'juan@example.com', created_at: '2026-03-05T09:00:00Z', is_verified: true },
+                        { id: 102, first_name: 'Maria', last_name: 'Santos', email: 'maria@example.com', created_at: '2026-02-25T10:30:00Z', is_verified: false }
+                    ];
+                    window.AdminAPI = window.AdminAPI || {};
+                    AdminAPI.getAllCenters = function() { return Promise.resolve(sampleCenters); };
+                    AdminAPI.getStudents = function() { return Promise.resolve(sampleStudents); };
+                })();
                 console.info('AuthAPI.login stub enabled (sa_debug=1)');
             }
         } catch(e) { /* ignore in older browsers */ }

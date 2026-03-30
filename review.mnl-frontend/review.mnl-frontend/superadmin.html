@@ -1036,7 +1036,7 @@
             saToast(name + ' has been approved!');
             logActivity('approve', name);
             // animate removal from Admissions table if present
-            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"]');
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
             if (row) {
                 row.classList.add('row-removing');
                 setTimeout(function(){ loadCenters(); }, 340);
@@ -1053,7 +1053,7 @@
         AdminAPI.updateCenterStatus(id, 'rejected').then(function() {
             saToast(name + ' has been rejected.');
             logActivity('reject', name);
-            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"]');
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
             if (row) {
                 row.classList.add('row-removing');
                 setTimeout(function(){ loadCenters(); }, 340);
@@ -1070,7 +1070,13 @@
         AdminAPI.updateCenterStatus(id, 'suspended').then(function() {
             saToast(name + ' has been suspended.');
             logActivity('suspend', name);
-            loadCenters();
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadCenters(); }, 340);
+            } else {
+                loadCenters();
+            }
         }).catch(function(err) {
             saToast('Error: ' + err.message);
         });
@@ -1081,7 +1087,7 @@
         AdminAPI.deleteCenter(id).then(function() {
             saToast(name + ' has been deleted.');
             logActivity('delete', name);
-            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"]');
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
             if (row) {
                 row.classList.add('row-removing');
                 setTimeout(function(){ loadCenters(); }, 340);
@@ -1098,7 +1104,13 @@
         AdminAPI.deleteUser(id).then(function() {
             saToast(name + ' has been deleted.');
             logActivity('delete', name);
-            loadStudents();
+            var row = document.querySelector('#studentsTable tbody tr[data-user-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadStudents(); }, 340);
+            } else {
+                loadStudents();
+            }
         }).catch(function(err) {
             saToast('Error: ' + err.message);
         });

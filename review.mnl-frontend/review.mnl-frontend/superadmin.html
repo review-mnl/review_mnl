@@ -109,13 +109,13 @@
         /* Dashboard stats layout */
 
         /* Stats: translucent rounded cards matching screenshots */
-        .sa-stats { display:flex; gap:22px; flex-wrap:wrap; margin-bottom: 26px; align-items:flex-start; }
+        .sa-stats { display:flex; gap:22px; flex-wrap:wrap; margin-bottom: 26px; align-items:flex-start; max-width:1100px; }
         .sa-stat-card { background: rgba(10,18,40,0.6); padding: 20px 22px; border-radius: 12px; min-width: 180px; flex: 0 0 220px; border:1px solid rgba(255,255,255,0.03); backdrop-filter: blur(6px); }
         .sa-stat-card .sa-stat-value { font-size: 2rem; }
         .sa-stat-card .sa-stat-label { color:#9fb0e6; }
-
+        
         /* Center table card sizing to avoid overflow and overlap */
-        .sa-table-card { max-width: 980px; margin: 8px auto 28px; }
+        .sa-table-card { max-width: 1100px; margin: 8px 0 28px 0; }
 
         /* Ensure topbar stays above everything */
         .sa-topbar { z-index: 1100; }
@@ -812,7 +812,8 @@
     function loadCenters() {
         AdminAPI.getAllCenters().then(function(centers) {
             allCenters = centers;
-            renderCentersTable(centers);
+            // Admissions should only show incoming (pending) applications
+            renderCentersTable(centers.filter(function(c){ return c.status === 'pending'; }));
             renderPendingCenters(centers.filter(c => c.status === 'pending'));
             // fetch pending centers separately because the `getAllCenters` response
             // does not include file fields (business_permit, dti_sec_reg)

@@ -48,7 +48,19 @@ const registerStudent = async (req, res) => {
 };
 
 const registerCenter = async (req, res) => {
-  const { owner_first, owner_last, business_name, email, password } = req.body;
+  let { owner_first, owner_last, business_name, email, password } = req.body;
+  owner_first = owner_first ? owner_first.trim() : '';
+  owner_last = owner_last ? owner_last.trim() : '';
+  if (!owner_first)
+    return res.status(400).json({ message: 'Owner first name is required.' });
+  if (!owner_last)
+    return res.status(400).json({ message: 'Owner last name is required.' });
+  if (!business_name)
+    return res.status(400).json({ message: 'Business name is required.' });
+  if (!email)
+    return res.status(400).json({ message: 'Email is required.' });
+  if (!password)
+    return res.status(400).json({ message: 'Password is required.' });
   // Use Cloudinary file URLs instead of local filenames
   const businessPermit = req.files?.business_permit?.[0]?.path || req.files?.business_permit?.[0]?.url || null;
   const dtiSecReg      = req.files?.dti_sec_reg?.[0]?.path || req.files?.dti_sec_reg?.[0]?.url || null;

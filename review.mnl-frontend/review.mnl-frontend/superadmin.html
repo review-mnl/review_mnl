@@ -193,6 +193,9 @@
         .sa-action-btn.danger:hover { border-color: #e53935; color: #e53935; }
         .sa-action-btn.approve:hover { border-color: #4caf50; color: #4caf50; }
 
+        /* Row removal animation */
+        .row-removing { transition: opacity 300ms ease, transform 300ms ease, height 300ms ease, margin 300ms ease, padding 300ms ease; opacity: 0; transform: translateX(-18px) scale(0.99); height: 0 !important; margin: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+
         /* Document viewer modal */
         .sa-doc-modal-overlay {
             display: none; position: fixed; inset: 0; z-index: 2000;
@@ -1032,7 +1035,14 @@
         AdminAPI.updateCenterStatus(id, 'approved').then(function() {
             saToast(name + ' has been approved!');
             logActivity('approve', name);
-            loadCenters();
+            // animate removal from Admissions table if present
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadCenters(); }, 340);
+            } else {
+                loadCenters();
+            }
         }).catch(function(err) {
             saToast('Error: ' + err.message);
         });
@@ -1043,7 +1053,13 @@
         AdminAPI.updateCenterStatus(id, 'rejected').then(function() {
             saToast(name + ' has been rejected.');
             logActivity('reject', name);
-            loadCenters();
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadCenters(); }, 340);
+            } else {
+                loadCenters();
+            }
         }).catch(function(err) {
             saToast('Error: ' + err.message);
         });
@@ -1065,7 +1081,13 @@
         AdminAPI.deleteCenter(id).then(function() {
             saToast(name + ' has been deleted.');
             logActivity('delete', name);
-            loadCenters();
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadCenters(); }, 340);
+            } else {
+                loadCenters();
+            }
         }).catch(function(err) {
             saToast('Error: ' + err.message);
         });

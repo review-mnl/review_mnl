@@ -2,7 +2,7 @@ const db      = require('../config/db');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const crypto   = require('crypto');
-const { sendVerificationEmail } = require('../config/mailer');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
 require('dotenv').config();
 
 const registerStudent = async (req, res) => {
@@ -113,11 +113,8 @@ const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'No account found with that email.' });
     const token = crypto.randomBytes(32).toString('hex');
     await db.query('UPDATE users SET verify_token = ? WHERE email = ?', [token, email]);
-    // For local development, just return the token in the response
-    // In production, you would send an email with the link
-    const link = `${process.env.CLIENT_URL}/resetpassword.html?token=${token}`;
-    console.log('Password reset link:', link);
-    res.json({ message: 'Password reset link sent to your email.', resetLink: link });
+    await sendPasswordResetEmail(email, token, rows[0].first_name);
+    res.json({ message: 'Password reset link sent to your email.' });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }

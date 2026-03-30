@@ -734,7 +734,14 @@
             allCenters = centers;
             renderCentersTable(centers);
             renderPendingCenters(centers.filter(c => c.status === 'pending'));
-            renderDocSubmissions(centers);
+            // fetch pending centers separately because the `getAllCenters` response
+            // does not include file fields (business_permit, dti_sec_reg)
+            AdminAPI.getPendingCenters().then(function(pendingCenters) {
+                renderDocSubmissions(pendingCenters);
+            }).catch(function(err) {
+                console.warn('Failed to load pending centers for documents:', err);
+                renderDocSubmissions([]);
+            });
             updateStats();
         }).catch(function(err) {
             console.error('Failed to load centers:', err);

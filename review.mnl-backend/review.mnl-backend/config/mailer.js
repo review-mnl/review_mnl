@@ -2,17 +2,19 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.MAIL_HOST,
+  port: parseInt(process.env.MAIL_PORT) || 587,
+  secure: false, // use TLS
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
   },
 });
 
 const sendVerificationEmail = async (toEmail, token, name) => {
   const link = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
   await transporter.sendMail({
-    from: `"REVIEW.MNL" <${process.env.EMAIL_USER}>`,
+    from: `"REVIEW.MNL" <${process.env.MAIL_FROM}>`,
     to: toEmail,
     subject: 'Verify Your REVIEW.MNL Account',
     html: `
@@ -31,7 +33,7 @@ const sendVerificationEmail = async (toEmail, token, name) => {
 const sendCenterStatusEmail = async (toEmail, name, status) => {
   const isApproved = status === 'approved';
   await transporter.sendMail({
-    from: `"REVIEW.MNL Admin" <${process.env.EMAIL_USER}>`,
+    from: `"REVIEW.MNL Admin" <${process.env.MAIL_FROM}>`,
     to: toEmail,
     subject: `Your REVIEW.MNL Application has been ${isApproved ? 'Approved ✅' : 'Rejected ❌'}`,
     html: `

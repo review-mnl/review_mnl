@@ -12,6 +12,7 @@ const resendVerification = async (req, res) => {
     await sendVerificationEmail(email, token, rows[0].first_name);
     res.json({ message: 'Verification email resent.' });
   } catch (err) {
+    console.error('Resend verification error:', err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -133,6 +134,7 @@ const forgotPassword = async (req, res) => {
     await sendPasswordResetEmail(email, token, rows[0].first_name);
     res.json({ message: 'Password reset link sent to your email.' });
   } catch (err) {
+    console.error('Forgot password error:', err);
     res.status(500).json({ message: 'Server error.' });
   }
 };

@@ -543,29 +543,28 @@
             var params = new URLSearchParams(window.location.search);
             var v = params.get('sa_view');
             if (v === 'dashboard') {
-                document.getElementById('loginGate').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
+                var lgEl = document.getElementById('loginGate'); if (lgEl) lgEl.style.display = 'none';
+                var dbEl = document.getElementById('dashboard'); if (dbEl) dbEl.style.display = 'block';
             } else if (v === 'login') {
-                document.getElementById('loginGate').style.display = 'flex';
-                document.getElementById('dashboard').style.display = 'none';
+                var lgEl2 = document.getElementById('loginGate'); if (lgEl2) lgEl2.style.display = 'flex';
+                var dbEl2 = document.getElementById('dashboard'); if (dbEl2) dbEl2.style.display = 'none';
             }
         } catch(e){}
     })();
     // ── Doc viewer ──
     var _currentDocUrl = null;
     function viewDoc(center, email, date, docType, filename, fileUrl) {
-        document.getElementById('docModalTitle').textContent = docType;
-        document.getElementById('docCenterName').textContent = center;
-        document.getElementById('docEmail').textContent = email;
-        document.getElementById('docDate').textContent = date;
-        document.getElementById('docFileName').textContent = filename || (fileUrl ? fileUrl.split('/').pop() : '—');
-        document.getElementById('docFileType').textContent = docType;
-        var ext = (document.getElementById('docFileName').textContent || '').split('.').pop().toUpperCase();
-        document.getElementById('docFileBadge').textContent = ext || '';
-        document.getElementById('docFileIcon').textContent = ext === 'PDF' ? '📄' : '🖼️';
+        var tEl = document.getElementById('docModalTitle'); if (tEl) tEl.textContent = docType;
+        var cEl = document.getElementById('docCenterName'); if (cEl) cEl.textContent = center;
+        var eEl = document.getElementById('docEmail'); if (eEl) eEl.textContent = email;
+        var dEl = document.getElementById('docDate'); if (dEl) dEl.textContent = date;
+        var fnEl = document.getElementById('docFileName'); if (fnEl) fnEl.textContent = filename || (fileUrl ? fileUrl.split('/').pop() : '—');
+        var ftEl = document.getElementById('docFileType'); if (ftEl) ftEl.textContent = docType;
+        var ext = (fnEl && fnEl.textContent ? fnEl.textContent : '').split('.').pop().toUpperCase();
+        var badgeEl = document.getElementById('docFileBadge'); if (badgeEl) badgeEl.textContent = ext || '';
+        var iconEl = document.getElementById('docFileIcon'); if (iconEl) iconEl.textContent = ext === 'PDF' ? '📄' : '🖼️';
         _currentDocUrl = fileUrl || null;
-        var saModalEl = document.getElementById('saDocModal');
-        if (saModalEl) saModalEl.classList.add('open');
+        var saModalEl = document.getElementById('saDocModal'); if (saModalEl) saModalEl.classList.add('open');
     }
     function closeDocModal() {
         var saModalEl = document.getElementById('saDocModal');
@@ -638,8 +637,8 @@
                 return;
             }
             saveSession(data);
-            document.getElementById('loginGate').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
+            var _lg = document.getElementById('loginGate'); if (_lg) _lg.style.display = 'none';
+            var _db = document.getElementById('dashboard'); if (_db) _db.style.display = 'block';
             var nameEl = document.querySelector('strong[style*="color:#ccd6f6"]');
             if (nameEl) nameEl.textContent = data.user.name;
             btn.disabled = false;
@@ -655,16 +654,19 @@
         });
     }
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && document.getElementById('loginGate').style.display !== 'none') attemptLogin();
+        try {
+            var lg = document.getElementById('loginGate');
+            if (e.key === 'Enter' && lg && lg.style.display !== 'none') attemptLogin();
+        } catch (err) { }
     });
 
     function saLogout() {
         clearSession();
-        document.getElementById('dashboard').style.display = 'none';
-        document.getElementById('loginGate').style.display = 'flex';
-        document.getElementById('gateUser').value = '';
-        document.getElementById('gatePass').value = '';
-        document.getElementById('gateError').style.display = 'none';
+        var _db = document.getElementById('dashboard'); if (_db) _db.style.display = 'none';
+        var _lg = document.getElementById('loginGate'); if (_lg) _lg.style.display = 'flex';
+        var gu = document.getElementById('gateUser'); if (gu) gu.value = '';
+        var gp = document.getElementById('gatePass'); if (gp) gp.value = '';
+        var ge = document.getElementById('gateError'); if (ge) ge.style.display = 'none';
     }
 
     // ── Panel navigation ──

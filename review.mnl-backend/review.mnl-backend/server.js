@@ -20,11 +20,17 @@ const allowedOrigins = [
   'http://127.0.0.1:5501',
 ];
 
+function isAllowedOrigin(origin) {
+  if (allowedOrigins.includes(origin)) return true;
+  // Allow any *.vercel.app domain
+  if (/^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin)) return true;
+  return false;
+}
+
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     } else {
       return callback(new Error('Not allowed by CORS: ' + origin));
@@ -37,7 +43,7 @@ app.use(cors({
 app.options('*', cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     } else {
       return callback(new Error('Not allowed by CORS: ' + origin));

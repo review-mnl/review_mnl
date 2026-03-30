@@ -48,13 +48,7 @@ const registerStudent = async (req, res) => {
 };
 
 const registerCenter = async (req, res) => {
-  let { owner_first, owner_last, business_name, email, password } = req.body;
-  owner_first = owner_first ? owner_first.trim() : '';
-  owner_last = owner_last ? owner_last.trim() : '';
-  if (!owner_first)
-    return res.status(400).json({ message: 'Owner first name is required.' });
-  if (!owner_last)
-    return res.status(400).json({ message: 'Owner last name is required.' });
+  const { business_name, email, password } = req.body;
   if (!business_name)
     return res.status(400).json({ message: 'Business name is required.' });
   if (!email)
@@ -71,15 +65,16 @@ const registerCenter = async (req, res) => {
     if (existing.length > 0)
       return res.status(409).json({ message: 'Email is already registered.' });
     const hashed = await bcrypt.hash(password, 10);
+    // Insert user with business_name as first_name, last_name blank
     const [userResult] = await db.query(
       `INSERT INTO users (first_name, last_name, email, password, role, is_verified)
        VALUES (?, ?, ?, ?, 'review_center', 1)`,
-      [owner_first, owner_last, email, hashed]
+      [business_name, '', email, hashed]
     );
     await db.query(
-      `INSERT INTO review_centers (user_id, business_name, email, password, owner_first, owner_last, business_permit, dti_sec_reg, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [userResult.insertId, business_name, email, hashed, owner_first, owner_last, businessPermit, dtiSecReg]
+      `INSERT INTO review_centers (user_id, business_name, email, password, business_permit, dti_sec_reg, status)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+      [userResult.insertId, business_name, email, hashed, businessPermit, dtiSecReg]
     );
     res.status(201).json({ message: 'Application submitted! Admin will review your documents.' });
   } catch (err) {

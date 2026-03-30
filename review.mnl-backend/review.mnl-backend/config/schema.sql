@@ -19,8 +19,6 @@ CREATE TABLE IF NOT EXISTS review_centers (
   business_name   VARCHAR(200) NOT NULL,
   email           VARCHAR(150) NOT NULL UNIQUE,
   password        VARCHAR(255) NOT NULL,
-  owner_first     VARCHAR(100) NOT NULL,
-  owner_last      VARCHAR(100) NOT NULL,
   business_permit VARCHAR(255),
   dti_sec_reg     VARCHAR(255),
   status          ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',

@@ -88,17 +88,18 @@
 
         /* Sidebar nav */
         .sa-nav {
-            width: 260px;
-            flex: 0 0 260px;
-            background: #0d1533;
-            border: 1px solid #1e2d5a;
+            width: 220px;
+            flex: 0 0 220px;
+            background: linear-gradient(180deg,#0b1430 0%, #0d1533 100%);
+            border: 1px solid rgba(30,45,90,0.9);
             border-radius: 14px;
-            padding: 22px 16px;
-            margin: 0 24px 20px 24px;
+            padding: 22px 18px;
+            margin: 0 28px 20px 28px;
             height: calc(100vh - 120px);
             overflow: auto;
             position: relative;
-            top: 0; /* ensure nav sits below topbar in normal flow */
+            top: 0;
+            box-shadow: 0 10px 30px rgba(2,8,20,0.45);
         }
         .sa-nav-section { font-size: 0.75rem; color: #6b7fa8; font-weight: 700; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.6px; }
         .sa-nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; color:#c0cadf; border-radius:8px; cursor:pointer; margin-bottom:8px; font-weight:600; }
@@ -106,15 +107,27 @@
         .sa-stat-label { font-size: 0.75rem; color: #6b7fa8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
 
         /* Dashboard stats layout */
-        .sa-stats { display:flex; gap:18px; flex-wrap:wrap; margin-bottom: 22px; }
-        .sa-stat-card { background: rgba(13,21,51,0.6); padding: 18px 20px; border-radius: 12px; min-width: 160px; flex: 0 0 200px; }
-        .sa-stat-card .sa-stat-value { font-size: 1.8rem; }
+
+        /* Stats: translucent rounded cards matching screenshots */
+        .sa-stats { display:flex; gap:22px; flex-wrap:wrap; margin-bottom: 26px; align-items:flex-start; }
+        .sa-stat-card { background: rgba(10,18,40,0.6); padding: 20px 22px; border-radius: 12px; min-width: 180px; flex: 0 0 220px; border:1px solid rgba(255,255,255,0.03); backdrop-filter: blur(6px); }
+        .sa-stat-card .sa-stat-value { font-size: 2rem; }
+        .sa-stat-card .sa-stat-label { color:#9fb0e6; }
 
         /* Center table card sizing to avoid overflow and overlap */
-        .sa-table-card { max-width: calc(100% - 40px); margin: 0 auto; }
+        .sa-table-card { max-width: 980px; margin: 8px auto 28px; }
 
         /* Ensure topbar stays above everything */
         .sa-topbar { z-index: 1100; }
+
+        /* Responsive adjustments */
+        @media (max-width: 1100px) {
+            .sa-nav { display:none; }
+            .sa-layout { padding: 12px; }
+            .sa-main { padding: 18px; }
+            .sa-table-card { max-width: 100%; }
+            .sa-stats { justify-content: space-between; }
+        }
         .sa-stat-value { font-size: 2rem; font-weight: 700; color: #fff; }
         .sa-stat-note { font-size: 0.72rem; color: #3a5a9a; margin-top: 4px; }
 

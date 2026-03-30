@@ -49,8 +49,9 @@ const registerStudent = async (req, res) => {
 
 const registerCenter = async (req, res) => {
   const { owner_first, owner_last, business_name, email, password } = req.body;
-  const businessPermit = req.files?.business_permit?.[0]?.filename || null;
-  const dtiSecReg      = req.files?.dti_sec_reg?.[0]?.filename || null;
+  // Use Cloudinary file URLs instead of local filenames
+  const businessPermit = req.files?.business_permit?.[0]?.path || req.files?.business_permit?.[0]?.url || null;
+  const dtiSecReg      = req.files?.dti_sec_reg?.[0]?.path || req.files?.dti_sec_reg?.[0]?.url || null;
   if (!businessPermit || !dtiSecReg)
     return res.status(400).json({ message: 'Both Business Permit and DTI/SEC Registration are required.' });
   try {

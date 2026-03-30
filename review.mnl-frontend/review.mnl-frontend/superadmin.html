@@ -821,8 +821,8 @@
                 '<td>' + c.email + '</td>' +
                 '<td>' + formatDate(c.created_at) + '</td>' +
                 '<td>' +
-                    '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + "\')">Approve</button>' +
-                    '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + "\')">Reject</button>' +
+                    '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
+                    '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>' +
                 '</td></tr>';
         }).join('');
     }
@@ -838,8 +838,8 @@
             var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
             var actions = '';
             if (c.status === 'pending') {
-                actions = '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + "\')">Approve</button>' +
-                          '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + "\')">Reject</button>';
+                actions = '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
+                          '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>';
             } else {
                 actions = '<button class="sa-action-btn danger" onclick="deleteCenterConfirm(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Delete</button>';
             }

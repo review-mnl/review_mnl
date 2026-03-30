@@ -864,15 +864,18 @@
             return;
         }
         tbody.innerHTML = centers.map(function(c) {
-            return '<tr data-center-id="' + c.id + '">' +
-                '<td>' + c.business_name + '</td>' +
-                '<td></td>' +
-                '<td>' + c.email + '</td>' +
-                '<td>' + formatDate(c.created_at) + '</td>' +
-                '<td>' +
-                    '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
-                    '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>' +
-                '</td></tr>';
+            var name = (c.business_name || '').replace(/'/g, "\\'");
+            return `
+                <tr data-center-id="${c.id}">
+                    <td>${c.business_name}</td>
+                    <td></td>
+                    <td>${c.email}</td>
+                    <td>${formatDate(c.created_at)}</td>
+                    <td>
+                        <button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${name}')">Approve</button>
+                        <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${name}')">Reject</button>
+                    </td>
+                </tr>`;
         }).join('');
     }
 
@@ -885,20 +888,21 @@
         }
         tbody.innerHTML = centers.map(function(c) {
             var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
+            var name = (c.business_name || '').replace(/'/g, "\\'");
             var actions = '';
             if (c.status === 'pending') {
-                actions = '<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Approve</button>' +
-                          '<button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'" + c.business_name.replace(/'/g, "\\'") + '\')">Reject</button>';
+                actions = `\n                    <button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${name}')">Approve</button>` +
+                          `\n                    <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${name}')">Reject</button>`;
             } else {
-                actions = '<button class="sa-action-btn danger" onclick="deleteCenterConfirm(' + c.id + ', \'' + c.business_name.replace(/'/g, "\\'") + '\')">Delete</button>';
+                actions = `\n                    <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${name}')">Delete</button>`;
             }
-            return '<tr data-center-id="' + c.id + '">' +
-                '<td>' + c.business_name + '</td>' +
-                '<td></td>' +
-                '<td>' + c.email + '</td>' +
-                '<td>' + formatDate(c.created_at) + '</td>' +
-                '<td><span class="sa-status ' + statusClass + '">' + (c.status.charAt(0).toUpperCase() + c.status.slice(1)) + '</span></td>' +
-                '<td>' + actions + '</td></tr>';
+            return `<tr data-center-id="${c.id}">` +
+                `<td>${c.business_name}</td>` +
+                `<td></td>` +
+                `<td>${c.email}</td>` +
+                `<td>${formatDate(c.created_at)}</td>` +
+                `<td><span class="sa-status ${statusClass}">` + (c.status.charAt(0).toUpperCase() + c.status.slice(1)) + `</span></td>` +
+                `<td>${actions}</td></tr>`;
         }).join('');
     }
 

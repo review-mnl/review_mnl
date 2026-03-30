@@ -46,7 +46,14 @@ async function apiRequest(method, path, body, isFormData) {
         if (body) opts.body = JSON.stringify(body);
     }
     const res = await fetch(API_BASE + path, opts);
-    const json = await res.json().catch(() => ({}));
+    const text = await res.text().catch(() => '');
+    var json = {};
+    try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
+    if (res.status === 401) {
+        try { clearSession(); } catch(e) {}
+        console.warn('API returned 401 for', path, json);
+        throw new Error(json.message || 'Invalid or expired token.');
+    }
     if (!res.ok) throw new Error(json.message || 'Request failed (' + res.status + ')');
     return json;
 }

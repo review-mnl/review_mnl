@@ -656,6 +656,7 @@
         var token = localStorage.getItem('rmnl_token');
         var user = null;
         try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
+        inspectToken();
         if (token && user && user.role === 'superadmin') {
             document.getElementById('loginGate').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
@@ -663,6 +664,25 @@
             if (nameEl) nameEl.textContent = user.name;
         }
     })();
+
+    // Inspect saved token and auto-clear if expired (log payload for debugging)
+    function inspectToken() {
+        try {
+            var t = localStorage.getItem('rmnl_token');
+            console.info('rmnl_token:', t);
+            if (!t) return;
+            var parts = t.split('.');
+            if (parts.length < 2) return;
+            var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+            console.info('token payload:', payload);
+            if (payload.exp && payload.exp < Date.now()/1000) {
+                console.warn('Token expired — clearing session');
+                clearSession();
+                document.getElementById('dashboard').style.display = 'none';
+                document.getElementById('loginGate').style.display = 'flex';
+            }
+        } catch(e) { console.warn('inspectToken failed', e); }
+    }
 
     function attemptLogin() {
         const email = document.getElementById('gateUser').value.trim();

@@ -581,6 +581,29 @@
 
 <script src="api.js"></script>
 <script>
+    // Debug stub: enable by adding ?sa_debug=1 to the page URL. This will
+    // temporarily override AuthAPI.login to return a successful superadmin
+    // session for testing without hitting the backend. Remove after testing.
+    (function(){
+        try {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('sa_debug') === '1') {
+                if (window.AuthAPI && typeof AuthAPI.login === 'function') {
+                    AuthAPI._orig_login = AuthAPI.login;
+                } else {
+                    window.AuthAPI = window.AuthAPI || {};
+                }
+                AuthAPI.login = function(email, password) {
+                    return new Promise(function(resolve) {
+                        setTimeout(function(){
+                            resolve({ token: 'debug-token', user: { role: 'superadmin', name: 'Super Admin (debug)' } });
+                        }, 150);
+                    });
+                };
+                console.info('AuthAPI.login stub enabled (sa_debug=1)');
+            }
+        } catch(e) { /* ignore in older browsers */ }
+    })();
     // ── Doc viewer ──
     function viewDoc(center, email, date, docType, filename) {
         document.getElementById('docModalTitle').textContent = docType;

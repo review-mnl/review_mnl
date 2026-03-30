@@ -15,15 +15,40 @@ const allowedOrigins = [
   'http://127.0.0.1:5501',
 ];
 
-// TEMP: Allow all origins for debugging
+
+// Allow only the deployed frontend and localhost for CORS
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'https://review-mnl.vercel.app',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  'http://localhost:5501',
+  'http://127.0.0.1:5501',
+];
+
 app.use(cors({
-  origin: true,
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS: ' + origin));
+    }
+  },
   credentials: true
 }));
 
-// TEMP: Allow all origins for preflight
+// Handle preflight requests
 app.options('*', cors({
-  origin: true,
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS: ' + origin));
+    }
+  },
   credentials: true
 }));
 

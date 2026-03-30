@@ -534,12 +534,15 @@
         document.getElementById('docFileBadge').textContent = ext || '';
         document.getElementById('docFileIcon').textContent = ext === 'PDF' ? '📄' : '🖼️';
         _currentDocUrl = fileUrl || null;
-        document.getElementById('saDocModal').classList.add('open');
+        var saModalEl = document.getElementById('saDocModal');
+        if (saModalEl) saModalEl.classList.add('open');
     }
     function closeDocModal() {
-        document.getElementById('saDocModal').classList.remove('open');
+        var saModalEl = document.getElementById('saDocModal');
+        if (saModalEl) saModalEl.classList.remove('open');
     }
-    document.getElementById('saDocModal').addEventListener('click', function(e){ if (e.target === this) closeDocModal(); });
+    var _saDocModalEl = document.getElementById('saDocModal');
+    if (_saDocModalEl) _saDocModalEl.addEventListener('click', function(e){ if (e.target === this) closeDocModal(); });
 
     // ── Credentials (creator-only) ──
     const SA_SESSION_KEY = 'rmnl_sa_session';
@@ -550,9 +553,11 @@
         var user = null;
         try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
         inspectToken();
+        var loginGateEl = document.getElementById('loginGate');
+        var dashboardEl = document.getElementById('dashboard');
         if (token && user && user.role === 'superadmin') {
-            document.getElementById('loginGate').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
+            if (loginGateEl) loginGateEl.style.display = 'none';
+            if (dashboardEl) dashboardEl.style.display = 'block';
             var nameEl = document.querySelector('.sa-topbar span[style*="color:#ccd6f6"]');
             if (nameEl) nameEl.textContent = user.name;
         }
@@ -571,8 +576,10 @@
             if (payload.exp && payload.exp < Date.now()/1000) {
                 console.warn('Token expired — clearing session');
                 clearSession();
-                document.getElementById('dashboard').style.display = 'none';
-                document.getElementById('loginGate').style.display = 'flex';
+                var dashEl = document.getElementById('dashboard');
+                var gateEl = document.getElementById('loginGate');
+                if (dashEl) dashEl.style.display = 'none';
+                if (gateEl) gateEl.style.display = 'flex';
             }
         } catch(e) { console.warn('inspectToken failed', e); }
     }

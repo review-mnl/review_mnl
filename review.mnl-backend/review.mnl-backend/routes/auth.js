@@ -1,7 +1,8 @@
 const express = require('express');
 const router  = express.Router();
 const upload  = require('../middleware/upload');
-const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword } = require('../controllers/authController');
+const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification } = require('../controllers/authController');
+router.post('/resend-verification', resendVerification);
 
 router.post('/register/student', registerStudent);
 router.post('/register/center',

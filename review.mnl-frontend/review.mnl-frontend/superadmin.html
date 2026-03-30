@@ -824,6 +824,38 @@
         }).join('');
     }
 
+    // Render all centers into the Admissions / Centers table
+    function renderCentersTable(centers) {
+        var tbody = document.querySelector('#centersTable tbody');
+        if (!tbody) return;
+        if (!centers || centers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No centers found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = centers.map(function(c) {
+            var safeName = (c.business_name || '').replace(/'/g, "\\'");
+            var owner = c.owner || c.owner_name || '';
+            var email = c.email || '';
+            var date = formatDate(c.created_at);
+            var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
+            var statusText = (c.status ? (c.status.charAt(0).toUpperCase() + c.status.slice(1)) : '—');
+            var actions = '';
+            if (c.status === 'pending') {
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Approve</button> <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${safeName}')">Reject</button>`;
+            } else {
+                actions = `<button class="sa-action-btn" onclick="viewCenter(${c.id})">View</button> <button class="sa-action-btn danger" onclick="confirmAction('delete','${safeName}')">Delete</button>`;
+            }
+            return `<tr data-center-id="${c.id}">` +
+                `<td>${c.business_name || ''}</td>` +
+                `<td>${owner}</td>` +
+                `<td>${email}</td>` +
+                `<td>${date}</td>` +
+                `<td><span class="sa-status ${statusClass}">${statusText}</span></td>` +
+                `<td>${actions}</td>` +
+                `</tr>`;
+        }).join('');
+    }
+
     function renderReviewCentersTable(centers) {
         var tbody = document.querySelector('#adminsTable tbody');
         if (!tbody) return;

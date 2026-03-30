@@ -63,7 +63,10 @@ app.use('/api/centers', require('./routes/centers'));
 app.get('/', (req, res) => res.json({ message: 'REVIEW.MNL API is running.' }));
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Full error:', err);
+  if (err.response && err.response.body) {
+    console.error('Brevo error response:', err.response.body);
+  }
   res.status(500).json({ message: err.message || 'Something went wrong.' });
 });
 

@@ -591,6 +591,27 @@
 
 <script src="api.js"></script>
 <script>
+    // Temporary debug wrapper: log AuthAPI.login responses and saved session
+    (function(){
+        try {
+            if (window.AuthAPI && typeof AuthAPI.login === 'function') {
+                var _origLogin = AuthAPI.login;
+                AuthAPI.login = function(email, password) {
+                    return _origLogin(email, password).then(function(res){
+                        console.log('DEBUG login response:', res);
+                        setTimeout(function(){
+                            console.log('DEBUG saved rmnl_token:', localStorage.getItem('rmnl_token'));
+                            console.log('DEBUG saved rmnl_user:', localStorage.getItem('rmnl_user'));
+                        }, 50);
+                        return res;
+                    }).catch(function(err){
+                        console.error('DEBUG login error:', err);
+                        throw err;
+                    });
+                };
+            }
+        } catch(e) { console.warn('debug wrapper failed', e); }
+    })();
     // View toggles: use ?sa_view=login to force the login gate,
     // or ?sa_view=dashboard to force the dashboard. Default behavior
     // remains: show login gate unless session exists.

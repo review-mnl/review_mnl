@@ -80,11 +80,11 @@
         .sa-logout-btn:hover { border-color: #e53935; color: #e53935; }
 
         /* Layout */
-        .sa-layout { display: flex; min-height: calc(100vh - 60px); padding: 20px 0; gap: 20px; }
+        .sa-layout { display: flex; min-height: calc(100vh - 60px); padding: 20px 0; gap: 12px; }
 
         /* let the layout slightly reveal the background image */
         .sa-layout { background: linear-gradient(180deg, rgba(6,10,20,0.55) 0%, rgba(6,10,20,0.65) 100%); }
-        .sa-main { background: transparent; flex: 1; padding: 36px 36px 28px 40px; min-width: 0; }
+        .sa-main { background: transparent; flex: 1; padding: 36px 28px 28px 20px; min-width: 0; }
 
         /* Sidebar nav */
         .sa-nav {
@@ -908,8 +908,12 @@
             var statusText = isActive ? 'Active' : 'Inactive';
             var actions = '';
             if (isActive) {
-                actions = `<button class="sa-action-btn" onclick="viewCenter(${c.id})">Manage</button> <button class="sa-action-btn danger" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button>`;
+                actions = `<button class="sa-action-btn" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
+            } else if (c.status === 'suspended') {
+                // suspended centers: show only Activate
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button>`;
             } else {
+                // pending or other: allow approve or delete
                 actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
             }
             return `<tr data-center-id="${c.id}">` +
@@ -935,14 +939,19 @@
             var statusClass = isActive ? 'active' : 'inactive';
             var date = formatDate(c.created_at);
             var safeName = (c.business_name || '').replace(/'/g, "\\'");
-            var actions = isActive
-                ? `<button class="sa-action-btn" onclick="viewCenter(${c.id})">Manage</button> <button class="sa-action-btn danger" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button>`
-                : `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
+            var actions = '';
+            if (isActive) {
+                actions = `<button class="sa-action-btn" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
+            } else if (c.status === 'suspended') {
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button>`;
+            } else {
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
+            }
             return `<tr data-center-id="${c.id}">` +
                 `<td>${c.business_name || ''}</td>` +
                 `<td>${c.email || ''}</td>` +
                 `<td>${date}</td>` +
-                `<td><span class="sa-status ${statusClass}">${isActive ? 'Active' : 'Inactive'}</span></td>` +
+                `<td><span class="sa-status ${statusClass}">${isActive ? 'Active' : (c.status === 'suspended' ? 'Suspended' : 'Inactive')}</span></td>` +
                 `<td>${actions}</td>` +
                 `</tr>`;
         }).join('');

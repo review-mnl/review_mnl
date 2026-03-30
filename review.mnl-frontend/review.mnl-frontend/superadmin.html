@@ -88,34 +88,7 @@
 
         /* Sidebar nav */
         .sa-nav {
-            width: 220px; flex-shrink: 0;
-            background: #0d1533; border-right: 1px solid #1e2d5a;
-            padding: 24px 0; position: sticky; top: 60px; height: calc(100vh - 60px);
-            overflow-y: auto;
         }
-        .sa-nav-section { font-size: 0.68rem; font-weight: 700; color: #3a4a6b; letter-spacing: 1px; text-transform: uppercase; padding: 0 20px 8px; margin-top: 18px; }
-        .sa-nav-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 11px 20px; cursor: pointer; font-size: 0.85rem; color: #8898c4;
-            border-left: 3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s;
-        }
-        .sa-nav-item:hover { background: #131e40; color: #ccd6f6; }
-        .sa-nav-item.active { background: #0a4cff18; color: #4d7fff; border-left-color: #0a4cff; font-weight: 600; }
-        .sa-nav-item .material-symbols-outlined { font-size: 20px; }
-
-        /* Main content */
-        .sa-main { flex: 1; padding: 32px; overflow-x: hidden; }
-
-        /* Section panels */
-        .sa-panel { display: none; }
-        .sa-panel.active { display: block; }
-
-        .sa-page-title { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
-        .sa-page-sub { font-size: 0.83rem; color: #6b7fa8; margin-bottom: 28px; }
-
-        /* Stat cards */
-        .sa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin-bottom: 32px; }
-        .sa-stat-card {
             background: #0d1533; border: 1px solid #1e2d5a; border-radius: 14px;
             padding: 22px 24px;
         }
@@ -125,6 +98,9 @@
 
         /* Table */
         .sa-table-card { background: #0d1533; border: 1px solid #1e2d5a; border-radius: 14px; overflow: hidden; margin-bottom: 28px; }
+        /* allow horizontal scrolling for wide tables on small viewports */
+        .sa-table-card { overflow-x: auto; }
+        table { min-width: 780px; }
         .sa-table-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #1e2d5a; }
         .sa-table-header h3 { font-size: 0.95rem; font-weight: 600; color: #ccd6f6; }
         .sa-search-input {
@@ -262,13 +238,13 @@
                 <span class="material-symbols-outlined">history</span> Activity
             </div>
             <div class="sa-nav-item" onclick="showPanel('centers', this)">
-                <span class="material-symbols-outlined">school</span> Review Centers
+                <span class="material-symbols-outlined">school</span> Admissions
             </div>
             <div class="sa-nav-item" onclick="showPanel('students', this)">
                 <span class="material-symbols-outlined">people</span> Students
             </div>
             <div class="sa-nav-item" onclick="showPanel('admins', this)">
-                <span class="material-symbols-outlined">admin_panel_settings</span> Admins
+                <span class="material-symbols-outlined">admin_panel_settings</span> Review Centers
             </div>
             <div class="sa-nav-item" onclick="showPanel('docs', this)">
                 <span class="material-symbols-outlined">description</span> Document Submissions
@@ -344,8 +320,8 @@
 
             <!-- ── REVIEW CENTERS ── -->
             <div class="sa-panel" id="panel-centers">
-                <div class="sa-page-title">Review Centers</div>
-                <div class="sa-page-sub">Manage all registered review centers.</div>
+                <div class="sa-page-title">Admissions</div>
+                <div class="sa-page-sub">Manage incoming review center applications.</div>
                 <div class="sa-table-card">
                     <div class="sa-table-header">
                         <h3>All Centers</h3>
@@ -380,19 +356,19 @@
 
             <!-- ── ADMINS ── -->
             <div class="sa-panel" id="panel-admins">
-                <div class="sa-page-title">Admins</div>
-                <div class="sa-page-sub">Manage review center admin accounts.</div>
+                <div class="sa-page-title">Review Centers</div>
+                <div class="sa-page-sub">Manage all registered review centers.</div>
                 <div class="sa-table-card">
                     <div class="sa-table-header">
-                        <h3>All Admins</h3>
-                        <input class="sa-search-input" placeholder="Search admins..." oninput="filterTable('adminsTable', this.value)">
+                        <h3>All Review Centers</h3>
+                        <input class="sa-search-input" placeholder="Search centers..." oninput="filterTable('adminsTable', this.value)">
                     </div>
                     <table id="adminsTable">
-                        <thead><tr><th>Name</th><th>Email</th><th>Manages</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Review Center</th><th>Email</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr><td>ERC Admin</td><td>admin@erc.com</td><td>ERC Review Center</td><td>Jan 5, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing ERC Admin...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','ERC Admin')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','ERC Admin')">Delete</button></td></tr>
-                            <tr><td>Metro Admin</td><td>admin@metro.com</td><td>Metro Review Center</td><td>Jan 18, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Metro Admin...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('suspend','Metro Admin')">Suspend</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Metro Admin')">Delete</button></td></tr>
-                            <tr><td>Old Manila Admin</td><td>admin@oldmnl.com</td><td>Old Manila Review</td><td>Nov 12, 2025</td><td><span class="sa-status suspended">Suspended</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('restore','Old Manila Admin')">Restore</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Old Manila Admin')">Delete</button></td></tr>
+                            <tr><td>ERC Review Center</td><td>info@ercreview.com</td><td>Jan 5, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing ERC Review Center...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('delete','ERC Review Center')">Delete</button></td></tr>
+                            <tr><td>Metro Review Center</td><td>info@metroreview.com</td><td>Jan 18, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Metro Review Center...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Metro Review Center')">Delete</button></td></tr>
+                            <tr><td>Old Manila Review</td><td>info@oldmanilareview.com</td><td>Nov 12, 2025</td><td><span class="sa-status suspended">Suspended</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('restore','Old Manila Review')">Restore</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Old Manila Review')">Delete</button></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -781,6 +757,8 @@
                 console.warn('Failed to load pending centers for documents:', err);
                 renderDocSubmissions([]);
             });
+            // Render approved centers into the Review Centers panel
+            try { renderReviewCentersTable(centers.filter(c => c.status === 'approved')); } catch (e) { console.warn('renderReviewCentersTable failed', e); }
             updateStats();
         }).catch(function(err) {
             console.error('Failed to load centers:', err);
@@ -846,32 +824,34 @@
         }).join('');
     }
 
-    function renderCentersTable(centers) {
-        var tbody = document.querySelector('#centersTable tbody');
+    function renderReviewCentersTable(centers) {
+        var tbody = document.querySelector('#adminsTable tbody');
         if (!tbody) return;
-        if (centers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No review centers found</td></tr>';
+        if (!centers || centers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7fa8;">No review centers found</td></tr>';
             return;
         }
         tbody.innerHTML = centers.map(function(c) {
             var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
-            var name = (c.business_name || '').replace(/'/g, "\\'");
+            var date = formatDate(c.created_at);
+            var safeName = (c.business_name || '').replace(/'/g, "\\'");
             var actions = '';
-            if (c.status === 'pending') {
-                actions = `\n                    <button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${name}')">Approve</button>` +
-                          `\n                    <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${name}')">Reject</button>`;
+            if (c.status === 'approved') {
+                actions = `<button class="sa-action-btn" onclick="viewCenter(${c.id})">View</button> <button class="sa-action-btn danger" onclick="confirmAction('delete','${safeName}')">Delete</button>`;
             } else {
-                actions = `\n                    <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${name}')">Delete</button>`;
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Approve</button> <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${safeName}')">Reject</button>`;
             }
             return `<tr data-center-id="${c.id}">` +
-                `<td>${c.business_name}</td>` +
-                `<td></td>` +
-                `<td>${c.email}</td>` +
-                `<td>${formatDate(c.created_at)}</td>` +
-                `<td><span class="sa-status ${statusClass}">` + (c.status.charAt(0).toUpperCase() + c.status.slice(1)) + `</span></td>` +
-                `<td>${actions}</td></tr>`;
+                `<td>${c.business_name || ''}</td>` +
+                `<td>${c.email || ''}</td>` +
+                `<td>${date}</td>` +
+                `<td><span class="sa-status ${statusClass}">${c.status.charAt(0).toUpperCase() + c.status.slice(1)}</span></td>` +
+                `<td>${actions}</td>` +
+                `</tr>`;
         }).join('');
     }
+
+    
 
     function renderStudentsTable(students) {
         var tbody = document.querySelector('#studentsTable tbody');

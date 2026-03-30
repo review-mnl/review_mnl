@@ -311,13 +311,7 @@
                 if (error) {
                     window.addEventListener('DOMContentLoaded', function () {
                         const el = document.getElementById('loginError');
-                        if (!el) return;
-                        if (error === 'google_oauth_unavailable') {
-                            el.textContent = 'Google login is not configured on this server yet.';
-                        } else {
-                            el.textContent = 'Social login failed. Please try again.';
-                        }
-                        el.style.display = 'block';
+                        if (el) { el.textContent = 'Social login failed. Please try again.'; el.style.display = 'block'; }
                     });
                 }
             })();
@@ -364,12 +358,6 @@
                 btn.textContent = 'Logging in...';
                 try {
                     const data = await AuthAPI.login(email, password);
-
-                    if (data.requiresOtp && data.session) {
-                        window.location.href = 'verifyotp.html?session=' + encodeURIComponent(data.session);
-                        return;
-                    }
-
                     saveSession(data);
                     const role = data.user.role;
                     if (role === 'superadmin') {

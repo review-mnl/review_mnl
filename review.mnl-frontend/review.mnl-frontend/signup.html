@@ -415,23 +415,6 @@
         </div>
         <script src="api.js"></script>
         <script>
-            (function () {
-                const params = new URLSearchParams(window.location.search);
-                const error = params.get('error');
-                if (!error) return;
-
-                window.addEventListener('DOMContentLoaded', function () {
-                    const el = document.getElementById('signupError');
-                    if (!el) return;
-                    if (error === 'google_oauth_unavailable') {
-                        el.textContent = 'Google sign up is not configured on this server yet.';
-                    } else {
-                        el.textContent = 'Social sign up failed. Please try again.';
-                    }
-                    el.style.display = 'block';
-                });
-            })();
-
             // ── OAuth buttons ───────────────────────────────────────────────
             document.getElementById('googleSignupBtn').addEventListener('click', function () {
                 window.location.href = API_BASE + '/api/auth/google';

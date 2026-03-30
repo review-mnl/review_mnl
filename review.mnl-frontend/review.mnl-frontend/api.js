@@ -4,7 +4,7 @@
 // Uses production backend URL when deployed, falls back to localhost for development
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000'
-    : 'https://reviewmnl-production.up.railway.app';
+    : 'https://reviewmnl-production-67eb.up.railway.app';
 
 // ---------------------------------------------------------------------------
 // Auth helpers
@@ -75,12 +75,6 @@ const AuthAPI = {
 
     resendVerification: (email) =>
         apiRequest('POST', '/api/auth/resend-verification', { email }),
-
-    resendOTP: (session) =>
-        apiRequest('POST', '/api/auth/resend-otp', { session }),
-
-    verifyOTP: (session, otp) =>
-        apiRequest('POST', '/api/auth/verify-otp', { session, otp }),
 };
 
 // ---------------------------------------------------------------------------

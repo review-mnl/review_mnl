@@ -236,13 +236,11 @@
             <input type="email" id="gateUser" placeholder="Enter email" autocomplete="off">
         </div>
         <div class="gate-field">
-                    <table id="docsTable">
-                        <thead><tr><th>Center Name</th><th>Submitted By</th><th>Date</th><th>Business Permit</th><th>DTI / SEC</th><th>Status</th><th>Actions</th></thead>
-                        <tbody>
-                            <tr><td colspan="7" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
-                        </tbody>
-                    </table>
-            </div>
+            <label>Password</label>
+            <input type="password" id="gatePass" placeholder="Enter password" autocomplete="current-password">
+        </div>
+        <div id="gateError" class="gate-error">Invalid credentials.</div>
+        <button class="gate-btn" onclick="attemptLogin()">Access Dashboard</button>
         </div>
     </div>
 

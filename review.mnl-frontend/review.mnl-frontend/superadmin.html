@@ -84,7 +84,7 @@
 
         /* let the layout slightly reveal the background image */
         .sa-layout { background: linear-gradient(180deg, rgba(6,10,20,0.55) 0%, rgba(6,10,20,0.65) 100%); }
-        .sa-main { background: transparent; flex: 1; padding: 28px 36px; min-width: 0; }
+        .sa-main { background: transparent; flex: 1; padding: 36px 36px 28px 40px; min-width: 0; }
 
         /* Sidebar nav */
         .sa-nav {
@@ -94,7 +94,7 @@
             border: 1px solid rgba(30,45,90,0.9);
             border-radius: 14px;
             padding: 22px 18px;
-            margin: 0 28px 20px 28px;
+            margin: 0 20px 20px 28px;
             height: calc(100vh - 120px);
             overflow: auto;
             position: relative;
@@ -183,6 +183,7 @@
         .sa-status.active   { background: #0a2a0a; color: #4caf50; }
         .sa-status.pending  { background: #2a1a02; color: #ff9800; }
         .sa-status.suspended{ background: #2a0a0a; color: #e53935; }
+        .sa-status.inactive { background: rgba(255,255,255,0.03); color: #9fb0d6; }
         .sa-action-btn {
             background: none; border: 1.5px solid #1e2d5a; color: #8898c4;
             padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-family: Poppins, sans-serif;
@@ -901,13 +902,15 @@
             var owner = c.owner || c.owner_name || '';
             var email = c.email || '';
             var date = formatDate(c.created_at);
-            var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
-            var statusText = (c.status ? (c.status.charAt(0).toUpperCase() + c.status.slice(1)) : '—');
+            // Map backend statuses to Active/Inactive and choose actions
+            var isActive = (c.status === 'approved');
+            var statusClass = isActive ? 'active' : 'inactive';
+            var statusText = isActive ? 'Active' : 'Inactive';
             var actions = '';
-            if (c.status === 'pending') {
-                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Approve</button> <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${safeName}')">Reject</button>`;
+            if (isActive) {
+                actions = `<button class="sa-action-btn" onclick="viewCenter(${c.id})">Manage</button> <button class="sa-action-btn danger" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button>`;
             } else {
-                actions = `<button class="sa-action-btn" onclick="viewCenter(${c.id})">View</button> <button class="sa-action-btn danger" onclick="confirmAction('delete','${safeName}')">Delete</button>`;
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
             }
             return `<tr data-center-id="${c.id}">` +
                 `<td>${c.business_name || ''}</td>` +
@@ -928,20 +931,18 @@
             return;
         }
         tbody.innerHTML = centers.map(function(c) {
-            var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
+            var isActive = (c.status === 'approved');
+            var statusClass = isActive ? 'active' : 'inactive';
             var date = formatDate(c.created_at);
             var safeName = (c.business_name || '').replace(/'/g, "\\'");
-            var actions = '';
-            if (c.status === 'approved') {
-                actions = `<button class="sa-action-btn" onclick="viewCenter(${c.id})">View</button> <button class="sa-action-btn danger" onclick="confirmAction('delete','${safeName}')">Delete</button>`;
-            } else {
-                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Approve</button> <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${safeName}')">Reject</button>`;
-            }
+            var actions = isActive
+                ? `<button class="sa-action-btn" onclick="viewCenter(${c.id})">Manage</button> <button class="sa-action-btn danger" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button>`
+                : `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
             return `<tr data-center-id="${c.id}">` +
                 `<td>${c.business_name || ''}</td>` +
                 `<td>${c.email || ''}</td>` +
                 `<td>${date}</td>` +
-                `<td><span class="sa-status ${statusClass}">${c.status.charAt(0).toUpperCase() + c.status.slice(1)}</span></td>` +
+                `<td><span class="sa-status ${statusClass}">${isActive ? 'Active' : 'Inactive'}</span></td>` +
                 `<td>${actions}</td>` +
                 `</tr>`;
         }).join('');
@@ -1032,6 +1033,17 @@
         AdminAPI.updateCenterStatus(id, 'rejected').then(function() {
             saToast(name + ' has been rejected.');
             logActivity('reject', name);
+            loadCenters();
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    function suspendCenter(id, name) {
+        if (!confirm('Suspend ' + name + '? This will disable their access.')) return;
+        AdminAPI.updateCenterStatus(id, 'suspended').then(function() {
+            saToast(name + ' has been suspended.');
+            logActivity('suspend', name);
             loadCenters();
         }).catch(function(err) {
             saToast('Error: ' + err.message);

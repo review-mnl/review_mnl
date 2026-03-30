@@ -425,7 +425,7 @@
 
             function switchRole(role, btn) {
                 document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
-                btn.classList.add('active');
+                if (btn) btn.classList.add('active');
                 document.getElementById('signupRole').value = role;
 
                 const isAdmin = role === 'admin';
@@ -435,6 +435,14 @@
                 document.getElementById('fullname').required = !isAdmin;
                 document.getElementById('centername').required = isAdmin;
             }
+
+            // Ensure correct section is shown on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                var activeTab = document.querySelector('.role-tab.active');
+                if (activeTab) {
+                    switchRole(activeTab.textContent.trim().toLowerCase() === 'review center' ? 'admin' : 'student', activeTab);
+                }
+            });
 
             function showFileName(inputId, labelId, zoneId) {
                 const file = document.getElementById(inputId).files[0];

@@ -7,10 +7,18 @@ CREATE TABLE IF NOT EXISTS users (
   last_name   VARCHAR(100) NOT NULL,
   email       VARCHAR(150) NOT NULL UNIQUE,
   password    VARCHAR(255) NOT NULL,
+  phone       VARCHAR(50),
+  address     TEXT,
+  bio         TEXT,
+  profile_picture_url VARCHAR(500),
   role        ENUM('student', 'review_center', 'admin', 'superadmin') DEFAULT 'student',
   is_verified TINYINT(1) DEFAULT 0,
   verify_token VARCHAR(255),
-  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  reset_token VARCHAR(255),
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_email (email),
+  INDEX idx_verify_token (verify_token),
+  INDEX idx_reset_token (reset_token)
 );
 
 CREATE TABLE IF NOT EXISTS review_centers (

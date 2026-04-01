@@ -18,7 +18,7 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:5501',
   'http://127.0.0.1:5501',
-];
+].filter(Boolean); // Remove undefined values
 
 function isAllowedOrigin(origin) {
   if (allowedOrigins.includes(origin)) return true;

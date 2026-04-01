@@ -2,9 +2,12 @@
 // All fetch calls go through here so only one place needs updating for the base URL.
 
 // Uses production backend URL when deployed, falls back to localhost for development
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
-    : 'https://reviewmnl-production-67eb.up.railway.app';
+// You can override this by setting window.BACKEND_URL in your HTML before loading this script
+const API_BASE = window.BACKEND_URL || (
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000'
+        : 'https://reviewmnl-production-67eb.up.railway.app'
+);
 
 // ---------------------------------------------------------------------------
 // Auth helpers

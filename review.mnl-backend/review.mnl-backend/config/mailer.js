@@ -4,8 +4,8 @@ const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
 apiKey.apiKey = process.env.BREVO_API_KEY;
 
-const SENDER_EMAIL = 'review.mnl1@gmail.com'; // <-- Replace with your verified Brevo sender email
-const SENDER_NAME = 'REVIEW.MNL';
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'review.mnl1@gmail.com';
+const SENDER_NAME = process.env.SENDER_NAME || 'REVIEW.MNL';
 
 const sendVerificationEmail = async (toEmail, token, name) => {
   const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();

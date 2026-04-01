@@ -1,4 +1,30 @@
 {
-  "buildCommand": "echo 'Frontend ready'",
-  "outputDirectory": "review.mnl-frontend/review.mnl-frontend"
+  "version": 2,
+  "buildCommand": "echo 'Build complete'",
+  "outputDirectory": "review.mnl-frontend/review.mnl-frontend",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
 }

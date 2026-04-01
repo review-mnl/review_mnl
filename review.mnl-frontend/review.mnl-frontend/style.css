@@ -998,64 +998,73 @@ nav img{
     display: flex;
     align-items: center;
     position: absolute;
-    bottom: 40px;
-    left: 80px;
-    gap: 40px;
+    bottom: 20px;
+    left: 40px;
+    gap: 24px;
 }
 
 /* Adjust back button placement for admin header (prevents overlap with nav/logo) */
 /* back button removed for admin header; default .top-logo positioning will apply */
 
 .center-logo {
-    width: 200px;
-    height: 200px;
+    width: 120px;
+    height: 120px;
     background: #e0e0e0;
     border-radius: 50%;
     flex-shrink: 0;
-    border: 5px solid #fff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border: 4px solid #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
 }
 
 .center-info h1 {
-    font-size: 28px;
+    font-size: 20px;
     color: #fff;
     font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .center-description {
-    font-size: 24px;
+    font-size: 14px;
     color: #fff;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .center-rating {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 .center-rating .stars {
     color: #FFD700;
-    font-size: 36px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    font-size: 20px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .center-rating .rating-count {
-    font-size: 24px;
+    font-size: 14px;
     color: #fff;
     font-weight: 600;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 
 /* CENTER DETAILS SECTION */
 .center-details {
     background-color: #0a4cff;
-    padding: 60px 80px;
+    padding: 40px 60px;
     display: flex;
-    gap: 60px;
-    min-height: 70vh;
+    gap: 40px;
+    min-height: 55vh;
+}
+
+@media (max-width: 900px) {
+    .center-header-content { bottom: 12px; left: 16px; gap: 12px; }
+    .center-logo { width: 96px; height: 96px; }
+    .center-info h1 { font-size: 18px; }
+    .center-description { font-size: 13px; }
+    .center-rating .stars { font-size: 18px; }
+    .center-details { padding: 20px; min-height: auto; }
 }
 
 .center-left {

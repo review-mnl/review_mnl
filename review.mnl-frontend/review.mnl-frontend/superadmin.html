@@ -622,7 +622,7 @@
 
     // ── Auto-login if session exists and role is superadmin ──
     (function(){
-        var token = localStorage.getItem('rmnl_token');
+        var token = getActiveToken();
         var user = null;
         try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
         inspectToken();
@@ -639,7 +639,7 @@
     // Inspect saved token and auto-clear if expired (log payload for debugging)
     function inspectToken() {
         try {
-            var t = localStorage.getItem('rmnl_token');
+            var t = getActiveToken();
             // token inspection (silent in production)
             if (!t) return;
             var parts = t.split('.');
@@ -1147,7 +1147,7 @@
 
     // Also load on page load if already logged in and start live updates
     (function() {
-        var token = localStorage.getItem('rmnl_token');
+        var token = getActiveToken();
         var user = null;
         try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
         if (token && user && user.role === 'superadmin') {

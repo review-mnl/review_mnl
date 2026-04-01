@@ -989,7 +989,7 @@
 
         <script src="api.js"></script>
         <script>
-        if (!localStorage.getItem('rmnl_token')) { window.location.href = 'login.html'; }
+        if (!isAuthenticated()) { window.location.href = 'login.html'; }
         // ── Student data (populated from API) ────────────────────────────
         var STUDENTS = [];
 

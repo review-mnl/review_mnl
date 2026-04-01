@@ -13,7 +13,7 @@ const API_BASE = window.BACKEND_URL || (
 // Auth helpers
 // ---------------------------------------------------------------------------
 function authHeaders() {
-    const token = localStorage.getItem('rmnl_token');
+    const token = getActiveToken();
     return token ? { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
                  : { 'Content-Type': 'application/json' };
 }
@@ -36,31 +36,66 @@ function saveSession(data) {
             token = data.token || data.accessToken || (data.data && (data.data.token || data.data.accessToken)) || null;
             user  = data.user || (data.data && data.data.user) || null;
         }
-        if (token) localStorage.setItem('rmnl_token', token);
-        if (user) {
-            try { localStorage.setItem('rmnl_user', JSON.stringify(user)); } catch(e) { localStorage.setItem('rmnl_user', null); }
-            if (user.role) localStorage.setItem('rmnl_role', user.role);
+        // create and store a session object (persisted) and set active session id for this tab
+        try {
+            var sid = 's_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+            var sess = { token: token || null, user: user || null, created: Date.now() };
+            try { localStorage.setItem('rmnl_session_' + sid, JSON.stringify(sess)); } catch(e) {}
+            try { sessionStorage.setItem('rmnl_active_session', sid); } catch(e) {}
+            if (user && user.role) {
+                try { localStorage.setItem('rmnl_role', user.role); } catch(e) {}
+            }
             // persist original signup values per-user (keyed) if not already present
             try {
-                var uid = user.id || user._id || user.email || null;
-                if (uid) {
-                    var key = 'rmnl_user_original_' + uid;
-                    if (!localStorage.getItem(key)) {
-                        localStorage.setItem(key, JSON.stringify(user));
+                if (user) {
+                    var uid = user.id || user._id || user.email || null;
+                    if (uid) {
+                        var key = 'rmnl_user_original_' + uid;
+                        if (!localStorage.getItem(key)) {
+                            localStorage.setItem(key, JSON.stringify(user));
+                        }
                     }
                 }
             } catch(e) {}
-        }
+        } catch(e) {}
         // (no debug logging) 
     } catch (e) {
         console.warn('saveSession failed', e);
     }
 }
 
-function clearSession() {
-    localStorage.removeItem('rmnl_token');
-    localStorage.removeItem('rmnl_user');
-    localStorage.removeItem('rmnl_role');
+function clearSession(removeStoredSession) {
+    try {
+        // remove active session id from this tab
+        var active = sessionStorage.getItem('rmnl_active_session');
+        if (active) sessionStorage.removeItem('rmnl_active_session');
+        // optionally remove the stored persistent session object
+        if (removeStoredSession && active) {
+            try { localStorage.removeItem('rmnl_session_' + active); } catch(e) {}
+        }
+    } catch(e) {}
+}
+
+function getActiveSessionId() {
+    return sessionStorage.getItem('rmnl_active_session');
+}
+
+function getActiveToken() {
+    try {
+        var sid = getActiveSessionId();
+        if (!sid) return null;
+        var s = JSON.parse(localStorage.getItem('rmnl_session_' + sid) || 'null');
+        return s && s.token ? s.token : null;
+    } catch(e) { return null; }
+}
+
+function getActiveUser() {
+    try {
+        var sid = getActiveSessionId();
+        if (!sid) return null;
+        var s = JSON.parse(localStorage.getItem('rmnl_session_' + sid) || 'null');
+        return s && s.user ? s.user : null;
+    } catch(e) { return null; }
 }
 
 function getUser() {
@@ -89,6 +124,10 @@ function getOriginalUser(userIdentifier) {
     } catch(e) { return null; }
 }
 
+function isAuthenticated() {
+    return Boolean(getActiveToken());
+}
+
 // ---------------------------------------------------------------------------
 // Generic request wrapper
 // ---------------------------------------------------------------------------
@@ -96,7 +135,7 @@ async function apiRequest(method, path, body, isFormData) {
     const opts = { method, credentials: 'include' };
     if (isFormData) {
         // Let browser set multipart boundary automatically — no Content-Type header
-        const token = localStorage.getItem('rmnl_token');
+        const token = getActiveToken();
         opts.headers = token ? { 'Authorization': 'Bearer ' + token } : {};
         opts.body = body;
     } else {

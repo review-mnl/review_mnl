@@ -40,10 +40,14 @@ function saveSession(data) {
         if (user) {
             try { localStorage.setItem('rmnl_user', JSON.stringify(user)); } catch(e) { localStorage.setItem('rmnl_user', null); }
             if (user.role) localStorage.setItem('rmnl_role', user.role);
-            // persist original signup values if not already present
+            // persist original signup values per-user (keyed) if not already present
             try {
-                if (!localStorage.getItem('rmnl_user_original')) {
-                    localStorage.setItem('rmnl_user_original', JSON.stringify(user));
+                var uid = user.id || user._id || user.email || null;
+                if (uid) {
+                    var key = 'rmnl_user_original_' + uid;
+                    if (!localStorage.getItem(key)) {
+                        localStorage.setItem(key, JSON.stringify(user));
+                    }
                 }
             } catch(e) {}
         }
@@ -67,14 +71,22 @@ function setSessionUser(user, overwriteOriginal) {
     try {
         if (!user) return;
         localStorage.setItem('rmnl_user', JSON.stringify(user));
-        if (overwriteOriginal || !localStorage.getItem('rmnl_user_original')) {
-            try { localStorage.setItem('rmnl_user_original', JSON.stringify(user)); } catch(e) {}
+        var uid = user.id || user._id || user.email || null;
+        if (uid) {
+            var key = 'rmnl_user_original_' + uid;
+            if (overwriteOriginal || !localStorage.getItem(key)) {
+                try { localStorage.setItem(key, JSON.stringify(user)); } catch(e) {}
+            }
         }
     } catch(e) { console.warn('setSessionUser failed', e); }
 }
 
-function getOriginalUser() {
-    try { return JSON.parse(localStorage.getItem('rmnl_user_original')); } catch(e) { return null; }
+function getOriginalUser(userIdentifier) {
+    try {
+        if (!userIdentifier) return null;
+        var key = 'rmnl_user_original_' + userIdentifier;
+        return JSON.parse(localStorage.getItem(key));
+    } catch(e) { return null; }
 }
 
 // ---------------------------------------------------------------------------

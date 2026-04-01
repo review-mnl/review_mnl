@@ -295,7 +295,13 @@
                         const center = await CentersAPI.getMyProfile();
                         if (center && center.business_name) {
                             welcomeEl.textContent = center.business_name;
-                            try { if (!localStorage.getItem('rmnl_center_original')) localStorage.setItem('rmnl_center_original', center.business_name); } catch(e) {}
+                            try {
+                                var uid = (user && (user.id || user._id || user.email)) || null;
+                                if (uid) {
+                                    var ck = 'rmnl_user_original_' + uid;
+                                    if (!localStorage.getItem(ck)) localStorage.setItem(ck, JSON.stringify({ business_name: center.business_name }));
+                                }
+                            } catch(e) {}
                         } else {
                             welcomeEl.textContent = user.name || 'Admin';
                         }

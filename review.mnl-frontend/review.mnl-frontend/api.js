@@ -43,7 +43,8 @@ function saveSession(data) {
             try { localStorage.setItem('rmnl_session_' + sid, JSON.stringify(sess)); } catch(e) {}
             try { sessionStorage.setItem('rmnl_active_session', sid); } catch(e) {}
             if (user && user.role) {
-                try { localStorage.setItem('rmnl_role', user.role); } catch(e) {}
+                // role is available on the session's user object; avoid storing a global rmnl_role key
+                try { /* noop - role stored on session user */ } catch(e) {}
             }
             // persist original signup values per-user (keyed) if not already present
             try {
@@ -134,6 +135,13 @@ function getOriginalUser(userIdentifier) {
 
 function isAuthenticated() {
     return Boolean(getActiveToken());
+}
+
+function getActiveRole() {
+    try {
+        var u = getActiveUser();
+        return u && u.role ? u.role : null;
+    } catch(e) { return null; }
 }
 
 // ---------------------------------------------------------------------------

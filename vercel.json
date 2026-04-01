@@ -1,4 +1,4 @@
 {
   "buildCommand": "echo 'Frontend ready'",
-  "outputDirectory": "review_mnl/review.mnl-frontend/review.mnl-frontend"
+  "outputDirectory": "review.mnl-frontend/review.mnl-frontend"
 }

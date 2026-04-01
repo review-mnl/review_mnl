@@ -124,7 +124,7 @@
                 </div>
             </nav>
             <div class="textbox">
-                <h1>Welcome, Admin!</h1>
+                <h1 class="welcome-heading">Welcome, <span id="welcomeName">Admin</span>!</h1>
             </div>
         </section>
 
@@ -282,6 +282,13 @@
             });
             logout.addEventListener('click', function(){ clearSession(); window.location.href = 'index.html'; });
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+        })();
+        // set welcome name from session
+        (function(){
+            try{
+                var user = getUser();
+                if (user && document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = user.name || 'Admin';
+            }catch(e){}
         })();
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');

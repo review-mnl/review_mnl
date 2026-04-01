@@ -144,6 +144,16 @@ function getActiveRole() {
     } catch(e) { return null; }
 }
 
+function setOriginalUser(userIdentifier, userObj, overwrite) {
+    try {
+        if (!userIdentifier || !userObj) return;
+        var key = 'rmnl_user_original_' + userIdentifier;
+        if (overwrite || !localStorage.getItem(key)) {
+            try { localStorage.setItem(key, JSON.stringify(userObj)); } catch(e) {}
+        }
+    } catch(e) {}
+}
+
 // ---------------------------------------------------------------------------
 // Generic request wrapper
 // ---------------------------------------------------------------------------

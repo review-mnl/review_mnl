@@ -51,10 +51,7 @@ function saveSession(data) {
                 if (user) {
                     var uid = user.id || user._id || user.email || null;
                     if (uid) {
-                        var key = 'rmnl_user_original_' + uid;
-                        if (!localStorage.getItem(key)) {
-                            localStorage.setItem(key, JSON.stringify(user));
-                        }
+                        try { setOriginalUser(uid, user); } catch(e) {}
                     }
                 }
             } catch(e) {}
@@ -117,10 +114,7 @@ function setSessionUser(user, overwriteOriginal) {
         } catch(e) {}
         var uid = user.id || user._id || user.email || null;
         if (uid) {
-            var key = 'rmnl_user_original_' + uid;
-            if (overwriteOriginal || !localStorage.getItem(key)) {
-                try { localStorage.setItem(key, JSON.stringify(user)); } catch(e) {}
-            }
+            try { setOriginalUser(uid, user, overwriteOriginal); } catch(e) {}
         }
     } catch(e) { console.warn('setSessionUser failed', e); }
 }

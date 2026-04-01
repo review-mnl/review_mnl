@@ -1003,6 +1003,19 @@ nav img{
     gap: 40px;
 }
 
+/* Adjust back button placement for admin header (prevents overlap with nav/logo) */
+.header-admindashboard .back-btn-viewcenter {
+    top: 22px;           /* align with top nav */
+    left: 20px;          /* small left offset */
+    padding: 8px 14px;   /* more compact */
+    font-size: 14px;
+    border-radius: 24px;
+}
+
+@media (max-width: 900px) {
+    .header-admindashboard .back-btn-viewcenter { top: 18px; left: 12px; padding: 7px 12px; }
+}
+
 .center-logo {
     width: 200px;
     height: 200px;

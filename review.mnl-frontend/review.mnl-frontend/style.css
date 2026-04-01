@@ -1023,6 +1023,20 @@ nav img{
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
 }
 
+/* Large welcome heading styling (admin profile) */
+.welcome-heading {
+    font-size: 48px;
+    color: #fff;
+    font-weight: 800;
+    margin-bottom: 8px;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.45);
+    letter-spacing: 0.6px;
+}
+
+@media (max-width: 900px) {
+    .welcome-heading { font-size: 28px; }
+}
+
 .center-description {
     font-size: 16px;
     color: #fff;

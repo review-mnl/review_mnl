@@ -1,7 +1,4 @@
 {
-  "version": 2,
-  "buildCommand": "echo 'Build complete'",
-  "outputDirectory": "review.mnl-frontend/review.mnl-frontend",
   "rewrites": [
     {
       "source": "/(.*)",

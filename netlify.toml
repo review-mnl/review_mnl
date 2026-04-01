@@ -1,7 +1,0 @@
-[build]
-  publish = "review.mnl-frontend/review.mnl-frontend"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200

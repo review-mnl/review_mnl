@@ -364,15 +364,27 @@
                 btn.textContent = 'Logging in...';
                 try {
                     const data = await AuthAPI.login(email, password);
-                    saveSession(data);
-                    const role = data.user.role;
-                    if (role === 'superadmin') {
-                        window.location.href = 'superadmin.html';
-                    } else if (role === 'admin' || role === 'review_center') {
-                        window.location.href = 'admindashboard.html';
-                    } else {
-                        window.location.href = 'loggedin.html';
-                    }
+                        saveSession(data);
+                        // Ensure user logged in under the role they selected on the form
+                        const selectedRole = document.getElementById('loginRole').value || 'student';
+                        const actualRole = (data.user && data.user.role) ? data.user.role : 'student';
+                        if (selectedRole === 'student' && (actualRole === 'admin' || actualRole === 'review_center')) {
+                            // prevent accidental admin access from student tab
+                            clearSession();
+                            errEl.textContent = 'This account is registered as a Review Center. Please switch to the Review Center tab to sign in.';
+                            errEl.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'LOGIN';
+                            return;
+                        }
+                        // Redirect based on actual role
+                        if (actualRole === 'superadmin') {
+                            window.location.href = 'superadmin.html';
+                        } else if (actualRole === 'admin' || actualRole === 'review_center') {
+                            window.location.href = 'admindashboard.html';
+                        } else {
+                            window.location.href = 'loggedin.html';
+                        }
                 } catch (err) {
                     errEl.textContent = err.message || 'Login failed. Please try again.';
                     errEl.style.display = 'block';

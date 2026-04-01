@@ -111,6 +111,8 @@ const login = async (req, res) => {
         return res.status(403).json({ message: 'Your account is still pending admin approval.' });
       if (center[0]?.status === 'rejected')
         return res.status(403).json({ message: 'Your application was rejected.' });
+      if (center[0]?.status === 'suspended')
+        return res.status(403).json({ message: 'Your account has been suspended. Please contact support.' });
     }
     const match = await bcrypt.compare(password, user.password);
     if (!match)
@@ -167,4 +169,99 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification };
+const getProfile = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT id, first_name, last_name, email, bio, role, profile_photo FROM users WHERE id = ?',
+      [req.user.id]
+    );
+    if (rows.length === 0)
+      return res.status(404).json({ message: 'User not found.' });
+    const user = rows[0];
+    res.json({
+      id: user.id,
+      name: `${user.first_name} ${user.last_name}`.trim(),
+      firstName: user.first_name,
+      lastName: user.last_name,
+      email: user.email,
+      bio: user.bio || '',
+      role: user.role,
+      profilePhoto: user.profile_photo || null,
+    });
+  } catch (err) {
+    console.error('Get profile error:', err.message, err.code);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  const { fullName, email, bio } = req.body;
+  const profilePhotoUrl = req.file ? req.file.path : null;
+  try {
+    // Check if email is being changed and if it's already taken
+    if (email) {
+      const [existing] = await db.query(
+        'SELECT id FROM users WHERE email = ? AND id != ?',
+        [email, req.user.id]
+      );
+      if (existing.length > 0)
+        return res.status(409).json({ message: 'Email is already in use by another account.' });
+    }
+
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+
+    if (fullName) {
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '';
+      updates.push('first_name = ?', 'last_name = ?');
+      values.push(firstName, lastName);
+    }
+    if (email) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+    if (bio !== undefined) {
+      updates.push('bio = ?');
+      values.push(bio);
+    }
+    if (profilePhotoUrl) {
+      updates.push('profile_photo = ?');
+      values.push(profilePhotoUrl);
+    }
+
+    if (updates.length === 0)
+      return res.status(400).json({ message: 'No fields to update.' });
+
+    values.push(req.user.id);
+    await db.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    // Fetch updated user data
+    const [rows] = await db.query(
+      'SELECT id, first_name, last_name, email, bio, role, profile_photo FROM users WHERE id = ?',
+      [req.user.id]
+    );
+    const user = rows[0];
+    res.json({
+      message: 'Profile updated successfully.',
+      user: {
+        id: user.id,
+        name: `${user.first_name} ${user.last_name}`.trim(),
+        email: user.email,
+        bio: user.bio || '',
+        role: user.role,
+        profilePhoto: user.profile_photo || null,
+      },
+    });
+  } catch (err) {
+    console.error('Update profile error:', err.message, err.code);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification, getProfile, updateProfile };

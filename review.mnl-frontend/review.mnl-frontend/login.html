@@ -323,10 +323,14 @@
             }
 
             document.querySelector('.social-btn[title="Login with Google"]').addEventListener('click', function () {
-                window.location.href = API_BASE + '/api/auth/google';
+                const errEl = document.getElementById('loginError');
+                errEl.textContent = 'Google login is not enabled yet. Please use email and password.';
+                errEl.style.display = 'block';
             });
             document.querySelector('.social-btn[title="Login with Facebook"]').addEventListener('click', function () {
-                window.location.href = API_BASE + '/api/auth/facebook';
+                const errEl = document.getElementById('loginError');
+                errEl.textContent = 'Facebook login is not enabled yet. Please use email and password.';
+                errEl.style.display = 'block';
             });
 
             document.getElementById('resendLink').addEventListener('click', async function (e) {

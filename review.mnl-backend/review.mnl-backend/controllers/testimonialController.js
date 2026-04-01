@@ -1,7 +1,8 @@
 const db = require('../config/db');
 
 const postTestimonial = async (req, res) => {
-  const { center_id, content, rating } = req.body;
+  const center_id = req.params.id || req.body.center_id;
+  const { content, rating } = req.body;
   const student_id = req.user.id;
   if (!content || !center_id)
     return res.status(400).json({ message: 'Content and center_id are required.' });

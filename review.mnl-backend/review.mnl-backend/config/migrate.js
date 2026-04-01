@@ -14,6 +14,20 @@ async function runMigration() {
     
     if (tables[0].count > 0) {
       console.log('✓ Database schema already initialized');
+      
+      // Check and add profile_photo column if it doesn't exist
+      try {
+        const [columns] = await db.query(
+          `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_photo'`
+        );
+        if (columns.length === 0) {
+          console.log('→ Adding profile_photo column to users table...');
+          await db.query('ALTER TABLE users ADD COLUMN profile_photo VARCHAR(500) DEFAULT NULL');
+          console.log('✓ profile_photo column added successfully');
+        }
+      } catch (err) {
+        console.warn('⚠ Could not check/add profile_photo column:', err.message);
+      }
     } else {
       console.log('→ Initializing database schema...');
       

@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
   role        ENUM('student', 'review_center', 'admin', 'superadmin') DEFAULT 'student',
   is_verified TINYINT(1) DEFAULT 0,
   verify_token VARCHAR(255),
+  bio         VARCHAR(255) DEFAULT NULL,
+  profile_photo VARCHAR(500) DEFAULT NULL,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -21,7 +23,7 @@ CREATE TABLE IF NOT EXISTS review_centers (
   password        VARCHAR(255) NOT NULL,
   business_permit VARCHAR(255),
   dti_sec_reg     VARCHAR(255),
-  status          ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  status          ENUM('pending', 'approved', 'rejected', 'suspended') DEFAULT 'pending',
   latitude        DECIMAL(10, 8),
   longitude       DECIMAL(11, 8),
   address         VARCHAR(500),

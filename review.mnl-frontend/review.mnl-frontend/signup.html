@@ -420,10 +420,14 @@
         <script>
             // ── OAuth buttons ───────────────────────────────────────────────
             document.getElementById('googleSignupBtn').addEventListener('click', function () {
-                window.location.href = API_BASE + '/api/auth/google';
+                const errEl = document.getElementById('signupError');
+                errEl.textContent = 'Google signup is not enabled yet. Please register with email/password.';
+                errEl.style.display = 'block';
             });
             document.getElementById('facebookSignupBtn').addEventListener('click', function () {
-                window.location.href = API_BASE + '/api/auth/facebook';
+                const errEl = document.getElementById('signupError');
+                errEl.textContent = 'Facebook signup is not enabled yet. Please register with email/password.';
+                errEl.style.display = 'block';
             });
 
             function switchRole(role, btn) {

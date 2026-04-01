@@ -1,7 +1,8 @@
 const express = require('express');
 const router  = express.Router();
 const upload  = require('../middleware/upload');
-const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification } = require('../controllers/authController');
+const { protect } = require('../middleware/auth');
+const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification, getProfile, updateProfile } = require('../controllers/authController');
 router.post('/resend-verification', resendVerification);
 
 router.post('/register/student', registerStudent);
@@ -16,5 +17,9 @@ router.get('/verify-email', verifyEmail);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+
+// Profile routes (protected)
+router.get('/profile', protect, getProfile);
+router.put('/profile', protect, upload.single('profilePhoto'), updateProfile);
 
 module.exports = router;

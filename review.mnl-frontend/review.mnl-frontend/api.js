@@ -105,6 +105,12 @@ const AuthAPI = {
 
     resendVerification: (email) =>
         apiRequest('POST', '/api/auth/resend-verification', { email }),
+
+    getProfile: () =>
+        apiRequest('GET', '/api/auth/profile'),
+
+    updateProfile: (data) =>
+        apiRequest('PUT', '/api/auth/profile', data),
 };
 
 // ---------------------------------------------------------------------------

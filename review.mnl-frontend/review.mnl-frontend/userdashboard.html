@@ -454,28 +454,87 @@
                 function closeUserModal() {
                     document.getElementById('userProfileModal').style.display = 'none';
                 }
-                function saveUserProfile() {
+                async function saveUserProfile() {
                     const name = document.getElementById('userNameInput').value.trim();
                     const email = document.getElementById('userEmailInput').value.trim();
                     const bio = document.getElementById('userBioInput').value.trim();
                     const file = document.getElementById('userImageInput').files[0];
-                    if (name) {
-                        document.getElementById('userNameDisplay').textContent = name;
-                        document.getElementById('welcomeName').textContent = name;
+
+                    // Build FormData with all fields (name, email, bio, photo)
+                    const formData = new FormData();
+                    if (name) formData.append('fullName', name);
+                    if (email) formData.append('email', email);
+                    if (bio) formData.append('bio', bio);
+                    if (file) formData.append('profilePhoto', file);
+
+                    // If no changes, just close
+                    if (formData.entries().length === 0) {
+                        closeUserModal();
+                        return;
                     }
-                    if (email) document.getElementById('userEmailDisplay').textContent = email;
-                    if (bio) document.getElementById('userBioDisplay').textContent = bio;
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
+
+                    const saveBtn = document.querySelector('.modal-save-btn');
+                    const originalText = saveBtn.textContent;
+                    saveBtn.textContent = 'Saving...';
+                    saveBtn.disabled = true;
+
+                    try {
+                        // Send FormData with multipart/form-data
+                        console.log('Sending profile update to:', window.REVIEW_MNL_CONFIG.API_BASE + '/api/auth/profile');
+                        const response = await fetch(window.REVIEW_MNL_CONFIG.API_BASE + '/api/auth/profile', {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('rmnl_token'),
+                            },
+                            body: formData
+                        });
+
+                        console.log('Response status:', response.status);
+                        
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            console.error('Error response:', errorData);
+                            throw new Error(errorData.message || 'Failed to update profile');
+                        }
+
+                        const result = await response.json();
+                        console.log('Profile update success:', result);
+
+                        // Update local storage with new user data
+                        if (result.user) {
+                            console.log('Updating localStorage with:', result.user);
+                            localStorage.setItem('rmnl_user', JSON.stringify(result.user));
+                        }
+
+                        // Update UI
+                        if (name) {
+                            document.getElementById('userNameDisplay').textContent = name;
+                            document.getElementById('welcomeName').textContent = name;
+                            var sidebarName = document.querySelector('.sidebar-header h3');
+                            if (sidebarName) sidebarName.textContent = name;
+                        }
+                        if (email) {
+                            document.getElementById('userEmailDisplay').textContent = email;
+                        }
+                        if (bio) {
+                            document.getElementById('userBioDisplay').textContent = bio;
+                        }
+                        // Update profile photo from backend response
+                        if (result.user && result.user.profilePhoto) {
                             const avatar = document.getElementById('userAvatarPreview');
-                            avatar.style.backgroundImage = 'url(' + e.target.result + ')';
+                            avatar.style.backgroundImage = 'url(' + result.user.profilePhoto + ')';
                             avatar.style.backgroundSize = 'cover';
                             avatar.style.backgroundPosition = 'center';
-                        };
-                        reader.readAsDataURL(file);
+                        }
+                        alert('Profile updated successfully!');
+                        closeUserModal();
+                    } catch (err) {
+                        console.error('Profile update error:', err);
+                        alert(err.message || 'Failed to update profile.');
+                    } finally {
+                        saveBtn.textContent = originalText;
+                        saveBtn.disabled = false;
                     }
-                    closeUserModal();
                 }
                 document.getElementById('userImageInput').addEventListener('change', function() {
                     const file = this.files[0];
@@ -493,15 +552,41 @@
                     if (e.target === this) closeUserModal();
                 });
 
-                // Personalize from session
-                (function(){
+                // Personalize from session and fetch full profile
+                (async function(){
                     var user = getUser();
                     if (!user) { window.location.href = 'login.html'; return; }
+                    // Set initial values from localStorage
                     document.getElementById('welcomeName').textContent = user.name;
                     document.getElementById('userNameDisplay').textContent = user.name;
                     document.getElementById('userEmailDisplay').textContent = user.email;
                     var sidebarName = document.querySelector('.sidebar-header h3');
                     if (sidebarName) sidebarName.textContent = user.name;
+                    // Fetch full profile from API to get bio and profile photo
+                    try {
+                        const profile = await AuthAPI.getProfile();
+                        if (profile.bio) {
+                            document.getElementById('userBioDisplay').textContent = profile.bio;
+                        }
+                        // Display profile photo if it exists
+                        if (profile.profilePhoto) {
+                            const avatar = document.getElementById('userAvatarPreview');
+                            avatar.style.backgroundImage = 'url(' + profile.profilePhoto + ')';
+                            avatar.style.backgroundSize = 'cover';
+                            avatar.style.backgroundPosition = 'center';
+                        }
+                        // Update localStorage with latest data
+                        localStorage.setItem('rmnl_user', JSON.stringify({
+                            id: profile.id,
+                            name: profile.name,
+                            email: profile.email,
+                            bio: profile.bio,
+                            role: profile.role,
+                            profilePhoto: profile.profilePhoto || null
+                        }));
+                    } catch (err) {
+                        console.warn('Could not fetch profile:', err.message);
+                    }
                 })();
             </script>
     </body>

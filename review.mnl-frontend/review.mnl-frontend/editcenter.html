@@ -79,6 +79,8 @@
                     const center = await CentersAPI.getMyProfile();
                     if (center.business_name) {
                         document.getElementById('centerNameDisplay').textContent = center.business_name;
+                        // Use center business name for welcome if present
+                        try { if (document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = center.business_name; } catch(e){}
                     }
                     if (center.address) {
                         document.getElementById('centerDescDisplay').textContent = center.address;

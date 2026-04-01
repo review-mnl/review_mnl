@@ -283,11 +283,27 @@
             logout.addEventListener('click', function(){ clearSession(); window.location.href = 'index.html'; });
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
         })();
-        // set welcome name from session
-        (function(){
+        // set welcome name from session; for center accounts prefer the center business name
+        (async function(){
             try{
                 var user = getUser();
-                if (user && document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = user.name || 'Admin';
+                if (!user) { window.location.href = 'login.html'; return; }
+                var welcomeEl = document.getElementById('welcomeName');
+                if (!welcomeEl) return;
+                if (user.role === 'admin' || user.role === 'review_center') {
+                    try {
+                        const center = await CentersAPI.getMyProfile();
+                        if (center && center.business_name) {
+                            welcomeEl.textContent = center.business_name;
+                        } else {
+                            welcomeEl.textContent = user.name || 'Admin';
+                        }
+                    } catch(err) {
+                        welcomeEl.textContent = user.name || 'Admin';
+                    }
+                } else {
+                    welcomeEl.textContent = user.name || 'User';
+                }
             }catch(e){}
         })();
         function toggleSidebar() {

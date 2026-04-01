@@ -649,6 +649,8 @@
             if (payload.exp && payload.exp < Date.now()/1000) {
                 console.warn('Token expired — clearing session');
                 clearSession();
+                // stop any background live updates when token expires
+                try { stopLiveUpdates(); } catch(e) {}
                 var dashEl = document.getElementById('dashboard');
                 var gateEl = document.getElementById('loginGate');
                 if (dashEl) dashEl.style.display = 'none';
@@ -706,6 +708,8 @@
 
     function saLogout() {
         clearSession();
+        // stop live updates when logging out
+        try { stopLiveUpdates(); } catch(e) {}
         var _db = document.getElementById('dashboard'); if (_db) _db.style.display = 'none';
         var _lg = document.getElementById('loginGate'); if (_lg) _lg.style.display = 'flex';
         var gu = document.getElementById('gateUser'); if (gu) gu.value = '';
@@ -1116,20 +1120,38 @@
         });
     }
 
-    // Load data when dashboard becomes visible
+    // Live update interval handles automatic refresh without full page reload.
+    var _saLiveInterval = null;
+    function startLiveUpdates(intervalMs) {
+        if (_saLiveInterval) return;
+        intervalMs = intervalMs || 15000; // default 15s
+        // initial refresh quickly after starting
+        try { loadDashboardData(); } catch(e) {}
+        _saLiveInterval = setInterval(function() {
+            try { loadDashboardData(); } catch(e) { console.warn('live update failed', e); }
+        }, intervalMs);
+    }
+    function stopLiveUpdates() {
+        if (!_saLiveInterval) return;
+        clearInterval(_saLiveInterval);
+        _saLiveInterval = null;
+    }
+
+    // Load data when dashboard becomes visible and start live updates
     var originalSaveSession = saveSession;
     saveSession = function(data) {
         originalSaveSession(data);
         setTimeout(loadDashboardData, 100);
+        try { startLiveUpdates(15000); } catch(e) {}
     };
 
-    // Also load on page load if already logged in
+    // Also load on page load if already logged in and start live updates
     (function() {
         var token = localStorage.getItem('rmnl_token');
         var user = null;
         try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
         if (token && user && user.role === 'superadmin') {
-            setTimeout(loadDashboardData, 100);
+            setTimeout(function(){ loadDashboardData(); startLiveUpdates(15000); }, 100);
         }
     })();
 </script>

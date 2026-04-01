@@ -59,6 +59,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth',    require('./routes/auth'));
 app.use('/api/admin',   require('./routes/admin'));
 app.use('/api/centers', require('./routes/centers'));
+app.use('/api/users',   require('./routes/users'));
 
 app.get('/', (req, res) => res.json({ message: 'REVIEW.MNL API is running.' }));
 

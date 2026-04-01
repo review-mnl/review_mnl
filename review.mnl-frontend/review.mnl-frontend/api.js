@@ -9,6 +9,21 @@ const API_BASE = window.BACKEND_URL || (
         : 'https://reviewmnl-production-67eb.up.railway.app'
 );
 
+// Redirect any duplicated consecutive path segments (e.g. "/review.mnl-frontend/review.mnl-frontend/..." )
+// to the site root to avoid exposing duplicated copies of the site.
+(function(){
+    try {
+        var p = window.location.pathname || '';
+        var parts = p.split('/').filter(Boolean);
+        for (var i = 0; i < parts.length - 1; i++) {
+            if (parts[i] === parts[i+1]) {
+                try { window.location.replace(window.location.origin + '/index.html'); } catch(e) { window.location.replace('/index.html'); }
+                return;
+            }
+        }
+    } catch(e) {}
+})();
+
 // ---------------------------------------------------------------------------
 // Auth helpers
 // ---------------------------------------------------------------------------

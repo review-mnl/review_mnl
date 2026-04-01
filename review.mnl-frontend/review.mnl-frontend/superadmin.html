@@ -579,20 +579,20 @@
 
 <script src="api.js"></script>
 <script>
-    // View toggles: use ?sa_view=login to force the login gate,
-    // or ?sa_view=dashboard to force the dashboard. Default behavior
-    // remains: show login gate unless session exists.
+    // Restrict direct URL access: only allow when an active superadmin session exists.
+    // Otherwise redirect to the public index so the superadmin UI is hidden.
     (function(){
         try {
-            var params = new URLSearchParams(window.location.search);
-            var v = params.get('sa_view');
-            if (v === 'dashboard') {
-                var lgEl = document.getElementById('loginGate'); if (lgEl) lgEl.style.display = 'none';
-                var dbEl = document.getElementById('dashboard'); if (dbEl) dbEl.style.display = 'block';
-            } else if (v === 'login') {
-                var lgEl2 = document.getElementById('loginGate'); if (lgEl2) lgEl2.style.display = 'flex';
-                var dbEl2 = document.getElementById('dashboard'); if (dbEl2) dbEl2.style.display = 'none';
+            var token = getActiveToken();
+            var user = getActiveUser();
+            // If no active superadmin session, redirect away immediately
+            if (!token || !user || user.role !== 'superadmin') {
+                try { window.location.href = window.location.origin + '/index.html'; } catch(e) { window.location.href = 'index.html'; }
+                return;
             }
+            // Show the dashboard for authenticated superadmin
+            var lgEl = document.getElementById('loginGate'); if (lgEl) lgEl.style.display = 'none';
+            var dbEl = document.getElementById('dashboard'); if (dbEl) dbEl.style.display = 'block';
         } catch(e){}
     })();
     // ── Doc viewer ──
@@ -620,19 +620,18 @@
     // ── Credentials (creator-only) ──
     const SA_SESSION_KEY = 'rmnl_sa_session';
 
-    // ── Auto-login if session exists and role is superadmin ──
+    // ── Auto-start data load and live updates for authenticated superadmin ──
     (function(){
-        var token = getActiveToken();
-        var user = getActiveUser();
-        inspectToken();
-        var loginGateEl = document.getElementById('loginGate');
-        var dashboardEl = document.getElementById('dashboard');
-        if (token && user && user.role === 'superadmin') {
-            if (loginGateEl) loginGateEl.style.display = 'none';
-            if (dashboardEl) dashboardEl.style.display = 'block';
-            var nameEl = document.querySelector('.sa-topbar span[style*="color:#ccd6f6"]');
-            if (nameEl) nameEl.textContent = user.name;
-        }
+        try {
+            var token = getActiveToken();
+            var user = getActiveUser();
+            inspectToken();
+            if (token && user && user.role === 'superadmin') {
+                try { setTimeout(function(){ loadDashboardData(); startLiveUpdates(15000); }, 100); } catch(e) {}
+                var nameEl = document.querySelector('.sa-topbar span[style*="color:#ccd6f6"]');
+                if (nameEl) nameEl.textContent = user.name;
+            }
+        } catch(e) {}
     })();
 
     // Inspect saved token and auto-clear if expired (log payload for debugging)

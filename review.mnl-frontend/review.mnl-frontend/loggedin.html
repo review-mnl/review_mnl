@@ -112,19 +112,22 @@
         // Handle OAuth callback (token in URL)
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
-        const name = urlParams.get('name');
-        const role = urlParams.get('role');
+        const userDataParam = urlParams.get('user');
         
         if (token) {
             // Save OAuth session
             localStorage.setItem('rmnl_token', token);
-            if (name && role) {
-                localStorage.setItem('rmnl_user', JSON.stringify({ 
-                    name: decodeURIComponent(name), 
-                    role: role 
-                }));
-                localStorage.setItem('rmnl_role', role);
+            
+            if (userDataParam) {
+                try {
+                    const userData = JSON.parse(decodeURIComponent(userDataParam));
+                    localStorage.setItem('rmnl_user', JSON.stringify(userData));
+                    localStorage.setItem('rmnl_role', userData.role);
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
             }
+            
             // Clean URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }

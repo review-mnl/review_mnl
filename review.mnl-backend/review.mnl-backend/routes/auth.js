@@ -41,8 +41,15 @@ router.get('/google/callback',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
     
-    // Redirect to frontend with token
-    res.redirect(`${process.env.CLIENT_URL}/loggedin.html?token=${token}&name=${encodeURIComponent(req.user.first_name + ' ' + req.user.last_name)}&role=${req.user.role}`);
+    // Redirect to frontend with token and user data
+    const userData = encodeURIComponent(JSON.stringify({
+      id: req.user.id,
+      name: `${req.user.first_name} ${req.user.last_name}`,
+      email: req.user.email,
+      role: req.user.role
+    }));
+    
+    res.redirect(`${process.env.CLIENT_URL}/loggedin.html?token=${token}&user=${userData}`);
   }
 );
 

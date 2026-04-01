@@ -579,20 +579,31 @@
 
 <script src="api.js"></script>
 <script>
-    // Restrict direct URL access: only allow when an active superadmin session exists.
-    // Otherwise redirect to the public index so the superadmin UI is hidden.
+    // Allow access to the login gate; only show the dashboard to an authenticated superadmin.
+    // Autofill the email input from the last known superadmin email, if available.
     (function(){
         try {
             var token = getActiveToken();
             var user = getActiveUser();
-            // If no active superadmin session, redirect away immediately
-            if (!token || !user || user.role !== 'superadmin') {
-                try { window.location.href = window.location.origin + '/index.html'; } catch(e) { window.location.href = 'index.html'; }
-                return;
+            inspectToken();
+            var loginGateEl = document.getElementById('loginGate');
+            var dashboardEl = document.getElementById('dashboard');
+            if (token && user && user.role === 'superadmin') {
+                if (loginGateEl) loginGateEl.style.display = 'none';
+                if (dashboardEl) dashboardEl.style.display = 'block';
+                var nameEl = document.querySelector('.sa-topbar span[style*="color:#ccd6f6"]');
+                if (nameEl) nameEl.textContent = user.name;
+            } else {
+                if (loginGateEl) loginGateEl.style.display = 'flex';
+                if (dashboardEl) dashboardEl.style.display = 'none';
+                try {
+                    var lastEmail = (typeof getLastSuperadminEmail === 'function') ? getLastSuperadminEmail() : (localStorage.getItem ? localStorage.getItem('rmnl_last_superadmin_email') : null);
+                    if (lastEmail) {
+                        var gu = document.getElementById('gateUser'); if (gu) gu.value = lastEmail;
+                        var gp = document.getElementById('gatePass'); if (gp) gp.focus();
+                    }
+                } catch(e) {}
             }
-            // Show the dashboard for authenticated superadmin
-            var lgEl = document.getElementById('loginGate'); if (lgEl) lgEl.style.display = 'none';
-            var dbEl = document.getElementById('dashboard'); if (dbEl) dbEl.style.display = 'block';
         } catch(e){}
     })();
     // ── Doc viewer ──

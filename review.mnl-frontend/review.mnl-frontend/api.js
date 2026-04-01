@@ -67,6 +67,7 @@ function saveSession(data) {
                     var uid = user.id || user._id || user.email || null;
                     if (uid) {
                         try { setOriginalUser(uid, user); } catch(e) {}
+                        try { if (user && user.role === 'superadmin' && user.email) setLastSuperadminEmail(user.email); } catch(e) {}
                     }
                 }
             } catch(e) {}
@@ -161,6 +162,17 @@ function setOriginalUser(userIdentifier, userObj, overwrite) {
             try { localStorage.setItem(key, JSON.stringify(userObj)); } catch(e) {}
         }
     } catch(e) {}
+}
+
+function setLastSuperadminEmail(email) {
+    try {
+        if (!email) return;
+        try { localStorage.setItem('rmnl_last_superadmin_email', String(email)); } catch(e) {}
+    } catch(e) {}
+}
+
+function getLastSuperadminEmail() {
+    try { return localStorage.getItem('rmnl_last_superadmin_email') || null; } catch(e) { return null; }
 }
 
 // ---------------------------------------------------------------------------

@@ -53,37 +53,4 @@ router.get('/google/callback',
   }
 );
 
-// Facebook OAuth routes (registered only if Facebook credentials provided)
-router.get('/facebook',
-  passport.authenticate('facebook', {
-    scope: ['email'],
-    session: false
-  })
-);
-
-router.get('/facebook/callback',
-  passport.authenticate('facebook', {
-    session: false,
-    failureRedirect: `${process.env.CLIENT_URL}/login.html?error=facebook_auth_failed`
-  }),
-  (req, res) => {
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: req.user.id, role: req.user.role, email: req.user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
-    // Redirect to frontend with token and user data
-    const userData = encodeURIComponent(JSON.stringify({
-      id: req.user.id,
-      name: `${req.user.first_name} ${req.user.last_name}`,
-      email: req.user.email,
-      role: req.user.role
-    }));
-
-    res.redirect(`${process.env.CLIENT_URL}/loggedin.html?token=${token}&user=${userData}`);
-  }
-);
-
 module.exports = router;

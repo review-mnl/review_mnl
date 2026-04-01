@@ -252,7 +252,6 @@
 
                     <div class="social-login">
                         <button type="button" class="social-btn" id="googleLoginBtn" title="Login with Google"><i class="fab fa-google"></i></button>
-                        <button type="button" class="social-btn" title="Login with Facebook"><i class="fab fa-facebook-f"></i></button>
                     </div>
 
                     <div class="divider">
@@ -324,9 +323,6 @@
 
             document.querySelector('.social-btn[title="Login with Google"]').addEventListener('click', function () {
                 window.location.href = API_BASE + '/api/auth/google';
-            });
-            document.querySelector('.social-btn[title="Login with Facebook"]').addEventListener('click', function () {
-                window.location.href = API_BASE + '/api/auth/facebook';
             });
 
             document.getElementById('resendLink').addEventListener('click', async function (e) {

@@ -142,6 +142,89 @@
                     updateBtn();
                 };
 
+                // Live update: periodically refresh center details so students see latest info
+                (function(){
+                    let intervalId = null;
+                    async function loadCenterDetails(){
+                        try{
+                            if (!CENTER.id || CENTER.id === 'center_unknown') return;
+                            const data = await CentersAPI.getById(CENTER.id);
+                            if (!data) return;
+                            // Name and description
+                            const nameEl = document.querySelector('.center-info h1');
+                            const descEl = document.querySelector('.center-description');
+                            if (data.business_name && nameEl) nameEl.textContent = data.business_name;
+                            if ((data.description || data.address) && descEl) descEl.textContent = data.description || data.address || '';
+
+                            // Logo / image
+                            const logoEl = document.querySelector('.center-header-content .center-logo');
+                            if (logoEl) {
+                                const img = data.logo_url || data.image || data.photo_url || data.avatar;
+                                if (img) {
+                                    logoEl.style.backgroundImage = 'url(' + img + ')';
+                                    logoEl.style.backgroundSize = 'cover';
+                                    logoEl.style.backgroundPosition = 'center';
+                                }
+                            }
+
+                            // Rating
+                            try{
+                                const rating = Math.round(data.avg_rating || 0);
+                                const starsEl = document.querySelector('.center-rating .stars');
+                                const ratingCount = document.querySelector('.center-rating .rating-count');
+                                if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+                                if (ratingCount) ratingCount.textContent = (data.avg_rating || 0).toFixed(1) + ' (' + (data.review_count || 0) + ')';
+                            }catch(e){}
+
+                            // Programs
+                            try{
+                                const progWrap = document.querySelector('.programs-section .program-tags');
+                                if (progWrap) {
+                                    progWrap.innerHTML = '';
+                                    const programs = data.programs || data.program_tags || data.program_list || [];
+                                    (Array.isArray(programs) ? programs : String(programs).split(',')).forEach(function(p){
+                                        const text = (typeof p === 'string') ? p : (p.name || p.title || JSON.stringify(p));
+                                        if (!text) return;
+                                        const btn = document.createElement('button');
+                                        btn.className = 'program-tag';
+                                        btn.textContent = text.trim();
+                                        progWrap.appendChild(btn);
+                                    });
+                                }
+                            }catch(e){}
+
+                            // Achievements
+                            try{
+                                const achWrap = document.querySelector('.achievements-card .achievement-list');
+                                if (achWrap) {
+                                    achWrap.innerHTML = '';
+                                    const ach = data.achievements || data.achievement_list || [];
+                                    (Array.isArray(ach) ? ach : []).forEach(function(a){
+                                        const item = document.createElement('div');
+                                        item.className = 'achievement-item';
+                                        const span = document.createElement('span'); span.className = 'trophy-icon'; span.textContent = '🏆';
+                                        const p = document.createElement('p'); p.textContent = (a.title || a || '').toString();
+                                        item.appendChild(span); item.appendChild(p);
+                                        achWrap.appendChild(item);
+                                    });
+                                }
+                            }catch(e){}
+
+                            // Update CENTER object used for save/bookmark functionality
+                            try{ window._updateSaveCenterId(String(data.id || data._id || CENTER.id), data.business_name || data.name || CENTER.name, data.address || CENTER.location || ''); }catch(e){}
+                        }catch(e){ /* ignore */ }
+                    }
+
+                    // start immediately and then poll every 10s
+                    loadCenterDetails();
+                    intervalId = setInterval(loadCenterDetails, 10000);
+                    window._viewCenterInterval = intervalId;
+                    // suspend polling when tab hidden to save requests
+                    document.addEventListener('visibilitychange', function(){
+                        if (document.hidden) { if (window._viewCenterInterval) clearInterval(window._viewCenterInterval); }
+                        else { loadCenterDetails(); window._viewCenterInterval = setInterval(loadCenterDetails, 10000); }
+                    });
+                })();
                 function getSaved() {
                     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
                 }

@@ -368,8 +368,9 @@
                         // Ensure user logged in under the role they selected on the form
                         const selectedRole = document.getElementById('loginRole').value || 'student';
                         const actualRole = (data.user && data.user.role) ? data.user.role : 'student';
+
+                        // If user selected Student but account is a Review Center/admin, block and instruct
                         if (selectedRole === 'student' && (actualRole === 'admin' || actualRole === 'review_center')) {
-                            // prevent accidental admin access from student tab
                             clearSession();
                             errEl.textContent = 'This account is registered as a Review Center. Please switch to the Review Center tab to sign in.';
                             errEl.style.display = 'block';
@@ -377,6 +378,17 @@
                             btn.textContent = 'LOGIN';
                             return;
                         }
+
+                        // Symmetric: If user selected Review Center tab but account is a Student, block and instruct
+                        if (selectedRole === 'admin' && (actualRole === 'student' || actualRole === 'user' || (!actualRole))) {
+                            clearSession();
+                            errEl.textContent = 'This account is registered as a Student. Please switch to the Student tab to sign in.';
+                            errEl.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'LOGIN';
+                            return;
+                        }
+
                         // Redirect based on actual role
                         if (actualRole === 'superadmin') {
                             window.location.href = 'superadmin.html';

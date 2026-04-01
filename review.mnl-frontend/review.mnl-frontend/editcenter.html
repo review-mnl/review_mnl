@@ -33,6 +33,7 @@
             <div class="center-header-content">
                 <div class="center-logo" id="centerLogoPreview"></div>
                 <div class="center-info">
+                    <h2 class="welcome-heading">Welcome, <span id="welcomeName">Admin</span>!</h2>
                     <div class="center-name-row">
                         <h1 id="centerNameDisplay">Name of Review Center</h1>
                         <button class="edit-center-profile-btn" onclick="openModal('profileModal')">
@@ -88,6 +89,15 @@
                     // Not yet approved or no internet — display defaults are fine
                 }
             })();
+                // set welcome name from session (like student profile)
+                (function(){
+                    try{
+                        var user = getUser();
+                        if (user && document.getElementById('welcomeName')) {
+                            document.getElementById('welcomeName').textContent = user.name || 'Admin';
+                        }
+                    }catch(e){}
+                })();
         </script>
 
         <section class="center-details">

@@ -623,8 +623,7 @@
     // ── Auto-login if session exists and role is superadmin ──
     (function(){
         var token = getActiveToken();
-        var user = null;
-        try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
+        var user = getActiveUser();
         inspectToken();
         var loginGateEl = document.getElementById('loginGate');
         var dashboardEl = document.getElementById('dashboard');
@@ -1148,8 +1147,7 @@
     // Also load on page load if already logged in and start live updates
     (function() {
         var token = getActiveToken();
-        var user = null;
-        try { user = JSON.parse(localStorage.getItem('rmnl_user')); } catch(e){}
+        var user = getActiveUser();
         if (token && user && user.role === 'superadmin') {
             setTimeout(function(){ loadDashboardData(); startLiveUpdates(15000); }, 100);
         }

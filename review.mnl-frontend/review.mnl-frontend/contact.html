@@ -420,7 +420,8 @@
 
             // Nav context: swap between public and logged-in based on localStorage
             (function() {
-                const role = localStorage.getItem('rmnl_role');
+                const user = getActiveUser();
+                const role = user && user.role ? user.role : null;
                 if (role) {
                     document.getElementById('contactRegisterBtn').style.display = 'none';
                     document.getElementById('contactProfileWrapper').style.display = '';

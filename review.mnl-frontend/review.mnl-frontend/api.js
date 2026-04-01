@@ -99,13 +99,21 @@ function getActiveUser() {
 }
 
 function getUser() {
-    try { return JSON.parse(localStorage.getItem('rmnl_user')); } catch(e) { return null; }
+    try { return getActiveUser(); } catch(e) { return null; }
 }
 
 function setSessionUser(user, overwriteOriginal) {
     try {
         if (!user) return;
-        localStorage.setItem('rmnl_user', JSON.stringify(user));
+        // update active session object with new user data
+        try {
+            var sid = getActiveSessionId();
+            if (sid) {
+                var s = JSON.parse(localStorage.getItem('rmnl_session_' + sid) || 'null') || {};
+                s.user = user;
+                try { localStorage.setItem('rmnl_session_' + sid, JSON.stringify(s)); } catch(e) {}
+            }
+        } catch(e) {}
         var uid = user.id || user._id || user.email || null;
         if (uid) {
             var key = 'rmnl_user_original_' + uid;

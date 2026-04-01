@@ -115,19 +115,15 @@
         const userDataParam = urlParams.get('user');
         
         if (token) {
-            // Save OAuth session
-            localStorage.setItem('rmnl_token', token);
-            
-            if (userDataParam) {
-                try {
-                    const userData = JSON.parse(decodeURIComponent(userDataParam));
-                    localStorage.setItem('rmnl_user', JSON.stringify(userData));
-                    localStorage.setItem('rmnl_role', userData.role);
-                } catch (e) {
-                    console.error('Error parsing user data:', e);
+            // Save OAuth session using saveSession helper so original values are persisted
+            try {
+                var payload = { token: token };
+                if (userDataParam) {
+                    try { payload.user = JSON.parse(decodeURIComponent(userDataParam)); } catch(e) { console.error('Error parsing user data:', e); }
                 }
-            }
-            
+                saveSession(payload);
+            } catch(e) { console.error('Failed to save OAuth session', e); }
+
             // Clean URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }

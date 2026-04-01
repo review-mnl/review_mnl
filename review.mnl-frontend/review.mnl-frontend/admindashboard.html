@@ -290,11 +290,12 @@
                 if (!user) { window.location.href = 'login.html'; return; }
                 var welcomeEl = document.getElementById('welcomeName');
                 if (!welcomeEl) return;
-                if (user.role === 'admin' || user.role === 'review_center') {
+                    if (user.role === 'admin' || user.role === 'review_center') {
                     try {
                         const center = await CentersAPI.getMyProfile();
                         if (center && center.business_name) {
                             welcomeEl.textContent = center.business_name;
+                            try { if (!localStorage.getItem('rmnl_center_original')) localStorage.setItem('rmnl_center_original', center.business_name); } catch(e) {}
                         } else {
                             welcomeEl.textContent = user.name || 'Admin';
                         }

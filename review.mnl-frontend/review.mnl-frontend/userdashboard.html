@@ -464,12 +464,12 @@
                         document.getElementById('welcomeName').textContent = name;
                     }
                     if (email) document.getElementById('userEmailDisplay').textContent = email;
-                    // persist changes to session user so other pages read updated name/email
+                    // persist changes to session user (explicit profile edit) and overwrite original
                     try {
                         var _u = getUser() || {};
                         if (name) _u.name = name;
                         if (email) _u.email = email;
-                        localStorage.setItem('rmnl_user', JSON.stringify(_u));
+                        setSessionUser(_u, true);
                     } catch(e) {}
                     if (bio) document.getElementById('userBioDisplay').textContent = bio;
                     if (file) {

@@ -398,6 +398,13 @@
                     reader.readAsDataURL(file);
                 }
                 closeModal('profileModal');
+                // persist profile changes to session (explicit profile edit)
+                try {
+                    var u = getUser() || {};
+                    if (name) { u.name = name; u.business_name = name; }
+                    if (desc) u.address = desc;
+                    setSessionUser(u, true);
+                } catch(e) {}
             }
             function saveAbout() {
                 const text = document.getElementById('aboutInput').value.trim();

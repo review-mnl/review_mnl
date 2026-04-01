@@ -40,6 +40,12 @@ function saveSession(data) {
         if (user) {
             try { localStorage.setItem('rmnl_user', JSON.stringify(user)); } catch(e) { localStorage.setItem('rmnl_user', null); }
             if (user.role) localStorage.setItem('rmnl_role', user.role);
+            // persist original signup values if not already present
+            try {
+                if (!localStorage.getItem('rmnl_user_original')) {
+                    localStorage.setItem('rmnl_user_original', JSON.stringify(user));
+                }
+            } catch(e) {}
         }
         // (no debug logging) 
     } catch (e) {
@@ -55,6 +61,20 @@ function clearSession() {
 
 function getUser() {
     try { return JSON.parse(localStorage.getItem('rmnl_user')); } catch(e) { return null; }
+}
+
+function setSessionUser(user, overwriteOriginal) {
+    try {
+        if (!user) return;
+        localStorage.setItem('rmnl_user', JSON.stringify(user));
+        if (overwriteOriginal || !localStorage.getItem('rmnl_user_original')) {
+            try { localStorage.setItem('rmnl_user_original', JSON.stringify(user)); } catch(e) {}
+        }
+    } catch(e) { console.warn('setSessionUser failed', e); }
+}
+
+function getOriginalUser() {
+    try { return JSON.parse(localStorage.getItem('rmnl_user_original')); } catch(e) { return null; }
 }
 
 // ---------------------------------------------------------------------------

@@ -109,6 +109,27 @@
         </section>
     <script src="api.js"></script>
     <script>
+        // Handle OAuth callback (token in URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const name = urlParams.get('name');
+        const role = urlParams.get('role');
+        
+        if (token) {
+            // Save OAuth session
+            localStorage.setItem('rmnl_token', token);
+            if (name && role) {
+                localStorage.setItem('rmnl_user', JSON.stringify({ 
+                    name: decodeURIComponent(name), 
+                    role: role 
+                }));
+                localStorage.setItem('rmnl_role', role);
+            }
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
+        // Check if user is logged in
         if (!localStorage.getItem('rmnl_token')) { window.location.href = 'login.html'; }
         (function(){
             const btn = document.getElementById('profileBtn');

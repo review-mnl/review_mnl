@@ -1,5 +1,11 @@
 {
   "buildCommand": "echo 'Frontend ready'",
   "outputDirectory": "review_mnl/review.mnl-frontend/review.mnl-frontend",
-  "framework": "static"
+  "framework": "static",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "master": false
+    }
+  }
 }

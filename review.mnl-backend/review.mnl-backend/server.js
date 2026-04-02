@@ -76,4 +76,12 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+// Run DB migrations before starting the server (non-blocking safety)
+const { runMigration } = require('./config/migrate');
+runMigration().then(() => {
+  app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+}).catch(err => {
+  console.error('Migration failed to run:', err);
+  process.exit(1);
+});

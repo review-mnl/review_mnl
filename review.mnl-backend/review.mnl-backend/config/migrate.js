@@ -52,6 +52,30 @@ async function runMigration() {
     console.error('✗ Migration failed:', error.message);
     process.exit(1);
   }
+  
+  // Apply incremental migrations from migration.sql if present
+  try {
+    const migrationPath = path.join(__dirname, 'migration.sql');
+    if (fs.existsSync(migrationPath)) {
+      console.log('→ Applying incremental migrations...');
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      const stmts = migrationSQL
+        .split(';')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      for (const s of stmts) {
+        try {
+          await db.query(s);
+        } catch (e) {
+          // Log but continue — some statements may be no-ops on older schemas
+          console.warn('Migration statement skipped/failed:', e.message);
+        }
+      }
+      console.log('✓ Incremental migrations applied');
+    }
+  } catch (err) {
+    console.error('✗ Applying incremental migrations failed:', err.message);
+  }
 }
 
 module.exports = { runMigration };

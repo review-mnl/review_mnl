@@ -46,7 +46,8 @@ router.get('/google/callback',
       id: req.user.id,
       name: `${req.user.first_name} ${req.user.last_name}`,
       email: req.user.email,
-      role: req.user.role
+      role: req.user.role,
+      profile_picture_url: req.user.profile_picture_url || null
     }));
     
     res.redirect(`${process.env.CLIENT_URL}/loggedin.html?token=${token}&user=${userData}`);

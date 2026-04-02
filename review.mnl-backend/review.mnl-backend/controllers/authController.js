@@ -129,10 +129,32 @@ const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: tokenExpires }
     );
+    // Build a richer user payload so frontend keeps profile images after re-login
+    const userPayload = {
+      id: user.id,
+      name: `${user.first_name} ${user.last_name}`,
+      email: user.email,
+      role: user.role,
+      profile_picture_url: user.profile_picture_url || null,
+    };
+
+    // If this is a review center, include center logo/business_name if available
+    if (user.role === 'review_center') {
+      try {
+        const [centerRows] = await db.query('SELECT business_name, logo_url FROM review_centers WHERE user_id = ?', [user.id]);
+        if (centerRows && centerRows.length > 0) {
+          userPayload.logo_url = centerRows[0].logo_url || null;
+          userPayload.business_name = centerRows[0].business_name || userPayload.name;
+        }
+      } catch (e) {
+        // ignore center fetching errors
+      }
+    }
+
     res.json({
       message: 'Login successful.',
       token,
-      user: { id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email, role: user.role },
+      user: userPayload,
     });
   } catch (err) {
     console.error(err);

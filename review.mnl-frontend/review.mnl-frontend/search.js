@@ -206,6 +206,13 @@ function initFilters() {
                         .map(function(b){ return b.textContent.trim(); });
                     updateClearState();
                 });
+                // Add Enter key support to filter buttons
+                btn.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        btn.click();
+                    }
+                });
             });
         }
 
@@ -216,6 +223,13 @@ function initFilters() {
                     btn.classList.add('active');
                     _activeRating = btn.textContent.trim();
                     updateClearState();
+                });
+                // Add Enter key support to rating buttons
+                btn.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        btn.click();
+                    }
                 });
             });
         }
@@ -229,6 +243,7 @@ function initFilters() {
     }
 
     const applyBtn = document.getElementById('applyFiltersBtn');
+    const clearBtn = document.getElementById('clearFiltersBtn');
     const popup = document.getElementById('filterPopup');
     const popupContent = document.getElementById('filterPopupContent');
     const closeBtn = document.getElementById('filterPopupClose');
@@ -264,6 +279,13 @@ function initFilters() {
             }
             popup.style.display = 'flex';
         });
+        // Add Enter key support to Apply Filters button
+        applyBtn.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyBtn.click();
+            }
+        });
     }
 
     const clearBtn = document.getElementById('clearFiltersBtn');
@@ -275,6 +297,26 @@ function initFilters() {
             if (popup) popup.style.display = 'none';
             updateClearState();
             applyAllFilters();
+        });
+        // Add Enter key support to Clear Filters button
+        clearBtn.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearBtn.click();
+            }
+        });
+    }
+
+    // Add Enter key support to filter container for quicker filtering
+    const filterContainer = document.getElementById('filterContainer');
+    if (filterContainer) {
+        filterContainer.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (applyBtn) {
+                    applyBtn.click();
+                }
+            }
         });
     }
 
@@ -300,7 +342,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 applyAllFilters();
             });
             searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') { e.preventDefault(); }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const query = searchInput.value.trim();
+                    if (query) {
+                        window.location.href = 'search.html?q=' + encodeURIComponent(query);
+                    }
+                }
             });
         }
     });

@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS review_centers (
   latitude        DECIMAL(10, 8),
   longitude       DECIMAL(11, 8),
   address         VARCHAR(500),
+  logo_url        VARCHAR(500),
+  description     TEXT,
+  programs        JSON,
+  achievements    JSON,
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

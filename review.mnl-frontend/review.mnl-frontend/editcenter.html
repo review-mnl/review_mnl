@@ -451,12 +451,33 @@
                     console.warn('Saving center profile failed', e);
                 }
             }
-            function saveAbout() {
+            async function saveAbout() {
                 const text = document.getElementById('aboutInput').value.trim();
                 if (text) document.getElementById('aboutDisplay').innerText = text;
                 closeModal('aboutModal');
+                
+                // Persist to session
+                try {
+                    var u = getUser() || {};
+                    if (text) u.description = text;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    if (text) {
+                        const updated = await CentersAPI.updateMyProfile({ description: text });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.description) u2.description = updated.description;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save about section', e);
+                }
             }
-            function savePrograms() {
+            async function savePrograms() {
                 const checked = Array.from(document.querySelectorAll('#programsModal .program-checklist input[type=checkbox]:checked')).map(cb => cb.value);
                 const container = document.getElementById('programTagsDisplay');
                 container.innerHTML = '';
@@ -476,6 +497,31 @@
                     container.appendChild(btn);
                 }
                 closeModal('programsModal');
+                
+                // Persist to session
+                try {
+                    const allPrograms = [...checked];
+                    if (othersChecked && othersText) allPrograms.push(othersText);
+                    var u = getUser() || {};
+                    if (allPrograms.length > 0) u.programs = allPrograms;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    const allPrograms = [...checked];
+                    if (othersChecked && othersText) allPrograms.push(othersText);
+                    if (allPrograms.length > 0) {
+                        const updated = await CentersAPI.updateMyProfile({ programs: allPrograms });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.programs) u2.programs = updated.programs;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save programs', e);
+                }
             }
             function toggleOthersInput(cb) {
                 const input = document.getElementById('othersInput');
@@ -497,19 +543,42 @@
                     + '<button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#e53935;font-size:18px;line-height:1;" title="Remove">&times;</button>';
                 list.appendChild(row);
             }
-            function saveAchievements() {
+            async function saveAchievements() {
                 const inputs = document.querySelectorAll('#achievementsInputList input[type=text]');
                 const container = document.getElementById('achievementListDisplay');
                 container.innerHTML = '';
+                const achievements = [];
                 inputs.forEach(function(input) {
                     const val = input.value.trim();
                     if (!val) return;
+                    achievements.push(val);
                     const item = document.createElement('div');
                     item.className = 'achievement-item';
-                    item.innerHTML = '<span class="trophy-icon">\ud83c\udfc6</span><p>' + val + '</p>';
+                    item.innerHTML = '<span class="trophy-icon">🏆</span><p>' + val + '</p>';
                     container.appendChild(item);
                 });
                 closeModal('achievementsModal');
+                
+                // Persist to session
+                try {
+                    var u = getUser() || {};
+                    if (achievements.length > 0) u.achievements = achievements;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    if (achievements.length > 0 || inputs.length > 0) {
+                        const updated = await CentersAPI.updateMyProfile({ achievements: achievements });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.achievements) u2.achievements = updated.achievements;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save achievements', e);
+                }
             }
         </script>
 

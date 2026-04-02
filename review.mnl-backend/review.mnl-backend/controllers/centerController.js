@@ -99,7 +99,7 @@ const updateCenterLocation = async (req, res) => {
 };
 
 const updateCenterProfile = async (req, res) => {
-  const { business_name, email, address } = req.body;
+  const { business_name, email, address, description, programs, achievements } = req.body;
   const userId = req.user.id;
   try {
     // If email is provided, ensure it's not used by another user
@@ -115,6 +115,9 @@ const updateCenterProfile = async (req, res) => {
     if (business_name !== undefined) { updates.push('business_name = ?'); vals.push(business_name); }
     if (email !== undefined) { updates.push('email = ?'); vals.push(email); }
     if (address !== undefined) { updates.push('address = ?'); vals.push(address); }
+    if (description !== undefined) { updates.push('description = ?'); vals.push(description); }
+    if (programs !== undefined) { updates.push('programs = ?'); vals.push(JSON.stringify(programs)); }
+    if (achievements !== undefined) { updates.push('achievements = ?'); vals.push(JSON.stringify(achievements)); }
 
     if (updates.length > 0) {
       vals.push(userId);
@@ -133,7 +136,8 @@ const updateCenterProfile = async (req, res) => {
 
     // Return updated center profile
     const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url,
+      `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url, rc.description,
+              rc.programs, rc.achievements,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -141,7 +145,15 @@ const updateCenterProfile = async (req, res) => {
       [userId]
     );
     if (rows.length === 0) return res.status(404).json({ message: 'Center not found.' });
-    res.json(rows[0]);
+    const center = rows[0];
+    // Parse JSON fields if they exist
+    if (center.programs && typeof center.programs === 'string') {
+      try { center.programs = JSON.parse(center.programs); } catch(e) { center.programs = []; }
+    }
+    if (center.achievements && typeof center.achievements === 'string') {
+      try { center.achievements = JSON.parse(center.achievements); } catch(e) { center.achievements = []; }
+    }
+    res.json(center);
   } catch (err) {
     console.error('Update center profile error:', err);
     res.status(500).json({ message: 'Server error.' });
@@ -177,7 +189,8 @@ const getMyCenterProfile = async (req, res) => {
   const userId = req.user.id;
   try {
     const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.email, rc.address,
+      `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url, rc.description,
+              rc.programs, rc.achievements,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -186,7 +199,15 @@ const getMyCenterProfile = async (req, res) => {
     );
     if (rows.length === 0)
       return res.status(404).json({ message: 'Center not found.' });
-    res.json(rows[0]);
+    const center = rows[0];
+    // Parse JSON fields if they exist
+    if (center.programs && typeof center.programs === 'string') {
+      try { center.programs = JSON.parse(center.programs); } catch(e) { center.programs = []; }
+    }
+    if (center.achievements && typeof center.achievements === 'string') {
+      try { center.achievements = JSON.parse(center.achievements); } catch(e) { center.achievements = []; }
+    }
+    res.json(center);
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }

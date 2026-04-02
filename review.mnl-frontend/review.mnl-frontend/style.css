@@ -784,6 +784,20 @@ nav img{
     display: flex;
     align-items: center;
     gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    border-radius: 8px;
+}
+
+.section:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.section:active {
+    transform: scale(0.98);
 }
 
 .results{

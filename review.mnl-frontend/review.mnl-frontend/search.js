@@ -6,6 +6,142 @@ var _activeCategories = [];
 var _activeRating = null;
 var _allCenters = []; // populated from API
 
+// --- Filter persistence (localStorage) ---
+const FILTER_STORAGE_KEY = 'rmnl_applied_filters';
+
+// Save filter state to localStorage
+function saveFilterState() {
+    const filterState = {
+        categories: _activeCategories,
+        rating: _activeRating,
+        savedAt: new Date().toISOString()
+    };
+    try {
+        localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filterState));
+    } catch (e) {
+        console.warn('Failed to save filter state:', e);
+    }
+}
+
+// Load filter state from localStorage
+function loadFilterState() {
+    try {
+        const stored = localStorage.getItem(FILTER_STORAGE_KEY);
+        if (stored) {
+            const filterState = JSON.parse(stored);
+            _activeCategories = filterState.categories || [];
+            _activeRating = filterState.rating || null;
+            return true;
+        }
+    } catch (e) {
+        console.warn('Failed to load filter state:', e);
+    }
+    return false;
+}
+
+// Clear saved filters from localStorage
+function clearSavedFilters() {
+    try {
+        localStorage.removeItem(FILTER_STORAGE_KEY);
+    } catch (e) {
+        console.warn('Failed to clear saved filters:', e);
+    }
+}
+
+// Display applied filters
+function updateAppliedFiltersDisplay() {
+    let appliedFiltersContainer = document.getElementById('appliedFiltersDisplay');
+    
+    // Create container if it doesn't exist
+    if (!appliedFiltersContainer) {
+        const body = document.querySelector('.body');
+        if (!body) return;
+        
+        appliedFiltersContainer = document.createElement('div');
+        appliedFiltersContainer.id = 'appliedFiltersDisplay';
+        appliedFiltersContainer.className = 'applied-filters-display';
+        
+        const filterSection = document.querySelector('.filter-container');
+        if (filterSection) {
+            body.insertBefore(appliedFiltersContainer, filterSection.nextSibling);
+        } else {
+            body.insertBefore(appliedFiltersContainer, body.firstChild);
+        }
+    }
+    
+    // Build filter tags
+    let tagsHtml = '';
+    
+    if (_activeCategories.length > 0) {
+        _activeCategories.forEach(function(cat) {
+            tagsHtml += '<span class="filter-tag">' + escHtml(cat) + 
+                '<button class="filter-tag-remove" data-type="category" data-value="' + 
+                escHtml(cat) + '" aria-label="Remove ' + escHtml(cat) + '">×</button></span>';
+        });
+    }
+    
+    if (_activeRating) {
+        tagsHtml += '<span class="filter-tag">' + escHtml(_activeRating) + 
+            '<button class="filter-tag-remove" data-type="rating" aria-label="Remove rating filter">×</button></span>';
+    }
+    
+    if (tagsHtml) {
+        appliedFiltersContainer.innerHTML = 
+            '<div class="applied-filters-header">' +
+                '<strong>Applied Filters:</strong> ' +
+                '<span class="applied-filters-tags">' + tagsHtml + '</span>' +
+                '<button class="clear-all-filters-btn">Clear All</button>' +
+            '</div>';
+        appliedFiltersContainer.style.display = 'block';
+        
+        // Attach event listeners to remove buttons
+        appliedFiltersContainer.querySelectorAll('.filter-tag-remove').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const type = this.getAttribute('data-type');
+                const value = this.getAttribute('data-value');
+                
+                if (type === 'category') {
+                    _activeCategories = _activeCategories.filter(function(c) { return c !== value; });
+                    // Deactivate button in UI
+                    const categoryBtn = Array.from(document.querySelectorAll('.filter-btn'))
+                        .find(function(btn) { return btn.textContent.trim().toLowerCase() === value.toLowerCase(); });
+                    if (categoryBtn) categoryBtn.classList.remove('active');
+                } else if (type === 'rating') {
+                    _activeRating = null;
+                    // Deactivate button in UI
+                    document.querySelectorAll('.filter-btn.active').forEach(function(btn) {
+                        const isRatingBtn = btn.textContent.includes('★');
+                        if (isRatingBtn) btn.classList.remove('active');
+                    });
+                }
+                
+                saveFilterState();
+                updateAppliedFiltersDisplay();
+                applyAllFilters();
+            });
+        });
+        
+        // Clear all button
+        const clearAllBtn = appliedFiltersContainer.querySelector('.clear-all-filters-btn');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                _activeCategories = [];
+                _activeRating = null;
+                clearSavedFilters();
+                document.querySelectorAll('.filter-btn.active').forEach(function(btn) {
+                    btn.classList.remove('active');
+                });
+                updateAppliedFiltersDisplay();
+                applyAllFilters();
+            });
+        }
+    } else {
+        appliedFiltersContainer.style.display = 'none';
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Render helpers
 // ---------------------------------------------------------------------------
@@ -196,6 +332,9 @@ function displaySearchResults() {
 
 // Initialize filter interactions
 function initFilters() {
+    // Load previously saved filters from localStorage
+    const hasSavedFilters = loadFilterState();
+    
     const filterSections = document.querySelectorAll('.filter-section');
 
     filterSections.forEach(function(section) {
@@ -206,11 +345,18 @@ function initFilters() {
 
         if (title.includes('category')) {
             buttons.forEach(function(btn) {
+                // Restore active state if saved
+                if (hasSavedFilters && _activeCategories.includes(btn.textContent.trim())) {
+                    btn.classList.add('active');
+                }
+                
                 btn.addEventListener('click', function() {
                     btn.classList.toggle('active');
                     _activeCategories = Array.from(section.querySelectorAll('.filter-btn.active'))
                         .map(function(b){ return b.textContent.trim(); });
+                    saveFilterState();
                     updateClearState();
+                    updateAppliedFiltersDisplay();
                 });
                 // Add Enter key support to filter buttons
                 btn.addEventListener('keypress', function(e) {
@@ -224,11 +370,18 @@ function initFilters() {
 
         if (title.includes('ratings')) {
             buttons.forEach(function(btn) {
+                // Restore active state if saved
+                if (hasSavedFilters && btn.textContent.trim() === _activeRating) {
+                    btn.classList.add('active');
+                }
+                
                 btn.addEventListener('click', function() {
                     buttons.forEach(function(b){ b.classList.remove('active'); });
                     btn.classList.add('active');
                     _activeRating = btn.textContent.trim();
+                    saveFilterState();
                     updateClearState();
+                    updateAppliedFiltersDisplay();
                 });
                 // Add Enter key support to rating buttons
                 btn.addEventListener('keypress', function(e) {
@@ -267,6 +420,8 @@ function initFilters() {
             const activeRatingBtn = ratingSection ? ratingSection.querySelector('.filter-btn.active') : null;
             _activeRating = activeRatingBtn ? activeRatingBtn.textContent.trim() : null;
 
+            saveFilterState();
+            updateAppliedFiltersDisplay();
             applyAllFilters();
 
             if (_activeCategories.length === 0 && !_activeRating) {
@@ -300,6 +455,8 @@ function initFilters() {
             document.querySelectorAll('.filter-btn.active').forEach(function(b){ b.classList.remove('active'); });
             _activeCategories = [];
             _activeRating = null;
+            clearSavedFilters();
+            updateAppliedFiltersDisplay();
             if (popup) popup.style.display = 'none';
             updateClearState();
             applyAllFilters();
@@ -364,6 +521,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loadCenters();
     }
     initFilters();
+    updateAppliedFiltersDisplay();
+    applyAllFilters();
 });
 
 function applyAllFilters() {

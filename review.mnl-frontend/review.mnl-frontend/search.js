@@ -329,6 +329,26 @@ function initFilters() {
     if (closeBtn) closeBtn.addEventListener('click', function(){ if (popup) popup.style.display = 'none'; });
     if (popup) popup.addEventListener('click', function(e){ if (e.target === popup) popup.style.display = 'none'; });
 
+    // Make Category and Ratings headings clickable to toggle visibility
+    const filterSectionHeadings = document.querySelectorAll('.filter-section h2');
+    filterSectionHeadings.forEach(function(heading) {
+        heading.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const section = heading.closest('.filter-section');
+            if (section) {
+                const filterOptions = section.querySelector('.filter-options');
+                if (filterOptions) {
+                    // Toggle visibility
+                    if (filterOptions.style.display === 'none') {
+                        filterOptions.style.display = 'grid';
+                    } else {
+                        filterOptions.style.display = 'none';
+                    }
+                }
+            }
+        });
+    });
+
     updateClearState();
 }
 

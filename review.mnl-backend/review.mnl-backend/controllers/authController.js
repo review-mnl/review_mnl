@@ -112,9 +112,17 @@ const login = async (req, res) => {
       if (center[0]?.status === 'rejected')
         return res.status(403).json({ message: 'Your application was rejected.' });
     }
+    try {
+      // Log minimal info for debugging without exposing password/hash
+      const pwLooksHashed = typeof user.password === 'string' && (user.password.startsWith('$2') || user.password.startsWith('$argon'));
+      console.log(`Login attempt: email=${email}, userId=${user.id}, is_verified=${user.is_verified}, role=${user.role}, pwLooksHashed=${pwLooksHashed}, pwLen=${user.password ? user.password.length : 0}`);
+    } catch (e) {}
+
     const match = await bcrypt.compare(password, user.password);
-    if (!match)
+    if (!match) {
+      console.warn(`Login failed: bcrypt.compare returned false for userId=${user.id} email=${email}`);
       return res.status(401).json({ message: 'Invalid email or password.' });
+    }
     const tokenExpires = process.env.JWT_EXPIRES_IN || '7d';
     const token = jwt.sign(
       { id: user.id, role: user.role, email: user.email },

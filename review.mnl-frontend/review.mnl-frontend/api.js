@@ -193,12 +193,45 @@ async function apiRequest(method, path, body, isFormData) {
     const text = await res.text().catch(() => '');
     var json = {};
     try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
+    
+    // Handle authentication errors
     if (res.status === 401) {
         try { clearSession(); } catch(e) {}
+        const errorMsg = json.message || 'Session expired. Please login again.';
         console.warn('API returned 401 for', path, json);
-        throw new Error(json.message || 'Invalid or expired token.');
+        // Redirect to login if not already there
+        if (!window.location.pathname.includes('login.html') && !window.location.pathname === '/') {
+            setTimeout(function() { window.location.href = 'login.html'; }, 500);
+        }
+        throw new Error(errorMsg);
     }
-    if (!res.ok) throw new Error(json.message || 'Request failed (' + res.status + ')');
+    
+    // Handle authorization errors
+    if (res.status === 403) {
+        const errorMsg = json.message || 'You do not have permission to access this resource.';
+        console.warn('API returned 403 for', path, json);
+        throw new Error(errorMsg);
+    }
+    
+    // Handle validation/bad request errors
+    if (res.status === 400) {
+        const errorMsg = json.message || json.error || 'Invalid request. Please check your input.';
+        throw new Error(errorMsg);
+    }
+    
+    // Handle conflict errors (duplicates, etc)
+    if (res.status === 409) {
+        const errorMsg = json.message || 'This resource already exists.';
+        throw new Error(errorMsg);
+    }
+    
+    // Handle other errors
+    if (!res.ok) {
+        const errorMsg = json.message || json.error || ('Request failed (' + res.status + '. Please try again later.');
+        console.error('API error for', path, res.status, json);
+        throw new Error(errorMsg);
+    }
+    
     return json;
 }
 

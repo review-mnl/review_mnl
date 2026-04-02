@@ -19,18 +19,24 @@ function buildCard(center) {
     div.className = 'result-card';
     div.setAttribute('data-id', center.id);
     div.setAttribute('data-category', (center.category || '').trim());
-    div.setAttribute('data-rating', Math.round(center.average_rating || 0));
+    // Map backend field avg_rating to avg_rating for display
+    const rating = center.avg_rating !== undefined ? center.avg_rating : center.average_rating;
+    div.setAttribute('data-rating', Math.round(rating || 0));
     div.style.cursor = 'pointer';
 
+    // Map backend field business_name to display name
+    const centerName = center.business_name || center.name || 'Unnamed Center';
+    const centerDesc = center.description || '';
+    
     div.innerHTML =
         '<div class="result-image"></div>' +
         '<div class="result-content">' +
-            '<h3>' + escHtml(center.name) + '</h3>' +
+            '<h3>' + escHtml(centerName) + '</h3>' +
             '<p class="result-location">' + escHtml(center.address || '') + '</p>' +
-            '<p class="result-description">' + escHtml(center.description || '') + '</p>' +
-            '<div class="result-rating">' + starString(center.average_rating) +
+            '<p class="result-description">' + escHtml(centerDesc) + '</p>' +
+            '<div class="result-rating">' + starString(rating) +
                 ' <span style="font-size:0.8em;color:#555;">' +
-                (center.average_rating ? Number(center.average_rating).toFixed(1) : 'No ratings') +
+                (rating ? Number(rating).toFixed(1) : 'No ratings') +
                 '</span>' +
             '</div>' +
         '</div>';

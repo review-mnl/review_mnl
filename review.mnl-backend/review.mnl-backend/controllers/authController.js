@@ -25,11 +25,25 @@ require('dotenv').config();
 
 const registerStudent = async (req, res) => {
   const { fullname, email, password } = req.body;
+  
+  // Input validation
+  if (!fullname || !fullname.trim())
+    return res.status(400).json({ message: 'Full name is required.' });
+  if (!email || !email.trim())
+    return res.status(400).json({ message: 'Email is required.' });
+  if (!password || password.length < 6)
+    return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+  
+  // Email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim()))
+    return res.status(400).json({ message: 'Please enter a valid email address.' });
+  
   const nameParts = fullname.trim().split(' ');
   const first_name = nameParts[0];
   const last_name = nameParts.slice(1).join(' ') || '';
   try {
-    const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
     if (existing.length > 0)
       return res.status(409).json({ message: 'Email is already registered.' });
     const hashed = await bcrypt.hash(password, 10);
@@ -37,7 +51,7 @@ const registerStudent = async (req, res) => {
     await db.query(
       `INSERT INTO users (first_name, last_name, email, password, role, verify_token)
        VALUES (?, ?, ?, ?, 'student', ?)`,
-      [first_name, last_name, email, hashed, token]
+      [first_name, last_name, email.toLowerCase(), hashed, token]
     );
     await sendVerificationEmail(email, token, first_name);
     res.status(201).json({ message: 'Account created! Please check your email to verify.' });
@@ -49,19 +63,27 @@ const registerStudent = async (req, res) => {
 
 const registerCenter = async (req, res) => {
   const { business_name, email, password } = req.body;
-  if (!business_name)
+  
+  // Input validation
+  if (!business_name || !business_name.trim())
     return res.status(400).json({ message: 'Business name is required.' });
-  if (!email)
+  if (!email || !email.trim())
     return res.status(400).json({ message: 'Email is required.' });
-  if (!password)
-    return res.status(400).json({ message: 'Password is required.' });
+  if (!password || password.length < 6)
+    return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+  
+  // Email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim()))
+    return res.status(400).json({ message: 'Please enter a valid email address.' });
+  
   // Use Cloudinary file URLs instead of local filenames
   const businessPermit = req.files?.business_permit?.[0]?.path || req.files?.business_permit?.[0]?.url || null;
   const dtiSecReg      = req.files?.dti_sec_reg?.[0]?.path || req.files?.dti_sec_reg?.[0]?.url || null;
   if (!businessPermit || !dtiSecReg)
     return res.status(400).json({ message: 'Both Business Permit and DTI/SEC Registration are required.' });
   try {
-    const [existing] = await db.query('SELECT id FROM review_centers WHERE email = ?', [email]);
+    const [existing] = await db.query('SELECT id FROM review_centers WHERE email = ?', [email.toLowerCase()]);
     if (existing.length > 0)
       return res.status(409).json({ message: 'Email is already registered.' });
     const hashed = await bcrypt.hash(password, 10);
@@ -69,12 +91,12 @@ const registerCenter = async (req, res) => {
     const [userResult] = await db.query(
       `INSERT INTO users (first_name, last_name, email, password, role, is_verified)
        VALUES (?, ?, ?, ?, 'review_center', 1)`,
-      [business_name, '', email, hashed]
+      [business_name.trim(), '', email.toLowerCase(), hashed]
     );
     await db.query(
       `INSERT INTO review_centers (user_id, business_name, email, password, business_permit, dti_sec_reg, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [userResult.insertId, business_name, email, hashed, businessPermit, dtiSecReg]
+      [userResult.insertId, business_name.trim(), email.toLowerCase(), hashed, businessPermit, dtiSecReg]
     );
     res.status(201).json({ message: 'Application submitted! Admin will review your documents.' });
   } catch (err) {
@@ -98,6 +120,12 @@ const verifyEmail = async (req, res) => {
 
 const login = async (req, res) => {
   const { email, password } = req.body;
+  
+  // Input validation
+  if (!email || !email.trim())
+    return res.status(400).json({ message: 'Email is required.' });
+  if (!password)
+    return res.status(400).json({ message: 'Password is required.' });
   try {
     const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
     if (rows.length === 0)

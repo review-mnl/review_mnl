@@ -454,7 +454,7 @@
                 function closeUserModal() {
                     document.getElementById('userProfileModal').style.display = 'none';
                 }
-                function saveUserProfile() {
+                async function saveUserProfile() {
                     const name = document.getElementById('userNameInput').value.trim();
                     const email = document.getElementById('userEmailInput').value.trim();
                     const bio = document.getElementById('userBioInput').value.trim();
@@ -483,6 +483,39 @@
                         reader.readAsDataURL(file);
                     }
                     closeUserModal();
+                    // Persist to backend
+                    try {
+                        // If there's a profile photo, upload it first
+                        if (file) {
+                            const fd = new FormData();
+                            fd.append('profile_picture', file);
+                            try {
+                                const uploadRes = await UserAPI.uploadProfilePhoto(fd);
+                                if (uploadRes && uploadRes.user) {
+                                    try { setSessionUser(uploadRes.user, true); } catch(e) {}
+                                }
+                            } catch (err) {
+                                console.warn('Profile photo upload failed', err);
+                            }
+                        }
+
+                        const body = {};
+                        if (name) {
+                            const parts = name.split(' ');
+                            body.first_name = parts.shift();
+                            body.last_name = parts.join(' ');
+                        }
+                        if (email) body.email = email;
+                        if (bio) body.bio = bio;
+                        if (Object.keys(body).length > 0) {
+                            const res = await UserAPI.updateMyProfile(body);
+                            if (res && res.user) {
+                                try { setSessionUser(res.user, true); } catch(e) {}
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Failed to save user profile', e);
+                    }
                 }
                 document.getElementById('userImageInput').addEventListener('change', function() {
                     const file = this.files[0];
@@ -507,6 +540,14 @@
                     document.getElementById('welcomeName').textContent = user.name;
                     document.getElementById('userNameDisplay').textContent = user.name;
                     document.getElementById('userEmailDisplay').textContent = user.email;
+                    if (user.profile_picture_url) {
+                        const avatar = document.getElementById('userAvatarPreview');
+                        if (avatar) {
+                            avatar.style.backgroundImage = 'url(' + user.profile_picture_url + ')';
+                            avatar.style.backgroundSize = 'cover';
+                            avatar.style.backgroundPosition = 'center';
+                        }
+                    }
                     var sidebarName = document.querySelector('.sidebar-header h3');
                     if (sidebarName) sidebarName.textContent = user.name;
                 })();

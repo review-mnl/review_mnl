@@ -246,6 +246,10 @@ const CentersAPI = {
 
     getMyProfile: () =>
         apiRequest('GET', '/api/centers/me'),
+    updateMyProfile: (data) =>
+        apiRequest('PUT', '/api/centers/me', data),
+    uploadLogo: (formData) =>
+        apiRequest('PUT', '/api/centers/me/logo', formData, true),
 };
 
 // ---------------------------------------------------------------------------
@@ -257,6 +261,8 @@ const UserAPI = {
 
     updateMyProfile: (data) =>
         apiRequest('PUT', '/api/users/me', data),
+    uploadProfilePhoto: (formData) =>
+        apiRequest('PUT', '/api/users/me/photo', formData, true),
 };
 
 // ---------------------------------------------------------------------------

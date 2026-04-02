@@ -85,6 +85,14 @@
                     if (center.address) {
                         document.getElementById('centerDescDisplay').textContent = center.address;
                     }
+                    if (center.logo_url) {
+                        const logo = document.getElementById('centerLogoPreview');
+                        if (logo) {
+                            logo.style.backgroundImage = 'url(' + center.logo_url + ')';
+                            logo.style.backgroundSize = 'cover';
+                            logo.style.backgroundPosition = 'center';
+                        }
+                    }
                     var rating = Math.round(center.avg_rating || 0);
                     var starsEl = document.querySelector('.center-rating .stars');
                     if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
@@ -218,8 +226,8 @@
                 <div class="modal-body">
                     <label>Center Name</label>
                     <input type="text" id="centerNameInput" placeholder="Name of Review Center">
-                    <label>Description</label>
-                    <textarea id="centerDescInput" rows="3" placeholder="Short description..."></textarea>
+                    <label>Location</label>
+                    <textarea id="centerLocationInput" rows="3" placeholder="Short location/address..."></textarea>
                     <label>Profile Image</label>
                     <input type="file" id="centerImageInput" accept="image/*">
                     <div class="modal-img-preview" id="modalImgPreview"></div>
@@ -337,7 +345,7 @@
             function openModal(id) {
                 if (id === 'profileModal') {
                     const nameInput = document.getElementById('centerNameInput');
-                    const descInput = document.getElementById('centerDescInput');
+                    const descInput = document.getElementById('centerLocationInput');
                     nameInput.value = '';
                     descInput.value = '';
                     nameInput.placeholder = document.getElementById('centerNameDisplay').innerText;
@@ -381,12 +389,12 @@
                     reader.readAsDataURL(file);
                 }
             });
-            function saveProfile() {
+            async function saveProfile() {
                 const name = document.getElementById('centerNameInput').value.trim();
-                const desc = document.getElementById('centerDescInput').value.trim();
+                const location = document.getElementById('centerLocationInput').value.trim();
                 const file = document.getElementById('centerImageInput').files[0];
                 if (name) document.getElementById('centerNameDisplay').innerText = name;
-                if (desc) document.getElementById('centerDescDisplay').innerText = desc;
+                if (location) document.getElementById('centerDescDisplay').innerText = location;
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
@@ -402,9 +410,46 @@
                 try {
                     var u = getUser() || {};
                     if (name) { u.name = name; u.business_name = name; }
-                    if (desc) u.address = desc;
+                    if (location) u.address = location;
                     setSessionUser(u, true);
                 } catch(e) {}
+
+                // Persist to backend; upload logo first (if present), then update other fields
+                try {
+                    if (file) {
+                        const fd = new FormData();
+                        fd.append('logo', file);
+                        const centerResp = await CentersAPI.uploadLogo(fd);
+                        if (centerResp && centerResp.logo_url) {
+                            const logo = document.getElementById('centerLogoPreview');
+                            logo.style.backgroundImage = 'url(' + centerResp.logo_url + ')';
+                            logo.style.backgroundSize = 'cover';
+                            logo.style.backgroundPosition = 'center';
+                        }
+                        // Update session user with returned center info
+                        try {
+                            const u2 = getUser() || {};
+                            if (centerResp.business_name) u2.business_name = centerResp.business_name;
+                            if (centerResp.logo_url) u2.logo_url = centerResp.logo_url;
+                            setSessionUser(u2, true);
+                        } catch(e) {}
+                    }
+                    const body = {};
+                    if (name) body.business_name = name;
+                    if (location) body.address = location;
+                    if (Object.keys(body).length > 0) {
+                        const updated = await CentersAPI.updateMyProfile(body);
+                        // Refresh session user from server if available
+                        try {
+                            const u3 = getUser() || {};
+                            if (updated && updated.business_name) u3.business_name = updated.business_name;
+                            if (updated && updated.address) u3.address = updated.address;
+                            setSessionUser(u3, true);
+                        } catch(e) {}
+                    }
+                } catch(e) {
+                    console.warn('Saving center profile failed', e);
+                }
             }
             function saveAbout() {
                 const text = document.getElementById('aboutInput').value.trim();

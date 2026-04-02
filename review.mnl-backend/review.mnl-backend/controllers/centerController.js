@@ -3,7 +3,7 @@ const db = require('../config/db');
 const getApprovedCenters = async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude,
+      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url,
               IFNULL(AVG(t.rating), 0) AS avg_rating,
               COUNT(t.id) AS review_count
        FROM review_centers rc
@@ -21,7 +21,7 @@ const getCenterById = async (req, res) => {
   const { id } = req.params;
   try {
     const [center] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.latitude, rc.longitude,
+      `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.latitude, rc.longitude, rc.logo_url,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -46,7 +46,7 @@ const getCentersNearby = async (req, res) => {
     return res.status(400).json({ message: 'Latitude and longitude are required.' });
   try {
     const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude,
+      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count,
               (6371 * ACOS(
                 COS(RADIANS(?)) * COS(RADIANS(rc.latitude)) *
@@ -70,7 +70,7 @@ const searchCenters = async (req, res) => {
   if (!q) return res.status(400).json({ message: 'Search query is required.' });
   try {
     const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude,
+      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -98,6 +98,81 @@ const updateCenterLocation = async (req, res) => {
   }
 };
 
+const updateCenterProfile = async (req, res) => {
+  const { business_name, email, address } = req.body;
+  const userId = req.user.id;
+  try {
+    // If email is provided, ensure it's not used by another user
+    if (email) {
+      const [existingUser] = await db.query('SELECT id FROM users WHERE email = ? AND id != ?', [email, userId]);
+      if (existingUser.length > 0) return res.status(409).json({ message: 'Email already in use.' });
+      const [existingCenter] = await db.query('SELECT id FROM review_centers WHERE email = ? AND user_id != ?', [email, userId]);
+      if (existingCenter.length > 0) return res.status(409).json({ message: 'Email already in use by another center.' });
+    }
+
+    const updates = [];
+    const vals = [];
+    if (business_name !== undefined) { updates.push('business_name = ?'); vals.push(business_name); }
+    if (email !== undefined) { updates.push('email = ?'); vals.push(email); }
+    if (address !== undefined) { updates.push('address = ?'); vals.push(address); }
+
+    if (updates.length > 0) {
+      vals.push(userId);
+      await db.query(`UPDATE review_centers SET ${updates.join(', ')} WHERE user_id = ?`, vals);
+    }
+
+    // Also keep users table in sync (first_name used for business_name)
+    const uUpdates = [];
+    const uVals = [];
+    if (business_name !== undefined) { uUpdates.push('first_name = ?'); uVals.push(business_name); }
+    if (email !== undefined) { uUpdates.push('email = ?'); uVals.push(email); }
+    if (uUpdates.length > 0) {
+      uVals.push(userId);
+      await db.query(`UPDATE users SET ${uUpdates.join(', ')} WHERE id = ?`, uVals);
+    }
+
+    // Return updated center profile
+    const [rows] = await db.query(
+      `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url,
+              IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
+       FROM review_centers rc
+       LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
+       WHERE rc.user_id = ? GROUP BY rc.id`,
+      [userId]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Center not found.' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Update center profile error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const updateCenterLogo = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
+    const url = req.file.path || req.file.url || req.file.secure_url || null;
+    if (!url) return res.status(500).json({ message: 'Upload failed.' });
+
+    await db.query('UPDATE review_centers SET logo_url = ? WHERE user_id = ?', [url, userId]);
+
+    const [rows] = await db.query(
+      `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url,
+              IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
+       FROM review_centers rc
+       LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
+       WHERE rc.user_id = ? GROUP BY rc.id`,
+      [userId]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Center not found.' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Update center logo error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 const getMyCenterProfile = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -117,4 +192,4 @@ const getMyCenterProfile = async (req, res) => {
   }
 };
 
-module.exports = { getApprovedCenters, getCenterById, getCentersNearby, searchCenters, updateCenterLocation, getMyCenterProfile };
+module.exports = { getApprovedCenters, getCenterById, getCentersNearby, searchCenters, updateCenterLocation, updateCenterProfile, updateCenterLogo, getMyCenterProfile };

@@ -2,6 +2,7 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 const passport = require('./config/passport');
+const db = require('./config/db');
 require('dotenv').config();
 
 
@@ -80,7 +81,17 @@ const PORT = process.env.PORT || 5000;
 // Run DB migrations before starting the server (non-blocking safety)
 const { runMigration } = require('./config/migrate');
 runMigration().then(() => {
-  app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  app.listen(PORT, async () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    try {
+      const [rows] = await db.query('SELECT DATABASE() AS db, @@hostname AS host, @@port AS port');
+      if (rows && rows[0]) {
+        console.log(`DB connected: ${rows[0].db} @ ${rows[0].host}:${rows[0].port}`);
+      }
+    } catch (e) {
+      console.error('Failed to fetch DB connection identity:', e && e.message);
+    }
+  });
 }).catch(err => {
   console.error('Migration failed to run:', err);
   process.exit(1);

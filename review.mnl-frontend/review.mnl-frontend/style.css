@@ -1752,8 +1752,11 @@ nav img{
 
 /* DASHBOARD SECTION */
 .dashboard {
-    background: linear-gradient(to bottom right, #0a3fa3, #072d75);
-    padding: 60px 8%;
+    background:
+        radial-gradient(circle at 12% 18%, rgba(154, 188, 255, 0.20) 0%, rgba(154, 188, 255, 0) 34%),
+        radial-gradient(circle at 88% 26%, rgba(126, 170, 255, 0.22) 0%, rgba(126, 170, 255, 0) 32%),
+        linear-gradient(180deg, #0a4cff 0%, #1d49cc 55%, #0a3aa8 100%);
+    padding: 70px 8%;
 }
 
 .dashboard-container {
@@ -1770,9 +1773,11 @@ nav img{
 
 .dashboard-card {
     flex: 1;
-    background: #f5f6fa;
+    background: rgba(245, 248, 255, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 20px;
-    padding: 20px;
+    padding: 22px;
+    box-shadow: 0 14px 30px rgba(6, 22, 82, 0.20);
 }
 
 /* CARD HEADER */
@@ -1786,6 +1791,7 @@ nav img{
 .card-header h3 {
     font-size: 18px;
     font-weight: 600;
+    color: #0a2f9a;
 }
 
 /* REVIEW ITEMS */
@@ -1793,7 +1799,8 @@ nav img{
 .saved-item {
     display: flex;
     align-items: center;
-    background: #fff;
+    background: #ffffff;
+    border: 1px solid #dbe8ff;
     padding: 10px;
     border-radius: 15px;
     margin-bottom: 10px;
@@ -1803,18 +1810,19 @@ nav img{
 .review-avatar {
     width: 50px;
     height: 50px;
-    background: #dcdcdc;
+    background: linear-gradient(135deg, #dce8ff, #c5d8ff);
     border-radius: 50%;
 }
 
 .review-info h4 {
     font-size: 14px;
     margin: 0;
+    color: #0d2d8f;
 }
 
 .review-info p {
     font-size: 12px;
-    color: gray;
+    color: #5b6f9a;
     margin: 2px 0 0;
 }
 
@@ -1826,7 +1834,7 @@ nav img{
 }
 
 .btn-delete {
-    background: #1d4ed8;
+    background: #1746c9;
     color: #fff;
     border: none;
     padding: 6px 10px;
@@ -1836,7 +1844,7 @@ nav img{
 }
 
 .btn-view {
-    background: #2563eb;
+    background: #0a4cff;
     color: #fff;
     border: none;
     padding: 6px 10px;
@@ -1847,9 +1855,11 @@ nav img{
 
 /* RECENT SECTION */
 .recent-section {
-    background: #f5f6fa;
-    padding: 20px;
+    background: rgba(245, 248, 255, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    padding: 22px;
     border-radius: 20px;
+    box-shadow: 0 14px 30px rgba(6, 22, 82, 0.20);
 }
 
 .recent-grid {
@@ -1859,17 +1869,19 @@ nav img{
 }
 
 .recent-card {
-    background: #1d4ed8;
+    background: linear-gradient(165deg, #2462f5 0%, #0f3dbc 100%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
     border-radius: 15px;
     padding: 15px;
     width: 200px;
     color: #fff;
+    box-shadow: 0 10px 20px rgba(6, 29, 94, 0.30);
 }
 
 .recent-img {
     width: 100%;
     height: 100px;
-    background: #fff;
+    background: linear-gradient(135deg, #f7faff, #dbe8ff);
     border-radius: 10px;
     margin-bottom: 10px;
 }
@@ -1912,11 +1924,12 @@ nav img{
     display: flex;
     align-items: center;
     gap: 24px;
-    background: #fff;
+    background: rgba(252, 253, 255, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: 16px;
     padding: 28px 32px;
     margin-bottom: 28px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    box-shadow: 0 14px 30px rgba(6, 22, 82, 0.24);
 }
 
 .user-profile-avatar {
@@ -1949,7 +1962,7 @@ nav img{
 
 .user-profile-info p {
     font-size: 13px;
-    color: #555;
+    color: #425788;
     margin: 0;
 }
 

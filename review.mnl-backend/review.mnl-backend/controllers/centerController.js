@@ -21,7 +21,8 @@ const getCenterById = async (req, res) => {
   const { id } = req.params;
   try {
     const [center] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.latitude, rc.longitude, rc.logo_url,
+            `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.latitude, rc.longitude, rc.logo_url,
+              rc.description, rc.programs, rc.achievements,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1

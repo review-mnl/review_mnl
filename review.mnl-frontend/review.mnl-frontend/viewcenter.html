@@ -11,7 +11,7 @@
     </head>
     <body>
         <section class="header header-viewcenter">
-            <a href="search.html" class="back-btn-viewcenter">
+            <a href="search.html" id="backToResultsBtn" class="back-btn-viewcenter">
                 <span class="material-symbols-outlined">arrow_back</span>
                 Back
             </a>
@@ -37,13 +37,13 @@
             </nav>
             <div class="center-header-content" style="display:flex;align-items:flex-start;justify-content:space-between;">
                 <div style="display:flex;align-items:flex-start;gap:20px;">
-                    <div class="center-logo"></div>
+                    <div class="center-logo" id="centerLogo"></div>
                     <div class="center-info">
-                        <h1>Name of Review Center</h1>
-                        <p class="center-description">Description.....</p>
+                        <h1 id="centerName">Name of Review Center</h1>
+                        <p class="center-description" id="centerShortDescription">Description.....</p>
                         <div class="center-rating">
-                            <span class="stars">★★★★★</span>
-                            <span class="rating-count">5.0 (10)</span>
+                            <span class="stars" id="centerStars">★★★★★</span>
+                            <span class="rating-count" id="centerRatingCount">5.0 (10)</span>
                         </div>
                     </div>
                 </div>
@@ -77,12 +77,12 @@
             <div class="center-left">
                 <div class="about-section">
                     <h2>About</h2>
-                    <p>Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
+                    <p id="centerAbout">Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
                 </div>
 
                 <div class="programs-section">
                     <h2>Programs Offered</h2>
-                    <div class="program-tags">
+                    <div class="program-tags" id="programTags">
                         <button class="program-tag">Category 1</button>
                         <button class="program-tag">Category 1</button>
                         <button class="program-tag">Category 1</button>
@@ -95,7 +95,7 @@
 
             <div class="achievements-card">
                 <h2>Achievements</h2>
-                <div class="achievement-list">
+                <div class="achievement-list" id="achievementList">
                     <div class="achievement-item">
                         <span class="trophy-icon">🏆</span>
                         <p>Achievement Achievement Achievement</p>
@@ -142,89 +142,6 @@
                     updateBtn();
                 };
 
-                // Live update: periodically refresh center details so students see latest info
-                (function(){
-                    let intervalId = null;
-                    async function loadCenterDetails(){
-                        try{
-                            if (!CENTER.id || CENTER.id === 'center_unknown') return;
-                            const data = await CentersAPI.getById(CENTER.id);
-                            if (!data) return;
-                            // Name and description
-                            const nameEl = document.querySelector('.center-info h1');
-                            const descEl = document.querySelector('.center-description');
-                            if (data.business_name && nameEl) nameEl.textContent = data.business_name;
-                            if ((data.description || data.address) && descEl) descEl.textContent = data.description || data.address || '';
-
-                            // Logo / image
-                            const logoEl = document.querySelector('.center-header-content .center-logo');
-                            if (logoEl) {
-                                const img = data.logo_url || data.image || data.photo_url || data.avatar;
-                                if (img) {
-                                    logoEl.style.backgroundImage = 'url(' + img + ')';
-                                    logoEl.style.backgroundSize = 'cover';
-                                    logoEl.style.backgroundPosition = 'center';
-                                }
-                            }
-
-                            // Rating
-                            try{
-                                const rating = Math.round(data.avg_rating || 0);
-                                const starsEl = document.querySelector('.center-rating .stars');
-                                const ratingCount = document.querySelector('.center-rating .rating-count');
-                                if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-                                if (ratingCount) ratingCount.textContent = (data.avg_rating || 0).toFixed(1) + ' (' + (data.review_count || 0) + ')';
-                            }catch(e){}
-
-                            // Programs
-                            try{
-                                const progWrap = document.querySelector('.programs-section .program-tags');
-                                if (progWrap) {
-                                    progWrap.innerHTML = '';
-                                    const programs = data.programs || data.program_tags || data.program_list || [];
-                                    (Array.isArray(programs) ? programs : String(programs).split(',')).forEach(function(p){
-                                        const text = (typeof p === 'string') ? p : (p.name || p.title || JSON.stringify(p));
-                                        if (!text) return;
-                                        const btn = document.createElement('button');
-                                        btn.className = 'program-tag';
-                                        btn.textContent = text.trim();
-                                        progWrap.appendChild(btn);
-                                    });
-                                }
-                            }catch(e){}
-
-                            // Achievements
-                            try{
-                                const achWrap = document.querySelector('.achievements-card .achievement-list');
-                                if (achWrap) {
-                                    achWrap.innerHTML = '';
-                                    const ach = data.achievements || data.achievement_list || [];
-                                    (Array.isArray(ach) ? ach : []).forEach(function(a){
-                                        const item = document.createElement('div');
-                                        item.className = 'achievement-item';
-                                        const span = document.createElement('span'); span.className = 'trophy-icon'; span.textContent = '🏆';
-                                        const p = document.createElement('p'); p.textContent = (a.title || a || '').toString();
-                                        item.appendChild(span); item.appendChild(p);
-                                        achWrap.appendChild(item);
-                                    });
-                                }
-                            }catch(e){}
-
-                            // Update CENTER object used for save/bookmark functionality
-                            try{ window._updateSaveCenterId(String(data.id || data._id || CENTER.id), data.business_name || data.name || CENTER.name, data.address || CENTER.location || ''); }catch(e){}
-                        }catch(e){ /* ignore */ }
-                    }
-
-                    // start immediately and then poll every 10s
-                    loadCenterDetails();
-                    intervalId = setInterval(loadCenterDetails, 10000);
-                    window._viewCenterInterval = intervalId;
-                    // suspend polling when tab hidden to save requests
-                    document.addEventListener('visibilitychange', function(){
-                        if (document.hidden) { if (window._viewCenterInterval) clearInterval(window._viewCenterInterval); }
-                        else { loadCenterDetails(); window._viewCenterInterval = setInterval(loadCenterDetails, 10000); }
-                    });
-                })();
                 function getSaved() {
                     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
                 }
@@ -708,42 +625,109 @@
         (async function loadCenter() {
             const params = new URLSearchParams(window.location.search);
             const centerId = params.get('id');
-            if (!centerId) return; // no ID, leave placeholder content
+            if (!centerId) return;
+
+            function parseArrayField(raw) {
+                if (!raw) return [];
+                if (Array.isArray(raw)) return raw;
+                if (typeof raw === 'string') {
+                    const trimmed = raw.trim();
+                    if (!trimmed) return [];
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        return Array.isArray(parsed) ? parsed : [];
+                    } catch (e) {
+                        return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                    }
+                }
+                return [];
+            }
+
+            function stars(rating) {
+                const r = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+                return '★'.repeat(r) + '☆'.repeat(5 - r);
+            }
+
+            function resolveImageUrl(raw) {
+                if (!raw) return '';
+                const value = String(raw).trim();
+                if (!value) return '';
+                if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+                if (value.startsWith('/')) return API_BASE + value;
+                return API_BASE + '/' + value;
+            }
 
             try {
                 const center = await CentersAPI.getById(centerId);
+                const centerName = center.business_name || center.name || 'Review Center';
+                const centerAbout = center.description || 'No description provided yet.';
+                const centerShort = center.description || center.address || 'Explore this review center.';
+                const ratingValue = Number(center.avg_rating || center.average_rating || 0);
 
-                // Header info
-                const h1 = document.querySelector('.center-header-content h1');
-                const desc = document.querySelector('.center-header-content .center-description');
-                const ratingSpan = document.querySelector('.center-header-content .stars');
-                const ratingCount = document.querySelector('.center-header-content .rating-count');
-                if (h1) h1.textContent = center.name || '';
-                if (desc) desc.textContent = center.description || '';
-                if (ratingSpan) {
-                    const r = Math.round(center.average_rating || 0);
-                    ratingSpan.textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
+                const nameEl = document.getElementById('centerName');
+                const shortDescEl = document.getElementById('centerShortDescription');
+                const aboutEl = document.getElementById('centerAbout');
+                const starsEl = document.getElementById('centerStars');
+                const ratingCountEl = document.getElementById('centerRatingCount');
+                const logoEl = document.getElementById('centerLogo');
+                const programTagsEl = document.getElementById('programTags');
+                const achievementsEl = document.getElementById('achievementList');
+
+                if (nameEl) nameEl.textContent = centerName;
+                if (shortDescEl) shortDescEl.textContent = centerShort;
+                if (aboutEl) aboutEl.textContent = centerAbout;
+                if (starsEl) starsEl.textContent = stars(ratingValue);
+                if (ratingCountEl) ratingCountEl.textContent = ratingValue.toFixed(1) + ' (' + Number(center.review_count || 0) + ')';
+
+                if (logoEl) {
+                    const logoUrl = resolveImageUrl(center.logo_url);
+                    if (logoUrl) {
+                        logoEl.style.backgroundImage = 'url(' + logoUrl + ')';
+                        logoEl.style.backgroundSize = 'cover';
+                        logoEl.style.backgroundPosition = 'center';
+                    }
                 }
-                if (ratingCount) {
-                    ratingCount.textContent = (center.average_rating
-                        ? Number(center.average_rating).toFixed(1) : 'No ratings') +
-                        (center.review_count ? ' (' + center.review_count + ')' : '');
+
+                if (programTagsEl) {
+                    const programs = parseArrayField(center.programs);
+                    programTagsEl.innerHTML = '';
+                    if (programs.length === 0) {
+                        programTagsEl.innerHTML = '<button class="program-tag">No programs listed yet</button>';
+                    } else {
+                        programs.forEach(function(program) {
+                            const btn = document.createElement('button');
+                            btn.className = 'program-tag';
+                            btn.textContent = String(program).trim();
+                            programTagsEl.appendChild(btn);
+                        });
+                    }
                 }
 
-                // About section
-                const aboutP = document.querySelector('.about-section p');
-                if (aboutP) aboutP.textContent = center.description || '';
+                if (achievementsEl) {
+                    const achievements = parseArrayField(center.achievements);
+                    achievementsEl.innerHTML = '';
+                    if (achievements.length === 0) {
+                        achievementsEl.innerHTML =
+                            '<div class="achievement-item"><span class="trophy-icon">🏆</span><p>No achievements listed yet.</p></div>';
+                    } else {
+                        achievements.forEach(function(itemText) {
+                            const item = document.createElement('div');
+                            item.className = 'achievement-item';
+                            item.innerHTML = '<span class="trophy-icon">🏆</span><p>' + escHtml(String(itemText)) + '</p>';
+                            achievementsEl.appendChild(item);
+                        });
+                    }
+                }
 
-                // Programs / category tags
-                const programTags = document.querySelector('.program-tags');
-                if (programTags && center.category) {
-                    programTags.innerHTML = '';
-                    String(center.category).split(',').forEach(function(cat) {
-                        const btn = document.createElement('button');
-                        btn.className = 'program-tag';
-                        btn.textContent = cat.trim();
-                        programTags.appendChild(btn);
-                    });
+                // Keep save-center payload in sync with selected center.
+                if (window._updateSaveCenterId) {
+                    window._updateSaveCenterId(String(center.id || centerId), centerName, center.address || '');
+                }
+
+                // Make the Back button return to previous search results context when possible.
+                const backBtn = document.getElementById('backToResultsBtn');
+                if (backBtn && document.referrer && document.referrer.indexOf('search.html') !== -1) {
+                    backBtn.href = document.referrer;
                 }
 
                 // Testimonials
@@ -759,11 +743,12 @@
                     testiSection.innerHTML = '<h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews</h2>';
                     center.testimonials.forEach(function(t) {
                         const r = Math.round(t.rating || 0);
+                        const studentName = [t.first_name || '', t.last_name || ''].join(' ').trim() || 'Anonymous';
                         const card = document.createElement('div');
                         card.style.cssText = 'background:#f9fafb;border-radius:12px;padding:16px 20px;margin-bottom:14px;';
                         card.innerHTML =
                             '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
-                                '<strong style="color:#0d1b4b;">' + escHtml(t.student_name || 'Anonymous') + '</strong>' +
+                                '<strong style="color:#0d1b4b;">' + escHtml(studentName) + '</strong>' +
                                 '<span style="color:#f59e0b;">' + '★'.repeat(r) + '☆'.repeat(5 - r) + '</span>' +
                             '</div>' +
                             '<p style="color:#555;font-size:0.9rem;margin:0;">' + escHtml(t.content || '') + '</p>';
@@ -818,7 +803,7 @@
                 }
 
                 // Update save button center ID
-                if (window._updateSaveCenterId) window._updateSaveCenterId(String(centerId), center.name, center.address || '');
+                if (window._updateSaveCenterId) window._updateSaveCenterId(String(centerId), centerName, center.address || '');
 
             } catch (err) {
                 console.error('Failed to load center:', err);

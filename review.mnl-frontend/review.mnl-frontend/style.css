@@ -44,6 +44,21 @@ Body{
     background-image: url(images/viewcenterbg.png);
 }
 
+.header-viewcenter::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10, 33, 92, 0.62) 0%, rgba(10, 76, 255, 0.72) 100%);
+    z-index: 0;
+}
+
+.header-viewcenter nav,
+.header-viewcenter .back-btn-viewcenter,
+.header-viewcenter .center-header-content {
+    position: relative;
+    z-index: 1;
+}
+
 .header-editcenter {
     background-image: url(images/bg-editcenter.png);
 }
@@ -1675,6 +1690,10 @@ nav img{
     display: flex;
     align-items: center;
     gap: 15px;
+    background: #f5f8ff;
+    border: 1px solid #dce8ff;
+    border-radius: 12px;
+    padding: 14px 16px;
 }
 
 .trophy-icon {

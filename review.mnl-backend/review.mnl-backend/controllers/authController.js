@@ -83,24 +83,34 @@ const registerCenter = async (req, res) => {
   if (!businessPermit || !dtiSecReg)
     return res.status(400).json({ message: 'Both Business Permit and DTI/SEC Registration are required.' });
   try {
-    const [existing] = await db.query('SELECT id FROM review_centers WHERE email = ?', [email.toLowerCase()]);
-    if (existing.length > 0)
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const [existingUser] = await db.query('SELECT id FROM users WHERE email = ?', [normalizedEmail]);
+    if (existingUser.length > 0)
       return res.status(409).json({ message: 'Email is already registered.' });
+
+    const [existingCenter] = await db.query('SELECT id FROM review_centers WHERE email = ?', [normalizedEmail]);
+    if (existingCenter.length > 0)
+      return res.status(409).json({ message: 'Email is already registered.' });
+
     const hashed = await bcrypt.hash(password, 10);
     // Insert user with business_name as first_name, last_name blank
     const [userResult] = await db.query(
       `INSERT INTO users (first_name, last_name, email, password, role, is_verified)
        VALUES (?, ?, ?, ?, 'review_center', 1)`,
-      [business_name.trim(), '', email.toLowerCase(), hashed]
+      [business_name.trim(), '', normalizedEmail, hashed]
     );
     await db.query(
       `INSERT INTO review_centers (user_id, business_name, email, password, business_permit, dti_sec_reg, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [userResult.insertId, business_name.trim(), email.toLowerCase(), hashed, businessPermit, dtiSecReg]
+      [userResult.insertId, business_name.trim(), normalizedEmail, hashed, businessPermit, dtiSecReg]
     );
     res.status(201).json({ message: 'Application submitted! Admin will review your documents.' });
   } catch (err) {
     console.error(err);
+    if (err && err.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ message: 'Email is already registered.' });
+    }
     res.status(500).json({ message: 'Server error. Please try again.' });
   }
 };

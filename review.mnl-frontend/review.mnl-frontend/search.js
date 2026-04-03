@@ -772,3 +772,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initFilters();
     initClickableCards();
 });
+
+// Fallback delegated handler: guarantees the magnifying icon triggers search.
+document.addEventListener('click', function(event) {
+    var icon = event.target.closest('.search-icon');
+    if (!icon) return;
+    var form = icon.closest('.search-form');
+    if (!form) return;
+    handleSearchIconClick(form);
+});

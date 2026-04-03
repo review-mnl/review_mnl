@@ -475,6 +475,17 @@
                     return joined || user.business_name || user.email || '';
                 }
 
+                function resolveProfilePhotoUrl(rawUrl) {
+                    if (!rawUrl) return '';
+                    var url = String(rawUrl).trim();
+                    if (!url) return '';
+                    if (/^data:/i.test(url) || /^https?:\/\//i.test(url)) return url;
+                    if (/^\/\//.test(url)) return window.location.protocol + url;
+                    var normalized = url.replace(/\\/g, '/');
+                    if (normalized.charAt(0) === '/') return API_BASE + normalized;
+                    return API_BASE + '/' + normalized.replace(/^\/+/, '');
+                }
+
                 function applyUserProfileToUI(user) {
                     if (!user) return;
                     var displayName = toDisplayName(user);
@@ -491,7 +502,8 @@
                     if (user.profile_picture_url) {
                         var avatar = document.getElementById('userAvatarPreview');
                         if (avatar) {
-                            avatar.style.backgroundImage = 'url(' + user.profile_picture_url + ')';
+                            var resolvedPhotoUrl = resolveProfilePhotoUrl(user.profile_picture_url);
+                            avatar.style.backgroundImage = resolvedPhotoUrl ? 'url(' + resolvedPhotoUrl + ')' : 'none';
                             avatar.style.backgroundSize = 'cover';
                             avatar.style.backgroundPosition = 'center';
                         }

@@ -539,6 +539,8 @@ nav img{
     margin-top: 0px;
     position: relative;
     z-index: 5;
+    box-shadow: none;
+    border: none;
 }
 
 .filter-section {

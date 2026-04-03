@@ -1,10 +1,18 @@
 // review.mnl — shared API helper
 // All fetch calls go through here so only one place needs updating for the base URL.
 
-// Uses production backend URL when deployed, falls back to localhost for development
-// You can override this by setting window.BACKEND_URL in your HTML before loading this script
+// Uses production backend URL when deployed, falls back to localhost for development.
+// Opening HTML directly via file:// has empty hostname, so keep that local too.
+// You can override this by setting window.BACKEND_URL in your HTML before loading this script.
+const isLocalRuntime = (
+    window.location.protocol === 'file:' ||
+    window.location.hostname === '' ||
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+);
+
 const API_BASE = window.BACKEND_URL || (
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    isLocalRuntime
         ? 'http://localhost:5000'
         : 'https://reviewmnl-production-67eb.up.railway.app'
 );

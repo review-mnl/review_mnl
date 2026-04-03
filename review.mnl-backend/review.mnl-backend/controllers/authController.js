@@ -164,6 +164,9 @@ const registerCenter = async (req, res) => {
     if (err && err.code === 'ER_DATA_TOO_LONG') {
       return res.status(400).json({ message: 'Uploaded document metadata is too long. Please rename the file shorter and try again.' });
     }
+    if (err && (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD')) {
+      return res.status(500).json({ message: 'Database schema is outdated for review center signup. Please restart backend to apply migrations and try again.' });
+    }
     if (err && err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Email is already registered.' });
     }

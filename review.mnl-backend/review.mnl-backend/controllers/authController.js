@@ -20,6 +20,7 @@ const db      = require('../config/db');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const crypto   = require('crypto');
+const path     = require('path');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
 require('dotenv').config();
 
@@ -83,8 +84,18 @@ const registerCenter = async (req, res) => {
     return String(v).trim().slice(0, 255);
   };
 
-  const businessPermitRaw = req.files?.business_permit?.[0]?.path || req.files?.business_permit?.[0]?.url || null;
-  const dtiSecRegRaw      = req.files?.dti_sec_reg?.[0]?.path || req.files?.dti_sec_reg?.[0]?.url || null;
+  const toStoredUploadPath = (fileObj) => {
+    if (!fileObj) return null;
+    if (fileObj.secure_url) return fileObj.secure_url;
+    if (fileObj.url && /^https?:\/\//i.test(String(fileObj.url))) return String(fileObj.url);
+    if (fileObj.path && /^https?:\/\//i.test(String(fileObj.path))) return String(fileObj.path);
+    if (fileObj.filename) return '/uploads/' + String(fileObj.filename);
+    if (fileObj.path) return '/uploads/' + path.basename(String(fileObj.path));
+    return null;
+  };
+
+  const businessPermitRaw = toStoredUploadPath(req.files?.business_permit?.[0]);
+  const dtiSecRegRaw      = toStoredUploadPath(req.files?.dti_sec_reg?.[0]);
   const businessPermit = normalizeDocValue(businessPermitRaw);
   const dtiSecReg      = normalizeDocValue(dtiSecRegRaw);
   if (!businessPermit || !dtiSecReg)

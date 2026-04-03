@@ -925,7 +925,7 @@ nav img{
 
 /* RESULTS SECTION */
 .results-section {
-    background-image: none;
+    background-image: url(images/resultsbg.png);
     background-position: center;
     background-size: cover;
     padding: 50px 70px;

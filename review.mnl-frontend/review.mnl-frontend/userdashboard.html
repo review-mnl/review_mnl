@@ -528,20 +528,14 @@
                     const bio = document.getElementById('userBioInput').value.trim();
                     const file = document.getElementById('userImageInput').files[0];
                     const currentUser = getUser() || {};
-                    if (name) {
-                        document.getElementById('userNameDisplay').textContent = name;
-                        document.getElementById('welcomeName').textContent = name;
+                    const saveBtn = document.querySelector('#userProfileModal .modal-save-btn');
+                    const originalBtnText = saveBtn ? saveBtn.textContent : 'Save Changes';
+
+                    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        alert('Please enter a valid email address.');
+                        return;
                     }
-                    if (email) document.getElementById('userEmailDisplay').textContent = email;
-                    // persist changes to session user (explicit profile edit) and overwrite original
-                    try {
-                        var _u = Object.assign({}, currentUser);
-                        if (name) _u.name = name;
-                        if (email) _u.email = email;
-                        if (bio) _u.bio = bio;
-                        setSessionUser(_u, true);
-                    } catch(e) {}
-                    if (bio) document.getElementById('userBioDisplay').textContent = bio;
+
                     if (file) {
                         const reader = new FileReader();
                         reader.onload = function(e) {
@@ -552,37 +546,45 @@
                         };
                         reader.readAsDataURL(file);
                     }
-                    closeUserModal();
+
+                    if (saveBtn) {
+                        saveBtn.disabled = true;
+                        saveBtn.textContent = 'Saving...';
+                    }
+
                     // Persist to backend
                     try {
                         // If there's a profile photo, upload it first
                         if (file) {
                             const fd = new FormData();
                             fd.append('profile_picture', file);
-                            try {
-                                const uploadRes = await UserAPI.uploadProfilePhoto(fd);
-                                if (uploadRes && uploadRes.user) {
-                                    try { setSessionUser(uploadRes.user, true); } catch(e) {}
-                                }
-                            } catch (err) {
-                                console.warn('Profile photo upload failed', err);
+                            const uploadRes = await UserAPI.uploadProfilePhoto(fd);
+                            if (uploadRes && uploadRes.user) {
+                                try { setSessionUser(uploadRes.user, true); } catch(e) {}
                             }
                         }
 
                         const body = {};
-                        if (name) {
+                        if (name && name !== toDisplayName(currentUser)) {
                             const parts = splitName(name);
                             body.first_name = parts.first;
                             body.last_name = parts.last;
                         }
-                        if (email) body.email = email;
-                        if (bio) body.bio = bio;
+                        if (email && email !== (currentUser.email || '')) body.email = email;
+                        if (bio !== ((currentUser.bio || '').trim())) body.bio = bio;
                         if (Object.keys(body).length > 0) {
                             await UserAPI.updateMyProfile(body);
                         }
                         await loadLatestUserProfile();
+                        closeUserModal();
                     } catch (e) {
                         console.warn('Failed to save user profile', e);
+                        alert(e && e.message ? e.message : 'Failed to save profile. Please try again.');
+                    } finally {
+                        if (saveBtn) {
+                            saveBtn.disabled = false;
+                            saveBtn.textContent = originalBtnText;
+                        }
                     }
                 }
                 document.getElementById('userImageInput').addEventListener('change', function() {

@@ -82,36 +82,73 @@ const registerCenter = async (req, res) => {
   const dtiSecReg      = req.files?.dti_sec_reg?.[0]?.path || req.files?.dti_sec_reg?.[0]?.url || null;
   if (!businessPermit || !dtiSecReg)
     return res.status(400).json({ message: 'Both Business Permit and DTI/SEC Registration are required.' });
+
+  const normalizedEmail = email.toLowerCase().trim();
+  let conn;
   try {
-    const normalizedEmail = email.toLowerCase().trim();
+    conn = await db.getConnection();
+    await conn.beginTransaction();
 
-    const [existingUser] = await db.query('SELECT id FROM users WHERE email = ?', [normalizedEmail]);
-    if (existingUser.length > 0)
-      return res.status(409).json({ message: 'Email is already registered.' });
+    const [existingCenterByEmail] = await conn.query('SELECT id FROM review_centers WHERE email = ? LIMIT 1', [normalizedEmail]);
+    if (existingCenterByEmail.length > 0) {
+      await conn.rollback();
+      return res.status(409).json({ message: 'A review center account already exists for this email.' });
+    }
 
-    const [existingCenter] = await db.query('SELECT id FROM review_centers WHERE email = ?', [normalizedEmail]);
-    if (existingCenter.length > 0)
-      return res.status(409).json({ message: 'Email is already registered.' });
-
+    const [existingUsers] = await conn.query('SELECT id, role FROM users WHERE email = ? LIMIT 1', [normalizedEmail]);
     const hashed = await bcrypt.hash(password, 10);
-    // Insert user with business_name as first_name, last_name blank
-    const [userResult] = await db.query(
-      `INSERT INTO users (first_name, last_name, email, password, role, is_verified)
-       VALUES (?, ?, ?, ?, 'review_center', 1)`,
-      [business_name.trim(), '', normalizedEmail, hashed]
-    );
-    await db.query(
+
+    let userId;
+    if (existingUsers.length > 0) {
+      const existingUser = existingUsers[0];
+
+      if (existingUser.role !== 'review_center') {
+        await conn.rollback();
+        return res.status(409).json({ message: 'This email is already used by another account type.' });
+      }
+
+      // Recover previously partial review-center signups by reusing/updating the existing user.
+      userId = existingUser.id;
+      await conn.query(
+        `UPDATE users
+         SET first_name = ?, last_name = '', password = ?, role = 'review_center', is_verified = 1
+         WHERE id = ?`,
+        [business_name.trim(), hashed, userId]
+      );
+    } else {
+      const [userResult] = await conn.query(
+        `INSERT INTO users (first_name, last_name, email, password, role, is_verified)
+         VALUES (?, '', ?, ?, 'review_center', 1)`,
+        [business_name.trim(), normalizedEmail, hashed]
+      );
+      userId = userResult.insertId;
+    }
+
+    const [existingCenterByUser] = await conn.query('SELECT id FROM review_centers WHERE user_id = ? LIMIT 1', [userId]);
+    if (existingCenterByUser.length > 0) {
+      await conn.rollback();
+      return res.status(409).json({ message: 'A review center application already exists for this email.' });
+    }
+
+    await conn.query(
       `INSERT INTO review_centers (user_id, business_name, email, password, business_permit, dti_sec_reg, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [userResult.insertId, business_name.trim(), normalizedEmail, hashed, businessPermit, dtiSecReg]
+      [userId, business_name.trim(), normalizedEmail, hashed, businessPermit, dtiSecReg]
     );
+
+    await conn.commit();
     res.status(201).json({ message: 'Application submitted! Admin will review your documents.' });
   } catch (err) {
     console.error(err);
+    if (conn) {
+      try { await conn.rollback(); } catch (e) {}
+    }
     if (err && err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Email is already registered.' });
     }
     res.status(500).json({ message: 'Server error. Please try again.' });
+  } finally {
+    if (conn) conn.release();
   }
 };
 

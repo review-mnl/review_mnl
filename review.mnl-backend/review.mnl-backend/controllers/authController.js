@@ -24,6 +24,53 @@ const path     = require('path');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
 require('dotenv').config();
 
+const getRequiredNoDefaultColumns = async (conn, tableName) => {
+  const [rows] = await conn.query(
+    `SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, EXTRA
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = ?
+       AND IS_NULLABLE = 'NO'
+       AND COLUMN_DEFAULT IS NULL`,
+    [tableName]
+  );
+  return rows.filter((r) => !String(r.EXTRA || '').toLowerCase().includes('auto_increment'));
+};
+
+const fallbackValueForColumn = (col) => {
+  const dataType = String(col.DATA_TYPE || '').toLowerCase();
+  const columnType = String(col.COLUMN_TYPE || '').toLowerCase();
+
+  if (dataType === 'enum') {
+    const m = columnType.match(/^enum\((.+)\)$/i);
+    if (m && m[1]) {
+      const first = m[1].split(',')[0].trim();
+      return first.replace(/^'+|'+$/g, '');
+    }
+    return '';
+  }
+  if (dataType === 'json') return '[]';
+  if (['tinyint', 'smallint', 'mediumint', 'int', 'bigint', 'decimal', 'float', 'double'].includes(dataType)) return 0;
+  if (['date', 'datetime', 'timestamp'].includes(dataType)) return new Date();
+  if (dataType === 'time') return '00:00:00';
+  return '';
+};
+
+const insertWithLegacyRequiredColumns = async (conn, tableName, valuesMap) => {
+  const requiredCols = await getRequiredNoDefaultColumns(conn, tableName);
+  requiredCols.forEach((col) => {
+    if (!(col.COLUMN_NAME in valuesMap)) {
+      valuesMap[col.COLUMN_NAME] = fallbackValueForColumn(col);
+    }
+  });
+
+  const cols = Object.keys(valuesMap);
+  const placeholders = cols.map(() => '?').join(', ');
+  const vals = cols.map((c) => valuesMap[c]);
+  const sql = `INSERT INTO ${tableName} (${cols.join(', ')}) VALUES (${placeholders})`;
+  return conn.query(sql, vals);
+};
+
 const registerStudent = async (req, res) => {
   const { fullname, email, password } = req.body;
   
@@ -135,11 +182,17 @@ const registerCenter = async (req, res) => {
         [business_name.trim(), hashed, userId]
       );
     } else {
-      const [userResult] = await conn.query(
-        `INSERT INTO users (first_name, last_name, email, password, role, is_verified, verify_token, reset_token)
-         VALUES (?, '', ?, ?, 'review_center', 1, '', NULL)`,
-        [business_name.trim(), normalizedEmail, hashed]
-      );
+      const [userResult] = await insertWithLegacyRequiredColumns(conn, 'users', {
+        first_name: business_name.trim(),
+        last_name: '',
+        email: normalizedEmail,
+        password: hashed,
+        role: 'review_center',
+        is_verified: 1,
+        verify_token: '',
+        reset_token: null,
+        created_at: new Date(),
+      });
       userId = userResult.insertId;
     }
 
@@ -149,11 +202,16 @@ const registerCenter = async (req, res) => {
       return res.status(409).json({ message: 'A review center application already exists for this email.' });
     }
 
-    await conn.query(
-      `INSERT INTO review_centers (user_id, business_name, email, password, business_permit, dti_sec_reg, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [userId, business_name.trim(), normalizedEmail, hashed, businessPermit, dtiSecReg]
-    );
+    await insertWithLegacyRequiredColumns(conn, 'review_centers', {
+      user_id: userId,
+      business_name: business_name.trim(),
+      email: normalizedEmail,
+      password: hashed,
+      business_permit: businessPermit,
+      dti_sec_reg: dtiSecReg,
+      status: 'pending',
+      created_at: new Date(),
+    });
 
     await conn.commit();
     res.status(201).json({ message: 'Application submitted! Admin will review your documents.' });

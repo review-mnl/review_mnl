@@ -4,6 +4,7 @@ const upload  = require('../middleware/upload');
 const passport = require('../config/passport');
 const jwt = require('jsonwebtoken');
 const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification } = require('../controllers/authController');
+const FRONTEND_URL = process.env.CLIENT_URL || 'https://review-mnl.vercel.app';
 
 router.post('/resend-verification', resendVerification);
 
@@ -31,7 +32,7 @@ router.get('/google',
 router.get('/google/callback',
   passport.authenticate('google', { 
     session: false,
-    failureRedirect: `${process.env.CLIENT_URL}/login.html?error=google_auth_failed`
+    failureRedirect: `${FRONTEND_URL}/login.html?error=google_auth_failed`
   }),
   (req, res) => {
     // Generate JWT token
@@ -50,7 +51,7 @@ router.get('/google/callback',
       profile_picture_url: req.user.profile_picture_url || null
     }));
     
-    res.redirect(`${process.env.CLIENT_URL}/loggedin.html?token=${token}&user=${userData}`);
+    res.redirect(`${FRONTEND_URL}/loggedin.html?token=${token}&user=${userData}`);
   }
 );
 

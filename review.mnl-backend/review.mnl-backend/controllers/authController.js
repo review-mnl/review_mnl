@@ -91,7 +91,6 @@ const registerStudent = async (req, res) => {
   const first_name = nameParts[0];
   const last_name = nameParts.slice(1).join(' ') || '';
   const normalizedEmail = email.toLowerCase().trim();
-  const emailConfigured = Boolean((process.env.BREVO_API_KEY || '').trim());
   try {
     const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [normalizedEmail]);
     if (existing.length > 0)
@@ -103,19 +102,8 @@ const registerStudent = async (req, res) => {
        VALUES (?, ?, ?, ?, 'student', ?)`,
       [first_name, last_name, normalizedEmail, hashed, token]
     );
-    if (!emailConfigured) {
-      await db.query('UPDATE users SET is_verified = 1, verify_token = NULL WHERE email = ?', [normalizedEmail]);
-      return res.status(201).json({ message: 'Account created! Email service is not configured, so your account was auto-verified for local development.' });
-    }
-
-    try {
-      await sendVerificationEmail(normalizedEmail, token, first_name);
-      res.status(201).json({ message: 'Account created! Please check your email to verify.' });
-    } catch (mailErr) {
-      console.warn('Verification email failed, auto-verifying local account:', mailErr && mailErr.message);
-      await db.query('UPDATE users SET is_verified = 1, verify_token = NULL WHERE email = ?', [normalizedEmail]);
-      res.status(201).json({ message: 'Account created! Verification email failed, so your account was auto-verified.' });
-    }
+    await sendVerificationEmail(normalizedEmail, token, first_name);
+    res.status(201).json({ message: 'Account created! Please check your email to verify.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error. Please try again.' });

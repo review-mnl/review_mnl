@@ -6,10 +6,11 @@ apiKey.apiKey = process.env.BREVO_API_KEY;
 
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'review.mnl1@gmail.com';
 const SENDER_NAME = process.env.SENDER_NAME || 'REVIEW.MNL';
+const FRONTEND_URL = process.env.CLIENT_URL || 'https://review-mnl.vercel.app';
 
 const sendVerificationEmail = async (toEmail, token, name) => {
   const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-  const link = `${process.env.CLIENT_URL}/verifyemail.html?token=${token}`;
+  const link = `${FRONTEND_URL}/verifyemail.html?token=${token}`;
   const sendSmtpEmail = {
     to: [{ email: toEmail, name }],
     sender: { email: SENDER_EMAIL, name: SENDER_NAME },
@@ -30,7 +31,7 @@ const sendVerificationEmail = async (toEmail, token, name) => {
 
 const sendPasswordResetEmail = async (toEmail, token, name) => {
   const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-  const link = `${process.env.CLIENT_URL}/resetpassword.html?token=${token}`;
+  const link = `${FRONTEND_URL}/resetpassword.html?token=${token}`;
   const sendSmtpEmail = {
     to: [{ email: toEmail, name }],
     sender: { email: SENDER_EMAIL, name: SENDER_NAME },

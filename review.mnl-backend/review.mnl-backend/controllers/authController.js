@@ -157,7 +157,12 @@ const registerCenter = async (req, res) => {
     await conn.commit();
     res.status(201).json({ message: 'Application submitted! Admin will review your documents.' });
   } catch (err) {
-    console.error(err);
+    console.error('registerCenter error:', {
+      code: err && err.code,
+      errno: err && err.errno,
+      sqlMessage: err && err.sqlMessage,
+      message: err && err.message,
+    });
     if (conn) {
       try { await conn.rollback(); } catch (e) {}
     }
@@ -170,7 +175,8 @@ const registerCenter = async (req, res) => {
     if (err && err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Email is already registered.' });
     }
-    res.status(500).json({ message: 'Server error. Please try again.' });
+    const code = (err && err.code) ? err.code : 'UNKNOWN';
+    res.status(500).json({ message: 'Server error (' + code + '). Please try again.' });
   } finally {
     if (conn) conn.release();
   }

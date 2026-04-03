@@ -534,7 +534,7 @@ nav img{
 /* SEARCH FILTERS */
 .filter-container {
     padding: 40px;
-    background-color: rgba(10, 76, 255, 0.85);
+    background-color: #ffffff;
     max-width: 2400px;
     margin-top: 0px;
     position: relative;
@@ -547,7 +547,7 @@ nav img{
 
 .filter-section h2 {
     font-size: 32px;
-    color: #ffffff;
+    color: #0a4cff;
     margin-bottom: 20px;
     font-weight: 600;
 }
@@ -938,7 +938,7 @@ nav img{
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(10, 76, 255, 0.85);
+    background: linear-gradient(to bottom, rgba(10, 76, 255, 0.95), rgba(10, 76, 255, 0.70));
     z-index: 0;
 }
 

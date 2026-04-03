@@ -129,14 +129,15 @@ const registerCenter = async (req, res) => {
       userId = existingUser.id;
       await conn.query(
         `UPDATE users
-         SET first_name = ?, last_name = '', password = ?, role = 'review_center', is_verified = 1
+         SET first_name = ?, last_name = '', password = ?, role = 'review_center', is_verified = 1,
+             verify_token = '', reset_token = NULL
          WHERE id = ?`,
         [business_name.trim(), hashed, userId]
       );
     } else {
       const [userResult] = await conn.query(
-        `INSERT INTO users (first_name, last_name, email, password, role, is_verified)
-         VALUES (?, '', ?, ?, 'review_center', 1)`,
+        `INSERT INTO users (first_name, last_name, email, password, role, is_verified, verify_token, reset_token)
+         VALUES (?, '', ?, ?, 'review_center', 1, '', NULL)`,
         [business_name.trim(), normalizedEmail, hashed]
       );
       userId = userResult.insertId;

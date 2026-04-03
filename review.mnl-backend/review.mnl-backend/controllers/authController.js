@@ -78,8 +78,15 @@ const registerCenter = async (req, res) => {
     return res.status(400).json({ message: 'Please enter a valid email address.' });
   
   // Use Cloudinary file URLs instead of local filenames
-  const businessPermit = req.files?.business_permit?.[0]?.path || req.files?.business_permit?.[0]?.url || null;
-  const dtiSecReg      = req.files?.dti_sec_reg?.[0]?.path || req.files?.dti_sec_reg?.[0]?.url || null;
+  const normalizeDocValue = (v) => {
+    if (!v) return null;
+    return String(v).trim().slice(0, 255);
+  };
+
+  const businessPermitRaw = req.files?.business_permit?.[0]?.path || req.files?.business_permit?.[0]?.url || null;
+  const dtiSecRegRaw      = req.files?.dti_sec_reg?.[0]?.path || req.files?.dti_sec_reg?.[0]?.url || null;
+  const businessPermit = normalizeDocValue(businessPermitRaw);
+  const dtiSecReg      = normalizeDocValue(dtiSecRegRaw);
   if (!businessPermit || !dtiSecReg)
     return res.status(400).json({ message: 'Both Business Permit and DTI/SEC Registration are required.' });
 
@@ -142,6 +149,9 @@ const registerCenter = async (req, res) => {
     console.error(err);
     if (conn) {
       try { await conn.rollback(); } catch (e) {}
+    }
+    if (err && err.code === 'ER_DATA_TOO_LONG') {
+      return res.status(400).json({ message: 'Uploaded document metadata is too long. Please rename the file shorter and try again.' });
     }
     if (err && err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ message: 'Email is already registered.' });

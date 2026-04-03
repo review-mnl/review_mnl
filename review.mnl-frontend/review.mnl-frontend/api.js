@@ -33,6 +33,16 @@ function authHeaders() {
                  : { 'Content-Type': 'application/json' };
 }
 
+function normalizeSessionUser(user) {
+    if (!user || typeof user !== 'object') return user;
+    var first = (user.first_name || '').toString().trim();
+    var last = (user.last_name || '').toString().trim();
+    var derived = (first + ' ' + last).trim();
+    var fallback = (user.business_name || user.email || '').toString().trim();
+    var name = (user.name || '').toString().trim() || derived || fallback;
+    return Object.assign({}, user, { name: name });
+}
+
 function saveSession(data) {
     // Accept a few possible shapes for the login response to be defensive:
     // - { token, user }
@@ -51,6 +61,7 @@ function saveSession(data) {
             token = data.token || data.accessToken || (data.data && (data.data.token || data.data.accessToken)) || null;
             user  = data.user || (data.data && data.data.user) || null;
         }
+        user = normalizeSessionUser(user);
         // create and store a session object (persisted) and set active session id for this tab
         try {
             var sid = 's_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
@@ -108,7 +119,7 @@ function getActiveUser() {
         var sid = getActiveSessionId();
         if (!sid) return null;
         var s = JSON.parse(localStorage.getItem('rmnl_session_' + sid) || 'null');
-        return s && s.user ? s.user : null;
+        return s && s.user ? normalizeSessionUser(s.user) : null;
     } catch(e) { return null; }
 }
 
@@ -119,6 +130,7 @@ function getUser() {
 function setSessionUser(user, overwriteOriginal) {
     try {
         if (!user) return;
+        user = normalizeSessionUser(user);
         // update active session object with new user data
         try {
             var sid = getActiveSessionId();

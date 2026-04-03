@@ -443,22 +443,79 @@
                 }
 
                 function openUserModal() {
-                    document.getElementById('userNameInput').placeholder = document.getElementById('userNameDisplay').textContent;
-                    document.getElementById('userEmailInput').placeholder = document.getElementById('userEmailDisplay').textContent;
-                    document.getElementById('userBioInput').placeholder = document.getElementById('userBioDisplay').textContent;
-                    document.getElementById('userNameInput').value = '';
-                    document.getElementById('userEmailInput').value = '';
-                    document.getElementById('userBioInput').value = '';
+                    var nameText = document.getElementById('userNameDisplay').textContent || '';
+                    var emailText = document.getElementById('userEmailDisplay').textContent || '';
+                    var bioText = document.getElementById('userBioDisplay').textContent || '';
+                    document.getElementById('userNameInput').placeholder = nameText;
+                    document.getElementById('userEmailInput').placeholder = emailText;
+                    document.getElementById('userBioInput').placeholder = bioText;
+                    document.getElementById('userNameInput').value = nameText;
+                    document.getElementById('userEmailInput').value = emailText;
+                    document.getElementById('userBioInput').value = bioText;
                     document.getElementById('userProfileModal').style.display = 'flex';
                 }
                 function closeUserModal() {
                     document.getElementById('userProfileModal').style.display = 'none';
                 }
+
+                function splitName(fullName) {
+                    var trimmed = (fullName || '').trim();
+                    if (!trimmed) return { first: '', last: '' };
+                    var parts = trimmed.split(/\s+/);
+                    return { first: parts.shift(), last: parts.join(' ') };
+                }
+
+                function toDisplayName(user) {
+                    if (!user) return '';
+                    var explicit = (user.name || '').trim();
+                    if (explicit) return explicit;
+                    var first = (user.first_name || '').trim();
+                    var last = (user.last_name || '').trim();
+                    var joined = (first + ' ' + last).trim();
+                    return joined || user.business_name || user.email || '';
+                }
+
+                function applyUserProfileToUI(user) {
+                    if (!user) return;
+                    var displayName = toDisplayName(user);
+                    var email = user.email || '';
+                    var bio = (user.bio || '').trim() || 'Student | review.mnl member';
+                    if (displayName) {
+                        document.getElementById('welcomeName').textContent = displayName;
+                        document.getElementById('userNameDisplay').textContent = displayName;
+                        var sidebarName = document.querySelector('.sidebar-header h3');
+                        if (sidebarName) sidebarName.textContent = displayName;
+                    }
+                    if (email) document.getElementById('userEmailDisplay').textContent = email;
+                    document.getElementById('userBioDisplay').textContent = bio;
+                    if (user.profile_picture_url) {
+                        var avatar = document.getElementById('userAvatarPreview');
+                        if (avatar) {
+                            avatar.style.backgroundImage = 'url(' + user.profile_picture_url + ')';
+                            avatar.style.backgroundSize = 'cover';
+                            avatar.style.backgroundPosition = 'center';
+                        }
+                    }
+                }
+
+                async function loadLatestUserProfile() {
+                    try {
+                        var res = await UserAPI.getMyProfile();
+                        if (res && res.user) {
+                            setSessionUser(res.user, true);
+                            applyUserProfileToUI(res.user);
+                        }
+                    } catch (e) {
+                        console.warn('Could not load latest user profile', e);
+                    }
+                }
+
                 async function saveUserProfile() {
                     const name = document.getElementById('userNameInput').value.trim();
                     const email = document.getElementById('userEmailInput').value.trim();
                     const bio = document.getElementById('userBioInput').value.trim();
                     const file = document.getElementById('userImageInput').files[0];
+                    const currentUser = getUser() || {};
                     if (name) {
                         document.getElementById('userNameDisplay').textContent = name;
                         document.getElementById('welcomeName').textContent = name;
@@ -466,9 +523,10 @@
                     if (email) document.getElementById('userEmailDisplay').textContent = email;
                     // persist changes to session user (explicit profile edit) and overwrite original
                     try {
-                        var _u = getUser() || {};
+                        var _u = Object.assign({}, currentUser);
                         if (name) _u.name = name;
                         if (email) _u.email = email;
+                        if (bio) _u.bio = bio;
                         setSessionUser(_u, true);
                     } catch(e) {}
                     if (bio) document.getElementById('userBioDisplay').textContent = bio;
@@ -501,18 +559,16 @@
 
                         const body = {};
                         if (name) {
-                            const parts = name.split(' ');
-                            body.first_name = parts.shift();
-                            body.last_name = parts.join(' ');
+                            const parts = splitName(name);
+                            body.first_name = parts.first;
+                            body.last_name = parts.last;
                         }
                         if (email) body.email = email;
                         if (bio) body.bio = bio;
                         if (Object.keys(body).length > 0) {
-                            const res = await UserAPI.updateMyProfile(body);
-                            if (res && res.user) {
-                                try { setSessionUser(res.user, true); } catch(e) {}
-                            }
+                            await UserAPI.updateMyProfile(body);
                         }
+                        await loadLatestUserProfile();
                     } catch (e) {
                         console.warn('Failed to save user profile', e);
                     }
@@ -537,19 +593,8 @@
                 (function(){
                     var user = getUser();
                     if (!user) { window.location.href = 'login.html'; return; }
-                    document.getElementById('welcomeName').textContent = user.name;
-                    document.getElementById('userNameDisplay').textContent = user.name;
-                    document.getElementById('userEmailDisplay').textContent = user.email;
-                    if (user.profile_picture_url) {
-                        const avatar = document.getElementById('userAvatarPreview');
-                        if (avatar) {
-                            avatar.style.backgroundImage = 'url(' + user.profile_picture_url + ')';
-                            avatar.style.backgroundSize = 'cover';
-                            avatar.style.backgroundPosition = 'center';
-                        }
-                    }
-                    var sidebarName = document.querySelector('.sidebar-header h3');
-                    if (sidebarName) sidebarName.textContent = user.name;
+                    applyUserProfileToUI(user);
+                    loadLatestUserProfile();
                 })();
             </script>
     </body>

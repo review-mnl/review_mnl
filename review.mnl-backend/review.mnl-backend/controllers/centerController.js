@@ -3,7 +3,7 @@ const db = require('../config/db');
 const getApprovedCenters = async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url,
+      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url, rc.description, rc.programs,
               IFNULL(AVG(t.rating), 0) AS avg_rating,
               COUNT(t.id) AS review_count
        FROM review_centers rc
@@ -70,7 +70,7 @@ const searchCenters = async (req, res) => {
   if (!q) return res.status(400).json({ message: 'Search query is required.' });
   try {
     const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url,
+      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url, rc.description, rc.programs,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1

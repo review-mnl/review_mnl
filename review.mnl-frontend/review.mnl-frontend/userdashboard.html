@@ -286,6 +286,7 @@
                     <label>Profile Photo</label>
                     <input type="file" id="userImageInput" accept="image/*">
                     <div class="modal-img-preview" id="userImgPreview"></div>
+                    <div id="userProfileFeedback" class="profile-feedback" style="display:none;"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="modal-cancel-btn" onclick="closeUserModal()">Cancel</button>
@@ -455,7 +456,24 @@
                     document.getElementById('userProfileModal').style.display = 'flex';
                 }
                 function closeUserModal() {
+                    clearProfileFeedback();
                     document.getElementById('userProfileModal').style.display = 'none';
+                }
+
+                function showProfileFeedback(type, message) {
+                    var el = document.getElementById('userProfileFeedback');
+                    if (!el) return;
+                    el.className = 'profile-feedback ' + (type === 'success' ? 'profile-feedback-success' : 'profile-feedback-error');
+                    el.textContent = message || '';
+                    el.style.display = message ? 'block' : 'none';
+                }
+
+                function clearProfileFeedback() {
+                    var el = document.getElementById('userProfileFeedback');
+                    if (!el) return;
+                    el.textContent = '';
+                    el.className = 'profile-feedback';
+                    el.style.display = 'none';
                 }
 
                 function splitName(fullName) {
@@ -530,9 +548,10 @@
                     const currentUser = getUser() || {};
                     const saveBtn = document.querySelector('#userProfileModal .modal-save-btn');
                     const originalBtnText = saveBtn ? saveBtn.textContent : 'Save Changes';
+                    clearProfileFeedback();
 
                     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                        alert('Please enter a valid email address.');
+                        showProfileFeedback('error', 'Please enter a valid email address.');
                         return;
                     }
 
@@ -576,10 +595,11 @@
                             await UserAPI.updateMyProfile(body);
                         }
                         await loadLatestUserProfile();
-                        closeUserModal();
+                        showProfileFeedback('success', 'Profile saved successfully.');
+                        setTimeout(function(){ closeUserModal(); }, 800);
                     } catch (e) {
                         console.warn('Failed to save user profile', e);
-                        alert(e && e.message ? e.message : 'Failed to save profile. Please try again.');
+                        showProfileFeedback('error', e && e.message ? e.message : 'Failed to save profile. Please try again.');
                     } finally {
                         if (saveBtn) {
                             saveBtn.disabled = false;

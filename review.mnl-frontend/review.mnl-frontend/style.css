@@ -1520,6 +1520,27 @@ nav img{
 .modal-save-btn:hover { background: #0035cc; transform: translateY(-1px); }
 .modal-save-btn:active { transform: translateY(0); }
 
+.profile-feedback {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.profile-feedback-success {
+    background: #eafaf1;
+    color: #1e7f45;
+    border: 1px solid #b7e7ca;
+}
+
+.profile-feedback-error {
+    background: #fff0f0;
+    color: #b42318;
+    border: 1px solid #ffd0d0;
+}
+
 /* ── Admin Dashboard ── */
 .admin-dashboard {
     padding: 60px 6%;

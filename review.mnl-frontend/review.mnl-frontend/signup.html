@@ -328,7 +328,6 @@
 
                     <div class="social-login">
                         <button type="button" class="social-btn" id="googleSignupBtn" title="Sign up with Google"><i class="fab fa-google"></i></button>
-                        <button type="button" class="social-btn" id="facebookSignupBtn" title="Sign up with Facebook"><i class="fab fa-facebook-f"></i></button>
                     </div>
 
                     <div class="divider">
@@ -421,9 +420,6 @@
             // ── OAuth buttons ───────────────────────────────────────────────
             document.getElementById('googleSignupBtn').addEventListener('click', function () {
                 window.location.href = API_BASE + '/api/auth/google';
-            });
-            document.getElementById('facebookSignupBtn').addEventListener('click', function () {
-                window.location.href = API_BASE + '/api/auth/facebook';
             });
 
             function switchRole(role, btn) {

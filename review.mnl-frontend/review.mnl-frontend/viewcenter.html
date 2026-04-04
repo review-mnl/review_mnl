@@ -55,11 +55,25 @@
                         </div>
                     </div>
                 </div>
-                <div id="headerMapContainer" style="width: 400px; height: 200px; border-radius: 12px; background: #e8eaed; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; flex-shrink: 0; align-self: center; display: none;">
+                <div id="headerMapContainer" style="width: 400px; height: 200px; border-radius: 12px; background: #e8eaed; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; flex-shrink: 0; align-self: center; display: none; position: relative;">
                     <div id="viewMap" style="width: 100%; height: 100%; z-index: 1;"></div>
+                    <div id="mapClickOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer;" title="Click to view large map" onclick="openLargeMap()"></div>
                 </div>
             </div>
         </section>
+
+        <!-- Map Modal -->
+        <div id="largeMapModal" class="modal-overlay">
+            <div class="modal-box" style="width: 800px; max-width: 95vw; height: 600px; max-height: 90vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3 id="largeMapTitle">Review Center Location</h3>
+                    <button class="modal-close" onclick="closeLargeMap()">&times;</button>
+                </div>
+                <div class="modal-body" style="flex: 1; padding: 0;">
+                    <div id="largeMap" style="width: 100%; height: 100%; z-index: 1;"></div>
+                </div>
+            </div>
+        </div>
         <script>
             (function(){
                 const btn = document.getElementById('profileBtn');
@@ -674,7 +688,9 @@
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
 
                 // --- Map Integration ---
+                let cachedLat, cachedLon, cachedAddress;
                 if (center.address && typeof L !== 'undefined') {
+                    cachedAddress = center.address;
                     // Try to fetch coordinates using address
                     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(center.address)}&limit=1`)
                         .then(res => res.json())
@@ -683,15 +699,16 @@
                             let mapContainer = document.getElementById('headerMapContainer');
                             if(data && data.length > 0) {
                                 mapContainer.style.display = 'block';
-                                const lat = data[0].lat;
-                                const lon = data[0].lon;
-                                const map = L.map(mapDiv, { zoomControl: false, scrollWheelZoom: false }).setView([lat, lon], 16);
+                                cachedLat = data[0].lat;
+                                cachedLon = data[0].lon;
+                                const map = L.map(mapDiv, { zoomControl: false, scrollWheelZoom: false, dragging: false, doubleClickZoom: false }).setView([cachedLat, cachedLon], 16);
                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                     attribution: ''
                                 }).addTo(map);
-                                L.marker([lat, lon]).addTo(map).bindPopup(`<div style="font-family:'Poppins',sans-serif;font-size:12px;"><b>${escHtml(centerName)}</b><br><span style="color:#555;font-size:11px;">${escHtml(center.address)}</span></div>`);
+                                L.marker([cachedLat, cachedLon]).addTo(map).bindPopup(`<div style="font-family:'Poppins',sans-serif;font-size:12px;"><b>${escHtml(centerName)}</b><br><span style="color:#555;font-size:11px;">${escHtml(center.address)}</span></div>`);
                             } else {
                                 mapContainer.style.display = 'block';
+                                document.getElementById('mapClickOverlay').style.display = 'none'; // Don't let users click if map failed
                                 mapDiv.innerHTML = '<div style="padding:15px;color:#888;text-align:center;padding-top:40px;font-size:12px;">Location preview unavailable</div>';
                             }
                         })
@@ -700,6 +717,31 @@
                         });
                 } else {
                     document.getElementById('headerMapContainer').style.display = 'none';
+                }
+
+                let largeMapInstance;
+                window.openLargeMap = function() {
+                    const modal = document.getElementById('largeMapModal');
+                    if (modal) {
+                        modal.classList.add('active');
+                        // Ensure Map initializes properly once container is visible
+                        setTimeout(() => {
+                            if (!largeMapInstance && cachedLat !== undefined) {
+                                largeMapInstance = L.map('largeMap').setView([cachedLat, cachedLon], 16);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; OpenStreetMap'
+                                }).addTo(largeMapInstance);
+                                L.marker([cachedLat, cachedLon]).addTo(largeMapInstance).bindPopup(`<div style="font-family:'Poppins',sans-serif;font-size:12px;"><b>${escHtml(centerName)}</b><br><span style="color:#555;font-size:11px;">${escHtml(cachedAddress)}</span></div>`).openPopup();
+                            }
+                            if (largeMapInstance) {
+                                largeMapInstance.invalidateSize();
+                            }
+                        }, 50);
+                    }
+                }
+                window.closeLargeMap = function() {
+                    const modal = document.getElementById('largeMapModal');
+                    if (modal) modal.classList.remove('active');
                 }
 
                 const nameEl = document.getElementById('centerName');

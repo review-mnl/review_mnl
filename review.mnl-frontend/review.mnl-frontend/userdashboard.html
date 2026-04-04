@@ -233,7 +233,7 @@
                 <h3>Enrolled Review Centers</h3>
                 <span id="enrolledSlideArrow" class="material-symbols-outlined enrolled-slide-arrow" role="button" tabindex="0" aria-label="Show more enrolled review centers">arrow_forward_ios</span>
             </div>
-            <p style="font-size:0.85rem;color:#6b7280;margin:-4px 0 14px 0;">Review centers you've scheduled a review with will appear here.</p>
+            <p id="enrolledEmptyMessage" style="display:none;font-size:0.85rem;color:#6b7280;margin:-4px 0 14px 0;">Review centers you've scheduled a review with will appear here.</p>
 
             <div class="recent-grid" id="enrolledCentersGrid"></div>
         </div>
@@ -525,13 +525,28 @@
 
                 function renderMyEnrollments(enrollments) {
                     var grid = document.getElementById('enrolledCentersGrid');
+                    var emptyMsg = document.getElementById('enrolledEmptyMessage');
+                    var arrow = document.getElementById('enrolledSlideArrow');
                     if (!grid) return;
-                    if (!enrollments || enrollments.length === 0) {
-                        grid.innerHTML = '<p style="font-size:0.9rem;color:#6b7280;grid-column:1 / -1;">No enrollments yet. Complete a GCash enrollment to see it here.</p>';
+
+                    var validEnrollments = (enrollments || []).filter(function(item) {
+                        var program = String((item && item.program_enrolled) || '').trim();
+                        if (!program) return false;
+                        var normalized = program.toLowerCase();
+                        return normalized !== 'program not specified' && normalized !== 'not specified';
+                    });
+
+                    if (validEnrollments.length === 0) {
+                        grid.innerHTML = '';
+                        if (emptyMsg) emptyMsg.style.display = 'block';
+                        if (arrow) arrow.style.visibility = 'hidden';
                         return;
                     }
 
-                    grid.innerHTML = enrollments.map(function(item) {
+                    if (emptyMsg) emptyMsg.style.display = 'none';
+                    if (arrow) arrow.style.visibility = 'visible';
+
+                    grid.innerHTML = validEnrollments.map(function(item) {
                         var logo = resolveCenterLogo(item.review_center_logo);
                         var paymentStatus = String(item.payment_status || 'pending').toLowerCase();
                         var statusColor = paymentStatus === 'paid' ? '#d7ffe6' : (paymentStatus === 'failed' ? '#ffe0e0' : '#e6f0ff');

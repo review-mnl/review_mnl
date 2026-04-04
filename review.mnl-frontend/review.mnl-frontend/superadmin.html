@@ -555,7 +555,8 @@
         </div>
         <div class="sa-doc-modal-actions">
             <button class="sa-modal-cancel" onclick="closeDocModal()">Close</button>
-            <button class="sa-modal-confirm green" onclick="previewDoc()">Download / Preview</button>
+            <button class="sa-action-btn" onclick="previewDoc()">Preview</button>
+            <button class="sa-modal-confirm green" onclick="downloadDoc()">Download</button>
         </div>
     </div>
 </div>
@@ -1044,6 +1045,35 @@
         }
         try { window.open(_currentDocUrl, '_blank'); } catch(e) { saToast('Unable to open file.'); }
         closeDocModal();
+    }
+
+    async function downloadDoc() {
+        if (!_currentDocUrl) { saToast('No file URL available.'); return; }
+        try {
+            const res = await fetch(_currentDocUrl, { mode: 'cors' });
+            if (!res.ok) throw new Error('Failed to fetch file: ' + res.status);
+            const cd = res.headers.get('Content-Disposition') || '';
+            let filename = null;
+            if (cd) {
+                const m = cd.match(/filename\*?=(?:UTF-8''|\")?([^;\"]+)/);
+                if (m && m[1]) filename = decodeURIComponent(m[1].replace(/['\"]/g, ''));
+            }
+            if (!filename) filename = (_currentDocUrl.split('/').pop() || 'download').split('?')[0];
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+            saToast('Download started');
+            closeDocModal();
+        } catch (err) {
+            console.error('downloadDoc failed', err);
+            try { window.open(_currentDocUrl, '_blank'); saToast('Opened file in new tab'); closeDocModal(); } catch (e) { saToast('Unable to download file.'); }
+        }
     }
 
     // Open center documents via API and show each in the document viewer

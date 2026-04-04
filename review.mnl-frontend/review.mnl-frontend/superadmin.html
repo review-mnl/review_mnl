@@ -964,6 +964,18 @@
             } else {
                 actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
             }
+            // Document view buttons (show if URLs available) — allow superadmin to view submitted docs even after approval
+            try {
+                var bpUrl = c.business_permit || '';
+                var dtiUrl = c.dti_sec_reg || '';
+                var bpName = bpUrl ? bpUrl.split('/').pop() : '';
+                var dtiName = dtiUrl ? dtiUrl.split('/').pop() : '';
+                var docsBtns = '';
+                if (bpUrl) docsBtns += `<button class="sa-action-btn" onclick="viewDoc('${safeName}', '${c.email||''}', '${date}', 'Business Permit', '${bpName}', '${bpUrl}')">📄 BP</button> `;
+                if (dtiUrl) docsBtns += `<button class="sa-action-btn" onclick="viewDoc('${safeName}', '${c.email||''}', '${date}', 'DTI / SEC', '${dtiName}', '${dtiUrl}')">📄 DTI</button> `;
+                if (bpUrl || dtiUrl) docsBtns = `<button class="sa-action-btn" onclick="openCenterDocs(${c.id})">View Docs</button> ` + docsBtns;
+                if (docsBtns) actions = docsBtns + actions;
+            } catch (e) {}
             return `<tr data-center-id="${c.id}">` +
                 `<td>${c.business_name || ''}</td>` +
                 `<td>${c.email || ''}</td>` +
@@ -1037,6 +1049,27 @@
         }
         try { window.open(_currentDocUrl, '_blank'); } catch(e) { saToast('Unable to open file.'); }
         closeDocModal();
+    }
+
+    // Open center documents via API and show each in the document viewer
+    function openCenterDocs(centerId) {
+        if (!centerId) return saToast('Invalid center id');
+        AdminAPI.getCenterDocuments(centerId).then(function(payload) {
+            var centerName = payload.business_name || payload.name || '—';
+            var email = payload.email || '';
+            var date = formatDate(payload.created_at || new Date());
+            var docs = payload.documents || [];
+            if (!docs || docs.length === 0) return saToast('No documents for this center');
+            docs.forEach(function(doc) {
+                var docType = (doc.type === 'business_permit') ? 'Business Permit' : (doc.type === 'dti_sec_reg' ? 'DTI / SEC' : (doc.type || 'Document'));
+                var filename = doc.filename || (doc.url ? String(doc.url).split('/').pop() : 'file');
+                var url = doc.url || doc.file || '';
+                viewDoc(centerName, email, date, docType, filename, url);
+            });
+        }).catch(function(err) {
+            saToast('Unable to load documents: ' + (err && err.message ? err.message : 'Request failed'));
+            console.error('openCenterDocs failed', err);
+        });
     }
 
     // ══════════════════════════════════════════════════════════════════════════

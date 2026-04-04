@@ -534,14 +534,14 @@
                     grid.innerHTML = enrollments.map(function(item) {
                         var logo = resolveCenterLogo(item.review_center_logo);
                         var paymentStatus = String(item.payment_status || 'pending').toLowerCase();
-                        var statusColor = paymentStatus === 'paid' ? '#2e7d32' : (paymentStatus === 'failed' ? '#b71c1c' : '#0a4cff');
+                        var statusColor = paymentStatus === 'paid' ? '#d7ffe6' : (paymentStatus === 'failed' ? '#ffe0e0' : '#e6f0ff');
                         var statusText = paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1);
                         return '<div class="recent-card">'
                             + '<div class="recent-img" style="' + (logo ? ('background-image:url(' + logo + ');background-size:cover;background-position:center;') : '') + '"></div>'
                             + '<h4>' + escHtml(item.review_center_name || 'Review Center') + '</h4>'
                             + '<p>' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
-                            + '<p style="font-size:0.75rem;color:#6b7280;margin:4px 0;">Enrolled: ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
-                            + '<span style="font-size:0.75rem;color:' + statusColor + ';font-weight:600;">Payment: ' + escHtml(statusText) + '</span>'
+                            + '<p style="font-size:0.75rem;color:rgba(255,255,255,0.92);opacity:1;margin:4px 0;">Enrolled: ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
+                            + '<span style="font-size:0.77rem;color:' + statusColor + ';font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.28);">Payment: ' + escHtml(statusText) + '</span>'
                             + '</div>';
                     }).join('');
                 }

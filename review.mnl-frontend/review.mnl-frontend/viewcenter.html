@@ -348,15 +348,15 @@
                         <!-- Payment methods -->
                         <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Payment Method</h4>
                         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
-                            <label class="sch-pay-option sch-pay-selected" for="schPayGcash">
+                            <label class="sch-pay-option sch-pay-selected" id="schPayGcashOption" for="schPayGcash">
                                 <input type="radio" id="schPayGcash" name="schPayMethod" value="gcash" checked>
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance_wallet</span>
                                 <span>GCash</span>
                                 <span style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
                             </label>
 
-                            <label class="sch-pay-option sch-pay-disabled" onclick="notifyBankComingSoon()">
-                                <input type="radio" id="schPayBank" name="schPayMethod" value="bank" disabled>
+                            <label class="sch-pay-option" id="schPayBankOption" for="schPayBank">
+                                <input type="radio" id="schPayBank" name="schPayMethod" value="bank">
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance</span>
                                 <span>Bank Payment</span>
                                 <span class="sch-pay-coming">Coming Soon</span>
@@ -372,10 +372,6 @@
                                 <label class="sch-label">GCash Account Name</label>
                                 <input id="schGcashName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
                             </div>
-                            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#666;">
-                                <input id="schSimFail" type="checkbox">
-                                Simulate failed payment (testing only)
-                            </label>
                             <p id="schPaymentMsg" style="display:none;font-size:12px;margin:0;padding:8px 10px;border-radius:8px;"></p>
                         </div>
 
@@ -501,7 +497,6 @@
                 font-family: 'Poppins', sans-serif;
             }
             .sch-pay-option.sch-pay-selected { border-color: #0a4cff; background: #f5f8ff; }
-            .sch-pay-option.sch-pay-disabled { opacity: 0.75; }
             .sch-pay-coming {
                 margin-left: auto; font-size: 11px; background: #ffe8e8;
                 color: #b71c1c; padding: 2px 8px; border-radius: 10px; font-weight: 600;
@@ -526,13 +521,16 @@
             _schSelectedDate = null; _schStep = 1;
             _schPaymentMethod = 'GCash';
             _schPaymentStatus = 'Pending';
+            var gcashRadio = document.getElementById('schPayGcash');
+            var bankRadio = document.getElementById('schPayBank');
+            if (gcashRadio) gcashRadio.checked = true;
+            if (bankRadio) bankRadio.checked = false;
             renderSchCal();
             schSetStep(1);
             var ov = document.getElementById('scheduleOverlay');
             ov.style.display = 'flex';
             document.body.style.overflow = 'hidden';
-            var payMsg = document.getElementById('schPaymentMsg');
-            if (payMsg) { payMsg.style.display = 'none'; payMsg.textContent = ''; }
+            updatePaymentMethodUI();
         }
 
         function closeScheduleModal() {
@@ -566,6 +564,7 @@
                 document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
                 document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
                 document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
+                updatePaymentMethodUI();
             }
             if (n === 4) {
                 document.getElementById('confDate').textContent    = schFmtDate(_schSelectedDate);
@@ -588,7 +587,7 @@
             schSetStep(n);
         }
 
-        function notifyBankComingSoon() {
+        function showBankComingSoonMessage() {
             var msgEl = document.getElementById('schPaymentMsg');
             if (!msgEl) return;
             msgEl.textContent = 'This payment method will be available soon';
@@ -596,8 +595,45 @@
             msgEl.style.background = '#fff8e1';
             msgEl.style.color = '#7a5a00';
             msgEl.style.border = '1px solid #f6c344';
+        }
+
+        function hidePaymentMessage() {
+            var msgEl = document.getElementById('schPaymentMsg');
+            if (!msgEl) return;
+            msgEl.style.display = 'none';
+            msgEl.textContent = '';
+            msgEl.style.background = '';
+            msgEl.style.color = '';
+            msgEl.style.border = '';
+        }
+
+        function updatePaymentMethodUI() {
             var gcashRadio = document.getElementById('schPayGcash');
-            if (gcashRadio) gcashRadio.checked = true;
+            var bankRadio = document.getElementById('schPayBank');
+            var gcashOption = document.getElementById('schPayGcashOption');
+            var bankOption = document.getElementById('schPayBankOption');
+            var payBtn = document.getElementById('gcashPayBtn');
+
+            if (gcashOption) gcashOption.classList.toggle('sch-pay-selected', !!(gcashRadio && gcashRadio.checked));
+            if (bankOption) bankOption.classList.toggle('sch-pay-selected', !!(bankRadio && bankRadio.checked));
+
+            if (bankRadio && bankRadio.checked) {
+                _schPaymentMethod = 'Bank Payment';
+                showBankComingSoonMessage();
+                if (payBtn) payBtn.textContent = 'Bank Payment Coming Soon';
+            } else {
+                _schPaymentMethod = 'GCash';
+                hidePaymentMessage();
+                if (payBtn) payBtn.textContent = 'Process GCash Payment';
+            }
+        }
+
+        function setupPaymentMethodListeners() {
+            var gcashRadio = document.getElementById('schPayGcash');
+            var bankRadio = document.getElementById('schPayBank');
+            if (gcashRadio) gcashRadio.addEventListener('change', updatePaymentMethodUI);
+            if (bankRadio) bankRadio.addEventListener('change', updatePaymentMethodUI);
+            updatePaymentMethodUI();
         }
 
         function schFmtDate(d) {
@@ -985,6 +1021,11 @@
             try {
                 const token = getActiveToken();
                 if (!token) { alert('Please login to continue to payment.'); return; }
+                const bankRadio = document.getElementById('schPayBank');
+                if (bankRadio && bankRadio.checked) {
+                    showBankComingSoonMessage();
+                    return;
+                }
                 const params = new URLSearchParams(window.location.search);
                 const centerId = params.get('id');
                 if (!centerId) return alert('Missing center id.');
@@ -1025,7 +1066,6 @@
                     amount: amount,
                     gcash_number: gcashNumber,
                     gcash_name: gcashName,
-                    simulate_fail: Boolean(document.getElementById('schSimFail') && document.getElementById('schSimFail').checked),
                 });
 
                 if (resp && resp.transaction_status === 'paid') {
@@ -1072,6 +1112,8 @@
         function escHtml(str) {
             return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
+
+        document.addEventListener('DOMContentLoaded', setupPaymentMethodListeners);
         </script>
         
         <!-- OpenStreetMap Leaflet Integrations -->

@@ -351,7 +351,7 @@
                 </div>
                 <div class="footer-center">
                     <div class="footer-column">
-                        <a href="index.html">Home</a>
+                        <a href="index.html" id="contactFooterHome">Home</a>
                         <a href="search.html">Review Centers</a>
                         <a href="contact.html">Contact</a>
                     </div>
@@ -427,9 +427,11 @@
                     document.getElementById('contactProfileWrapper').style.display = '';
                     const homeLink = document.getElementById('contactHomeNav');
                     const homeLogo = document.getElementById('contactHomeLi');
+                    const footerHome = document.getElementById('contactFooterHome');
                     const dest = role === 'admin' ? 'admindashboard.html' : 'loggedin.html';
-                    homeLink.href = dest;
-                    homeLogo.href = dest;
+                    if (homeLink) homeLink.href = dest;
+                    if (homeLogo) homeLogo.href = dest;
+                    if (footerHome) footerHome.href = dest;
                     if (role === 'admin') {
                         document.getElementById('contactMyProfileLink').href = 'editcenter.html';
                     }

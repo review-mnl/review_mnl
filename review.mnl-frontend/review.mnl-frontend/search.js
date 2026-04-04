@@ -90,6 +90,9 @@ function buildCard(center) {
     const div = document.createElement('div');
     div.className = 'result-card';
     div._centerData = center;
+    div.tabIndex = 0;
+    div.setAttribute('role', 'link');
+    div.setAttribute('aria-label', 'Open review center details');
 
     const rating = Number(center.avg_rating !== undefined ? center.avg_rating : center.average_rating) || 0;
     const centerName = center.business_name || center.name || 'Unnamed Center';
@@ -113,8 +116,16 @@ function buildCard(center) {
             '</div>' +
         '</div>';
 
-    div.addEventListener('click', function() {
+    function openCenter() {
         window.location.href = 'viewcenter.html?id=' + center.id;
+    }
+
+    div.addEventListener('click', openCenter);
+    div.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openCenter();
+        }
     });
 
     return div;

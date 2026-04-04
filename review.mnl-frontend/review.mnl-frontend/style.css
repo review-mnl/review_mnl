@@ -42,13 +42,15 @@ Body{
 
 .header-viewcenter {
     background-image: url(images/viewcenterbg.png);
+    display: flex;
+    flex-direction: column;
 }
 
 .header-viewcenter::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(10, 33, 92, 0.62) 0%, rgba(10, 76, 255, 0.72) 100%);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0.7) 100%);
     z-index: 0;
 }
 
@@ -1199,10 +1201,11 @@ nav img{
     /* Override absolute layout used elsewhere so the center header flows after the nav
        and doesn't overlap on narrow viewports. */
     position: relative;
-    padding-top: 20px; /* add spacing if needed */
+    padding-top: 20px;
     bottom: auto;
     left: auto;
-    margin-top: 12px;
+    margin-top: auto;
+    margin-bottom: 30px;
     align-items: center;
     gap: 28px;
     padding: 18px 6%;
@@ -1211,7 +1214,7 @@ nav img{
     width: 100%;
 }
 @media (max-width: 900px) {
-    .header-viewcenter .center-header-content { flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 8px; padding-top: 12px; }
+    .header-viewcenter .center-header-content { flex-direction: column; align-items: flex-start; gap: 12px; margin-top: auto; padding-top: 12px; }
     .center-logo { width: 96px; height: 96px; }
 }
 

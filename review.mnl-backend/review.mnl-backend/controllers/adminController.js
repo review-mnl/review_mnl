@@ -62,35 +62,84 @@ const getAllStudents = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   const { id } = req.params;
+  let conn;
   try {
-    const [rows] = await db.query('SELECT id, role FROM users WHERE id = ?', [id]);
-    if (rows.length === 0)
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    const [rows] = await conn.query('SELECT id, role FROM users WHERE id = ? FOR UPDATE', [id]);
+    if (rows.length === 0) {
+      await conn.rollback();
       return res.status(404).json({ message: 'User not found.' });
-    if (rows[0].role === 'superadmin')
+    }
+    if (rows[0].role === 'superadmin') {
+      await conn.rollback();
       return res.status(403).json({ message: 'Cannot delete superadmin account.' });
-    await db.query('DELETE FROM users WHERE id = ?', [id]);
+    }
+
+    // Remove related data explicitly to ensure cleanup across schemas that may not
+    // have full cascading rules. Order: sessions, testimonials (as student), centers (if owner), then user.
+    try {
+      await conn.query('DELETE FROM user_sessions WHERE user_id = ?', [id]);
+    } catch (e) { /* ignore */ }
+
+    try {
+      await conn.query('DELETE FROM testimonials WHERE student_id = ?', [id]);
+    } catch (e) { /* ignore */ }
+
+    // If this user owns a review center, delete the center record(s) which will
+    // also remove center-related testimonials via FK cascade where applicable.
+    try {
+      await conn.query('DELETE FROM review_centers WHERE user_id = ?', [id]);
+    } catch (e) { /* ignore */ }
+
+    // Finally delete the user row
+    await conn.query('DELETE FROM users WHERE id = ?', [id]);
+
+    await conn.commit();
     res.json({ message: 'User deleted successfully.' });
   } catch (err) {
+    if (conn) try { await conn.rollback(); } catch (e) {}
     console.error('Delete user error:', err);
     res.status(500).json({ message: 'Server error.' });
+  } finally {
+    if (conn) conn.release();
   }
 };
 
 const deleteCenter = async (req, res) => {
   const { id } = req.params;
+  let conn;
   try {
-    const [rows] = await db.query('SELECT id, user_id FROM review_centers WHERE id = ?', [id]);
-    if (rows.length === 0)
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    const [rows] = await conn.query('SELECT id, user_id FROM review_centers WHERE id = ? FOR UPDATE', [id]);
+    if (rows.length === 0) {
+      await conn.rollback();
       return res.status(404).json({ message: 'Review center not found.' });
-    // Delete the center and associated user account
-    await db.query('DELETE FROM review_centers WHERE id = ?', [id]);
-    if (rows[0].user_id) {
-      await db.query('DELETE FROM users WHERE id = ?', [rows[0].user_id]);
     }
+
+    const userId = rows[0].user_id;
+
+    // Delete center (will remove related center testimonials via FK cascade if configured)
+    await conn.query('DELETE FROM review_centers WHERE id = ?', [id]);
+
+    // If a linked user account exists, delete it as well (and related data)
+    if (userId) {
+      try { await conn.query('DELETE FROM user_sessions WHERE user_id = ?', [userId]); } catch (e) {}
+      try { await conn.query('DELETE FROM testimonials WHERE student_id = ?', [userId]); } catch (e) {}
+      await conn.query('DELETE FROM users WHERE id = ?', [userId]);
+    }
+
+    await conn.commit();
     res.json({ message: 'Review center deleted successfully.' });
   } catch (err) {
+    if (conn) try { await conn.rollback(); } catch (e) {}
     console.error('Delete center error:', err);
     res.status(500).json({ message: 'Server error.' });
+  } finally {
+    if (conn) conn.release();
   }
 };
 

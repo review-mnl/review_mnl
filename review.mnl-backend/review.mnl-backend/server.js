@@ -66,6 +66,17 @@ app.use('/api/admin',   require('./routes/admin'));
 app.use('/api/centers', require('./routes/centers'));
 app.use('/api/users',   require('./routes/users'));
 
+// Optional debug route to inspect which database the app is connected to.
+// Enable by setting environment variable `ENABLE_DEBUG_ROUTE=1` (temporary).
+if (process.env.ENABLE_DEBUG_ROUTE === '1') {
+  try {
+    app.use('/api/debug', require('./routes/debug'));
+    console.log('Debug route enabled: /api/debug/db');
+  } catch (e) {
+    console.warn('Debug route could not be mounted:', e && e.message);
+  }
+}
+
 app.get('/', (req, res) => res.json({ message: 'REVIEW.MNL API is running.' }));
 
 app.use((err, req, res, next) => {

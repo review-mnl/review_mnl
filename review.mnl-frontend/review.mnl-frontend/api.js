@@ -311,6 +311,9 @@ const UserAPI = {
     getMyProfile: () =>
         apiRequest('GET', '/api/users/me'),
 
+    getMyEnrollments: () =>
+        apiRequest('GET', '/api/users/me/enrollments'),
+
     updateMyProfile: (data) =>
         apiRequest('PUT', '/api/users/me', data),
     uploadProfilePhoto: (formData) =>

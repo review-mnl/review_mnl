@@ -1053,6 +1053,10 @@
                 }
                 // Use booking total displayed in the UI or default amount
                 const amount = 1550; // ₱1,550 default — replace with dynamic value if available
+                const programEnrolled = (document.getElementById('schProgram').value || '').trim();
+                const enrollmentDate = _schSelectedDate
+                    ? _schSelectedDate.toISOString().slice(0, 10)
+                    : new Date().toISOString().slice(0, 10);
                 if (payBtn) {
                     payBtn.disabled = true;
                     payBtn.textContent = 'Processing...';
@@ -1062,11 +1066,22 @@
                     msgEl.textContent = '';
                 }
 
-                const resp = await CentersAPI.enrollWithGcash(centerId, {
+                const payload = {
                     amount: amount,
                     gcash_number: gcashNumber,
                     gcash_name: gcashName,
+                    program_enrolled: programEnrolled,
+                    enrollment_date: enrollmentDate,
+                };
+                console.log('[Enrollment] Sending enrollment payload', {
+                    centerId: centerId,
+                    userId: (getUser() && getUser().id) || null,
+                    program_enrolled: payload.program_enrolled,
+                    enrollment_date: payload.enrollment_date,
+                    amount: payload.amount,
                 });
+                const resp = await CentersAPI.enrollWithGcash(centerId, payload);
+                console.log('[Enrollment] Enrollment response', resp);
 
                 if (resp && resp.transaction_status === 'paid') {
                     _schPaymentMethod = resp.payment_method || 'GCash';

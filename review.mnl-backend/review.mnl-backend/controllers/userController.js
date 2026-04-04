@@ -18,6 +18,62 @@ const getMyProfile = async (req, res) => {
   }
 };
 
+const getMyEnrollments = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [rows] = await db.query(
+      `SELECT
+         e.id AS enrollment_id,
+         e.user_id,
+         e.center_id AS review_center_id,
+         e.status AS enrollment_status,
+         e.created_at AS enrollment_created_at,
+         rc.business_name AS review_center_name,
+         rc.logo_url AS review_center_logo,
+         p.amount,
+         p.status AS payment_status,
+         p.provider AS payment_method,
+         p.metadata,
+         p.created_at AS payment_created_at
+       FROM enrollments e
+       JOIN review_centers rc ON rc.id = e.center_id
+       LEFT JOIN payments p ON p.id = e.payment_id
+       WHERE e.user_id = ?
+       ORDER BY e.created_at DESC`,
+      [userId]
+    );
+
+    const enrollments = rows.map((row) => {
+      let metadata = {};
+      try {
+        metadata = row.metadata && typeof row.metadata === 'string' ? JSON.parse(row.metadata) : (row.metadata || {});
+      } catch (e) {
+        metadata = {};
+      }
+
+      return {
+        enrollment_id: row.enrollment_id,
+        user_id: row.user_id,
+        review_center_id: row.review_center_id,
+        review_center_name: row.review_center_name,
+        review_center_logo: row.review_center_logo,
+        program_enrolled: metadata.program_enrolled || 'Program not specified',
+        enrollment_date: metadata.enrollment_date || (row.enrollment_created_at ? new Date(row.enrollment_created_at).toISOString().slice(0, 10) : null),
+        payment_status: row.payment_status || 'pending',
+        payment_method: row.payment_method || 'gcash',
+        amount: row.amount || 0,
+        created_at: row.enrollment_created_at,
+      };
+    });
+
+    console.log('[Enrollment] Fetched enrollments for user', { userId, count: enrollments.length });
+    return res.json({ enrollments });
+  } catch (err) {
+    console.error('Get enrollments error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 const updateMyProfile = async (req, res) => {
   try {
     const { first_name, last_name, phone, address, bio, profile_picture_url, current_password, new_password, email } = req.body;
@@ -120,4 +176,4 @@ const updateMyProfilePhoto = async (req, res) => {
   }
 };
 
-module.exports = { getMyProfile, updateMyProfile, updateMyProfilePhoto };
+module.exports = { getMyProfile, getMyEnrollments, updateMyProfile, updateMyProfilePhoto };

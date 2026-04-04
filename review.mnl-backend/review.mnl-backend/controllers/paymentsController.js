@@ -13,6 +13,17 @@ const createGcashEnrollment = async (req, res) => {
     const gcashNumber = String(req.body.gcash_number || '').trim();
     const gcashName = String(req.body.gcash_name || '').trim();
     const simulateFail = Boolean(req.body.simulate_fail);
+    const programEnrolled = String(req.body.program_enrolled || '').trim();
+    const enrollmentDateRaw = String(req.body.enrollment_date || '').trim();
+    const enrollmentDate = enrollmentDateRaw || new Date().toISOString().slice(0, 10);
+
+    console.log('[Enrollment] Request received', {
+      userId,
+      centerId,
+      amount,
+      programEnrolled,
+      enrollmentDate,
+    });
 
     if (!gcashNumber || !gcashName) {
       return res.status(400).json({ message: 'GCash number and account name are required.' });
@@ -53,6 +64,8 @@ const createGcashEnrollment = async (req, res) => {
           payment_method: 'GCash',
           gcash_number_masked: maskedNumber,
           gcash_name: gcashName,
+          program_enrolled: programEnrolled,
+          enrollment_date: enrollmentDate,
           mock: true,
         }),
       ]
@@ -64,10 +77,22 @@ const createGcashEnrollment = async (req, res) => {
       await conn.query('INSERT INTO enrollments (user_id, center_id, payment_id, status) VALUES (?, ?, ?, ?)', [userId, centerId, paymentId, 'active']);
     }
 
+    console.log('[Enrollment] Saved', {
+      userId,
+      centerId,
+      paymentId,
+      transactionStatus: status,
+      programEnrolled,
+      enrollmentDate,
+    });
+
     await conn.commit();
     return res.json({
       payment_id: paymentId,
       user_id: userId,
+      review_center_id: Number(centerId),
+      program_enrolled: programEnrolled,
+      enrollment_date: enrollmentDate,
       amount,
       payment_method: 'GCash',
       transaction_status: status,

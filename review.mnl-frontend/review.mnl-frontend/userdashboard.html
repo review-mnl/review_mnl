@@ -235,35 +235,7 @@
             </div>
             <p style="font-size:0.85rem;color:#6b7280;margin:-4px 0 14px 0;">Review centers you've scheduled a review with will appear here.</p>
 
-            <div class="recent-grid">
-                <div class="recent-card">
-                    <div class="recent-img"></div>
-                    <h4>Review Center Name</h4>
-                    <p>Program Enrolled</p>
-                    <span style="font-size:0.75rem;color:#0a4cff;font-weight:600;">Scheduled</span>
-                </div>
-
-                <div class="recent-card">
-                    <div class="recent-img"></div>
-                    <h4>Review Center Name</h4>
-                    <p>Program Enrolled</p>
-                    <span style="font-size:0.75rem;color:#0a4cff;font-weight:600;">Scheduled</span>
-                </div>
-
-                <div class="recent-card">
-                    <div class="recent-img"></div>
-                    <h4>Review Center Name</h4>
-                    <p>Program Enrolled</p>
-                    <span style="font-size:0.75rem;color:#0a4cff;font-weight:600;">Scheduled</span>
-                </div>
-
-                <div class="recent-card">
-                    <div class="recent-img"></div>
-                    <h4>Review Center Name</h4>
-                    <p>Program Enrolled</p>
-                    <span style="font-size:0.75rem;color:#0a4cff;font-weight:600;">Scheduled</span>
-                </div>
-            </div>
+            <div class="recent-grid" id="enrolledCentersGrid"></div>
         </div>
 
     </div>
@@ -504,6 +476,69 @@
                     return API_BASE + '/' + normalized.replace(/^\/+/, '');
                 }
 
+                function escHtml(str) {
+                    return String(str || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                }
+
+                function formatDate(value) {
+                    if (!value) return 'Unknown date';
+                    var d = new Date(value);
+                    if (isNaN(d.getTime())) return String(value);
+                    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                }
+
+                function resolveCenterLogo(rawUrl) {
+                    if (!rawUrl) return '';
+                    var url = String(rawUrl).trim();
+                    if (!url) return '';
+                    if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+                    if (url.charAt(0) === '/') return API_BASE + url;
+                    return API_BASE + '/' + url.replace(/^\/+/, '');
+                }
+
+                function renderMyEnrollments(enrollments) {
+                    var grid = document.getElementById('enrolledCentersGrid');
+                    if (!grid) return;
+                    if (!enrollments || enrollments.length === 0) {
+                        grid.innerHTML = '<p style="font-size:0.9rem;color:#6b7280;grid-column:1 / -1;">No enrollments yet. Complete a GCash enrollment to see it here.</p>';
+                        return;
+                    }
+
+                    grid.innerHTML = enrollments.map(function(item) {
+                        var logo = resolveCenterLogo(item.review_center_logo);
+                        var paymentStatus = String(item.payment_status || 'pending').toLowerCase();
+                        var statusColor = paymentStatus === 'paid' ? '#2e7d32' : (paymentStatus === 'failed' ? '#b71c1c' : '#0a4cff');
+                        var statusText = paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1);
+                        return '<div class="recent-card">'
+                            + '<div class="recent-img" style="' + (logo ? ('background-image:url(' + logo + ');background-size:cover;background-position:center;') : '') + '"></div>'
+                            + '<h4>' + escHtml(item.review_center_name || 'Review Center') + '</h4>'
+                            + '<p>' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
+                            + '<p style="font-size:0.75rem;color:#6b7280;margin:4px 0;">Enrolled: ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
+                            + '<span style="font-size:0.75rem;color:' + statusColor + ';font-weight:600;">Payment: ' + escHtml(statusText) + '</span>'
+                            + '</div>';
+                    }).join('');
+                }
+
+                async function loadMyEnrollments() {
+                    try {
+                        var res = await UserAPI.getMyEnrollments();
+                        var enrollments = (res && res.enrollments) ? res.enrollments : [];
+                        console.log('[Enrollment] Fetched enrollments for profile', {
+                            userId: (getUser() && getUser().id) || null,
+                            count: enrollments.length
+                        });
+                        renderMyEnrollments(enrollments);
+                    } catch (e) {
+                        console.warn('[Enrollment] Failed to fetch enrollments for profile', e);
+                        renderMyEnrollments([]);
+                    }
+                }
+
                 function applyUserProfileToUI(user) {
                     if (!user) return;
                     var displayName = toDisplayName(user);
@@ -629,6 +664,7 @@
                     if (!user) { window.location.href = 'login.html'; return; }
                     applyUserProfileToUI(user);
                     loadLatestUserProfile();
+                    loadMyEnrollments();
                 })();
             </script>
     </body>

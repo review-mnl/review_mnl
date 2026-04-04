@@ -328,7 +328,7 @@
                         <!-- Notice -->
                         <div style="background:#fffbea;border:1.5px dashed #f6c344;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#7a5a00;">
                             <span class="material-symbols-outlined" style="font-size:18px;color:#e6a800;flex-shrink:0;margin-top:1px;">info</span>
-                            <span>Payment gateway is not yet available — this is a preview of how payment will work once the backend is ready. No actual charges will be made.</span>
+                            <span>GCash is currently the only available payment method. Bank payment will be available soon.</span>
                         </div>
 
                         <!-- Booking summary -->
@@ -345,35 +345,39 @@
                             </div>
                         </div>
 
-                        <!-- Payment methods (disabled) -->
+                        <!-- Payment methods -->
                         <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Payment Method</h4>
                         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
-                            <label class="sch-pay-option sch-pay-selected">
-                                <input type="radio" name="schPayMethod" checked disabled>
-                                <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">credit_card</span>
-                                <span>Credit / Debit Card</span>
-                                <span class="sch-pay-coming">Soon</span>
-                            </label>
-                            <label class="sch-pay-option">
-                                <input type="radio" name="schPayMethod" disabled>
-                                <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance</span>
-                                <span>Online Banking / GCash</span>
-                                <span class="sch-pay-coming">Soon</span>
-                            </label>
-                            <label class="sch-pay-option">
-                                <input type="radio" name="schPayMethod" disabled>
-                                <span class="material-symbols-outlined" style="font-size:18px;color:#888;">store</span>
-                                <span>Pay on-site</span>
+                            <label class="sch-pay-option sch-pay-selected" for="schPayGcash">
+                                <input type="radio" id="schPayGcash" name="schPayMethod" value="gcash" checked>
+                                <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance_wallet</span>
+                                <span>GCash</span>
                                 <span style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
                             </label>
+
+                            <label class="sch-pay-option sch-pay-disabled" onclick="notifyBankComingSoon()">
+                                <input type="radio" id="schPayBank" name="schPayMethod" value="bank" disabled>
+                                <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance</span>
+                                <span>Bank Payment</span>
+                                <span class="sch-pay-coming">Soon</span>
+                            </label>
+                        </div>
+
+                        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+                            <div>
+                                <label class="sch-label">GCash Number</label>
+                                <input id="schGcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
+                            </div>
+                            <div>
+                                <label class="sch-label">GCash Account Name</label>
+                                <input id="schGcashName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
+                            </div>
+                            <p id="schPaymentMsg" style="display:none;font-size:12px;margin:0;padding:8px 10px;border-radius:8px;"></p>
                         </div>
 
                         <div style="display:flex;justify-content:space-between;">
                             <button onclick="schGoStep(2)" class="sch-btn-ghost">&larr; Back</button>
-                            <div style="display:flex;gap:8px;">
-                                <button id="gcashPayBtn" onclick="startGcashPayment()" class="sch-btn-primary">Pay with GCash</button>
-                                <button onclick="schGoStep(4)" class="sch-btn-primary">Confirm Booking</button>
-                            </div>
+                            <button id="gcashPayBtn" onclick="startGcashPayment()" class="sch-btn-primary">Process GCash Payment</button>
                         </div>
                     </div>
 
@@ -387,8 +391,8 @@
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Booked Date</span><span id="confDate" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="confName" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Payment</span><span style="font-weight:600;color:#e65100;">Pay on-site</span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Status</span><span style="font-weight:600;background:#fff8e1;color:#e65100;padding:2px 10px;border-radius:10px;font-size:11px;">Pending Approval</span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Payment</span><span id="confPaymentMethod" style="font-weight:600;color:#0a4cff;">GCash</span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Status</span><span id="confPaymentStatus" style="font-weight:600;background:#e8f5e9;color:#2e7d32;padding:2px 10px;border-radius:10px;font-size:11px;">Paid</span></div>
                             </div>
                         </div>
                         <button onclick="closeScheduleModal()" class="sch-btn-primary" style="width:100%;">Done</button>
@@ -488,11 +492,12 @@
             .sch-pay-option {
                 display: flex; align-items: center; gap: 10px;
                 padding: 12px 14px; border: 1.5px solid #e2e8f5;
-                border-radius: 10px; cursor: default;
+                border-radius: 10px; cursor: pointer;
                 font-size: 13px; font-weight: 600; color: #555;
                 font-family: 'Poppins', sans-serif;
             }
             .sch-pay-option.sch-pay-selected { border-color: #0a4cff; background: #f5f8ff; }
+            .sch-pay-option.sch-pay-disabled { opacity: 0.75; }
             .sch-pay-coming {
                 margin-left: auto; font-size: 11px; background: #ffe8e8;
                 color: #b71c1c; padding: 2px 8px; border-radius: 10px; font-weight: 600;
@@ -508,17 +513,22 @@
             { dow: 6, open: true  }
         ];
         var _schYear, _schMonth, _schSelectedDate = null, _schStep = 1;
+        var _schPaymentMethod = 'GCash', _schPaymentStatus = 'Pending';
         var SCH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
         function openScheduleModal() {
             var now = new Date();
             _schYear = now.getFullYear(); _schMonth = now.getMonth();
             _schSelectedDate = null; _schStep = 1;
+            _schPaymentMethod = 'GCash';
+            _schPaymentStatus = 'Pending';
             renderSchCal();
             schSetStep(1);
             var ov = document.getElementById('scheduleOverlay');
             ov.style.display = 'flex';
             document.body.style.overflow = 'hidden';
+            var payMsg = document.getElementById('schPaymentMsg');
+            if (payMsg) { payMsg.style.display = 'none'; payMsg.textContent = ''; }
         }
 
         function closeScheduleModal() {
@@ -557,8 +567,33 @@
                 document.getElementById('confDate').textContent    = schFmtDate(_schSelectedDate);
                 document.getElementById('confName').textContent    = document.getElementById('schName').value.trim() || '—';
                 document.getElementById('confProgram').textContent = document.getElementById('schProgram').value || '—';
+                var paymentMethodEl = document.getElementById('confPaymentMethod');
+                var paymentStatusEl = document.getElementById('confPaymentStatus');
+                if (paymentMethodEl) paymentMethodEl.textContent = _schPaymentMethod;
+                if (paymentStatusEl) {
+                    paymentStatusEl.textContent = _schPaymentStatus;
+                    if (_schPaymentStatus === 'Paid') {
+                        paymentStatusEl.style.background = '#e8f5e9';
+                        paymentStatusEl.style.color = '#2e7d32';
+                    } else {
+                        paymentStatusEl.style.background = '#fff8e1';
+                        paymentStatusEl.style.color = '#e65100';
+                    }
+                }
             }
             schSetStep(n);
+        }
+
+        function notifyBankComingSoon() {
+            var msgEl = document.getElementById('schPaymentMsg');
+            if (!msgEl) return;
+            msgEl.textContent = 'This payment method will be available soon';
+            msgEl.style.display = 'block';
+            msgEl.style.background = '#fff8e1';
+            msgEl.style.color = '#7a5a00';
+            msgEl.style.border = '1px solid #f6c344';
+            var gcashRadio = document.getElementById('schPayGcash');
+            if (gcashRadio) gcashRadio.checked = true;
         }
 
         function schFmtDate(d) {
@@ -941,25 +976,91 @@
         })();
 
         async function startGcashPayment() {
+            const msgEl = document.getElementById('schPaymentMsg');
+            const payBtn = document.getElementById('gcashPayBtn');
             try {
                 const token = getActiveToken();
                 if (!token) { alert('Please login to continue to payment.'); return; }
                 const params = new URLSearchParams(window.location.search);
                 const centerId = params.get('id');
                 if (!centerId) return alert('Missing center id.');
+                const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
+                const gcashName = (document.getElementById('schGcashName').value || '').trim();
+                if (!gcashNumber || !gcashName) {
+                    if (msgEl) {
+                        msgEl.textContent = 'Please enter your GCash number and account name.';
+                        msgEl.style.display = 'block';
+                        msgEl.style.background = '#ffe8e8';
+                        msgEl.style.color = '#b71c1c';
+                        msgEl.style.border = '1px solid #ef9a9a';
+                    }
+                    return;
+                }
+                if (!/^09\d{9}$/.test(gcashNumber)) {
+                    if (msgEl) {
+                        msgEl.textContent = 'Please enter a valid GCash number (09XXXXXXXXX).';
+                        msgEl.style.display = 'block';
+                        msgEl.style.background = '#ffe8e8';
+                        msgEl.style.color = '#b71c1c';
+                        msgEl.style.border = '1px solid #ef9a9a';
+                    }
+                    return;
+                }
                 // Use booking total displayed in the UI or default amount
                 const amount = 1550; // ₱1,550 default — replace with dynamic value if available
-                const resp = await CentersAPI.enrollWithGcash(centerId, { amount: amount });
-                if (resp && resp.payment_url) {
-                    // open the payment page in a new tab/window
-                    window.open(resp.payment_url, '_blank');
-                    showToast('Opened payment page. Complete the payment to finish enrollment.');
+                if (payBtn) {
+                    payBtn.disabled = true;
+                    payBtn.textContent = 'Processing...';
+                }
+                if (msgEl) {
+                    msgEl.style.display = 'none';
+                    msgEl.textContent = '';
+                }
+
+                const resp = await CentersAPI.enrollWithGcash(centerId, {
+                    amount: amount,
+                    gcash_number: gcashNumber,
+                    gcash_name: gcashName,
+                });
+
+                if (resp && resp.transaction_status === 'paid') {
+                    _schPaymentMethod = resp.payment_method || 'GCash';
+                    _schPaymentStatus = 'Paid';
+                    if (msgEl) {
+                        msgEl.textContent = resp.message || 'GCash payment successful.';
+                        msgEl.style.display = 'block';
+                        msgEl.style.background = '#e8f5e9';
+                        msgEl.style.color = '#2e7d32';
+                        msgEl.style.border = '1px solid #81c784';
+                    }
+                    schGoStep(4);
                 } else {
-                    alert('Unable to start payment.');
+                    _schPaymentMethod = 'GCash';
+                    _schPaymentStatus = 'Failed';
+                    if (msgEl) {
+                        msgEl.textContent = (resp && resp.message) ? resp.message : 'GCash payment failed. Please try again.';
+                        msgEl.style.display = 'block';
+                        msgEl.style.background = '#ffe8e8';
+                        msgEl.style.color = '#b71c1c';
+                        msgEl.style.border = '1px solid #ef9a9a';
+                    }
                 }
             } catch (err) {
                 console.error('startGcashPayment error', err);
-                alert('Payment request failed: ' + (err && err.message ? err.message : String(err)));
+                _schPaymentMethod = 'GCash';
+                _schPaymentStatus = 'Failed';
+                if (msgEl) {
+                    msgEl.textContent = 'Payment request failed: ' + (err && err.message ? err.message : String(err));
+                    msgEl.style.display = 'block';
+                    msgEl.style.background = '#ffe8e8';
+                    msgEl.style.color = '#b71c1c';
+                    msgEl.style.border = '1px solid #ef9a9a';
+                }
+            } finally {
+                if (payBtn) {
+                    payBtn.disabled = false;
+                    payBtn.textContent = 'Process GCash Payment';
+                }
             }
         }
 

@@ -1,32 +1,85 @@
 const db = require('../config/db');
 require('dotenv').config();
 
-// Create a payment record and return a payment URL (mock by default)
+// Simple API-based GCash processing flow (mock/sandbox behavior).
+// It stores payment details and returns success/failed immediately.
 const createGcashEnrollment = async (req, res) => {
+  let conn;
   try {
     if (!req.user || !req.user.id) return res.status(401).json({ message: 'Authentication required.' });
     const userId = req.user.id;
     const centerId = req.params.id;
     const amount = parseInt(req.body.amount, 10) || 1550; // default in PHP pesos
+    const gcashNumber = String(req.body.gcash_number || '').trim();
+    const gcashName = String(req.body.gcash_name || '').trim();
+    const simulateFail = Boolean(req.body.simulate_fail);
+
+    if (!gcashNumber || !gcashName) {
+      return res.status(400).json({ message: 'GCash number and account name are required.' });
+    }
+
+    // Basic local validation for PH mobile format (11 digits starting with 09)
+    if (!/^09\d{9}$/.test(gcashNumber)) {
+      return res.status(400).json({ message: 'Please enter a valid GCash number (e.g., 09XXXXXXXXX).' });
+    }
+    if (amount <= 0) {
+      return res.status(400).json({ message: 'Invalid payment amount.' });
+    }
 
     // Ensure center exists
     const [centerRows] = await db.query('SELECT id, business_name FROM review_centers WHERE id = ?', [centerId]);
     if (!centerRows || centerRows.length === 0) return res.status(404).json({ message: 'Center not found.' });
 
-    // Insert payment record (mock provider)
-    const [result] = await db.query(
-      'INSERT INTO payments (user_id, center_id, provider, amount, currency, status, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, centerId, 'mock_gcash', amount, 'PHP', 'pending', JSON.stringify({ source: 'gcash_mock' })]
+    const maskedNumber = gcashNumber.replace(/\d(?=\d{4})/g, '*');
+    const shouldFail = simulateFail;
+    const status = shouldFail ? 'failed' : 'paid';
+    const providerPaymentId = 'GCASH_MOCK_' + Date.now();
+
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    // Store payment details (userId, amount, method/provider, transaction status, timestamp)
+    const [result] = await conn.query(
+      'INSERT INTO payments (user_id, center_id, provider, provider_payment_id, amount, currency, status, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        userId,
+        centerId,
+        'gcash',
+        providerPaymentId,
+        amount,
+        'PHP',
+        status,
+        JSON.stringify({
+          payment_method: 'GCash',
+          gcash_number_masked: maskedNumber,
+          gcash_name: gcashName,
+          mock: true,
+        }),
+      ]
     );
     const paymentId = result.insertId;
 
-    const host = process.env.BACKEND_URL || (`http://localhost:${process.env.PORT || 5000}`);
-    const paymentUrl = host.replace(/\/\/$/, '') + '/api/payments/mock/' + paymentId;
+    // On successful payment, activate enrollment.
+    if (!shouldFail) {
+      await conn.query('INSERT INTO enrollments (user_id, center_id, payment_id, status) VALUES (?, ?, ?, ?)', [userId, centerId, paymentId, 'active']);
+    }
 
-    return res.json({ payment_id: paymentId, payment_url: paymentUrl, message: 'Mock GCash payment created.' });
+    await conn.commit();
+    return res.json({
+      payment_id: paymentId,
+      user_id: userId,
+      amount,
+      payment_method: 'GCash',
+      transaction_status: status,
+      timestamp: new Date().toISOString(),
+      message: shouldFail ? 'GCash payment failed. Please try again.' : 'GCash payment successful.',
+    });
   } catch (err) {
+    if (conn) try { await conn.rollback(); } catch (e) {}
     console.error('createGcashEnrollment error:', err);
     return res.status(500).json({ message: 'Server error.' });
+  } finally {
+    if (conn) try { conn.release(); } catch (e) {}
   }
 };
 

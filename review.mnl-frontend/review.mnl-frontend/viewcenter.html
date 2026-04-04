@@ -359,7 +359,7 @@
                                 <input type="radio" id="schPayBank" name="schPayMethod" value="bank" disabled>
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance</span>
                                 <span>Bank Payment</span>
-                                <span class="sch-pay-coming">Soon</span>
+                                <span class="sch-pay-coming">Coming Soon</span>
                             </label>
                         </div>
 
@@ -372,6 +372,10 @@
                                 <label class="sch-label">GCash Account Name</label>
                                 <input id="schGcashName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
                             </div>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#666;">
+                                <input id="schSimFail" type="checkbox">
+                                Simulate failed payment (testing only)
+                            </label>
                             <p id="schPaymentMsg" style="display:none;font-size:12px;margin:0;padding:8px 10px;border-radius:8px;"></p>
                         </div>
 
@@ -1021,6 +1025,7 @@
                     amount: amount,
                     gcash_number: gcashNumber,
                     gcash_name: gcashName,
+                    simulate_fail: Boolean(document.getElementById('schSimFail') && document.getElementById('schSimFail').checked),
                 });
 
                 if (resp && resp.transaction_status === 'paid') {

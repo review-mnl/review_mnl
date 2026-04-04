@@ -100,6 +100,65 @@ review.mnl/
 - `GET /api/centers/:id` - Get center details
 - `GET /api/centers/me` - Get my center profile (centers only)
 - `POST /api/centers/:id/testimonials` - Submit testimonial
+- `POST /api/centers/:id/enroll/gcash` - Process GCash payment and create enrollment
+
+### Payment Flow (GCash Only)
+
+- Active method: `GCash`
+- Visible but disabled: `Bank Payment (Coming Soon)`
+- Clicking bank option in UI shows: `This payment method will be available soon`
+
+Backend payment payload (`POST /api/centers/:id/enroll/gcash`):
+
+```json
+{
+   "amount": 1550,
+   "gcash_number": "09123456789",
+   "gcash_name": "Juan Dela Cruz",
+   "simulate_fail": false
+}
+```
+
+Stored payment details include:
+
+- `user_id`
+- `amount`
+- `provider` / payment method (`gcash`)
+- `status` (paid/failed)
+- DB timestamp (`created_at` from `payments` table)
+
+Example test request:
+
+```bash
+curl -X POST "https://your-backend.railway.app/api/centers/1/enroll/gcash" \
+   -H "Authorization: Bearer YOUR_JWT" \
+   -H "Content-Type: application/json" \
+   -d '{
+      "amount":1550,
+      "gcash_number":"09123456789",
+      "gcash_name":"Juan Dela Cruz",
+      "simulate_fail":false
+   }'
+```
+
+Expected API response includes:
+
+- `user_id`
+- `amount`
+- `payment_method` (`GCash`)
+- `transaction_status` (`paid` or `failed`)
+- `timestamp`
+
+Frontend testing steps:
+
+1. Login as a student.
+2. Open a center details page (`viewcenter.html?id=<centerId>`).
+3. Click `Schedule a review` and proceed to Step 3.
+4. Confirm `GCash` is selected and `Bank Payment (Coming Soon)` is not selectable.
+5. Click bank option area and confirm message appears: `This payment method will be available soon`.
+6. Enter valid GCash number and account name, then click `Process GCash Payment`.
+7. Verify success confirmation appears and booking proceeds to confirmation step.
+8. (Optional) Enable `Simulate failed payment (testing only)` before submitting to test failed response handling.
 
 ### Admin
 - `GET /api/admin/centers/pending` - Get pending centers

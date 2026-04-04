@@ -314,7 +314,7 @@
                             </div>
                             <div>
                                 <label class="sch-label">Additional Notes <span style="color:#aaa;font-weight:400;">(optional)</span></label>
-                                <textarea id="schNotes" class="sch-input" rows="3" placeholder="Any questions or special requests..."></textarea>
+                                <textarea id="schNotes" class="sch-input" rows="3" placeholder="Any questions or special requests..." style="height:150px;min-height:150px;max-height:150px;resize:none;overflow-y:auto;"></textarea>
                             </div>
                         </div>
                         <div style="display:flex;justify-content:space-between;margin-top:20px;">
@@ -463,6 +463,10 @@
                 background: #fff;
             }
             .sch-input:focus { border-color: #0a4cff; }
+            textarea.sch-input {
+                resize: none;
+                overflow-y: auto;
+            }
 
             .sch-btn-primary {
                 padding: 10px 24px; background: #0a4cff; color: #fff;

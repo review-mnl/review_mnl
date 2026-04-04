@@ -42,7 +42,7 @@
                     <div class="center-logo" id="centerLogo"></div>
                     <div class="center-info">
                         <h1 id="centerName">Name of Review Center</h1>
-                        <p class="center-description" id="centerShortDescription">Description.....</p>
+                        <p class="center-description" id="centerShortDescription">Location.....</p>
                         <div class="center-rating">
                             <span class="stars" id="centerStars">★★★★★</span>
                             <span class="rating-count" id="centerRatingCount">5.0 (10)</span>
@@ -671,7 +671,7 @@
                 const center = await CentersAPI.getById(centerId);
                 const centerName = center.business_name || center.name || 'Review Center';
                 const centerAbout = center.description || 'No description provided yet.';
-                const centerShort = center.description || center.address || 'Explore this review center.';
+                const centerShort = center.address || 'Location unavailable';
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
 
                 const nameEl = document.getElementById('centerName');

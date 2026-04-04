@@ -75,6 +75,22 @@
 
             // Load center profile from API
             (async function(){
+                function parseArrayField(raw) {
+                    if (!raw) return [];
+                    if (Array.isArray(raw)) return raw;
+                    if (typeof raw === 'string') {
+                        const trimmed = raw.trim();
+                        if (!trimmed) return [];
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            return Array.isArray(parsed) ? parsed : [];
+                        } catch (e) {
+                            return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                        }
+                    }
+                    return [];
+                }
+
                 try {
                     const center = await CentersAPI.getMyProfile();
                     if (center.business_name) {
@@ -93,6 +109,39 @@
                             logo.style.backgroundPosition = 'center';
                         }
                     }
+                    if (center.description) {
+                        document.getElementById('aboutDisplay').textContent = center.description;
+                    }
+                    
+                    const programTagsEl = document.getElementById('programTagsDisplay');
+                    if (programTagsEl) {
+                        const programs = parseArrayField(center.programs);
+                        if (programs.length > 0) {
+                            programTagsEl.innerHTML = '';
+                            programs.forEach(function(program) {
+                                const btn = document.createElement('button');
+                                btn.className = 'program-tag';
+                                btn.textContent = String(program).trim();
+                                programTagsEl.appendChild(btn);
+                            });
+                        }
+                    }
+
+                    const achievementsEl = document.getElementById('achievementListDisplay');
+                    if (achievementsEl) {
+                        const achievements = parseArrayField(center.achievements);
+                        if (achievements.length > 0) {
+                            achievementsEl.innerHTML = '';
+                            achievements.forEach(function(itemText) {
+                                const item = document.createElement('div');
+                                item.className = 'achievement-item';
+                                item.innerHTML = '<span class="trophy-icon">🏆</span><p></p>';
+                                item.querySelector('p').textContent = String(itemText).trim();
+                                achievementsEl.appendChild(item);
+                            });
+                        }
+                    }
+
                     var rating = Math.round(center.avg_rating || 0);
                     var starsEl = document.querySelector('.center-rating .stars');
                     if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
@@ -346,15 +395,15 @@
                 if (id === 'profileModal') {
                     const nameInput = document.getElementById('centerNameInput');
                     const descInput = document.getElementById('centerLocationInput');
-                    nameInput.value = '';
-                    descInput.value = '';
-                    nameInput.placeholder = document.getElementById('centerNameDisplay').innerText;
-                    descInput.placeholder = document.getElementById('centerDescDisplay').innerText;
+                    const dispName = document.getElementById('centerNameDisplay').innerText;
+                    const dispDesc = document.getElementById('centerDescDisplay').innerText;
+                    nameInput.value = dispName !== 'Name of Review Center' ? dispName : '';
+                    descInput.value = dispDesc !== 'Description.....' ? dispDesc : '';
                 }
                 if (id === 'aboutModal') {
                     const aboutInput = document.getElementById('aboutInput');
-                    aboutInput.value = '';
-                    aboutInput.placeholder = document.getElementById('aboutDisplay').innerText;
+                    const dispAbout = document.getElementById('aboutDisplay').innerText;
+                    aboutInput.value = dispAbout !== 'Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description' ? dispAbout : '';
                 }
                 if (id === 'achievementsModal') {
                     const inputList = document.getElementById('achievementsInputList');
@@ -364,6 +413,31 @@
                         addAchievementInput(p.textContent.trim());
                     });
                     if (items.length === 0) addAchievementInput('');
+                }
+                if (id === 'programsModal') {
+                    const tags = document.querySelectorAll('#programTagsDisplay .program-tag');
+                    const currentPrograms = Array.from(tags).map(t => t.textContent.trim());
+                    
+                    const checkboxes = document.querySelectorAll('#programsModal .program-checklist input[type=checkbox]:not(#othersCheckbox)');
+                    const predefined = Array.from(checkboxes).map(cb => cb.value);
+                    
+                    checkboxes.forEach(cb => {
+                        cb.checked = currentPrograms.includes(cb.value);
+                    });
+                    
+                    const others = currentPrograms.filter(p => !predefined.includes(p));
+                    const othersCb = document.getElementById('othersCheckbox');
+                    const othersInput = document.getElementById('othersInput');
+                    
+                    if (others.length > 0) {
+                        othersCb.checked = true;
+                        othersInput.value = others.join(', ');
+                        toggleOthersInput(othersCb);
+                    } else {
+                        othersCb.checked = false;
+                        othersInput.value = '';
+                        toggleOthersInput(othersCb);
+                    }
                 }
                 document.getElementById(id).classList.add('active');
             }

@@ -293,6 +293,8 @@ const CentersAPI = {
 
     getMyProfile: () =>
         apiRequest('GET', '/api/centers/me'),
+    getMyTestimonials: (sort) =>
+        apiRequest('GET', '/api/centers/me/testimonials' + (sort ? ('?sort=' + encodeURIComponent(sort)) : '')),
     updateMyProfile: (data) =>
         apiRequest('PUT', '/api/centers/me', data),
     uploadLogo: (formData) =>

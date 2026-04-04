@@ -77,4 +77,36 @@ const deleteTestimonial = async (req, res) => {
   }
 };
 
-module.exports = { postTestimonial, getPendingTestimonials, approveTestimonial, deleteTestimonial };
+const getMyCenterTestimonials = async (req, res) => {
+  const userId = req.user.id;
+  const sort = String(req.query.sort || 'latest').toLowerCase();
+
+  let orderBy = 't.created_at DESC';
+  if (sort === 'highest') orderBy = 't.rating DESC, t.created_at DESC';
+  if (sort === 'lowest') orderBy = 't.rating ASC, t.created_at DESC';
+
+  try {
+    const [centerRows] = await db.query('SELECT id FROM review_centers WHERE user_id = ? LIMIT 1', [userId]);
+    if (centerRows.length === 0) {
+      return res.status(404).json({ message: 'Review center not found.' });
+    }
+
+    const centerId = centerRows[0].id;
+    const [rows] = await db.query(
+      `SELECT t.id, t.center_id, t.content, t.rating, t.created_at,
+              u.first_name, u.last_name,
+              CONCAT(COALESCE(u.first_name, ''), CASE WHEN u.last_name IS NULL OR u.last_name = '' THEN '' ELSE ' ' END, COALESCE(u.last_name, '')) AS username
+       FROM testimonials t
+       JOIN users u ON u.id = t.student_id
+       WHERE t.center_id = ? AND t.is_approved = 1
+       ORDER BY ${orderBy}`,
+      [centerId]
+    );
+
+    res.json({ centerId, testimonials: rows });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { postTestimonial, getPendingTestimonials, approveTestimonial, deleteTestimonial, getMyCenterTestimonials };

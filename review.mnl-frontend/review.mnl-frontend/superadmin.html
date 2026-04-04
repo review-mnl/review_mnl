@@ -362,9 +362,9 @@
                         <span style="font-size:0.78rem;color:#6b7fa8;">Review Centers awaiting activation</span>
                     </div>
                     <table>
-                        <thead><tr><th>Center Name</th><th>Owner</th><th>Email</th><th>Submitted</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Center Name</th><th>Email</th><th>Submitted</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr><td colspan="5" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                            <tr><td colspan="4" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -396,9 +396,9 @@
                         <input class="sa-search-input" placeholder="Search centers..." oninput="filterTable('centersTable', this.value)">
                     </div>
                     <table id="centersTable">
-                        <thead><tr><th>Center Name</th><th>Owner</th><th>Email</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Center Name</th><th>Email</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr><td colspan="6" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                            <tr><td colspan="5" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -453,9 +453,9 @@
                         <input class="sa-search-input" placeholder="Search submissions..." oninput="filterTable('docsTable', this.value)">
                     </div>
                     <table id="docsTable">
-                        <thead><tr><th>Center Name</th><th>Submitted By</th><th>Date</th><th>Business Permit</th><th>DTI / SEC</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Center Name</th><th>Date</th><th>Business Permit</th><th>DTI / SEC</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr><td colspan="7" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                            <tr><td colspan="6" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -895,7 +895,6 @@
             return `
                 <tr data-center-id="${c.id}">
                     <td>${c.business_name}</td>
-                    <td></td>
                     <td>${c.email}</td>
                     <td>${formatDate(c.created_at)}</td>
                     <td>
@@ -911,12 +910,11 @@
         var tbody = document.querySelector('#centersTable tbody');
         if (!tbody) return;
         if (!centers || centers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No centers found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7fa8;">No centers found</td></tr>';
             return;
         }
         tbody.innerHTML = centers.map(function(c) {
             var safeName = (c.business_name || '').replace(/'/g, "\\'");
-            var owner = c.owner || c.owner_name || '';
             var email = c.email || '';
             var date = formatDate(c.created_at);
             // Map backend statuses to Active/Inactive and choose actions
@@ -935,7 +933,6 @@
             }
             return `<tr data-center-id="${c.id}">` +
                 `<td>${c.business_name || ''}</td>` +
-                `<td>${owner}</td>` +
                 `<td>${email}</td>` +
                 `<td>${date}</td>` +
                 `<td><span class="sa-status ${statusClass}">${statusText}</span></td>` +
@@ -1015,7 +1012,7 @@
         if (!tbody) return;
         var pending = (centers || []).filter(function(c){ return c.status === 'pending'; });
         if (pending.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7fa8;">No pending submissions</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No pending submissions</td></tr>';
             return;
         }
         tbody.innerHTML = pending.map(function(c) {
@@ -1031,7 +1028,6 @@
             var actions = c.status === 'pending' ? ('<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'' + safeName + '\')">Approve</button> <button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'' + safeName + '\')">Reject</button>') : '<span style="font-size:0.78rem;color:#3a4a6b;">—</span>';
             return '<tr data-center-id="' + c.id + '">' +
                 '<td>' + (c.business_name || '') + '</td>' +
-                '<td>' + (c.email || '') + '</td>' +
                 '<td>' + date + '</td>' +
                 '<td>' + bpBtn + '</td>' +
                 '<td>' + dtiBtn + '</td>' +

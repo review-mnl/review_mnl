@@ -146,6 +146,21 @@
 
         <section class="testimonials-section" style="padding:40px 6%;max-width:900px;margin:20px auto;">
             <h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews / Testimonials</h2>
+            <button id="writeFeedbackBtn" style="display:none;padding:10px 18px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">Write Feedback / Testimonial</button>
+            <div id="testimonialFormWrap" style="display:none;margin-bottom:16px;background:#f0f4ff;border-radius:12px;padding:16px;">
+                <p id="testiError" style="display:none;color:#d32f2f;font-size:12px;margin-bottom:8px;"></p>
+                <p id="testiSuccess" style="display:none;color:#2e7d32;font-size:12px;margin-bottom:8px;"></p>
+                <select id="testiRating" style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;margin-bottom:10px;">
+                    <option value="">Select rating (1-5)...</option>
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Average</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Very Poor</option>
+                </select>
+                <textarea id="testiContent" rows="4" placeholder="Write your feedback..." style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;margin-bottom:10px;"></textarea>
+                <button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Feedback</button>
+            </div>
             <div id="testimonialsList"></div>
         </section>
 
@@ -759,6 +774,8 @@
                 const programTagsEl = document.getElementById('programTags');
                 const achievementsEl = document.getElementById('achievementList');
                 const testimonialsListEl = document.getElementById('testimonialsList');
+                const writeFeedbackBtn = document.getElementById('writeFeedbackBtn');
+                const testimonialFormWrap = document.getElementById('testimonialFormWrap');
 
                 if (nameEl) nameEl.textContent = centerName;
                 if (shortDescEl) shortDescEl.textContent = centerShort;
@@ -825,68 +842,90 @@
                     testimonialsListEl.innerHTML = '';
                 }
 
-                if (center.testimonials && center.testimonials.length && testimonialsListEl) {
-                    center.testimonials.forEach(function(t) {
-                        const r = Math.round(t.rating || 0);
-                        const studentName = [t.first_name || '', t.last_name || ''].join(' ').trim() || 'Anonymous';
-                        const card = document.createElement('div');
-                        card.className = 'testimonial-card';
-                        card.innerHTML =
-                            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
-                                '<strong style="color:#0d1b4b;">' + escHtml(studentName) + '</strong>' +
-                                '<span style="color:#f59e0b;">' + '★'.repeat(r) + '☆'.repeat(5 - r) + '</span>' +
-                            '</div>' +
-                            '<p style="color:#555;font-size:0.9rem;margin:0;">' + escHtml(t.content || '') + '</p>';
+                function renderTestimonialItem(t, prepend) {
+                    if (!testimonialsListEl || !t) return;
+                    const r = Math.max(1, Math.min(5, Math.round(Number(t.rating) || 0)));
+                    const studentName = [t.first_name || '', t.last_name || ''].join(' ').trim() || t.username || 'Anonymous';
+                    const created = t.created_at ? new Date(t.created_at) : new Date();
+                    const dateLabel = created.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                    const card = document.createElement('div');
+                    card.className = 'testimonial-card';
+                    card.innerHTML =
+                        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">' +
+                            '<strong style="color:#0d1b4b;">' + escHtml(studentName) + '</strong>' +
+                            '<span style="font-size:12px;color:#6b7280;">' + escHtml(dateLabel) + '</span>' +
+                        '</div>' +
+                        '<div style="color:#f59e0b;margin-bottom:8px;">' + '★'.repeat(r) + '☆'.repeat(5 - r) + '</div>' +
+                        '<p style="color:#555;font-size:0.9rem;margin:0;">' + escHtml(t.content || t.feedback || '') + '</p>';
+                    if (prepend && testimonialsListEl.firstChild) {
+                        testimonialsListEl.insertBefore(card, testimonialsListEl.firstChild);
+                    } else {
                         testimonialsListEl.appendChild(card);
-                    });
-                } else if (testimonialsListEl) {
-                    testimonialsListEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">No reviews yet for this review center.</p>';
+                    }
                 }
 
-                // Add testimonial form for logged-in students if they are enrolled
-                const user = getUser();
-                if (user && user.role === 'student' && center.isEnrolled && testimonialsListEl) {
-                    const formDiv = document.createElement('div');
-                    formDiv.style.cssText = 'margin-top:24px;background:#f0f4ff;border-radius:12px;padding:20px;';
-                    formDiv.innerHTML =
-                        '<h3 style="color:#0d1b4b;margin-bottom:12px;font-size:1rem;">Leave a Review</h3>' +
-                        '<p id="testiError" style="display:none;color:#d32f2f;font-size:12px;margin-bottom:8px;"></p>' +
-                        '<p id="testiSuccess" style="display:none;color:#2e7d32;font-size:12px;margin-bottom:8px;"></p>' +
-                        '<select id="testiRating" style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;margin-bottom:10px;">' +
-                            '<option value="">Select rating...</option>' +
-                            '<option value="5">★★★★★ — Excellent</option>' +
-                            '<option value="4">★★★★ — Good</option>' +
-                            '<option value="3">★★★ — Average</option>' +
-                            '<option value="2">★★ — Poor</option>' +
-                            '<option value="1">★ — Very Poor</option>' +
-                        '</select>' +
-                        '<textarea id="testiContent" rows="3" placeholder="Share your experience..." style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;margin-bottom:10px;"></textarea>' +
-                        '<button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Review</button>';
-                    testimonialsListEl.appendChild(formDiv);
+                if (center.testimonials && center.testimonials.length && testimonialsListEl) {
+                    center.testimonials.forEach(function(t) { renderTestimonialItem(t, false); });
+                } else if (testimonialsListEl) {
+                    testimonialsListEl.innerHTML = '<p id="noTestimonialsMsg" style="color:#6b7280;font-size:0.95rem;">No reviews yet for this review center.</p>';
+                }
 
-                    document.getElementById('testiSubmitBtn').addEventListener('click', async function() {
-                        const content = document.getElementById('testiContent').value.trim();
-                        const rating  = document.getElementById('testiRating').value;
-                        const errEl   = document.getElementById('testiError');
-                        const okEl    = document.getElementById('testiSuccess');
-                        errEl.style.display = 'none';
-                        okEl.style.display  = 'none';
-                        if (!content || !rating) {
-                            errEl.textContent = 'Please select a rating and write a review.';
-                            errEl.style.display = 'block';
-                            return;
-                        }
-                        try {
-                            await CentersAPI.postTestimonial(centerId, content, parseInt(rating, 10));
-                            okEl.textContent = 'Review submitted for approval. Thank you!';
-                            okEl.style.display = 'block';
-                            document.getElementById('testiContent').value = '';
-                            document.getElementById('testiRating').value  = '';
-                        } catch (err) {
-                            errEl.textContent = err.message || 'Failed to submit review.';
-                            errEl.style.display = 'block';
-                        }
+                // Simple testimonial form for logged-in students (no approval flow)
+                const user = getUser();
+                if (user && user.role === 'student' && writeFeedbackBtn && testimonialFormWrap) {
+                    writeFeedbackBtn.style.display = 'inline-block';
+                    writeFeedbackBtn.addEventListener('click', function() {
+                        testimonialFormWrap.style.display = testimonialFormWrap.style.display === 'none' ? 'block' : 'none';
                     });
+
+                    const submitBtn = document.getElementById('testiSubmitBtn');
+                    if (submitBtn) {
+                        submitBtn.addEventListener('click', async function() {
+                            const content = document.getElementById('testiContent').value.trim();
+                            const rating = document.getElementById('testiRating').value;
+                            const errEl = document.getElementById('testiError');
+                            const okEl = document.getElementById('testiSuccess');
+                            errEl.style.display = 'none';
+                            okEl.style.display = 'none';
+
+                            if (!content || !rating) {
+                                errEl.textContent = 'Rating and feedback are required.';
+                                errEl.style.display = 'block';
+                                return;
+                            }
+
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Submitting...';
+                            try {
+                                const resp = await CentersAPI.postTestimonial(centerId, content, parseInt(rating, 10));
+                                okEl.textContent = (resp && resp.message) ? resp.message : 'Feedback submitted successfully.';
+                                okEl.style.display = 'block';
+
+                                document.getElementById('testiContent').value = '';
+                                document.getElementById('testiRating').value = '';
+
+                                const emptyMsg = document.getElementById('noTestimonialsMsg');
+                                if (emptyMsg) emptyMsg.remove();
+
+                                const firstName = (user.first_name || '').trim();
+                                const lastName = (user.last_name || '').trim();
+                                renderTestimonialItem((resp && resp.testimonial) || {
+                                    first_name: firstName,
+                                    last_name: lastName,
+                                    username: (user.name || user.email || 'You'),
+                                    rating: parseInt(rating, 10),
+                                    content: content,
+                                    created_at: new Date().toISOString(),
+                                }, true);
+                            } catch (err) {
+                                errEl.textContent = err.message || 'Failed to submit feedback.';
+                                errEl.style.display = 'block';
+                            } finally {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit Feedback';
+                            }
+                        });
+                    }
                 }
 
                 // Update save button center ID

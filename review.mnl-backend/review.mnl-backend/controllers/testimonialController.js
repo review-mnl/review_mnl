@@ -1,22 +1,41 @@
 const db = require('../config/db');
 
 const postTestimonial = async (req, res) => {
-  const { center_id, content, rating } = req.body;
+  const center_id = req.params.id || req.body.center_id;
+  const { content, rating } = req.body;
   const student_id = req.user.id;
-  if (!content || !center_id)
-    return res.status(400).json({ message: 'Content and center_id are required.' });
+  const parsedRating = Number(rating);
+  if (!content || !String(content).trim() || !center_id || !Number.isFinite(parsedRating)) {
+    return res.status(400).json({ message: 'Rating and feedback are required.' });
+  }
+  if (parsedRating < 1 || parsedRating > 5) {
+    return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
+  }
   try {
     const [center] = await db.query(
       "SELECT id FROM review_centers WHERE id = ? AND status = 'approved'", [center_id]
     );
     if (center.length === 0)
       return res.status(404).json({ message: 'Review center not found.' });
-    await db.query(
+
+    const [insertResult] = await db.query(
       `INSERT INTO testimonials (student_id, center_id, content, rating, is_approved)
-       VALUES (?, ?, ?, ?, 0)`,
-      [student_id, center_id, content, rating || null]
+       VALUES (?, ?, ?, ?, 1)`,
+      [student_id, center_id, String(content).trim(), parsedRating]
     );
-    res.status(201).json({ message: 'Testimonial submitted! It will appear after admin review.' });
+
+    const [rows] = await db.query(
+      `SELECT t.id, t.content, t.rating, t.created_at, u.first_name, u.last_name
+       FROM testimonials t
+       JOIN users u ON u.id = t.student_id
+       WHERE t.id = ? LIMIT 1`,
+      [insertResult.insertId]
+    );
+
+    res.status(201).json({
+      message: 'Feedback submitted successfully.',
+      testimonial: rows[0] || null,
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }

@@ -1090,19 +1090,19 @@ nav img{
 .back-btn-viewcenter {
     background: #fff;
     color: #0a4cff;
-    padding: 10px 16px;
+    padding: 6px 14px;
     border-radius: 999px;
     text-decoration: none;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     z-index: 10;
 }
 
 .back-btn-viewcenter .material-symbols-outlined {
-    font-size: 24px;
+    font-size: 18px;
 }
 
 .back-btn-viewcenter:hover {
@@ -1204,8 +1204,7 @@ nav img{
     padding-top: 20px;
     bottom: auto;
     left: auto;
-    margin-top: auto;
-    margin-bottom: 30px;
+    margin: auto 0;
     align-items: center;
     gap: 28px;
     padding: 18px 6%;
@@ -1214,17 +1213,11 @@ nav img{
     width: 100%;
 }
 @media (max-width: 900px) {
-    .header-viewcenter .center-header-content { flex-direction: column; align-items: flex-start; gap: 12px; margin-top: auto; padding-top: 12px; }
+    .header-viewcenter .center-header-content { flex-direction: column; align-items: flex-start; gap: 12px; margin: auto 0; padding-top: 12px; }
     .center-logo { width: 96px; height: 96px; }
 }
 
-/* Position the back button inside the header area for viewcenter to avoid it appearing mid-header */
-.header-viewcenter .back-btn-viewcenter {
-    padding: 10px 18px;
-}
-@media (max-width: 900px) {
-    .header-viewcenter .back-btn-viewcenter { padding: 8px 12px; }
-}
+/* Remove explicit back button padding override here to inherit standard styling */
 
 .center-left {
     flex: 1;
@@ -1764,6 +1757,11 @@ nav img{
     color: #0a4cff;
     font-size: 14px;
     line-height: 1.5;
+}
+
+.testimonials-section {
+    background: #fff;
+    border-radius: 12px;
 }
 
 .testimonials-section h2 {

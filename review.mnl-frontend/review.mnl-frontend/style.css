@@ -1016,6 +1016,9 @@ nav img{
     width: 200px;
     height: 200px;
     background: #0a4cff;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     border-radius: 15px;
     flex-shrink: 0;
 }

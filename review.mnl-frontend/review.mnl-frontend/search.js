@@ -40,6 +40,17 @@ function parsePrograms(raw) {
     return [];
 }
 
+function resolveCenterLogoUrl(rawUrl) {
+    if (!rawUrl) return '';
+    const url = String(rawUrl).trim();
+    if (!url) return '';
+    if (/^data:/i.test(url) || /^https?:\/\//i.test(url)) return url;
+    if (/^\/\//.test(url)) return window.location.protocol + url;
+    const normalized = url.replace(/\\/g, '/');
+    if (normalized.charAt(0) === '/') return API_BASE + normalized;
+    return API_BASE + '/' + normalized.replace(/^\/+/, '');
+}
+
 function normalizeCategory(text) {
     return String(text || '').trim().toLowerCase();
 }
@@ -83,9 +94,14 @@ function buildCard(center) {
     const rating = Number(center.avg_rating !== undefined ? center.avg_rating : center.average_rating) || 0;
     const centerName = center.business_name || center.name || 'Unnamed Center';
     const centerDesc = center.description || '';
+    const logoUrl = resolveCenterLogoUrl(center.logo_url || center.profile_picture_url || '');
+
+    const imageStyle = logoUrl
+        ? ' style="background-image:url(\'' + escHtml(logoUrl) + '\');"'
+        : '';
 
     div.innerHTML =
-        '<div class="result-image"></div>' +
+        '<div class="result-image"' + imageStyle + '></div>' +
         '<div class="result-content">' +
             '<h3>' + escHtml(centerName) + '</h3>' +
             '<p class="result-location">' + escHtml(center.address || '') + '</p>' +

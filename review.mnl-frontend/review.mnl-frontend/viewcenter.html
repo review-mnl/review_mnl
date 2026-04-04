@@ -41,20 +41,19 @@
                 <div style="display:flex;align-items:flex-start;gap:20px;flex:1;min-width:0;">
                     <div class="center-logo" id="centerLogo"></div>
                     <div class="center-info">
-                        <h1 id="centerName">Name of Review Center</h1>
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+                            <h1 id="centerName" style="margin:0;">Name of Review Center</h1>
+                            <button id="saveCenterBtn" onclick="toggleSaveCenter()" title="Save Center" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;">
+                                <span class="material-symbols-outlined" id="saveIcon" style="font-size:28px;text-shadow:1px 1px 3px rgba(0,0,0,0.4);">bookmark_border</span>
+                            </button>
+                            <div id="saveToast" style="display:none;padding:5px 12px;background:rgba(0,0,0,0.65);color:#fff;border-radius:6px;font-size:0.75rem;font-family:Poppins,sans-serif;"></div>
+                        </div>
                         <p class="center-description" id="centerShortDescription">Location.....</p>
                         <div class="center-rating">
                             <span class="stars" id="centerStars">★★★★★</span>
                             <span class="rating-count" id="centerRatingCount">5.0 (10)</span>
                         </div>
                     </div>
-                </div>
-                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;">
-                    <button id="saveCenterBtn" onclick="toggleSaveCenter()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:8px;border:2px solid #0a4cff;background:#0a4cff;color:#fff;font-family:Poppins,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.2s,color 0.2s,border-color 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
-                        <span class="material-symbols-outlined" id="saveIcon" style="font-size:18px;">bookmark</span>
-                        <span id="saveBtnText">Save Center</span>
-                    </button>
-                    <div id="saveToast" style="display:none;padding:6px 14px;background:rgba(255,255,255,0.2);color:#fff;border-radius:8px;font-size:0.8rem;font-family:Poppins,sans-serif;"></div>
                 </div>
             </div>
         </section>
@@ -92,16 +91,12 @@
                     </div>
                 </div>
 
-                <div class="location-map-section" style="margin-bottom: 30px;">
-                    <h2>Location</h2>
-                    <div id="viewMap" style="height: 190px; width: 100%; border-radius: 12px; background: #e8eaed; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #fff; overflow: hidden; z-index: 1;"></div>
-                </div>
-
-                <button class="schedule-review-btn" onclick="openScheduleModal()">Schedule a review</button>
+                <button class="schedule-review-btn" onclick="openScheduleModal()" style="margin-top: 20px;">Schedule a review</button>
             </div>
 
-            <div class="achievements-card">
-                <h2>Achievements</h2>
+            <div class="center-right flex-column" style="display:flex;flex-direction:column;gap:24px;width:400px;flex-shrink:0;">
+                <div class="achievements-card" style="width:100%;box-sizing:border-box;">
+                    <h2>Achievements</h2>
                 <div class="achievement-list" id="achievementList">
                     <div class="achievement-item">
                         <span class="trophy-icon">🏆</span>
@@ -127,6 +122,12 @@
                         <span class="trophy-icon">🏆</span>
                         <p>Achievement Achievement Achievement</p>
                     </div>
+                </div>
+                </div> <!-- Closing achievements card -->
+
+                <div class="location-card" style="background:#fff;border-radius:20px;padding:32px;box-sizing:border-box;width:100%;">
+                    <h2 style="font-size:36px;color:#0a4cff;font-weight:600;margin-bottom:20px;">Location</h2>
+                    <div id="viewMap" style="height: 180px; width: 100%; border-radius: 12px; background: #e8eaed; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 2px solid #fff; overflow: hidden; z-index: 1;"></div>
                 </div>
             </div>
         </section>
@@ -164,20 +165,15 @@
                     const saved = isSaved();
                     const btn = document.getElementById('saveCenterBtn');
                     const icon = document.getElementById('saveIcon');
-                    const text = document.getElementById('saveBtnText');
                     if (!btn) return;
                     if (saved) {
-                        btn.style.background = '#fff';
-                        btn.style.color = '#0a4cff';
-                        btn.style.borderColor = '#0a4cff';
-                        icon.textContent = 'bookmark_added';
-                        text.textContent = 'Saved';
-                    } else {
-                        btn.style.background = '#0a4cff';
-                        btn.style.color = '#fff';
-                        btn.style.borderColor = '#0a4cff';
                         icon.textContent = 'bookmark';
-                        text.textContent = 'Save Center';
+                        icon.style.color = '#fff';
+                        icon.style.textShadow = '0 0 10px rgba(255,255,255,1), 1px 1px 3px rgba(0,0,0,0.4)';
+                    } else {
+                        icon.textContent = 'bookmark_border';
+                        icon.style.color = '#fff';
+                        icon.style.textShadow = '1px 1px 3px rgba(0,0,0,0.4)';
                     }
                 }
                 function showToast(msg) {

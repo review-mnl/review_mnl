@@ -290,6 +290,9 @@ const CentersAPI = {
         apiRequest('PUT', '/api/centers/me', data),
     uploadLogo: (formData) =>
         apiRequest('PUT', '/api/centers/me/logo', formData, true),
+    
+    enrollWithGcash: (centerId, payload) =>
+        apiRequest('POST', '/api/centers/' + centerId + '/enroll/gcash', payload),
 };
 
 // ---------------------------------------------------------------------------

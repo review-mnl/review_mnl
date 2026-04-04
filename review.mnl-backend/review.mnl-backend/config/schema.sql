@@ -65,6 +65,34 @@ CREATE TABLE IF NOT EXISTS testimonials (
   FOREIGN KEY (center_id)  REFERENCES review_centers(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS payments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  center_id INT NOT NULL,
+  provider VARCHAR(100) NOT NULL,
+  provider_payment_id VARCHAR(255),
+  amount INT NOT NULL,
+  currency VARCHAR(10) DEFAULT 'PHP',
+  status ENUM('pending','paid','failed','cancelled') DEFAULT 'pending',
+  metadata JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS enrollments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  center_id INT NOT NULL,
+  payment_id INT,
+  status ENUM('pending','active','cancelled') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE,
+  FOREIGN KEY (payment_id) REFERENCES payments(id)
+);
+
 INSERT IGNORE INTO users (first_name, last_name, email, password, role, is_verified)
 VALUES ('Super', 'Admin', 'admin@reviewmnl.com',
   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHHC', 'superadmin', 1);

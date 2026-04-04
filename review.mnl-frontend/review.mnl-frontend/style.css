@@ -1197,6 +1197,24 @@ nav img{
     .center-details { padding: 20px; min-height: auto; }
 }
 
+/* Fix: Prevent header content from overlapping nav/search elements on narrow viewports
+   - Add top padding for viewcenter header so the center-info and logo do not collide
+   - Ensure the header content wraps on small screens instead of overlapping
+*/
+.header-viewcenter {
+    padding-top: 72px; /* reserve space for nav and prevent overlap */
+}
+.header-viewcenter .center-header-content {
+    align-items: center;
+    gap: 28px;
+    padding: 18px 6%;
+}
+@media (max-width: 900px) {
+    .header-viewcenter { padding-top: 56px; }
+    .header-viewcenter .center-header-content { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .center-logo { width: 96px; height: 96px; }
+}
+
 .center-left {
     flex: 1;
 }

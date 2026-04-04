@@ -44,7 +44,7 @@
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
                             <h1 id="centerName" style="margin:0;">Name of Review Center</h1>
                             <button id="saveCenterBtn" onclick="toggleSaveCenter()" title="Save Center" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;">
-                                <span class="material-symbols-outlined" id="saveIcon" style="font-size:28px;text-shadow:1px 1px 3px rgba(0,0,0,0.4);">bookmark_border</span>
+                                <span class="material-symbols-outlined" id="saveIcon" style="font-size:28px;text-shadow:1px 1px 3px rgba(0,0,0,0.4);transition:font-variation-settings 0.2s;">bookmark_border</span>
                             </button>
                             <div id="saveToast" style="display:none;padding:5px 12px;background:rgba(0,0,0,0.65);color:#fff;border-radius:6px;font-size:0.75rem;font-family:Poppins,sans-serif;"></div>
                         </div>
@@ -54,6 +54,9 @@
                             <span class="rating-count" id="centerRatingCount">5.0 (10)</span>
                         </div>
                     </div>
+                </div>
+                <div id="headerMapContainer" style="width: 250px; height: 130px; border-radius: 12px; background: #e8eaed; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; flex-shrink: 0; align-self: flex-end; display: none;">
+                    <div id="viewMap" style="width: 100%; height: 100%; z-index: 1;"></div>
                 </div>
             </div>
         </section>
@@ -124,11 +127,6 @@
                     </div>
                 </div>
                 </div> <!-- Closing achievements card -->
-
-                <div class="location-card" style="background:#fff;border-radius:20px;padding:32px;box-sizing:border-box;width:100%;">
-                    <h2 style="font-size:36px;color:#0a4cff;font-weight:600;margin-bottom:20px;">Location</h2>
-                    <div id="viewMap" style="height: 180px; width: 100%; border-radius: 12px; background: #e8eaed; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 2px solid #fff; overflow: hidden; z-index: 1;"></div>
-                </div>
             </div>
         </section>
 
@@ -682,23 +680,26 @@
                         .then(res => res.json())
                         .then(data => {
                             let mapDiv = document.getElementById('viewMap');
+                            let mapContainer = document.getElementById('headerMapContainer');
                             if(data && data.length > 0) {
+                                mapContainer.style.display = 'block';
                                 const lat = data[0].lat;
                                 const lon = data[0].lon;
                                 const map = L.map(mapDiv, { zoomControl: false, scrollWheelZoom: false }).setView([lat, lon], 16);
                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                    attribution: '&copy; OpenStreetMap'
+                                    attribution: ''
                                 }).addTo(map);
                                 L.marker([lat, lon]).addTo(map).bindPopup(`<div style="font-family:'Poppins',sans-serif;font-size:12px;"><b>${escHtml(centerName)}</b><br><span style="color:#555;font-size:11px;">${escHtml(center.address)}</span></div>`);
                             } else {
-                                mapDiv.innerHTML = '<div style="padding:15px;color:#888;text-align:center;padding-top:100px;">Location map could not be verified</div>';
+                                mapContainer.style.display = 'block';
+                                mapDiv.innerHTML = '<div style="padding:15px;color:#888;text-align:center;padding-top:40px;font-size:12px;">Location preview unavailable</div>';
                             }
                         })
                         .catch(err => {
-                            document.getElementById('viewMap').innerHTML = '<div style="padding:15px;color:#888;text-align:center;padding-top:100px;">Map preview unavailable</div>';
+                            document.getElementById('headerMapContainer').style.display = 'none';
                         });
                 } else {
-                    document.getElementById('viewMap').style.display = 'none';
+                    document.getElementById('headerMapContainer').style.display = 'none';
                 }
 
                 const nameEl = document.getElementById('centerName');

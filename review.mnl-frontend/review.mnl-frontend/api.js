@@ -321,6 +321,9 @@ const AdminAPI = {
     deleteCenter: (id) =>
         apiRequest('DELETE', '/api/admin/centers/' + id),
 
+    getCenterDocuments: (id) =>
+        apiRequest('GET', '/api/admin/centers/' + id + '/documents'),
+
     getStudents: () =>
         apiRequest('GET', '/api/admin/students'),
 

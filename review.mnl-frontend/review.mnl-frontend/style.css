@@ -1086,9 +1086,6 @@ nav img{
 
 /* VIEW CENTER PAGE */
 .back-btn-viewcenter {
-    position: absolute;
-    top: 150px;
-    left: 80px;
     background: #fff;
     color: #0a4cff;
     padding: 10px 16px;
@@ -1203,7 +1200,6 @@ nav img{
        and doesn't overlap on narrow viewports. */
     position: relative;
     padding-top: 20px; /* add spacing if needed */
-}
     bottom: auto;
     left: auto;
     margin-top: 12px;
@@ -1221,16 +1217,10 @@ nav img{
 
 /* Position the back button inside the header area for viewcenter to avoid it appearing mid-header */
 .header-viewcenter .back-btn-viewcenter {
-    top: 22px;
-    left: 16px;
     padding: 10px 18px;
 }
-.header-viewcenter nav {
-    padding-left: 130px;
-}
 @media (max-width: 900px) {
-    .header-viewcenter .back-btn-viewcenter { top: 12px; left: 12px; padding: 8px 12px; }
-    .header-viewcenter nav { padding-left: 110px; }
+    .header-viewcenter .back-btn-viewcenter { padding: 8px 12px; }
 }
 
 .center-left {

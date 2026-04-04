@@ -1,6 +1,6 @@
 const express = require('express');
 const router  = express.Router();
-const { protect, centerOnly, studentOnly } = require('../middleware/auth');
+const { protect, optionalAuth, centerOnly, studentOnly } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { getApprovedCenters, getCenterById, getCentersNearby, searchCenters, updateCenterLocation, updateCenterProfile, updateCenterLogo, getMyCenterProfile } = require('../controllers/centerController');
 const { postTestimonial } = require('../controllers/testimonialController');
@@ -10,7 +10,7 @@ router.get('/',          getApprovedCenters);
 router.get('/nearby',    getCentersNearby);
 router.get('/search',    searchCenters);
 router.get('/me',        protect, centerOnly, getMyCenterProfile);
-router.get('/:id',       getCenterById);
+router.get('/:id',       optionalAuth, getCenterById);
 router.put('/me/location', protect, centerOnly, updateCenterLocation);
 router.put('/me', protect, centerOnly, updateCenterProfile);
 router.put('/me/logo', protect, centerOnly, upload.single('logo'), updateCenterLogo);

@@ -35,7 +35,17 @@ const getCenterById = async (req, res) => {
        FROM testimonials t JOIN users u ON u.id = t.student_id
        WHERE t.center_id = ? AND t.is_approved = 1 ORDER BY t.created_at DESC`, [id]
     );
-    res.json({ ...center[0], testimonials });
+
+    let isEnrolled = false;
+    if (req.user && req.user.role === 'student') {
+      const [enrollment] = await db.query(
+        'SELECT id FROM enrollments WHERE user_id = ? AND center_id = ? AND status = "active"',
+        [req.user.id, id]
+      );
+      if (enrollment.length > 0) isEnrolled = true;
+    }
+
+    res.json({ ...center[0], testimonials, isEnrolled });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }

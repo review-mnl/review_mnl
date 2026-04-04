@@ -1,6 +1,17 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.split(' ')[1];
+      req.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {}
+  }
+  next();
+};
+
 const protect = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -59,4 +70,4 @@ const studentOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly, superAdminOnly, centerOnly, studentOnly };
+module.exports = { protect, optionalAuth, adminOnly, superAdminOnly, centerOnly, studentOnly };

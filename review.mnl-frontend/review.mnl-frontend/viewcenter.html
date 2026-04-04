@@ -11,13 +11,13 @@
     </head>
     <body>
         <section class="header header-viewcenter">
-            <a href="search.html" id="backToResultsBtn" class="back-btn-viewcenter">
-                <span class="material-symbols-outlined">arrow_back</span>
-                Back
-            </a>
-            <nav>
+            <nav style="justify-content: flex-start; gap: 20px;">
+                <a href="search.html" id="backToResultsBtn" class="back-btn-viewcenter" style="position: relative; top: 0; left: 0;">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Back
+                </a>
                 <a href="loggedin.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
-                <div class="nav-links">
+                <div class="nav-links" style="flex: 1; text-align: center;">
                     <ul>
                         <li><a href="loggedin.html">HOME</a></li>
                         <li><a href="search.html">VIEW REVIEW CENTERS</a></li>
@@ -777,9 +777,9 @@
                     testimonialsListEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">No reviews yet for this review center.</p>';
                 }
 
-                // Add testimonial form for logged-in students
+                // Add testimonial form for logged-in students if they are enrolled
                 const user = getUser();
-                if (user && user.role === 'student' && testimonialsListEl) {
+                if (user && user.role === 'student' && center.isEnrolled && testimonialsListEl) {
                     const formDiv = document.createElement('div');
                     formDiv.style.cssText = 'margin-top:24px;background:#f0f4ff;border-radius:12px;padding:20px;';
                     formDiv.innerHTML =

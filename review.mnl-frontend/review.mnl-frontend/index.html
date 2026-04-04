@@ -3,6 +3,16 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>review.mnl</title>
+        <script src="api.js"></script>
+        <script>
+            // If user is already logged in, skip the public homepage
+            (function() {
+                var user = getActiveUser();
+                if (user) {
+                    window.location.replace(user.role === 'admin' ? 'admindashboard.html' : 'loggedin.html');
+                }
+            })();
+        </script>
         <link rel="stylesheet" href="style.css">
         <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

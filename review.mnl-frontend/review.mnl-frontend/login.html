@@ -288,7 +288,13 @@
             </div>
         </div>
         <script src="api.js"></script>
-        <script>
+        <script>            // If already logged in, redirect away from login
+            (function() {
+                var user = getActiveUser();
+                if (user) {
+                    window.location.replace(user.role === 'admin' ? 'admindashboard.html' : 'loggedin.html');
+                }
+            })();
             // ── Handle OAuth redirect callback (token passed in URL by backend) ──
             (function () {
                 const params  = new URLSearchParams(window.location.search);

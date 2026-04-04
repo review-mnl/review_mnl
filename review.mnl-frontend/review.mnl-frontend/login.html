@@ -353,6 +353,7 @@
                 e.preventDefault();
                 const email    = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
+                const remember = document.querySelector('input[name="remember"]').checked;
                 const btn      = document.querySelector('.login-btn');
                 const errEl    = document.getElementById('loginError');
                 errEl.style.display = 'none';
@@ -360,7 +361,7 @@
                 btn.textContent = 'Logging in...';
                 try {
                     const data = await AuthAPI.login(email, password);
-                        saveSession(data);
+                        saveSession(data, remember);
                         // Ensure user logged in under the role they selected on the form
                         const selectedRole = document.getElementById('loginRole').value || 'student';
                         const actualRole = (data.user && data.user.role) ? data.user.role : 'student';

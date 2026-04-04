@@ -38,7 +38,7 @@ function normalizeSessionUser(user) {
     return Object.assign({}, user, { name: name });
 }
 
-function saveSession(data) {
+function saveSession(data, rememberMe) {
     // Accept a few possible shapes for the login response to be defensive:
     // - { token, user }
     // - { accessToken, user }
@@ -62,7 +62,11 @@ function saveSession(data) {
             var sid = 's_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
             var sess = { token: token || null, user: user || null, created: Date.now() };
             try { localStorage.setItem('rmnl_session_' + sid, JSON.stringify(sess)); } catch(e) {}
-            try { sessionStorage.setItem('rmnl_active_session', sid); } catch(e) {}
+            if (rememberMe) {
+                try { localStorage.setItem('rmnl_active_session', sid); } catch(e) {}
+            } else {
+                try { sessionStorage.setItem('rmnl_active_session', sid); } catch(e) {}
+            }
             if (user && user.role) {
                 // role is available on the session's user object; avoid storing a global rmnl_role key
                 try { /* noop - role stored on session user */ } catch(e) {}
@@ -87,8 +91,11 @@ function saveSession(data) {
 function clearSession(removeStoredSession) {
     try {
         // remove active session id from this tab
-        var active = sessionStorage.getItem('rmnl_active_session');
-        if (active) sessionStorage.removeItem('rmnl_active_session');
+        var active = sessionStorage.getItem('rmnl_active_session') || localStorage.getItem('rmnl_active_session');
+        if (active) {
+            sessionStorage.removeItem('rmnl_active_session');
+            localStorage.removeItem('rmnl_active_session');
+        }
         // optionally remove the stored persistent session object
         if (removeStoredSession && active) {
             try { localStorage.removeItem('rmnl_session_' + active); } catch(e) {}
@@ -97,7 +104,7 @@ function clearSession(removeStoredSession) {
 }
 
 function getActiveSessionId() {
-    return sessionStorage.getItem('rmnl_active_session');
+    return sessionStorage.getItem('rmnl_active_session') || localStorage.getItem('rmnl_active_session');
 }
 
 function getActiveToken() {

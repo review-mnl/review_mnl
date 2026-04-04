@@ -1870,6 +1870,18 @@ nav img{
     gap: 15px;
 }
 
+.vertical-scroll-list {
+    max-height: 260px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+
+.vertical-scroll-list .review-item:last-child,
+.vertical-scroll-list .saved-item:last-child {
+    margin-bottom: 0;
+}
+
 .review-avatar {
     width: 50px;
     height: 50px;
@@ -1929,6 +1941,29 @@ nav img{
     display: flex;
     gap: 20px;
     margin-top: 15px;
+}
+
+#enrolledCentersGrid {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+}
+
+#enrolledCentersGrid .recent-card {
+    flex: 0 0 200px;
+}
+
+.enrolled-slide-arrow {
+    cursor: pointer;
+    user-select: none;
+}
+
+.enrolled-slide-arrow:focus-visible {
+    outline: 2px solid #0a4cff;
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .recent-card {

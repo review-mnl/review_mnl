@@ -154,30 +154,31 @@
             <div class="dashboard-card">
                 <div class="card-header">
                     <h3>My Reviews</h3>
-                    <span class="material-symbols-outlined">arrow_forward_ios</span>
                 </div>
 
-                <div class="review-item">
-                    <div class="review-avatar"></div>
-                    <div class="review-info">
-                        <h4>Name of Review Center</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <div id="myReviewsList" class="vertical-scroll-list">
+                    <div class="review-item">
+                        <div class="review-avatar"></div>
+                        <div class="review-info">
+                            <h4>Name of Review Center</h4>
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                        </div>
                     </div>
-                </div>
 
-                <div class="review-item">
-                    <div class="review-avatar"></div>
-                    <div class="review-info">
-                        <h4>Name of Review Center</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                    <div class="review-item">
+                        <div class="review-avatar"></div>
+                        <div class="review-info">
+                            <h4>Name of Review Center</h4>
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                        </div>
                     </div>
-                </div>
 
-                <div class="review-item">
-                    <div class="review-avatar"></div>
-                    <div class="review-info">
-                        <h4>Name of Review Center</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                    <div class="review-item">
+                        <div class="review-avatar"></div>
+                        <div class="review-info">
+                            <h4>Name of Review Center</h4>
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -187,9 +188,8 @@
             <div class="dashboard-card">
                 <div class="card-header">
                     <h3>Saved Centers</h3>
-                    <span class="material-symbols-outlined">arrow_forward_ios</span>
                 </div>
-                <div id="savedCentersList"></div>
+                <div id="savedCentersList" class="vertical-scroll-list"></div>
             </div>
             <script>
                 (function(){
@@ -231,7 +231,7 @@
         <div class="recent-section">
             <div class="card-header">
                 <h3>Enrolled Review Centers</h3>
-                <span class="material-symbols-outlined">arrow_forward_ios</span>
+                <span id="enrolledSlideArrow" class="material-symbols-outlined enrolled-slide-arrow" role="button" tabindex="0" aria-label="Show more enrolled review centers">arrow_forward_ios</span>
             </div>
             <p style="font-size:0.85rem;color:#6b7280;margin:-4px 0 14px 0;">Review centers you've scheduled a review with will appear here.</p>
 
@@ -414,6 +414,28 @@
                     msgs.scrollTop = msgs.scrollHeight;
                     cancelAttachment();
                 }
+
+                function scrollEnrolledCenters() {
+                    var grid = document.getElementById('enrolledCentersGrid');
+                    if (!grid) return;
+                    var step = Math.max(240, Math.floor(grid.clientWidth * 0.7));
+                    var maxLeft = Math.max(0, grid.scrollWidth - grid.clientWidth);
+                    var nextLeft = grid.scrollLeft + step;
+                    if (nextLeft >= maxLeft - 2) nextLeft = 0;
+                    grid.scrollTo({ left: nextLeft, behavior: 'smooth' });
+                }
+
+                (function setupEnrolledCenterArrow() {
+                    var arrow = document.getElementById('enrolledSlideArrow');
+                    if (!arrow) return;
+                    arrow.addEventListener('click', scrollEnrolledCenters);
+                    arrow.addEventListener('keydown', function(event) {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            scrollEnrolledCenters();
+                        }
+                    });
+                })();
 
                 function openUserModal() {
                     var nameText = document.getElementById('userNameDisplay').textContent || '';

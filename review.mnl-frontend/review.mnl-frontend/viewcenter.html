@@ -37,8 +37,8 @@
                     Back
                 </a>
             </div>
-            <div class="center-header-content" style="display:flex;align-items:flex-start;justify-content:space-between;">
-                <div style="display:flex;align-items:flex-start;gap:20px;">
+            <div class="center-header-content" style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;box-sizing:border-box;">
+                <div style="display:flex;align-items:flex-start;gap:20px;flex:1;min-width:0;">
                     <div class="center-logo" id="centerLogo"></div>
                     <div class="center-info">
                         <h1 id="centerName">Name of Review Center</h1>
@@ -94,7 +94,7 @@
 
                 <div class="location-map-section" style="margin-bottom: 30px;">
                     <h2>Location</h2>
-                    <div id="viewMap" style="height: 250px; width: 100%; border-radius: 12px; background: #eaead9; margin-top: 15px;"></div>
+                    <div id="viewMap" style="height: 190px; width: 100%; border-radius: 12px; background: #e8eaed; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #fff; overflow: hidden; z-index: 1;"></div>
                 </div>
 
                 <button class="schedule-review-btn" onclick="openScheduleModal()">Schedule a review</button>
@@ -693,7 +693,7 @@
                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                     attribution: '&copy; OpenStreetMap'
                                 }).addTo(map);
-                                L.marker([lat, lon]).addTo(map).bindPopup(`<b>${centerName}</b><br>${center.address}`).openPopup();
+                                L.marker([lat, lon]).addTo(map).bindPopup(`<div style="font-family:'Poppins',sans-serif;font-size:12px;"><b>${escHtml(centerName)}</b><br><span style="color:#555;font-size:11px;">${escHtml(center.address)}</span></div>`);
                             } else {
                                 mapDiv.innerHTML = '<div style="padding:15px;color:#888;text-align:center;padding-top:100px;">Location map could not be verified</div>';
                             }

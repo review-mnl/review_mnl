@@ -68,7 +68,11 @@ async function runMigration() {
           await db.query(s);
         } catch (e) {
           // Log but continue — some statements may be no-ops on older schemas
-          console.warn('Migration statement skipped/failed:', e.message);
+          if (e.message.includes('Duplicate column name') || e.message.includes('Duplicate key name')) {
+            // Suppress expected duplicate schema errors to avoid panicking the deployment logs
+          } else {
+            console.warn('Migration statement skipped/failed:', e.message);
+          }
         }
       }
       console.log('✓ Incremental migrations applied');

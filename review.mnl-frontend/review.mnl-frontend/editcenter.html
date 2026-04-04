@@ -276,7 +276,11 @@
                     <label>Center Name</label>
                     <input type="text" id="centerNameInput" placeholder="Name of Review Center">
                     <label>Location</label>
-                    <textarea id="centerLocationInput" rows="3" placeholder="Short location/address..."></textarea>
+                    <div style="position: relative;">
+                        <input type="text" id="centerLocationInput" placeholder="Search for your location..." style="width: 100%; border: 1.5px solid #ddd; padding: 10px 14px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13.5px; margin-bottom: 12px; transition: border-color 0.2s;" onfocus="this.style.border='1.5px solid #0a4cff'" onblur="this.style.border='1.5px solid #ddd'">
+                        <div id="locationSuggestions" style="position: absolute; top: 43px; left: 0; right: 0; background: white; border: 1.5px solid #ddd; border-radius: 8px; z-index: 9999; max-height: 160px; overflow-y: auto; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>
+                    </div>
+                    <div id="mapPreview" style="height: 200px; width: 100%; border-radius: 8px; margin-bottom: 15px; background: #e8eaed; z-index: 1;"></div>
                     <label>Profile Image</label>
                     <input type="file" id="centerImageInput" accept="image/*">
                     <div class="modal-img-preview" id="modalImgPreview"></div>
@@ -1132,6 +1136,111 @@
 
         // Init schedule render
         renderEcSchedule();
+
+        // ── OpenStreetMap Integration (Free, Leaflet API) ─────────────────
+        let map;
+        let marker;
+
+        function initMap(lat = 14.5995, lng = 120.9842) { // Default to Manila
+            const mapDiv = document.getElementById('mapPreview');
+            
+            if (!map) {
+                map = L.map('mapPreview').setView([lat, lng], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+
+                marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+
+                // Update input value when marker is dragged
+                marker.on('dragend', function() {
+                    const pos = marker.getLatLng();
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if(data && data.display_name) {
+                                document.getElementById('centerLocationInput').value = data.display_name;
+                            }
+                        })
+                        .catch(err => console.log(err));
+                });
+            } else {
+                map.setView([lat, lng], 16);
+                marker.setLatLng([lat, lng]);
+            }
+            
+            setTimeout(() => map.invalidateSize(), 150);
+        }
+        
+        const locInput = document.getElementById('centerLocationInput');
+        let searchTimeout;
+
+        locInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const val = e.target.value;
+            const suggBox = document.getElementById('locationSuggestions');
+            
+            if (!val || val.length < 3) {
+                suggBox.style.display = 'none';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`)
+                    .then(res => res.json())
+                    .then(data => {
+                        suggBox.innerHTML = '';
+                        if (data.length > 0) {
+                            suggBox.style.display = 'block';
+                            data.forEach(place => {
+                                const item = document.createElement('div');
+                                item.style.padding = '10px 14px';
+                                item.style.cursor = 'pointer';
+                                item.style.fontSize = '12px';
+                                item.style.borderBottom = '1px solid #f1f1f1';
+                                item.textContent = place.display_name;
+                                item.onmouseover = () => item.style.background = '#f9fafd';
+                                item.onmouseout = () => item.style.background = '#fff';
+                                item.onclick = function() {
+                                    locInput.value = place.display_name;
+                                    suggBox.style.display = 'none';
+                                    initMap(place.lat, place.lon);
+                                };
+                                suggBox.appendChild(item);
+                            });
+                        } else {
+                            suggBox.style.display = 'none';
+                        }
+                    })
+                    .catch(() => suggBox.style.display = 'none');
+            }, 500);
+        });
+
+        // Listen for profile modal opening to trigger map resize
+        const __origProfileOpen = openModal;
+        openModal = function(id) {
+            __origProfileOpen(id);
+            if (id === 'profileModal') {
+                if (map) {
+                    setTimeout(() => map.invalidateSize(), 150);
+                } else {
+                    const existingLoc = document.getElementById('centerLocationInput').value;
+                    if (existingLoc) {
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(existingLoc)}&limit=1`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if(data.length > 0) initMap(data[0].lat, data[0].lon);
+                                else initMap();
+                            })
+                            .catch(() => initMap());
+                    } else {
+                        initMap();
+                    }
+                }
+            }
+        }
         </script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     </body>
 </html>

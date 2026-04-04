@@ -92,6 +92,11 @@
                     </div>
                 </div>
 
+                <div class="location-map-section" style="margin-bottom: 30px;">
+                    <h2>Location</h2>
+                    <div id="viewMap" style="height: 250px; width: 100%; border-radius: 12px; background: #eaead9; margin-top: 15px;"></div>
+                </div>
+
                 <button class="schedule-review-btn" onclick="openScheduleModal()">Schedule a review</button>
             </div>
 
@@ -674,6 +679,32 @@
                 const centerShort = center.address || 'Location unavailable';
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
 
+                // --- Map Integration ---
+                if (center.address && typeof L !== 'undefined') {
+                    // Try to fetch coordinates using address
+                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(center.address)}&limit=1`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let mapDiv = document.getElementById('viewMap');
+                            if(data && data.length > 0) {
+                                const lat = data[0].lat;
+                                const lon = data[0].lon;
+                                const map = L.map(mapDiv, { zoomControl: false, scrollWheelZoom: false }).setView([lat, lon], 16);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; OpenStreetMap'
+                                }).addTo(map);
+                                L.marker([lat, lon]).addTo(map).bindPopup(`<b>${centerName}</b><br>${center.address}`).openPopup();
+                            } else {
+                                mapDiv.innerHTML = '<div style="padding:15px;color:#888;text-align:center;padding-top:100px;">Location map could not be verified</div>';
+                            }
+                        })
+                        .catch(err => {
+                            document.getElementById('viewMap').innerHTML = '<div style="padding:15px;color:#888;text-align:center;padding-top:100px;">Map preview unavailable</div>';
+                        });
+                } else {
+                    document.getElementById('viewMap').style.display = 'none';
+                }
+
                 const nameEl = document.getElementById('centerName');
                 const shortDescEl = document.getElementById('centerShortDescription');
                 const aboutEl = document.getElementById('centerAbout');
@@ -851,5 +882,8 @@
             return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
         </script>
-	</body>
-</html>
+        
+        <!-- OpenStreetMap Leaflet Integrations -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    </body>

@@ -289,6 +289,19 @@ const login = async (req, res) => {
       console.warn(`Login failed: bcrypt.compare returned false for userId=${user.id} email=${email}`);
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
+    // Record last_login and insert a session record (non-blocking if it fails)
+    try {
+      const ipRaw = req.headers['x-forwarded-for'] || req.ip || '';
+      const ip = String(ipRaw).split(',')[0].trim() || null;
+      const ua = req.get('User-Agent') || null;
+      await db.query('UPDATE users SET last_login = ? WHERE id = ?', [new Date(), user.id]);
+      if (user.role === 'review_center') {
+        try { await db.query('UPDATE review_centers SET last_login = ? WHERE user_id = ?', [new Date(), user.id]); } catch (e) {}
+      }
+      await db.query('INSERT INTO user_sessions (user_id, role, ip, user_agent) VALUES (?, ?, ?, ?)', [user.id, user.role, ip, ua]);
+    } catch (e) {
+      console.warn('Failed to write login session:', e && e.message);
+    }
     const tokenExpires = process.env.JWT_EXPIRES_IN || '7d';
     const token = jwt.sign(
       { id: user.id, role: user.role, email: user.email },

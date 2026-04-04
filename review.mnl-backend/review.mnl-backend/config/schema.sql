@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
   verify_token VARCHAR(255),
   reset_token VARCHAR(255),
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_login  TIMESTAMP NULL,
   INDEX idx_email (email),
   INDEX idx_verify_token (verify_token),
   INDEX idx_reset_token (reset_token)
@@ -37,7 +38,18 @@ CREATE TABLE IF NOT EXISTS review_centers (
   description     TEXT,
   programs        JSON,
   achievements    JSON,
+  last_login      TIMESTAMP NULL,
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  role ENUM('student','review_center','admin','superadmin') NOT NULL,
+  ip VARCHAR(100),
+  user_agent VARCHAR(500),
+  logged_in_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

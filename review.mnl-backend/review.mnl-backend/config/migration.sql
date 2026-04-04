@@ -45,3 +45,18 @@ CREATE INDEX idx_reset_token ON users(reset_token);
 -- Verify the changes
 DESCRIBE users;
 DESCRIBE review_centers;
+
+-- Add last_login columns to track recent sign-ins
+ALTER TABLE users ADD COLUMN last_login TIMESTAMP NULL;
+ALTER TABLE review_centers ADD COLUMN last_login TIMESTAMP NULL;
+
+-- Create user_sessions to record each successful login (safe to run repeatedly)
+CREATE TABLE IF NOT EXISTS user_sessions (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	user_id INT NOT NULL,
+	role ENUM('student','review_center','admin','superadmin') NOT NULL,
+	ip VARCHAR(100),
+	user_agent VARCHAR(500),
+	logged_in_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

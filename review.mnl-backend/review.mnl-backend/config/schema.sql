@@ -1,5 +1,5 @@
 -- Schema will be applied to the currently configured database.
--- Do not create or switch databases here; let the configured connection determine the target.
+-- Do not create or switch databases here. Let the configured connection determine the target.
 
 CREATE TABLE IF NOT EXISTS users (
   id          INT AUTO_INCREMENT PRIMARY KEY,

@@ -1,7 +1,7 @@
 -- MIGRATION SCRIPT: Add missing columns to existing tables
 -- Run this if your tables already exist and need updating
 
--- Migration SQL runs against the configured database; do not hardcode a database name here.
+-- Migration SQL runs against the configured database. Do not hardcode a database name here.
 -- Add reset_token column if it doesn't exist
 ALTER TABLE users ADD COLUMN reset_token VARCHAR(255);
 

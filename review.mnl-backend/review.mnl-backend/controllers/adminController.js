@@ -16,7 +16,7 @@ const getPendingCenters = async (req, res) => {
 const getAllCenters = async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT id, business_name, email, status, created_at
+      `SELECT id, business_name, email, business_permit, dti_sec_reg, logo_url, status, created_at
        FROM review_centers ORDER BY created_at DESC`
     );
     res.json(rows);
@@ -143,4 +143,23 @@ const deleteCenter = async (req, res) => {
   }
 };
 
-module.exports = { getPendingCenters, getAllCenters, updateCenterStatus, getAllStudents, deleteUser, deleteCenter };
+const getCenterDocuments = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.query(
+      'SELECT id, business_name, email, business_permit, dti_sec_reg, status, created_at FROM review_centers WHERE id = ?',
+      [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Review center not found.' });
+    const c = rows[0];
+    const documents = [];
+    if (c.business_permit) documents.push({ type: 'business_permit', url: c.business_permit, filename: String(c.business_permit).split('/').pop() });
+    if (c.dti_sec_reg) documents.push({ type: 'dti_sec_reg', url: c.dti_sec_reg, filename: String(c.dti_sec_reg).split('/').pop() });
+    res.json({ center_id: c.id, business_name: c.business_name, email: c.email, status: c.status, created_at: c.created_at, documents });
+  } catch (err) {
+    console.error('Get center documents error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getPendingCenters, getAllCenters, updateCenterStatus, getAllStudents, deleteUser, deleteCenter, getCenterDocuments };

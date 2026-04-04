@@ -284,6 +284,7 @@
                     <label>Profile Image</label>
                     <input type="file" id="centerImageInput" accept="image/*">
                     <div class="modal-img-preview" id="modalImgPreview"></div>
+                    <div id="centerProfileFeedback" class="profile-feedback" style="display:none;"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="modal-cancel-btn" onclick="closeModal('profileModal')">Cancel</button>
@@ -446,7 +447,31 @@
                 document.getElementById(id).classList.add('active');
             }
             function closeModal(id) {
+                if (id === 'profileModal') {
+                    clearCenterProfileFeedback();
+                    const saveBtn = document.querySelector('#profileModal .modal-save-btn');
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                    }
+                }
                 document.getElementById(id).classList.remove('active');
+            }
+
+            function showCenterProfileFeedback(type, message) {
+                var el = document.getElementById('centerProfileFeedback');
+                if (!el) return;
+                el.className = 'profile-feedback ' + (type === 'success' ? 'profile-feedback-success' : 'profile-feedback-error');
+                el.textContent = message || '';
+                el.style.display = message ? 'block' : 'none';
+            }
+
+            function clearCenterProfileFeedback() {
+                var el = document.getElementById('centerProfileFeedback');
+                if (!el) return;
+                el.className = 'profile-feedback';
+                el.textContent = '';
+                el.style.display = 'none';
             }
             // Close modal when clicking outside box
             document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
@@ -468,9 +493,18 @@
                 }
             });
             async function saveProfile() {
+                const saveBtn = document.querySelector('#profileModal .modal-save-btn');
+                const originalBtnText = saveBtn ? saveBtn.textContent : 'Save Changes';
                 const name = document.getElementById('centerNameInput').value.trim();
                 const location = document.getElementById('centerLocationInput').value.trim();
                 const file = document.getElementById('centerImageInput').files[0];
+                clearCenterProfileFeedback();
+
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+                }
+
                 if (name) document.getElementById('centerNameDisplay').innerText = name;
                 if (location) document.getElementById('centerDescDisplay').innerText = location;
                 if (file) {
@@ -483,7 +517,6 @@
                     };
                     reader.readAsDataURL(file);
                 }
-                closeModal('profileModal');
                 // persist profile changes to session (explicit profile edit)
                 try {
                     var u = getUser() || {};
@@ -525,8 +558,16 @@
                             setSessionUser(u3, true);
                         } catch(e) {}
                     }
+                    showCenterProfileFeedback('success', 'Profile saved successfully.');
+                    setTimeout(function(){ closeModal('profileModal'); }, 800);
                 } catch(e) {
                     console.warn('Saving center profile failed', e);
+                    showCenterProfileFeedback('error', (e && e.message) ? e.message : 'Failed to save profile. Please try again.');
+                } finally {
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = originalBtnText;
+                    }
                 }
             }
             async function saveAbout() {

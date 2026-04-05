@@ -106,6 +106,52 @@
                 border-color: #0043CF;
             }
 
+            .password-field {
+                position: relative;
+            }
+
+            .password-field input {
+                padding-right: 38px;
+                position: relative;
+                z-index: 1;
+            }
+
+            .password-field input[type="password"]::-ms-reveal,
+            .password-field input[type="password"]::-ms-clear {
+                display: none;
+            }
+
+            .password-toggle {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                border: none;
+                background: transparent;
+                color: #666;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 20px;
+                height: 20px;
+                padding: 0;
+                line-height: 1;
+                z-index: 2;
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .password-toggle .material-symbols-outlined {
+                font-size: 18px;
+            }
+
+            .password-toggle:hover,
+            .password-toggle:focus-visible {
+                color: #0043CF;
+                outline: none;
+            }
+
             .remember-forgot {
                 display: flex;
                 justify-content: space-between;
@@ -265,7 +311,12 @@
 
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                        <div class="password-field">
+                            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+                            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Show password" aria-controls="password">
+                                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="remember-forgot">
@@ -326,6 +377,34 @@
                 btn.classList.add('active');
                 document.getElementById('loginRole').value = role;
             }
+
+            (function initPasswordToggle() {
+                const passwordInput = document.getElementById('password');
+                const toggleBtn = document.getElementById('passwordToggle');
+                if (!passwordInput || !toggleBtn) return;
+
+                const icon = toggleBtn.querySelector('.material-symbols-outlined');
+
+                function syncToggleState() {
+                    const showing = passwordInput.type === 'text';
+                    if (icon) icon.textContent = showing ? 'visibility_off' : 'visibility';
+                    toggleBtn.setAttribute('aria-label', showing ? 'Hide password' : 'Show password');
+                    // Keep the toggle visible/clickable even after typing or blur.
+                    toggleBtn.style.visibility = 'visible';
+                    toggleBtn.style.opacity = '1';
+                }
+
+                toggleBtn.addEventListener('click', function () {
+                    const showing = passwordInput.type === 'text';
+                    passwordInput.type = showing ? 'password' : 'text';
+                    syncToggleState();
+                });
+
+                passwordInput.addEventListener('input', syncToggleState);
+                passwordInput.addEventListener('blur', syncToggleState);
+                passwordInput.addEventListener('focus', syncToggleState);
+                syncToggleState();
+            })();
 
             document.querySelector('.social-btn[title="Login with Google"]').addEventListener('click', function () {
                 window.location.href = API_BASE + '/api/auth/google';

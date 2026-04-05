@@ -421,17 +421,21 @@ function initGlobalNotificationBell(options) {
             btn.setAttribute('aria-expanded', 'false');
         };
 
-        if (!window.__rmnlProfileNotifMutexBound) {
-            window.__rmnlProfileNotifMutexBound = true;
-            document.addEventListener('click', function(ev) {
-                var target = ev && ev.target;
-                if (!target || !target.closest) return;
-                if (!target.closest('#profileBtn, #contactProfileBtn, .profile-icon')) return;
-                if (typeof window.closeGlobalNotificationBell === 'function') {
-                    window.closeGlobalNotificationBell();
-                }
+        function bindProfileMutexButtons() {
+            var profileButtons = document.querySelectorAll('#profileBtn, #contactProfileBtn, .profile-icon');
+            profileButtons.forEach(function(el) {
+                if (el.__rmnlNotifMutexBound) return;
+                el.__rmnlNotifMutexBound = true;
+                // Capture phase ensures this runs even if page scripts stop propagation.
+                el.addEventListener('click', function() {
+                    if (typeof window.closeGlobalNotificationBell === 'function') {
+                        window.closeGlobalNotificationBell();
+                    }
+                }, true);
             });
         }
+
+        bindProfileMutexButtons();
 
         function statusStyle(status) {
             var s = String(status || 'pending').toLowerCase();

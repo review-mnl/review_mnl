@@ -416,6 +416,7 @@
         }, 8000);
 
         var activeConversation = null;
+        var activeConversationKey = null;
         var chatPollTimer = null;
 
         function formatDate(value) {
@@ -495,6 +496,10 @@
             const wrap = document.getElementById('convMessages');
             if (!wrap) return;
             const me = getUser();
+            console.log('[Chat][Center] Rendering messages', {
+                count: (messages || []).length,
+                conversationKey: activeConversationKey,
+            });
             wrap.innerHTML = (messages || []).map(function(msg) {
                 var outgoing = me && Number(msg.sender_id) === Number(me.id);
                 return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
@@ -507,10 +512,23 @@
 
         async function openConv(conversation) {
             if (!conversation || !conversation.other_user_id) return;
+            var nextKey = String(conversation.other_user_id) + ':' + String(conversation.center_id || 0);
+            var isSwitchingConversation = activeConversationKey !== nextKey;
             activeConversation = conversation;
+            activeConversationKey = nextKey;
             document.getElementById('convName').textContent = conversation.other_name || 'Chat';
             document.getElementById('msgList').style.display = 'none';
             document.getElementById('convPanel').style.display = 'flex';
+
+            if (isSwitchingConversation) {
+                var wrap = document.getElementById('convMessages');
+                if (wrap) wrap.innerHTML = '';
+            }
+
+            console.log('[Chat][Center] Opening conversation', {
+                conversationKey: nextKey,
+                switching: isSwitchingConversation,
+            });
             await loadActiveThread();
 
             if (chatPollTimer) clearInterval(chatPollTimer);
@@ -563,6 +581,7 @@
 
         function closeConv() {
             activeConversation = null;
+            activeConversationKey = null;
             if (chatPollTimer) {
                 clearInterval(chatPollTimer);
                 chatPollTimer = null;

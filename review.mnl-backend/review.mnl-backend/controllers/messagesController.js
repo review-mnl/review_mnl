@@ -237,6 +237,13 @@ const getThreadMessages = async (req, res) => {
       params.push(centerId);
     }
 
+    console.log('[Chat] Thread query', {
+      currentUserId,
+      withUserId,
+      centerId: centerId || null,
+      mode: centerClause ? 'pair+center' : 'pair-only',
+    });
+
     let [rows] = await db.query(
       `SELECT
          cm.id AS message_id,

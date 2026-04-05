@@ -1832,10 +1832,7 @@ nav img{
 
 /* DASHBOARD SECTION */
 .dashboard {
-    background:
-        radial-gradient(circle at 12% 18%, rgba(154, 188, 255, 0.20) 0%, rgba(154, 188, 255, 0) 34%),
-        radial-gradient(circle at 88% 26%, rgba(126, 170, 255, 0.22) 0%, rgba(126, 170, 255, 0) 32%),
-        linear-gradient(180deg, #0a4cff 0%, #1d49cc 55%, #0a3aa8 100%);
+    background: #0a4cff;
     padding: 70px 8%;
 }
 

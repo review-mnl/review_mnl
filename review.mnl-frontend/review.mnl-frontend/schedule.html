@@ -948,7 +948,8 @@ var FULL_SCHEDULE = {
         { day: "Fri", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
         { day: "Sat", open: true,  shifts: [{from:"09:00", to:"15:00"}] }
     ],
-    specific: {}
+    specific: {},
+    dateOverrides: {}
 };
 var EC_SCHEDULE = [];
 var _ecYear, _ecMonth;
@@ -1028,13 +1029,31 @@ function renderEcCalendar() {
     for (var d = 1; d <= daysInMonth; d++) {
         var cell = document.createElement("div");
         var dow = new Date(_ecYear, _ecMonth, d).getDay();
-        var isOpen = openDows.indexOf(dow) !== -1;
+        
+        var dateKey = _ecYear + "-" + _ecMonth + "-" + d;
+        if (!FULL_SCHEDULE.dateOverrides) FULL_SCHEDULE.dateOverrides = {};
+        
+        var over = FULL_SCHEDULE.dateOverrides[dateKey];
+        var isOpen = over ? over.open : (openDows.indexOf(dow) !== -1);
+        
         var isToday = today.getFullYear() === _ecYear && today.getMonth() === _ecMonth && today.getDate() === d;
         var cls = "ec-cal-cell";
         if (isOpen) cls += " ec-open";
+        else cls += " ec-closed";
         if (isToday) cls += " ec-today";
         cell.className = cls;
         cell.innerHTML = "<span>" + d + "</span>";
+        cell.style.cursor = "pointer";
+        cell.title = "Click to set custom hours for this date";
+        cell.setAttribute("onclick", "openDateModal(" + d + ")");
+        
+        if (over) {
+            var dot = document.createElement("div");
+            dot.style.cssText = "width:6px;height:6px;border-radius:50%;background:#d32f2f;position:absolute;bottom:4px;left:calc(50% - 3px);";
+            cell.style.position = "relative";
+            cell.appendChild(dot);
+        }
+        
         grid.appendChild(cell);
     }
 }
@@ -1156,6 +1175,146 @@ window.saveSchedule = async function() {
         if (btn) btn.textContent = oldText;
     }
 };
+
+var _workingDate = 1;
+var _workingDateSched = null;
+
+window.openDateModal = function(d) {
+    if(!d) return;
+    _workingDate = d;
+    var dateKey = _ecYear + "-" + _ecMonth + "-" + d;
+    
+    if (!FULL_SCHEDULE.dateOverrides) FULL_SCHEDULE.dateOverrides = {};
+    
+    if (FULL_SCHEDULE.dateOverrides[dateKey]) {
+        _workingDateSched = JSON.parse(JSON.stringify(FULL_SCHEDULE.dateOverrides[dateKey]));
+    } else {
+        var dow = new Date(_ecYear, _ecMonth, d).getDay();
+        var isSpec = !!(FULL_SCHEDULE.specific && FULL_SCHEDULE.specific[_ecYear + "-" + _ecMonth]);
+        var mSchedule = isSpec ? FULL_SCHEDULE.specific[_ecYear + "-" + _ecMonth] : FULL_SCHEDULE.default;
+        _workingDateSched = JSON.parse(JSON.stringify(mSchedule[dow]));
+    }
+    
+    var lbl = document.getElementById("dateModalLabel");
+    if(lbl) lbl.innerHTML = "Schedule for <strong>" + EC_MONTHS[_ecMonth] + " " + d + ", " + _ecYear + "</strong>";
+    
+    renderDateModalInputs();
+    document.getElementById("dateModal").classList.add("active");
+};
+
+function renderDateModalInputs() {
+    var cont = document.getElementById("dateModalBody");
+    if (!cont) return;
+    cont.innerHTML = "";
+    
+    var s = _workingDateSched;
+    if(!s.shifts) s.shifts = [];
+    
+    var dsbl = s.open ? "" : "disabled";
+    
+    var div = document.createElement("div");
+    div.style.cssText = "border: 1px solid #dde3f0; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #fff;";
+    
+    var header = document.createElement("div");
+    header.style.cssText = "display: flex; justify-content: space-between; align-items: center;";
+    header.innerHTML = "<label style=\"font-weight:600; font-size:14px; margin:0; display:flex; align-items:center; gap:8px;\"><input type=\"checkbox\" " + (s.open ? "checked" : "") + " onchange=\"dSchedToggle(this)\"> Open on this date</label>" +
+        "<button type=\"button\" class=\"btn-outline-small\" style=\"font-size:12px; padding:4px 8px;\" onclick=\"dSchedAddShift()\" id=\"dAddShiftBtn\" " + dsbl + ">+ Add Shift</button>";
+        
+    var shiftCont = document.createElement("div");
+    shiftCont.id = "dSchedShifts";
+    shiftCont.style.cssText = "margin-top: 10px; display:flex; flex-direction:column; gap:8px;";
+    
+    div.appendChild(header);
+    div.appendChild(shiftCont);
+    cont.appendChild(div);
+    
+    var dateKey = _ecYear + "-" + _ecMonth + "-" + _workingDate;
+    if (FULL_SCHEDULE.dateOverrides && FULL_SCHEDULE.dateOverrides[dateKey]) {
+        var removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.style.cssText = "width:100%; padding:10px; border:1px solid #d32f2f; background:transparent; color:#d32f2f; border-radius:8px; cursor:pointer; font-weight:600;";
+        removeBtn.textContent = "Remove specific override for this date";
+        removeBtn.onclick = function() { dSchedReset(); };
+        cont.appendChild(removeBtn);
+    }
+    
+    renderDateWorkingShifts();
+}
+
+window.dSchedToggle = function(cb) {
+    _workingDateSched.open = cb.checked;
+    var btn = document.getElementById("dAddShiftBtn");
+    if(btn) btn.disabled = !cb.checked;
+    renderDateWorkingShifts();
+};
+window.dSchedAddShift = function() {
+    _workingDateSched.shifts.push({ from: "08:00", to: "17:00" });
+    renderDateWorkingShifts();
+};
+window.dSchedRemoveShift = function(shIdx) {
+    _workingDateSched.shifts.splice(shIdx, 1);
+    renderDateWorkingShifts();
+};
+window.dSchedUpdate = function(shIdx, field, val) {
+    _workingDateSched.shifts[shIdx][field] = val;
+};
+window.renderDateWorkingShifts = function() {
+    var cont = document.getElementById("dSchedShifts");
+    if (!cont) return;
+    cont.innerHTML = "";
+    var s = _workingDateSched;
+    if (!s.open) {
+        cont.innerHTML = "<p style=\"font-size:12px; color:#bbb; margin:0; font-style:italic;\">Closed on this date.</p>";
+        return;
+    }
+    if (!s.shifts || s.shifts.length === 0) {
+        cont.innerHTML = "<p style=\"font-size:12px; color:#bbb; margin:0; font-style:italic;\">No shifts added.</p>";
+        return;
+    }
+    s.shifts.forEach(function(sh, shIdx) {
+        var shiftDiv = document.createElement("div");
+        shiftDiv.style.cssText = "display:flex; gap:8px; align-items:center;";
+        shiftDiv.innerHTML = 
+            "<input type=\"time\" style=\"flex:1; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.from + "\" onchange=\"dSchedUpdate(" + shIdx + ", 'from', this.value)\">" +
+            "<span style=\"color:#666; font-size:12px;\">to</span>" +
+            "<input type=\"time\" style=\"flex:1; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.to + "\" onchange=\"dSchedUpdate(" + shIdx + ", 'to', this.value)\">" +
+            "<button type=\"button\" style=\"background:#ffe8e8; color:#d32f2f; border:none; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;\" onclick=\"dSchedRemoveShift(" + shIdx + ")\">&times;</button>";
+        cont.appendChild(shiftDiv);
+    });
+};
+
+window.dSchedReset = async function() {
+    var dateKey = _ecYear + "-" + _ecMonth + "-" + _workingDate;
+    if (FULL_SCHEDULE.dateOverrides && FULL_SCHEDULE.dateOverrides[dateKey]) {
+        delete FULL_SCHEDULE.dateOverrides[dateKey];
+    }
+    await dSchedSaveBackend();
+};
+
+window.saveDateSchedule = async function() {
+    var btn = document.querySelector("#dateModal .modal-save-btn");
+    var oldText = "";
+    if (btn) { oldText = btn.textContent; btn.textContent = "Saving..."; }
+    
+    var dateKey = _ecYear + "-" + _ecMonth + "-" + _workingDate;
+    if (!FULL_SCHEDULE.dateOverrides) FULL_SCHEDULE.dateOverrides = {};
+    FULL_SCHEDULE.dateOverrides[dateKey] = JSON.parse(JSON.stringify(_workingDateSched));
+    
+    await dSchedSaveBackend();
+    
+    if (btn) btn.textContent = oldText;
+};
+
+window.dSchedSaveBackend = async function() {
+    try {
+        await CentersAPI.updateMyProfile({ schedule: FULL_SCHEDULE });
+        updateScheduleView();
+        closeModal("dateModal");
+    } catch(err) {
+        alert("Failed to save schedule.");
+    }
+};
+
 (async function() {
     try {
         var center = await CentersAPI.getMyProfile();
@@ -1182,6 +1341,20 @@ window.saveSchedule = async function() {
 </script>
         
         
+        <!-- Modal: Edit Date Schedule -->
+        <div class="modal-overlay" id="dateModal">
+            <div class="modal-box" style="max-width:400px;">
+                <div class="modal-header">
+                    <h3 id="dateModalLabel">Edit Date</h3>
+                    <button class="modal-close" onclick="closeModal('dateModal')">&times;</button>
+                </div>
+                <div class="modal-body" id="dateModalBody"></div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('dateModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveDateSchedule()">Save Date</button>
+                </div>
+            </div>
+        </div>
     </body>
 </html>
 

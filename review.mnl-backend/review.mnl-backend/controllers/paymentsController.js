@@ -105,6 +105,15 @@ const createGcashEnrollment = async (req, res) => {
       payment_method: 'GCash Manual',
       transaction_status: status,
       message: 'Payment tracking saved. Please wait for the Center Admin to verify your GCash Reference Number.',
+    });
+  } catch (err) {
+    if (conn) try { await conn.rollback(); } catch (e) {}
+    console.error('createGcashEnrollment error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  } finally {
+    if (conn) try { conn.release(); } catch (e) {}
+  }
+};
 
 // Render a small mock payment page where the user can "complete" the payment (for testing)
 const getMockPaymentPage = async (req, res) => {

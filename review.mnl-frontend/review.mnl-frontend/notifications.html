@@ -9,6 +9,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
+        body.notifications-light .header.header-loggedin {
+            background-image: none;
+            background: rgba(245,248,255,0.96);
+            min-height: auto;
+        }
+        body.notifications-light .header.header-loggedin nav a,
+        body.notifications-light .header.header-loggedin .material-symbols-outlined {
+            color: #0a4cff !important;
+        }
+        body.notifications-light .footer {
+            background: rgba(245,248,255,0.96);
+        }
+        body.notifications-light .footer,
+        body.notifications-light .footer h2,
+        body.notifications-light .footer p,
+        body.notifications-light .footer a {
+            color: #0a4cff;
+        }
         .notif-page-wrap {
             max-width: 980px;
             margin: 28px auto 40px;
@@ -139,7 +157,7 @@
         }
     </style>
 </head>
-<body>
+<body class="notifications-light">
     <section class="header header-loggedin">
         <nav>
             <a href="loggedin.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
@@ -152,7 +170,7 @@
                 </ul>
             </div>
             <div class="profile-wrapper" style="position:relative;">
-                <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#fff;">
+                <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#0a4cff;">
                     <span class="material-symbols-outlined">account_circle</span>
                 </button>
                 <div id="profileDropdown" class="profile-dropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">

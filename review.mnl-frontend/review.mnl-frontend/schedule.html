@@ -214,7 +214,6 @@
                     <h2>Operating Schedule</h2>
                     <p>Days and hours the review center is open</p>
                 </div>
-                <button class="edit-btn-small" onclick="openModal('scheduleModal')">Edit Schedule</button>
             </div>
 
             <div class="ec-schedule-body">
@@ -242,9 +241,6 @@
                         <span class="ec-legend-closed"></span> Closed
                     </div>
                 </div>
-
-                <!-- Hours list -->
-                <div class="ec-hours-list" id="ecHoursList"></div>
             </div>
         </section>
 
@@ -655,10 +651,11 @@
 
             .ec-schedule-body {
                 display: grid;
-                grid-template-columns: auto 1fr 1fr;
-                gap: 28px;
+                grid-template-columns: auto minmax(350px, 500px);
+                gap: 32px;
                 align-items: start;
-                max-width: 1200px;
+                justify-content: center;
+                max-width: 900px;
                 margin: 0 auto;
             }
 
@@ -927,8 +924,9 @@
             .sched-toggle:checked::after { left: 19px; }
 
             @media (max-width: 900px) {
-                .ec-schedule-body { grid-template-columns: 1fr 1fr; }
-                .ec-day-pills { flex-direction: row; flex-wrap: wrap; min-width: unset; grid-column: 1 / -1; }
+                .ec-schedule-body { grid-template-columns: 1fr; align-items: stretch; justify-items: center; }
+                .ec-day-pills { flex-direction: row; flex-wrap: wrap; min-width: unset; grid-column: 1 / -1; justify-content: center; }
+                .ec-cal-wrap { width: 100%; max-width: 500px; }
             }
 
             @media (max-width: 600px) {
@@ -992,23 +990,6 @@ function renderEcSchedule() {
         });
     }
     renderEcCalendar();
-    
-    var listEl = document.getElementById("ecHoursList");
-    if(listEl) {
-        var key = _ecYear + "-" + _ecMonth;
-        var isSpec = !!(FULL_SCHEDULE.specific && FULL_SCHEDULE.specific[key]);
-        var badge = isSpec ? "<span style=\"font-size:11px; background:#ffe8e8; color:#d32f2f; padding:2px 6px; border-radius:4px; margin-left:8px; vertical-align:middle;\">Custom month schedule</span>" : "";
-        listEl.innerHTML = "<h4>Opening Hours" + badge + "</h4>";
-        EC_SCHEDULE.forEach(function(s) {
-            var row = document.createElement("div");
-            row.className = "ec-hour-row";
-            var shiftsHtml = s.open && s.shifts && s.shifts.length 
-                ? s.shifts.map(function(sh) { return fmt12(sh.from) + " &ndash; " + fmt12(sh.to); }).join("<br>")
-                : "<span class=\"ec-hour-closed\">Closed</span>";
-            row.innerHTML = "<span class=\"ec-hour-day\">" + s.day + "</span><span class=\"ec-hour-time\" style=\"line-height:1.4;\">" + shiftsHtml + "</span>";
-            listEl.appendChild(row);
-        });
-    }
 }
 
 function renderEcCalendar() {

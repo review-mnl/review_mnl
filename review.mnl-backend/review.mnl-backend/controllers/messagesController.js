@@ -171,7 +171,6 @@ const getConversations = async (req, res) => {
            FROM chat_messages uc
            WHERE uc.receiver_id = ?
              AND uc.sender_id = g.other_user_id
-             AND uc.center_id = lm.center_id
              AND uc.is_read = 0
          ) AS unread_count,
          u.first_name,
@@ -182,11 +181,10 @@ const getConversations = async (req, res) => {
        FROM (
          SELECT
            CASE WHEN cm.sender_id = ? THEN cm.receiver_id ELSE cm.sender_id END AS other_user_id,
-           cm.center_id,
            MAX(cm.id) AS latest_id
          FROM chat_messages cm
          WHERE cm.sender_id = ? OR cm.receiver_id = ?
-         GROUP BY other_user_id, cm.center_id
+         GROUP BY other_user_id
        ) g
        JOIN chat_messages lm ON lm.id = g.latest_id
        JOIN users u ON u.id = g.other_user_id
@@ -224,24 +222,17 @@ const getThreadMessages = async (req, res) => {
   try {
     const currentUserId = req.user.id;
     const withUserId = Number(req.query.withUserId);
-    const centerId = req.query.centerId ? Number(req.query.centerId) : null;
 
     if (!Number.isInteger(withUserId) || withUserId <= 0) {
       return res.status(400).json({ message: 'Valid withUserId is required.' });
     }
 
     const params = [currentUserId, withUserId, currentUserId, withUserId];
-    let centerClause = '';
-    if (centerId && Number.isInteger(centerId) && centerId > 0) {
-      centerClause = ' AND cm.center_id = ?';
-      params.push(centerId);
-    }
 
     console.log('[Chat] Thread query', {
       currentUserId,
       withUserId,
-      centerId: centerId || null,
-      mode: centerClause ? 'pair+center' : 'pair-only',
+      mode: 'pair-only',
     });
 
     let [rows] = await db.query(
@@ -257,33 +248,10 @@ const getThreadMessages = async (req, res) => {
          cm.read_at,
          cm.created_at
        FROM chat_messages cm
-       WHERE ((cm.sender_id = ? AND cm.receiver_id = ?) OR (cm.sender_id = ? AND cm.receiver_id = ?))${centerClause}
+       WHERE ((cm.sender_id = ? AND cm.receiver_id = ?) OR (cm.sender_id = ? AND cm.receiver_id = ?))
        ORDER BY cm.created_at ASC`,
       params
     );
-
-    // Fallback: if a strict center filter was provided but no rows matched,
-    // fetch by sender/receiver pair only so valid threads still appear.
-    if (rows.length === 0 && centerClause) {
-      const [fallbackRows] = await db.query(
-        `SELECT
-           cm.id AS message_id,
-           cm.student_id,
-           cm.center_id,
-           cm.enrollment_id,
-           cm.sender_id,
-           cm.receiver_id,
-           cm.message,
-           cm.is_read,
-           cm.read_at,
-           cm.created_at
-         FROM chat_messages cm
-         WHERE ((cm.sender_id = ? AND cm.receiver_id = ?) OR (cm.sender_id = ? AND cm.receiver_id = ?))
-         ORDER BY cm.created_at ASC`,
-        [currentUserId, withUserId, currentUserId, withUserId]
-      );
-      rows = fallbackRows;
-    }
 
     const messages = rows.map((row) => ({
       message_id: row.message_id,
@@ -301,7 +269,6 @@ const getThreadMessages = async (req, res) => {
     console.log('[Chat] Thread fetched', {
       currentUserId,
       withUserId,
-      centerId,
       count: messages.length,
     });
 
@@ -316,23 +283,17 @@ const markThreadAsRead = async (req, res) => {
   try {
     const currentUserId = req.user.id;
     const withUserId = Number(req.body && req.body.with_user_id);
-    const centerId = req.body && req.body.center_id ? Number(req.body.center_id) : null;
 
     if (!Number.isInteger(withUserId) || withUserId <= 0) {
       return res.status(400).json({ message: 'Valid with_user_id is required.' });
     }
 
     const params = [currentUserId, withUserId];
-    let centerClause = '';
-    if (centerId && Number.isInteger(centerId) && centerId > 0) {
-      centerClause = ' AND center_id = ?';
-      params.push(centerId);
-    }
 
     const [result] = await db.query(
       `UPDATE chat_messages
        SET is_read = 1, read_at = NOW()
-       WHERE receiver_id = ? AND sender_id = ? AND is_read = 0${centerClause}`,
+       WHERE receiver_id = ? AND sender_id = ? AND is_read = 0`,
       params
     );
 

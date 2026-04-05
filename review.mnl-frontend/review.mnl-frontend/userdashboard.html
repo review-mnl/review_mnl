@@ -303,18 +303,13 @@
 
                 async function openConv(conversation) {
                     if (!conversation || !conversation.other_user_id) return;
-                    var nextKey = String(conversation.other_user_id) + ':' + String(conversation.center_id || 0);
+                    var nextKey = String(conversation.other_user_id);
                     var isSwitchingConversation = activeConversationKey !== nextKey;
                     activeConversation = conversation;
                     activeConversationKey = nextKey;
                     document.getElementById('convName').textContent = conversation.other_name || 'Chat';
                     document.getElementById('msgList').style.display = 'none';
                     document.getElementById('convPanel').style.display = 'flex';
-
-                    if (isSwitchingConversation) {
-                        var wrap = document.getElementById('convMessages');
-                        if (wrap) wrap.innerHTML = '';
-                    }
 
                     console.log('[Chat][Student] Opening conversation', {
                         conversationKey: nextKey,
@@ -343,7 +338,7 @@
                 async function loadActiveThread() {
                     if (!activeConversation) return;
                     try {
-                        const res = await MessageAPI.getThread(activeConversation.other_user_id, activeConversation.center_id);
+                        const res = await MessageAPI.getThread(activeConversation.other_user_id, null);
                         const messages = (res && res.messages) ? res.messages : [];
                         console.log('[Chat][Student] Thread loaded', {
                             withUserId: activeConversation.other_user_id,
@@ -351,7 +346,7 @@
                             count: messages.length,
                         });
                         renderThreadMessages(messages);
-                        await MessageAPI.markThreadAsRead(activeConversation.other_user_id, activeConversation.center_id);
+                        await MessageAPI.markThreadAsRead(activeConversation.other_user_id, null);
                         await loadConversations();
                     } catch (e) {
                         console.warn('Failed to load active thread', e);
@@ -628,7 +623,7 @@
                         });
                         window._conversationMap = {};
                         conversations.forEach(function(c) {
-                            window._conversationMap[(c.other_user_id + ':' + (c.center_id || 0))] = c;
+                            window._conversationMap[String(c.other_user_id)] = c;
                         });
                         renderConversationList(conversations);
                     } catch (e) {
@@ -642,7 +637,7 @@
                         otherUserId,
                         centerId,
                     });
-                    var key = String(otherUserId) + ':' + String(centerId || 0);
+                    var key = String(otherUserId);
                     var conv = window._conversationMap && window._conversationMap[key];
                     if (!conv) {
                         conv = {

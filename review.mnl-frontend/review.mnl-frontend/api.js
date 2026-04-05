@@ -345,6 +345,163 @@ const NotificationAPI = {
 };
 
 // ---------------------------------------------------------------------------
+// Global notification bell (shared navbar behavior)
+// ---------------------------------------------------------------------------
+function initGlobalNotificationBell(options) {
+    try {
+        options = options || {};
+        if (!isAuthenticated()) return;
+
+        var nav = options.navElement || document.querySelector(options.navSelector || 'nav');
+        if (!nav) return;
+
+        // Prevent duplicate mount on pages that already provide custom bell logic.
+        if (nav.querySelector('.rmnl-global-bell')) return;
+
+        var profileWrapper = nav.querySelector(options.profileWrapperSelector || '.profile-wrapper');
+        if (!profileWrapper) return;
+
+        if (!document.getElementById('rmnlNotifStyle')) {
+            var style = document.createElement('style');
+            style.id = 'rmnlNotifStyle';
+            style.textContent = [
+                '.rmnl-global-bell{position:relative;margin-right:10px;}',
+                '.rmnl-global-bell-btn{position:relative;background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;}',
+                '.rmnl-global-bell-badge{display:none;position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#d32f2f;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;}',
+                '.rmnl-global-drop{display:none;position:absolute;right:0;top:40px;width:360px;max-width:86vw;background:#fff;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.2);overflow:hidden;z-index:1600;}',
+                '.rmnl-global-drop-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eef2ff;}',
+                '.rmnl-global-drop-list{max-height:360px;overflow-y:auto;padding:10px 12px;}',
+                '.rmnl-global-drop-foot{padding:10px 12px;border-top:1px solid #eef2ff;background:#f8faff;}',
+            ].join('');
+            document.head.appendChild(style);
+        }
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'rmnl-global-bell';
+        wrapper.innerHTML = ''
+            + '<button type="button" class="rmnl-global-bell-btn" aria-label="Open notifications" aria-expanded="false">'
+            + '  <span class="material-symbols-outlined" style="font-size:28px;">notifications</span>'
+            + '  <span class="rmnl-global-bell-badge">0</span>'
+            + '</button>'
+            + '<div class="rmnl-global-drop">'
+            + '  <div class="rmnl-global-drop-head">'
+            + '    <strong style="font-size:14px;color:#0d1b4b;">Enrollment Notifications</strong>'
+            + '    <span class="rmnl-global-unread" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;">0 Unread</span>'
+            + '  </div>'
+            + '  <div class="rmnl-global-drop-list"></div>'
+            + '  <div class="rmnl-global-drop-foot"><a href="userdashboard.html#fullNotificationsSection" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a></div>'
+            + '</div>';
+
+        nav.insertBefore(wrapper, profileWrapper);
+
+        var btn = wrapper.querySelector('.rmnl-global-bell-btn');
+        var badge = wrapper.querySelector('.rmnl-global-bell-badge');
+        var drop = wrapper.querySelector('.rmnl-global-drop');
+        var dropList = wrapper.querySelector('.rmnl-global-drop-list');
+        var unreadEl = wrapper.querySelector('.rmnl-global-unread');
+
+        function statusStyle(status) {
+            var s = String(status || 'pending').toLowerCase();
+            return {
+                s: s,
+                bg: s === 'approved' ? '#e8f5e9' : (s === 'rejected' ? '#ffebee' : '#e3f2fd'),
+                color: s === 'approved' ? '#1b5e20' : (s === 'rejected' ? '#b71c1c' : '#0d47a1')
+            };
+        }
+
+        async function markRead(notificationId) {
+            try { await NotificationAPI.markAsRead(notificationId); } catch (e) {}
+        }
+
+        function render(notifications) {
+            var data = Array.isArray(notifications) ? notifications : [];
+            var unreadCount = data.filter(function(n){ return !n.is_read; }).length;
+
+            if (badge) {
+                badge.style.display = unreadCount > 0 ? 'block' : 'none';
+                badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+            }
+            if (unreadEl) {
+                unreadEl.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                unreadEl.textContent = unreadCount + ' Unread';
+            }
+
+            if (!data.length) {
+                dropList.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:4px 2px;">No notifications yet.</p>';
+                return;
+            }
+
+            dropList.innerHTML = data.slice(0, 8).map(function(item) {
+                var st = statusStyle(item.status);
+                var isUnread = !item.is_read;
+                return '<div class="rmnl-global-item" data-id="' + Number(item.notification_id || 0) + '" style="cursor:pointer;border:1px solid ' + (isUnread ? '#b9d0ff' : '#e5e7eb') + ';background:' + (isUnread ? '#f5f9ff' : '#fff') + ';border-radius:10px;padding:10px 11px;margin-bottom:9px;">'
+                    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">'
+                    + '<p style="margin:0;font-size:12px;color:#111827;font-weight:' + (isUnread ? '700' : '500') + ';line-height:1.45;">' + (String(item.message || '').replace(/[&<>"']/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]); })) + '</p>'
+                    + '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;color:' + st.color + ';background:' + st.bg + ';">' + (st.s.charAt(0).toUpperCase() + st.s.slice(1)) + '</span>'
+                    + '</div>'
+                    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;">'
+                    + '<span style="font-size:11px;color:#6b7280;">' + new Date(item.created_at).toLocaleString(undefined, { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) + '</span>'
+                    + (item.center_user_id
+                        ? '<button type="button" class="rmnl-global-open-chat" data-id="' + Number(item.notification_id || 0) + '" style="padding:5px 9px;border:1px solid #d0dcff;background:#fff;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">Open Chat</button>'
+                        : '<span style="font-size:10px;color:' + (isUnread ? '#b45309' : '#6b7280') + ';font-weight:600;">' + (isUnread ? 'Unread' : 'Read') + '</span>')
+                    + '</div>'
+                    + '</div>';
+            }).join('');
+
+            dropList.querySelectorAll('.rmnl-global-item').forEach(function(el) {
+                el.addEventListener('click', async function() {
+                    var id = Number(el.getAttribute('data-id'));
+                    if (id > 0) {
+                        await markRead(id);
+                        await refresh();
+                    }
+                });
+            });
+
+            dropList.querySelectorAll('.rmnl-global-open-chat').forEach(function(el) {
+                el.addEventListener('click', async function(ev) {
+                    ev.stopPropagation();
+                    var id = Number(el.getAttribute('data-id'));
+                    if (id > 0) {
+                        await markRead(id);
+                        window.location.href = 'userdashboard.html?openChatNotification=' + id;
+                    }
+                });
+            });
+        }
+
+        async function refresh() {
+            try {
+                var res = await NotificationAPI.getMy();
+                render((res && res.notifications) ? res.notifications : []);
+            } catch (e) {
+                render([]);
+            }
+        }
+
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var isOpen = drop.style.display === 'block';
+            drop.style.display = isOpen ? 'none' : 'block';
+            btn.setAttribute('aria-expanded', String(!isOpen));
+        });
+
+        document.addEventListener('click', function() {
+            drop.style.display = 'none';
+            btn.setAttribute('aria-expanded', 'false');
+        });
+
+        if (window.__rmnlGlobalNotifTimer) {
+            clearInterval(window.__rmnlGlobalNotifTimer);
+        }
+        refresh();
+        window.__rmnlGlobalNotifTimer = setInterval(refresh, 8000);
+    } catch (e) {
+        console.warn('initGlobalNotificationBell failed', e);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Messages API
 // ---------------------------------------------------------------------------
 const MessageAPI = {

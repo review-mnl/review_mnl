@@ -148,6 +148,8 @@
             document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
         })();
 
+        initGlobalNotificationBell();
+
         // Load featured centers from API
         (async function(){
             try {

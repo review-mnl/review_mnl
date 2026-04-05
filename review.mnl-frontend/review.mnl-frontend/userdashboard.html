@@ -830,6 +830,17 @@
                         notifications.forEach(function(n){ window._notificationsById[n.notification_id] = n; });
                         renderDashboardNotifications(notifications);
                         renderNotificationBellDropdown(notifications);
+                        if (!window._handledOpenChatNotificationParam) {
+                            window._handledOpenChatNotificationParam = true;
+                            var params = new URLSearchParams(window.location.search || '');
+                            var targetId = Number(params.get('openChatNotification') || 0);
+                            if (targetId > 0 && window._notificationsById[targetId]) {
+                                params.delete('openChatNotification');
+                                var cleanUrl = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+                                window.history.replaceState({}, '', cleanUrl);
+                                await openChatFromNotification(targetId);
+                            }
+                        }
                     } catch (e) {
                         console.warn('Failed to load notifications', e);
                         window._notificationsById = {};

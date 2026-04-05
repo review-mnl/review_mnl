@@ -406,6 +406,34 @@ function initGlobalNotificationBell(options) {
         var dropList = wrapper.querySelector('.rmnl-global-drop-list');
         var unreadEl = wrapper.querySelector('.rmnl-global-unread');
 
+        // Render dropdown at document level so page-specific stacking contexts
+        // (e.g., map panes) can never overlap it.
+        if (drop && drop.parentElement !== document.body) {
+            document.body.appendChild(drop);
+        }
+        if (drop) {
+            drop.style.position = 'fixed';
+            drop.style.zIndex = '2147483000';
+        }
+
+        function placeDropNearButton() {
+            if (!drop || !btn) return;
+            var rect = btn.getBoundingClientRect();
+            var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+            var dropWidth = drop.offsetWidth || 360;
+            var margin = 10;
+
+            var left = rect.right - dropWidth;
+            if (left < margin) left = margin;
+            if (left + dropWidth > viewportWidth - margin) {
+                left = Math.max(margin, viewportWidth - dropWidth - margin);
+            }
+
+            drop.style.left = left + 'px';
+            drop.style.top = (rect.bottom + 8) + 'px';
+            drop.style.right = 'auto';
+        }
+
         function closeProfileDropdowns() {
             var profileDropdowns = document.querySelectorAll('#profileDropdown, #contactProfileDropdown, .profile-dropdown');
             profileDropdowns.forEach(function(el) {
@@ -522,6 +550,7 @@ function initGlobalNotificationBell(options) {
             var isOpen = drop.style.display === 'block';
             if (!isOpen) {
                 closeProfileDropdowns();
+                placeDropNearButton();
             }
             drop.style.display = isOpen ? 'none' : 'block';
             btn.setAttribute('aria-expanded', String(!isOpen));
@@ -535,6 +564,14 @@ function initGlobalNotificationBell(options) {
             drop.style.display = 'none';
             btn.setAttribute('aria-expanded', 'false');
         });
+
+        window.addEventListener('resize', function() {
+            if (drop.style.display === 'block') placeDropNearButton();
+        });
+
+        window.addEventListener('scroll', function() {
+            if (drop.style.display === 'block') placeDropNearButton();
+        }, true);
 
         if (window.__rmnlGlobalNotifTimer) {
             clearInterval(window.__rmnlGlobalNotifTimer);

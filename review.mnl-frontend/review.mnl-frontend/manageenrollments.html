@@ -73,7 +73,7 @@
                 </div>
             </nav>
             <div class="textbox">
-                <h1 class="welcome-heading">Welcome, <span id="welcomeName">Admin</span>!</h1>
+                <h1 class="welcome-heading">Manage Enrollments</h1>
             </div>
         </section>
 
@@ -376,13 +376,12 @@
             try{
                 var user = getUser();
                 if (!user) { window.location.href = 'login.html'; return; }
-                var welcomeEl = document.getElementById('welcomeName');
-                if (!welcomeEl) return;
+                
                     if (user.role === 'admin' || user.role === 'review_center') {
                     try {
                         const center = await CentersAPI.getMyProfile();
                         if (center && center.business_name) {
-                            welcomeEl.textContent = center.business_name;
+                            if(document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = center.business_name;
                             try {
                                 var uid = (user && (user.id || user._id || user.email)) || null;
                                 if (uid) {
@@ -390,13 +389,13 @@
                                 }
                             } catch(e) {}
                         } else {
-                            welcomeEl.textContent = user.name || 'Admin';
+                            if(document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = user.name || 'Admin';
                         }
                     } catch(err) {
-                        welcomeEl.textContent = user.name || 'Admin';
+                        if(document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = user.name || 'Admin';
                     }
                 } else {
-                    welcomeEl.textContent = user.name || 'User';
+                    if(document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = user.name || 'User';
                 }
             }catch(e){}
         })();
@@ -659,6 +658,8 @@
     </body>
 </html>
 ﻿
+
+
 
 
 

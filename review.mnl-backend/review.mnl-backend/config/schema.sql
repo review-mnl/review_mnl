@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS review_centers (
   description     TEXT,
   programs        JSON,
   achievements    JSON,
+    schedule        JSON,
   last_login      TIMESTAMP NULL,
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -137,3 +138,4 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 INSERT IGNORE INTO users (first_name, last_name, email, password, role, is_verified)
 VALUES ('Super', 'Admin', 'admin@reviewmnl.com',
   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHHC', 'superadmin', 1);
+

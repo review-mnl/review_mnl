@@ -39,7 +39,7 @@ const getCenterById = async (req, res) => {
   try {
     const [center] = await db.query(
             `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.latitude, rc.longitude, rc.logo_url,
-              rc.description, rc.programs, rc.achievements,
+              rc.description, rc.programs, rc.achievements, rc.schedule,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -127,7 +127,7 @@ const updateCenterLocation = async (req, res) => {
 };
 
 const updateCenterProfile = async (req, res) => {
-  const { business_name, email, address, description, programs, achievements } = req.body;
+  const { business_name, email, address, description, programs, achievements, schedule } = req.body;
   const userId = req.user.id;
   try {
     // If email is provided, ensure it's not used by another user
@@ -146,6 +146,7 @@ const updateCenterProfile = async (req, res) => {
     if (description !== undefined) { updates.push('description = ?'); vals.push(description); }
     if (programs !== undefined) { updates.push('programs = ?'); vals.push(JSON.stringify(programs)); }
     if (achievements !== undefined) { updates.push('achievements = ?'); vals.push(JSON.stringify(achievements)); }
+    if (schedule !== undefined) { updates.push('schedule = ?'); vals.push(JSON.stringify(schedule)); }
 
     if (updates.length > 0) {
       vals.push(userId);
@@ -165,7 +166,7 @@ const updateCenterProfile = async (req, res) => {
     // Return updated center profile
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url, rc.description,
-              rc.programs, rc.achievements,
+              rc.programs, rc.achievements, rc.schedule,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -218,7 +219,7 @@ const getMyCenterProfile = async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url, rc.description,
-              rc.programs, rc.achievements,
+              rc.programs, rc.achievements, rc.schedule,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -496,3 +497,4 @@ module.exports = {
   verifyEnrollmentPayment,
   updateEnrollmentReviewStatus,
 };
+

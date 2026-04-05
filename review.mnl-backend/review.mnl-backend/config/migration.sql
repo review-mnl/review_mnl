@@ -137,3 +137,5 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 	INDEX idx_chat_participants (sender_id, receiver_id, created_at),
 	INDEX idx_chat_context (student_id, center_id, created_at)
 );
+
+ALTER TABLE review_centers ADD COLUMN schedule JSON;

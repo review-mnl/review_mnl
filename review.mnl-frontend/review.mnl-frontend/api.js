@@ -365,7 +365,7 @@ function initGlobalNotificationBell(options) {
             var style = document.createElement('style');
             style.id = 'rmnlNotifStyle';
             style.textContent = [
-                '.rmnl-global-bell{position:relative;margin-right:10px;}',
+                '.rmnl-global-bell{position:relative;margin-right:8px;}',
                 '.rmnl-global-bell-btn{position:relative;background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;}',
                 '.rmnl-global-bell-badge{display:none;position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#d32f2f;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;}',
                 '.rmnl-global-drop{display:none;position:absolute;right:0;top:40px;width:360px;max-width:86vw;background:#fff;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.2);overflow:hidden;z-index:1600;}',
@@ -392,7 +392,12 @@ function initGlobalNotificationBell(options) {
             + '  <div class="rmnl-global-drop-foot"><a href="userdashboard.html#fullNotificationsSection" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a></div>'
             + '</div>';
 
-        nav.insertBefore(wrapper, profileWrapper);
+        // Keep the bell in the right-side nav cluster (next to profile icon)
+        // so it does not appear in the middle menu area.
+        profileWrapper.style.display = 'flex';
+        profileWrapper.style.alignItems = 'center';
+        profileWrapper.style.gap = '8px';
+        profileWrapper.insertBefore(wrapper, profileWrapper.firstChild);
 
         var btn = wrapper.querySelector('.rmnl-global-bell-btn');
         var badge = wrapper.querySelector('.rmnl-global-bell-badge');

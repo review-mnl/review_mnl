@@ -27,43 +27,8 @@
     </div>
 
     <div class="messages-panel" id="msgList">
-        <h4 class="messages-panel-title">Messages</h4>
-
-        <div class="message-thread" onclick="openConv('Student A','I would like to inquire about enrollment...')">
-            <div class="message-avatar"></div>
-            <div class="message-info">
-                <span class="message-sender">Student A</span>
-                <p class="message-preview">I would like to inquire about enrollment...</p>
-            </div>
-            <span class="message-time">5m</span>
-        </div>
-
-        <div class="message-thread" onclick="openConv('Student B','When is the next review schedule?')">
-            <div class="message-avatar"></div>
-            <div class="message-info">
-                <span class="message-sender">Student B</span>
-                <p class="message-preview">When is the next review schedule?</p>
-            </div>
-            <span class="message-time">30m</span>
-        </div>
-
-        <div class="message-thread" onclick="openConv('Student C','Thank you for the quick response!')">
-            <div class="message-avatar"></div>
-            <div class="message-info">
-                <span class="message-sender">Student C</span>
-                <p class="message-preview">Thank you for the quick response!</p>
-            </div>
-            <span class="message-time">2h</span>
-        </div>
-
-        <div class="message-thread" onclick="openConv('Student D','Can I get a copy of the modules?')">
-            <div class="message-avatar"></div>
-            <div class="message-info">
-                <span class="message-sender">Student D</span>
-                <p class="message-preview">Can I get a copy of the modules?</p>
-            </div>
-            <span class="message-time">1d</span>
-        </div>
+        <h4 class="messages-panel-title">Messages <span id="sidebarUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;"></span></h4>
+        <div id="sidebarMessagesList"></div>
     </div>
 
     <!-- Conversation View -->
@@ -75,25 +40,8 @@
             <div class="message-avatar" style="width:32px;height:32px;"></div>
             <span class="conv-name" id="convName"></span>
         </div>
-        <div class="conv-messages" id="convMessages">
-            <div class="conv-bubble incoming" id="convFirstMsg"></div>
-        </div>
-        <!-- Attachment preview bar -->
-        <div class="conv-preview-bar" id="convPreviewBar" style="display:none;">
-            <div class="conv-preview-content" id="convPreviewContent"></div>
-            <div class="conv-preview-actions">
-                <button class="conv-preview-cancel" onclick="cancelAttachment()">Cancel</button>
-                <button class="conv-preview-send" onclick="sendAttachment()">Send</button>
-            </div>
-        </div>
+        <div class="conv-messages" id="convMessages"></div>
         <div class="conv-input-row">
-            <label class="conv-attach-btn" title="Attach image">
-                <span class="material-symbols-outlined">image</span>
-                <input type="file" id="convImageInput" accept="image/*" style="display:none;" onchange="attachImage(this)">
-            </label>
-            <button class="conv-attach-btn" title="Attach link" onclick="attachLink()">
-                <span class="material-symbols-outlined">link</span>
-            </button>
             <input type="text" id="convInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
             <button class="conv-send-btn" onclick="sendMsg()">
                 <span class="material-symbols-outlined">send</span>
@@ -259,6 +207,7 @@
                     + '</div>'
                     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">'
                     + verifyBtn
+                    + '<button onclick="openChatFromEnrollment(' + item.user_id + ',' + (item.review_center_id || 0) + ',' + item.enrollment_id + ')" style="padding:6px 12px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Message Student</button>'
                     + '<button ' + approveDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'approved\')" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>'
                     + '<button ' + rejectDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'rejected\')" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>'
                     + '</div>'
@@ -461,106 +410,183 @@
                 }
             }catch(e){}
         })();
+        loadConversations();
+        setInterval(function(){
+            loadConversations();
+        }, 8000);
+
+        var activeConversation = null;
+        var chatPollTimer = null;
+
+        function formatDate(value) {
+            if (!value) return '';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
         }
-        function openConv(name, firstMsg) {
-            document.getElementById('convName').textContent = name;
-            document.getElementById('convFirstMsg').textContent = firstMsg;
-            const msgs = document.getElementById('convMessages');
-            msgs.querySelectorAll('.conv-bubble.outgoing').forEach(function(el){ el.remove(); });
+
+        function renderConversationList(conversations) {
+            var wrap = document.getElementById('sidebarMessagesList');
+            var unreadBadge = document.getElementById('sidebarUnreadCount');
+            if (!wrap) return;
+
+            var data = Array.isArray(conversations) ? conversations : [];
+            var unreadCount = data.reduce(function(acc, item){ return acc + Number(item.unread_count || 0); }, 0);
+            if (unreadBadge) {
+                unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                unreadBadge.textContent = String(unreadCount);
+            }
+
+            if (!data.length) {
+                wrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">No conversations yet.</p>';
+                return;
+            }
+
+            wrap.innerHTML = data.map(function(item) {
+                var hasUnread = Number(item.unread_count || 0) > 0;
+                return '<div class="message-thread" style="background:' + (hasUnread ? '#eef4ff' : '#fff') + ';cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
+                    + '<div class="message-avatar"></div>'
+                    + '<div class="message-info">'
+                    + '<span class="message-sender" style="font-weight:' + (hasUnread ? '700' : '500') + ';">' + escHtml(item.other_name || 'Student') + '</span>'
+                    + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
+                    + '</div>'
+                    + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+                    + '<span class="message-time">' + escHtml(formatDate(item.last_timestamp)) + '</span>'
+                    + (hasUnread ? ('<span style="font-size:10px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 6px;font-weight:700;">' + Number(item.unread_count) + '</span>') : '')
+                    + '</div>'
+                    + '</div>';
+            }).join('');
+        }
+
+        async function loadConversations() {
+            try {
+                var res = await MessageAPI.getConversations();
+                var conversations = (res && res.conversations) ? res.conversations : [];
+                window._conversationMap = {};
+                conversations.forEach(function(c) {
+                    window._conversationMap[(c.other_user_id + ':' + (c.center_id || 0))] = c;
+                });
+                renderConversationList(conversations);
+            } catch (e) {
+                console.warn('Failed to load conversations', e);
+                renderConversationList([]);
+            }
+        }
+
+        function renderThreadMessages(messages) {
+            const wrap = document.getElementById('convMessages');
+            if (!wrap) return;
+            const me = getUser();
+            wrap.innerHTML = (messages || []).map(function(msg) {
+                var outgoing = me && Number(msg.sender_id) === Number(me.id);
+                return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
+                    + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(msg.message || '') + '</div>'
+                    + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:' + (outgoing ? 'right' : 'left') + ';">' + escHtml(formatDateTime(msg.created_at)) + '</div>'
+                    + '</div>';
+            }).join('');
+            wrap.scrollTop = wrap.scrollHeight;
+        }
+
+        async function openConv(conversation) {
+            if (!conversation || !conversation.other_user_id) return;
+            activeConversation = conversation;
+            document.getElementById('convName').textContent = conversation.other_name || 'Chat';
             document.getElementById('msgList').style.display = 'none';
             document.getElementById('convPanel').style.display = 'flex';
-            msgs.scrollTop = msgs.scrollHeight;
+            await loadActiveThread();
+
+            if (chatPollTimer) clearInterval(chatPollTimer);
+            chatPollTimer = setInterval(function(){
+                if (activeConversation) loadActiveThread();
+            }, 5000);
         }
+
+        function openConvByKey(otherUserId, centerId) {
+            var key = String(otherUserId) + ':' + String(centerId || 0);
+            var conv = window._conversationMap && window._conversationMap[key];
+            if (!conv) return;
+            openConv(conv);
+        }
+
+        async function openChatFromEnrollment(studentId, centerId, enrollmentId) {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.querySelector('.sidebar-overlay');
+            if (sidebar && !sidebar.classList.contains('active')) sidebar.classList.add('active');
+            if (overlay && !overlay.classList.contains('active')) overlay.classList.add('active');
+
+            var key = String(studentId) + ':' + String(centerId || 0);
+            var known = window._conversationMap && window._conversationMap[key];
+
+            await openConv({
+                other_user_id: Number(studentId),
+                center_id: Number(centerId || 0),
+                enrollment_id: Number(enrollmentId || 0) || null,
+                other_name: (known && known.other_name) || ('Student #' + studentId),
+            });
+        }
+
+        async function loadActiveThread() {
+            if (!activeConversation) return;
+            try {
+                const res = await MessageAPI.getThread(activeConversation.other_user_id, activeConversation.center_id);
+                const messages = (res && res.messages) ? res.messages : [];
+                renderThreadMessages(messages);
+                await MessageAPI.markThreadAsRead(activeConversation.other_user_id, activeConversation.center_id);
+                await loadConversations();
+            } catch (e) {
+                console.warn('Failed to load active thread', e);
+            }
+        }
+
         function closeConv() {
+            activeConversation = null;
+            if (chatPollTimer) {
+                clearInterval(chatPollTimer);
+                chatPollTimer = null;
+            }
             document.getElementById('convPanel').style.display = 'none';
             document.getElementById('msgList').style.display = 'block';
             document.getElementById('convInput').value = '';
         }
-        function sendMsg() {
+
+        async function sendMsg() {
             const input = document.getElementById('convInput');
             const text = input.value.trim();
-            if (!text) return;
-            const msgs = document.getElementById('convMessages');
-            const bubble = document.createElement('div');
-            bubble.className = 'conv-bubble outgoing';
-            bubble.textContent = text;
-            msgs.appendChild(bubble);
-            input.value = '';
-            msgs.scrollTop = msgs.scrollHeight;
-        }
-        function attachImage(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                window._pendingAttachment = { type: 'image', src: e.target.result };
-                const preview = document.getElementById('convPreviewContent');
-                preview.innerHTML = '';
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.cssText = 'max-height:80px;border-radius:8px;display:block;';
-                const label = document.createElement('span');
-                label.textContent = file.name;
-                label.style.cssText = 'font-size:12px;color:#555;margin-left:8px;';
-                preview.appendChild(img);
-                preview.appendChild(label);
-                document.getElementById('convPreviewBar').style.display = 'flex';
-            };
-            reader.readAsDataURL(file);
-            input.value = '';
-        }
-        function attachLink() {
-            const url = prompt('Enter a URL to share:');
-            if (!url || !url.trim()) return;
-            window._pendingAttachment = { type: 'link', url: url.trim() };
-            const preview = document.getElementById('convPreviewContent');
-            preview.innerHTML = '';
-            const icon = document.createElement('span');
-            icon.className = 'material-symbols-outlined';
-            icon.textContent = 'link';
-            icon.style.cssText = 'font-size:18px;color:#0a4cff;';
-            const span = document.createElement('span');
-            span.textContent = url.trim();
-            span.style.cssText = 'font-size:12px;color:#0a4cff;word-break:break-all;margin-left:6px;';
-            preview.appendChild(icon);
-            preview.appendChild(span);
-            document.getElementById('convPreviewBar').style.display = 'flex';
-        }
-        function cancelAttachment() {
-            window._pendingAttachment = null;
-            document.getElementById('convPreviewBar').style.display = 'none';
-            document.getElementById('convPreviewContent').innerHTML = '';
-        }
-        function sendAttachment() {
-            const att = window._pendingAttachment;
-            if (!att) return;
-            const msgs = document.getElementById('convMessages');
-            const bubble = document.createElement('div');
-            if (att.type === 'image') {
-                bubble.className = 'conv-bubble outgoing conv-bubble-img';
-                const img = document.createElement('img');
-                img.src = att.src;
-                img.style.cssText = 'max-width:100%;border-radius:10px;display:block;';
-                bubble.appendChild(img);
-            } else {
-                bubble.className = 'conv-bubble outgoing';
-                const a = document.createElement('a');
-                a.href = att.url;
-                a.textContent = att.url;
-                a.target = '_blank';
-                a.rel = 'noopener';
-                a.style.cssText = 'color:#cce0ff;word-break:break-all;';
-                bubble.appendChild(a);
+            if (!text || !activeConversation) return;
+
+            input.disabled = true;
+            try {
+                await MessageAPI.send({
+                    receiver_id: activeConversation.other_user_id,
+                    enrollment_id: activeConversation.enrollment_id,
+                    message: text,
+                });
+                input.value = '';
+                await loadActiveThread();
+            } catch (e) {
+                alert((e && e.message) ? e.message : 'Failed to send message.');
+            } finally {
+                input.disabled = false;
+                input.focus();
             }
-            msgs.appendChild(bubble);
-            msgs.scrollTop = msgs.scrollHeight;
-            cancelAttachment();
         }
+
+        window.openConvByKey = openConvByKey;
+        window.openChatFromEnrollment = openChatFromEnrollment;
         </script>
 
         <section class="footer">

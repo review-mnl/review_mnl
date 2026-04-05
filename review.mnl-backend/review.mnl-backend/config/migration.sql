@@ -116,3 +116,24 @@ CREATE TABLE IF NOT EXISTS enrollment_notifications (
 
 ALTER TABLE enrollment_notifications ADD COLUMN is_read TINYINT(1) DEFAULT 0;
 ALTER TABLE enrollment_notifications ADD COLUMN read_at TIMESTAMP NULL;
+
+-- Two-way chat messages between student and review center
+CREATE TABLE IF NOT EXISTS chat_messages (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	student_id INT NOT NULL,
+	center_id INT NOT NULL,
+	enrollment_id INT NULL,
+	sender_id INT NOT NULL,
+	receiver_id INT NOT NULL,
+	message TEXT NOT NULL,
+	is_read TINYINT(1) DEFAULT 0,
+	read_at TIMESTAMP NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE,
+	FOREIGN KEY (enrollment_id) REFERENCES enrollments(id) ON DELETE SET NULL,
+	FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+	INDEX idx_chat_participants (sender_id, receiver_id, created_at),
+	INDEX idx_chat_context (student_id, center_id, created_at)
+);

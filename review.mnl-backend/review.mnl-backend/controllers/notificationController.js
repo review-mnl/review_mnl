@@ -87,23 +87,30 @@ const getMyNotifications = async (req, res) => {
     const userId = req.user.id;
     const [rows] = await db.query(
       `SELECT
-         id AS notification_id,
-         user_id,
-         enrollment_id,
-         status,
-         message,
-         is_read,
-         read_at,
-         created_at
-       FROM enrollment_notifications
-       WHERE user_id = ?
-       ORDER BY created_at DESC`,
+         en.id AS notification_id,
+         en.user_id,
+         en.center_id,
+         en.enrollment_id,
+         en.status,
+         en.message,
+         en.is_read,
+         en.read_at,
+         en.created_at,
+         rc.user_id AS center_user_id,
+         rc.business_name AS center_name
+       FROM enrollment_notifications en
+       LEFT JOIN review_centers rc ON rc.id = en.center_id
+       WHERE en.user_id = ?
+       ORDER BY en.created_at DESC`,
       [userId]
     );
 
     const notifications = rows.map((row) => ({
       notification_id: row.notification_id,
       user_id: row.user_id,
+      center_id: row.center_id,
+      center_user_id: row.center_user_id,
+      center_name: row.center_name,
       enrollment_id: row.enrollment_id,
       status: row.status,
       message: row.message,

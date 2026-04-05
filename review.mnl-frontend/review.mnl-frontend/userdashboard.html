@@ -42,25 +42,8 @@
             <div class="message-avatar" style="width:32px;height:32px;"></div>
             <span class="conv-name" id="convName"></span>
         </div>
-        <div class="conv-messages" id="convMessages">
-            <div class="conv-bubble incoming" id="convFirstMsg"></div>
-        </div>
-        <!-- Attachment preview bar -->
-        <div class="conv-preview-bar" id="convPreviewBar" style="display:none;">
-            <div class="conv-preview-content" id="convPreviewContent"></div>
-            <div class="conv-preview-actions">
-                <button class="conv-preview-cancel" onclick="cancelAttachment()">Cancel</button>
-                <button class="conv-preview-send" onclick="sendAttachment()">Send</button>
-            </div>
-        </div>
+        <div class="conv-messages" id="convMessages"></div>
         <div class="conv-input-row">
-            <label class="conv-attach-btn" title="Attach image">
-                <span class="material-symbols-outlined">image</span>
-                <input type="file" id="convImageInput" accept="image/*" style="display:none;" onchange="attachImage(this)">
-            </label>
-            <button class="conv-attach-btn" title="Attach link" onclick="attachLink()">
-                <span class="material-symbols-outlined">link</span>
-            </button>
             <input type="text" id="convInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
             <button class="conv-send-btn" onclick="sendMsg()">
                 <span class="material-symbols-outlined">send</span>
@@ -287,106 +270,90 @@
                     });
                     document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
                 })();
+                var activeConversation = null;
+                var chatPollTimer = null;
+
                 function toggleSidebar() {
                     const sidebar = document.getElementById('sidebar');
                     const overlay = document.querySelector('.sidebar-overlay');
                     sidebar.classList.toggle('active');
                     overlay.classList.toggle('active');
                 }
-                function openConv(name, firstMsg) {
-                    document.getElementById('convName').textContent = name;
-                    document.getElementById('convFirstMsg').textContent = firstMsg;
-                    const msgs = document.getElementById('convMessages');
-                    // Remove any sent bubbles from previous conversation
-                    msgs.querySelectorAll('.conv-bubble.outgoing').forEach(function(el){ el.remove(); });
+
+                function renderThreadMessages(messages) {
+                    const wrap = document.getElementById('convMessages');
+                    if (!wrap) return;
+                    const me = getUser();
+                    wrap.innerHTML = (messages || []).map(function(msg) {
+                        var outgoing = me && Number(msg.sender_id) === Number(me.id);
+                        var ts = formatDateTime(msg.created_at);
+                        return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
+                            + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(msg.message || '') + '</div>'
+                            + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:' + (outgoing ? 'right' : 'left') + ';">' + escHtml(ts) + '</div>'
+                            + '</div>';
+                    }).join('');
+                    wrap.scrollTop = wrap.scrollHeight;
+                }
+
+                async function openConv(conversation) {
+                    if (!conversation || !conversation.other_user_id) return;
+                    activeConversation = conversation;
+                    document.getElementById('convName').textContent = conversation.other_name || 'Chat';
                     document.getElementById('msgList').style.display = 'none';
                     document.getElementById('convPanel').style.display = 'flex';
-                    msgs.scrollTop = msgs.scrollHeight;
+                    await loadActiveThread();
+
+                    if (chatPollTimer) clearInterval(chatPollTimer);
+                    chatPollTimer = setInterval(function() {
+                        if (activeConversation) loadActiveThread();
+                    }, 5000);
                 }
+
                 function closeConv() {
+                    activeConversation = null;
+                    if (chatPollTimer) {
+                        clearInterval(chatPollTimer);
+                        chatPollTimer = null;
+                    }
                     document.getElementById('convPanel').style.display = 'none';
                     document.getElementById('msgList').style.display = 'block';
                     document.getElementById('convInput').value = '';
                 }
-                function sendMsg() {
+
+                async function loadActiveThread() {
+                    if (!activeConversation) return;
+                    try {
+                        const res = await MessageAPI.getThread(activeConversation.other_user_id, activeConversation.center_id);
+                        const messages = (res && res.messages) ? res.messages : [];
+                        renderThreadMessages(messages);
+                        await MessageAPI.markThreadAsRead(activeConversation.other_user_id, activeConversation.center_id);
+                        await loadConversations();
+                    } catch (e) {
+                        console.warn('Failed to load active thread', e);
+                    }
+                }
+
+                async function sendMsg() {
                     const input = document.getElementById('convInput');
                     const text = input.value.trim();
                     if (!text) return;
-                    const msgs = document.getElementById('convMessages');
-                    const bubble = document.createElement('div');
-                    bubble.className = 'conv-bubble outgoing';
-                    bubble.textContent = text;
-                    msgs.appendChild(bubble);
-                    input.value = '';
-                    msgs.scrollTop = msgs.scrollHeight;
-                }
-                function attachImage(input) {
-                    const file = input.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        window._pendingAttachment = { type: 'image', src: e.target.result };
-                        const preview = document.getElementById('convPreviewContent');
-                        preview.innerHTML = '';
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.style.cssText = 'max-height:80px;border-radius:8px;display:block;';
-                        const label = document.createElement('span');
-                        label.textContent = file.name;
-                        label.style.cssText = 'font-size:12px;color:#555;margin-left:8px;';
-                        preview.appendChild(img);
-                        preview.appendChild(label);
-                        document.getElementById('convPreviewBar').style.display = 'flex';
-                    };
-                    reader.readAsDataURL(file);
-                    input.value = '';
-                }
-                function attachLink() {
-                    const url = prompt('Enter a URL to share:');
-                    if (!url || !url.trim()) return;
-                    window._pendingAttachment = { type: 'link', url: url.trim() };
-                    const preview = document.getElementById('convPreviewContent');
-                    preview.innerHTML = '';
-                    const icon = document.createElement('span');
-                    icon.className = 'material-symbols-outlined';
-                    icon.textContent = 'link';
-                    icon.style.cssText = 'font-size:18px;color:#0a4cff;';
-                    const span = document.createElement('span');
-                    span.textContent = url.trim();
-                    span.style.cssText = 'font-size:12px;color:#0a4cff;word-break:break-all;margin-left:6px;';
-                    preview.appendChild(icon);
-                    preview.appendChild(span);
-                    document.getElementById('convPreviewBar').style.display = 'flex';
-                }
-                function cancelAttachment() {
-                    window._pendingAttachment = null;
-                    document.getElementById('convPreviewBar').style.display = 'none';
-                    document.getElementById('convPreviewContent').innerHTML = '';
-                }
-                function sendAttachment() {
-                    const att = window._pendingAttachment;
-                    if (!att) return;
-                    const msgs = document.getElementById('convMessages');
-                    const bubble = document.createElement('div');
-                    if (att.type === 'image') {
-                        bubble.className = 'conv-bubble outgoing conv-bubble-img';
-                        const img = document.createElement('img');
-                        img.src = att.src;
-                        img.style.cssText = 'max-width:100%;border-radius:10px;display:block;';
-                        bubble.appendChild(img);
-                    } else {
-                        bubble.className = 'conv-bubble outgoing';
-                        const a = document.createElement('a');
-                        a.href = att.url;
-                        a.textContent = att.url;
-                        a.target = '_blank';
-                        a.rel = 'noopener';
-                        a.style.cssText = 'color:#cce0ff;word-break:break-all;';
-                        bubble.appendChild(a);
+                    if (!activeConversation) return;
+
+                    input.disabled = true;
+                    try {
+                        await MessageAPI.send({
+                            receiver_id: activeConversation.other_user_id,
+                            enrollment_id: activeConversation.enrollment_id,
+                            message: text,
+                        });
+                        input.value = '';
+                        await loadActiveThread();
+                    } catch (e) {
+                        alert((e && e.message) ? e.message : 'Failed to send message.');
+                    } finally {
+                        input.disabled = false;
+                        input.focus();
                     }
-                    msgs.appendChild(bubble);
-                    msgs.scrollTop = msgs.scrollHeight;
-                    cancelAttachment();
                 }
 
                 function scrollEnrolledCenters() {
@@ -569,13 +536,13 @@
                     }
                 }
 
-                function renderSidebarNotifications(notifications) {
+                function renderConversationList(conversations) {
                     var wrap = document.getElementById('sidebarMessagesList');
                     var unreadBadge = document.getElementById('sidebarUnreadCount');
                     if (!wrap) return;
 
-                    var data = Array.isArray(notifications) ? notifications : [];
-                    var unreadCount = data.filter(function(n){ return !n.is_read; }).length;
+                    var data = Array.isArray(conversations) ? conversations : [];
+                    var unreadCount = data.reduce(function(acc, item){ return acc + Number(item.unread_count || 0); }, 0);
 
                     if (unreadBadge) {
                         unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
@@ -587,19 +554,55 @@
                         return;
                     }
 
-                    wrap.innerHTML = data.slice(0, 8).map(function(item){
-                        var lineBg = item.is_read ? '#fff' : '#eef4ff';
-                        var weight = item.is_read ? '500' : '700';
-                        return '<div class="message-thread" style="background:' + lineBg + ';cursor:default;">'
+                    wrap.innerHTML = data.slice(0, 12).map(function(item){
+                        var hasUnread = Number(item.unread_count || 0) > 0;
+                        var lineBg = hasUnread ? '#eef4ff' : '#fff';
+                        var weight = hasUnread ? '700' : '500';
+                        return '<div class="message-thread" style="background:' + lineBg + ';cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
                             + '<div class="message-avatar"></div>'
                             + '<div class="message-info">'
-                            + '<span class="message-sender" style="font-weight:' + weight + ';">Enrollment Update</span>'
-                            + '<p class="message-preview">' + escHtml(item.message) + '</p>'
+                            + '<span class="message-sender" style="font-weight:' + weight + ';">' + escHtml(item.other_name || 'Conversation') + '</span>'
+                            + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
                             + '</div>'
-                            + '<span class="message-time">' + escHtml(formatDate(item.created_at)) + '</span>'
+                            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+                            + '<span class="message-time">' + escHtml(formatDate(item.last_timestamp)) + '</span>'
+                            + (hasUnread ? ('<span style="font-size:10px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 6px;font-weight:700;">' + Number(item.unread_count) + '</span>') : '')
+                            + '</div>'
                             + '</div>';
                     }).join('');
                 }
+
+                async function loadConversations() {
+                    try {
+                        var res = await MessageAPI.getConversations();
+                        var conversations = (res && res.conversations) ? res.conversations : [];
+                        window._conversationMap = {};
+                        conversations.forEach(function(c) {
+                            window._conversationMap[(c.other_user_id + ':' + (c.center_id || 0))] = c;
+                        });
+                        renderConversationList(conversations);
+                    } catch (e) {
+                        console.warn('Failed to load conversations', e);
+                        renderConversationList([]);
+                    }
+                }
+
+                function openConvByKey(otherUserId, centerId) {
+                    var key = String(otherUserId) + ':' + String(centerId || 0);
+                    var conv = window._conversationMap && window._conversationMap[key];
+                    if (conv) {
+                        openConv(conv);
+                        return;
+                    }
+                    openConv({
+                        other_user_id: Number(otherUserId),
+                        center_id: Number(centerId || 0),
+                        enrollment_id: null,
+                        other_name: 'Conversation',
+                    });
+                }
+
+                window.openConvByKey = openConvByKey;
 
                 function renderDashboardNotifications(notifications) {
                     var list = document.getElementById('notificationsList');
@@ -636,9 +639,12 @@
                             + '</div>'
                             + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;">'
                             + '<span style="font-size:11px;color:' + (isUnread ? '#b45309' : '#6b7280') + ';font-weight:600;">' + (isUnread ? 'Unread' : 'Read') + '</span>'
+                            + '<div style="display:flex;align-items:center;gap:8px;">'
+                            + '<button onclick="openChatFromNotification(' + item.notification_id + ')" style="padding:6px 10px;border:1px solid #d0dcff;background:#fff;color:#1d4ed8;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Open Chat</button>'
                             + (isUnread
                                 ? ('<button onclick="markNotificationAsRead(' + item.notification_id + ')" style="padding:6px 10px;border:1px solid #c6d4ff;background:#fff;color:#1d4ed8;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Mark as read</button>')
                                 : '<span style="font-size:11px;color:#6b7280;">Read at ' + escHtml(formatDateTime(item.read_at || item.created_at)) + '</span>')
+                            + '</div>'
                             + '</div>'
                             + '</div>';
                     }).join('');
@@ -648,12 +654,39 @@
                     try {
                         var res = await NotificationAPI.getMy();
                         var notifications = (res && res.notifications) ? res.notifications : [];
-                        renderSidebarNotifications(notifications);
+                        window._notificationsById = {};
+                        notifications.forEach(function(n){ window._notificationsById[n.notification_id] = n; });
                         renderDashboardNotifications(notifications);
                     } catch (e) {
                         console.warn('Failed to load notifications', e);
-                        renderSidebarNotifications([]);
+                        window._notificationsById = {};
                         renderDashboardNotifications([]);
+                    }
+                }
+
+                async function openChatFromNotification(notificationId) {
+                    var item = window._notificationsById && window._notificationsById[notificationId];
+                    if (!item) return;
+                    try {
+                        if (!item.is_read) {
+                            await NotificationAPI.markAsRead(notificationId);
+                        }
+                    } catch (e) {}
+
+                    var conversation = {
+                        other_user_id: Number(item.center_user_id),
+                        center_id: Number(item.center_id || 0),
+                        enrollment_id: Number(item.enrollment_id || 0) || null,
+                        other_name: item.center_name || 'Review Center',
+                    };
+                    if (conversation.other_user_id > 0) {
+                        await loadConversations();
+                        var sidebar = document.getElementById('sidebar');
+                        var overlay = document.querySelector('.sidebar-overlay');
+                        if (sidebar && !sidebar.classList.contains('active')) sidebar.classList.add('active');
+                        if (overlay && !overlay.classList.contains('active')) overlay.classList.add('active');
+                        await openConv(conversation);
+                        await loadMyNotifications();
                     }
                 }
 
@@ -667,6 +700,7 @@
                 }
 
                 window.markNotificationAsRead = markNotificationAsRead;
+                window.openChatFromNotification = openChatFromNotification;
 
                 function applyUserProfileToUI(user) {
                     if (!user) return;
@@ -794,7 +828,11 @@
                     applyUserProfileToUI(user);
                     loadLatestUserProfile();
                     loadMyEnrollments();
+                    loadConversations();
                     loadMyNotifications();
+                    setInterval(function(){
+                        loadConversations();
+                    }, 8000);
                 })();
             </script>
     </body>

@@ -345,6 +345,29 @@ const NotificationAPI = {
 };
 
 // ---------------------------------------------------------------------------
+// Messages API
+// ---------------------------------------------------------------------------
+const MessageAPI = {
+    getConversations: () =>
+        apiRequest('GET', '/api/messages/conversations'),
+
+    getThread: (withUserId, centerId) => {
+        var qs = ['withUserId=' + encodeURIComponent(withUserId)];
+        if (centerId) qs.push('centerId=' + encodeURIComponent(centerId));
+        return apiRequest('GET', '/api/messages/thread?' + qs.join('&'));
+    },
+
+    send: (payload) =>
+        apiRequest('POST', '/api/messages', payload),
+
+    markThreadAsRead: (withUserId, centerId) =>
+        apiRequest('PUT', '/api/messages/thread/read', {
+            with_user_id: withUserId,
+            center_id: centerId || null,
+        }),
+};
+
+// ---------------------------------------------------------------------------
 // Admin API
 // ---------------------------------------------------------------------------
 const AdminAPI = {

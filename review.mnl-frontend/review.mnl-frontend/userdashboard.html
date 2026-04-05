@@ -285,6 +285,7 @@
                     const wrap = document.getElementById('convMessages');
                     if (!wrap) return;
                     const me = getUser();
+                    console.log('[Chat][Student] Messages before render', messages || []);
                     console.log('[Chat][Student] Rendering messages', {
                         count: (messages || []).length,
                         conversationKey: activeConversationKey,
@@ -357,6 +358,18 @@
                     }
                 }
 
+                function appendOutgoingMessage(text) {
+                    const wrap = document.getElementById('convMessages');
+                    if (!wrap) return;
+                    var ts = formatDateTime(new Date().toISOString());
+                    var html = '<div class="conv-bubble outgoing">'
+                        + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(text) + '</div>'
+                        + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:right;">' + escHtml(ts) + '</div>'
+                        + '</div>';
+                    wrap.insertAdjacentHTML('beforeend', html);
+                    wrap.scrollTop = wrap.scrollHeight;
+                }
+
                 async function sendMsg() {
                     const input = document.getElementById('convInput');
                     const text = input.value.trim();
@@ -373,6 +386,7 @@
 
                     input.disabled = true;
                     try {
+                        appendOutgoingMessage(text);
                         await MessageAPI.send({
                             receiver_id: activeConversation.other_user_id,
                             enrollment_id: activeConversation.enrollment_id,
@@ -624,18 +638,21 @@
                 }
 
                 function openConvByKey(otherUserId, centerId) {
+                    console.log('[Chat][Student] Conversation click', {
+                        otherUserId,
+                        centerId,
+                    });
                     var key = String(otherUserId) + ':' + String(centerId || 0);
                     var conv = window._conversationMap && window._conversationMap[key];
-                    if (conv) {
-                        openConv(conv);
-                        return;
-                    }
-                    openConv({
+                    if (!conv) {
+                        conv = {
                         other_user_id: Number(otherUserId),
                         center_id: Number(centerId || 0),
                         enrollment_id: null,
                         other_name: 'Conversation',
-                    });
+                        };
+                    }
+                    openConv(conv);
                 }
 
                 window.openConvByKey = openConvByKey;

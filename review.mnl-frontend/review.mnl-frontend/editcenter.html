@@ -266,7 +266,22 @@
         </section>
 
         <section class="gap1"></section>
-
+        <section style="background:#f4f6fb;padding:28px 6% 40px;">
+            <div style="max-width:1200px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(10,76,255,0.07);padding:20px 22px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+                    <h2 style="font-size:20px;font-weight:700;color:#0d1b4b;margin:0;">Student Feedback / Testimonials</h2>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <label for="centerFeedbackSort" style="font-size:12px;color:#666;">Sort:</label>
+                        <select id="centerFeedbackSort" style="padding:7px 10px;border:1.5px solid #dde3f0;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;">
+                            <option value="latest">Latest</option>
+                            <option value="highest">Highest Rating</option>
+                            <option value="lowest">Lowest Rating</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="centerTestimonialsList"></div>
+            </div>
+        </section>
         <!-- Modal: Edit Schedule -->
         <div class="modal-overlay" id="scheduleModal">
             <div class="modal-box" style="max-width:520px;">
@@ -927,6 +942,7 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     </body>
 </html>
+
 
 
 

@@ -1999,18 +1999,29 @@ nav img{
     position: fixed;
     top: 40%;
     left: 0;
-    background: #1d4ed8;
+    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 60%, #173fb3 100%);
     color: #fff;
-    padding: 10px 8px;
+    padding: 12px 10px;
     border-radius: 0 20px 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    box-shadow: 0 8px 20px rgba(5, 19, 77, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
     display: flex;
     align-items: center;
     gap: 5px;
     cursor: pointer;
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
     z-index: 1001;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.dashboard-toggle:hover {
+    transform: translateX(2px);
+    filter: brightness(1.05);
+    box-shadow: 0 10px 24px rgba(5, 19, 77, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
 }
 
 .dashboard-toggle .material-symbols-outlined {

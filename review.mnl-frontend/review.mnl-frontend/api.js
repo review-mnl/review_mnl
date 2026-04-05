@@ -327,6 +327,12 @@ const UserAPI = {
     getMyEnrollments: () =>
         apiRequest('GET', '/api/users/me/enrollments'),
 
+    getMyRatings: () =>
+        apiRequest('GET', '/api/users/me/ratings'),
+
+    upsertMyRating: (centerId, rating) =>
+        apiRequest('PUT', '/api/users/me/ratings/' + centerId, { rating }),
+
     updateMyProfile: (data) =>
         apiRequest('PUT', '/api/users/me', data),
     uploadProfilePhoto: (formData) =>

@@ -121,29 +121,7 @@
                 </div>
 
                 <div id="myReviewsList" class="vertical-scroll-list">
-                    <div class="review-item">
-                        <div class="review-avatar"></div>
-                        <div class="review-info">
-                            <h4>Name of Review Center</h4>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        </div>
-                    </div>
-
-                    <div class="review-item">
-                        <div class="review-avatar"></div>
-                        <div class="review-info">
-                            <h4>Name of Review Center</h4>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        </div>
-                    </div>
-
-                    <div class="review-item">
-                        <div class="review-avatar"></div>
-                        <div class="review-info">
-                            <h4>Name of Review Center</h4>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        </div>
-                    </div>
+                    <p style="color:#6b7280;font-size:0.85rem;padding:8px 0;">Loading your enrolled centers...</p>
                 </div>
             </div>
 
@@ -671,6 +649,89 @@
                     }
                 }
 
+                function starButton(centerId, currentRating, starValue) {
+                    var active = Number(currentRating || 0) >= starValue;
+                    return '<button type="button" onclick="setCenterRating(' + Number(centerId) + ',' + Number(starValue) + ')" '
+                        + 'style="border:none;background:transparent;cursor:pointer;padding:0 2px;font-size:20px;line-height:1;color:' + (active ? '#f59e0b' : '#d1d5db') + ';" '
+                        + 'aria-label="Rate ' + Number(starValue) + ' star' + (starValue > 1 ? 's' : '') + '">&#9733;</button>';
+                }
+
+                function renderMyReviews(reviews) {
+                    var list = document.getElementById('myReviewsList');
+                    if (!list) return;
+
+                    var data = Array.isArray(reviews) ? reviews : [];
+                    if (!data.length) {
+                        list.innerHTML = '<p style="color:#6b7280;font-size:0.85rem;padding:8px 0;">You have no approved enrollments yet. Once approved, your review centers will appear here for rating.</p>';
+                        return;
+                    }
+
+                    list.innerHTML = data.map(function(item) {
+                        var centerId = Number(item.center_id || 0);
+                        var rating = Number(item.rating || 0);
+                        var logo = resolveCenterLogo(item.center_logo);
+                        var stars = [1, 2, 3, 4, 5].map(function(v) {
+                            return starButton(centerId, rating, v);
+                        }).join('');
+
+                        return '<div class="review-item">'
+                            + '<div class="review-avatar" style="' + (logo ? ('background-image:url(' + logo + ');background-size:cover;background-position:center;') : '') + '"></div>'
+                            + '<div class="review-info">'
+                            + '<h4>' + escHtml(item.center_name || 'Review Center') + '</h4>'
+                            + '<p style="margin:3px 0 7px;color:#4b5563;">' + (rating > 0 ? ('Your rating: ' + rating + '/5') : 'Rate this center from 1 to 5 stars') + '</p>'
+                            + '<div style="display:flex;align-items:center;gap:2px;">' + stars + '</div>'
+                            + '</div>'
+                            + '</div>';
+                    }).join('');
+                }
+
+                async function loadMyReviews() {
+                    try {
+                        var res = await UserAPI.getMyRatings();
+                        var reviews = (res && res.reviews) ? res.reviews : [];
+                        console.log('[Ratings] Loaded My Reviews data', {
+                            userId: (getUser() && getUser().id) || null,
+                            count: reviews.length
+                        });
+                        window._myReviewsMap = {};
+                        reviews.forEach(function(item) {
+                            window._myReviewsMap[String(item.center_id)] = item;
+                        });
+                        renderMyReviews(reviews);
+                    } catch (e) {
+                        console.warn('[Ratings] Failed to load My Reviews', e);
+                        renderMyReviews([]);
+                    }
+                }
+
+                async function setCenterRating(centerId, rating) {
+                    var id = Number(centerId || 0);
+                    var value = Number(rating || 0);
+                    if (id <= 0 || value < 1 || value > 5) return;
+
+                    try {
+                        await UserAPI.upsertMyRating(id, value);
+                        console.log('[Ratings] Saved rating', {
+                            userId: (getUser() && getUser().id) || null,
+                            centerId: id,
+                            rating: value
+                        });
+                        if (window._myReviewsMap && window._myReviewsMap[String(id)]) {
+                            window._myReviewsMap[String(id)].rating = value;
+                            renderMyReviews(Object.keys(window._myReviewsMap).map(function(key) {
+                                return window._myReviewsMap[key];
+                            }));
+                        } else {
+                            await loadMyReviews();
+                        }
+                    } catch (e) {
+                        console.warn('[Ratings] Failed to save rating', { centerId: id, rating: value, error: e });
+                        alert((e && e.message) ? e.message : 'Failed to save rating. Please try again.');
+                    }
+                }
+
+                window.setCenterRating = setCenterRating;
+
                 function renderConversationList(conversations) {
                     var wrap = document.getElementById('sidebarMessagesList');
                     var unreadBadge = document.getElementById('sidebarUnreadCount');
@@ -1072,6 +1133,7 @@
                     applyUserProfileToUI(user);
                     loadLatestUserProfile();
                     loadMyEnrollments();
+                    loadMyReviews();
                     loadConversations();
                     loadMyNotifications();
                     startDashboardNotificationRealtime();

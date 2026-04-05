@@ -139,3 +139,17 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 );
 
 ALTER TABLE review_centers ADD COLUMN schedule JSON;
+
+-- Student ratings per enrolled review center
+CREATE TABLE IF NOT EXISTS center_ratings (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	student_id INT NOT NULL,
+	center_id INT NOT NULL,
+	rating TINYINT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE,
+	UNIQUE KEY uniq_student_center_rating (student_id, center_id),
+	CHECK (rating BETWEEN 1 AND 5)
+);

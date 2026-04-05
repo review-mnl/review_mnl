@@ -24,14 +24,27 @@ let storage;
 if (hasCloudinaryConfig) {
   storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-      folder: 'review-mnl-uploads',
-      allowed_formats: allowedFormats,
-      resource_type: 'auto',
-      public_id: (req, file) => {
-        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        return unique + path.extname(file.originalname);
+    params: async (req, file) => {
+      let folderName = 'review-mnl-uploads/misc';
+      
+      // Determine the specific Cloudinary folder based on the field name
+      if (file.fieldname === 'business_permit' || file.fieldname === 'dti_sec_reg') {
+        folderName = 'review-mnl-uploads/documents submission';
+      } else if (file.fieldname === 'logo') {
+        folderName = 'review-mnl-uploads/center logos';
+      } else if (file.fieldname === 'profile_picture') {
+        folderName = 'review-mnl-uploads/profile pictures';
       }
+
+      const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);      
+      return {
+        folder: folderName,
+        allowed_formats: allowedFormats,
+        resource_type: 'auto',
+        // In params as a function format, providing an extension in public_id can sometimes cause 
+        // trailing duplicates. We replace the dot with an underscore just to be safe.
+        public_id: unique + path.extname(file.originalname).replace('.', '_')
+      };
     },
   });
 } else {

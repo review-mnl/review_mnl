@@ -491,6 +491,10 @@ function initGlobalNotificationBell(options) {
             btn.setAttribute('aria-expanded', String(!isOpen));
         });
 
+        drop.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
         document.addEventListener('click', function() {
             drop.style.display = 'none';
             btn.setAttribute('aria-expanded', 'false');

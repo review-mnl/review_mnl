@@ -303,6 +303,10 @@
                                 profileBtn.setAttribute('aria-expanded', 'false');
                             }
                         });
+
+                        bellDd.addEventListener('click', function(e){
+                            e.stopPropagation();
+                        });
                     }
 
                     if (viewAllLink) {

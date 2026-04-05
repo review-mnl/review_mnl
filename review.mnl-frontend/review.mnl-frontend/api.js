@@ -331,6 +331,20 @@ const UserAPI = {
 };
 
 // ---------------------------------------------------------------------------
+// Notifications API
+// ---------------------------------------------------------------------------
+const NotificationAPI = {
+    create: (payload) =>
+        apiRequest('POST', '/api/notifications', payload),
+
+    getMy: () =>
+        apiRequest('GET', '/api/notifications/me'),
+
+    markAsRead: (id) =>
+        apiRequest('PUT', '/api/notifications/' + id + '/read'),
+};
+
+// ---------------------------------------------------------------------------
 // Admin API
 // ---------------------------------------------------------------------------
 const AdminAPI = {

@@ -430,8 +430,8 @@ const updateEnrollmentReviewStatus = async (req, res) => {
 
     const nextLegacyStatus = requestedStatus === 'approved' ? 'active' : 'cancelled';
     const notificationMessage = requestedStatus === 'approved'
-      ? `Your enrollment has been approved by ${enrollment.business_name}.`
-      : `Your enrollment has been rejected by ${enrollment.business_name}.`;
+      ? 'Your enrollment has been approved.'
+      : 'Your enrollment has been rejected.';
 
     await conn.query(
       'UPDATE enrollments SET review_status = ?, status = ?, reviewed_at = NOW(), reviewed_by = ? WHERE id = ?',
@@ -439,7 +439,7 @@ const updateEnrollmentReviewStatus = async (req, res) => {
     );
 
     await conn.query(
-      'INSERT INTO enrollment_notifications (enrollment_id, user_id, center_id, status, message) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO enrollment_notifications (enrollment_id, user_id, center_id, status, message, is_read) VALUES (?, ?, ?, ?, ?, 0)',
       [enrollmentId, enrollment.user_id, enrollment.center_id, requestedStatus, notificationMessage]
     );
 

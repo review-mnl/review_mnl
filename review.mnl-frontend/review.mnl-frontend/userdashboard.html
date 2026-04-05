@@ -29,43 +29,8 @@
     </div>
 
     <div class="messages-panel" id="msgList">
-        <h4 class="messages-panel-title">Messages</h4>
-
-        <div class="message-thread" onclick="openConv('Review Center A','Your enrollment has been confirmed...')">
-            <div class="message-avatar"></div>
-            <div class="message-info">
-                <span class="message-sender">Review Center A</span>
-                <p class="message-preview">Your enrollment has been confirmed...</p>
-            </div>
-            <span class="message-time">2m</span>
-        </div>
-
-        <div class="message-thread" onclick="openConv('Review Center B','Please check your schedule for next week.')">
-            <div class="message-avatar"></div>
-            <div class="message-info">
-                <span class="message-sender">Review Center B</span>
-                <p class="message-preview">Please check your schedule for next week.</p>
-            </div>
-            <span class="message-time">1h</span>
-        </div>
-
-        <div class="message-thread" onclick="openConv('Review Center C','Thank you for your review!')">
-            <div class="message-avatar"></div>
-            <div class="message-info">
-                <span class="message-sender">Review Center C</span>
-                <p class="message-preview">Thank you for your review!</p>
-            </div>
-            <span class="message-time">3h</span>
-        </div>
-
-        <div class="message-thread" onclick="openConv('Review Center D','New module materials are now available.')">
-            <div class="message-avatar"></div>
-            <div class="message-info">
-                <span class="message-sender">Review Center D</span>
-                <p class="message-preview">New module materials are now available.</p>
-            </div>
-            <span class="message-time">1d</span>
-        </div>
+        <h4 class="messages-panel-title">Messages <span id="sidebarUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;"></span></h4>
+        <div id="sidebarMessagesList"></div>
     </div>
 
     <!-- Conversation View -->
@@ -236,6 +201,15 @@
             <p id="enrolledEmptyMessage" style="display:none;font-size:0.85rem;color:#6b7280;margin:-4px 0 14px 0;">Review centers you've scheduled a review with will appear here.</p>
 
             <div class="recent-grid" id="enrolledCentersGrid"></div>
+        </div>
+
+        <div class="recent-section" style="margin-top:20px;">
+            <div class="card-header">
+                <h3>Enrollment Notifications</h3>
+                <span id="dashboardUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;">0 Unread</span>
+            </div>
+            <p id="notificationsEmptyMessage" style="display:none;font-size:0.85rem;color:#6b7280;margin:0 0 12px 0;">No notifications yet.</p>
+            <div id="notificationsList"></div>
         </div>
 
     </div>
@@ -514,6 +488,19 @@
                     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
                 }
 
+                function formatDateTime(value) {
+                    if (!value) return 'Unknown time';
+                    var d = new Date(value);
+                    if (isNaN(d.getTime())) return String(value);
+                    return d.toLocaleString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    });
+                }
+
                 function resolveCenterLogo(rawUrl) {
                     if (!rawUrl) return '';
                     var url = String(rawUrl).trim();
@@ -581,6 +568,105 @@
                         renderMyEnrollments([]);
                     }
                 }
+
+                function renderSidebarNotifications(notifications) {
+                    var wrap = document.getElementById('sidebarMessagesList');
+                    var unreadBadge = document.getElementById('sidebarUnreadCount');
+                    if (!wrap) return;
+
+                    var data = Array.isArray(notifications) ? notifications : [];
+                    var unreadCount = data.filter(function(n){ return !n.is_read; }).length;
+
+                    if (unreadBadge) {
+                        unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                        unreadBadge.textContent = String(unreadCount);
+                    }
+
+                    if (!data.length) {
+                        wrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">No messages yet.</p>';
+                        return;
+                    }
+
+                    wrap.innerHTML = data.slice(0, 8).map(function(item){
+                        var lineBg = item.is_read ? '#fff' : '#eef4ff';
+                        var weight = item.is_read ? '500' : '700';
+                        return '<div class="message-thread" style="background:' + lineBg + ';cursor:default;">'
+                            + '<div class="message-avatar"></div>'
+                            + '<div class="message-info">'
+                            + '<span class="message-sender" style="font-weight:' + weight + ';">Enrollment Update</span>'
+                            + '<p class="message-preview">' + escHtml(item.message) + '</p>'
+                            + '</div>'
+                            + '<span class="message-time">' + escHtml(formatDate(item.created_at)) + '</span>'
+                            + '</div>';
+                    }).join('');
+                }
+
+                function renderDashboardNotifications(notifications) {
+                    var list = document.getElementById('notificationsList');
+                    var empty = document.getElementById('notificationsEmptyMessage');
+                    var unreadBadge = document.getElementById('dashboardUnreadCount');
+                    if (!list) return;
+
+                    var data = Array.isArray(notifications) ? notifications : [];
+                    var unreadCount = data.filter(function(n){ return !n.is_read; }).length;
+                    if (unreadBadge) {
+                        unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                        unreadBadge.textContent = unreadCount + ' Unread';
+                    }
+
+                    if (!data.length) {
+                        list.innerHTML = '';
+                        if (empty) empty.style.display = 'block';
+                        return;
+                    }
+
+                    if (empty) empty.style.display = 'none';
+                    list.innerHTML = data.map(function(item) {
+                        var status = String(item.status || 'pending').toLowerCase();
+                        var statusBg = status === 'approved' ? '#e8f5e9' : (status === 'rejected' ? '#ffebee' : '#e3f2fd');
+                        var statusColor = status === 'approved' ? '#1b5e20' : (status === 'rejected' ? '#b71c1c' : '#0d47a1');
+                        var isUnread = !item.is_read;
+                        return '<div style="border:1px solid ' + (isUnread ? '#b9d0ff' : '#e5e7eb') + ';background:' + (isUnread ? '#f5f9ff' : '#fff') + ';border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
+                            + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">'
+                            + '<div>'
+                            + '<p style="margin:0 0 5px;color:#111827;font-size:13px;font-weight:' + (isUnread ? '700' : '500') + ';">' + escHtml(item.message || '') + '</p>'
+                            + '<p style="margin:0;color:#6b7280;font-size:12px;">Enrollment #' + escHtml(item.enrollment_id) + ' • ' + escHtml(formatDateTime(item.created_at)) + '</p>'
+                            + '</div>'
+                            + '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;color:' + statusColor + ';background:' + statusBg + ';">' + escHtml(status.charAt(0).toUpperCase() + status.slice(1)) + '</span>'
+                            + '</div>'
+                            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;">'
+                            + '<span style="font-size:11px;color:' + (isUnread ? '#b45309' : '#6b7280') + ';font-weight:600;">' + (isUnread ? 'Unread' : 'Read') + '</span>'
+                            + (isUnread
+                                ? ('<button onclick="markNotificationAsRead(' + item.notification_id + ')" style="padding:6px 10px;border:1px solid #c6d4ff;background:#fff;color:#1d4ed8;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Mark as read</button>')
+                                : '<span style="font-size:11px;color:#6b7280;">Read at ' + escHtml(formatDateTime(item.read_at || item.created_at)) + '</span>')
+                            + '</div>'
+                            + '</div>';
+                    }).join('');
+                }
+
+                async function loadMyNotifications() {
+                    try {
+                        var res = await NotificationAPI.getMy();
+                        var notifications = (res && res.notifications) ? res.notifications : [];
+                        renderSidebarNotifications(notifications);
+                        renderDashboardNotifications(notifications);
+                    } catch (e) {
+                        console.warn('Failed to load notifications', e);
+                        renderSidebarNotifications([]);
+                        renderDashboardNotifications([]);
+                    }
+                }
+
+                async function markNotificationAsRead(notificationId) {
+                    try {
+                        await NotificationAPI.markAsRead(notificationId);
+                        await loadMyNotifications();
+                    } catch (e) {
+                        alert((e && e.message) ? e.message : 'Failed to mark notification as read.');
+                    }
+                }
+
+                window.markNotificationAsRead = markNotificationAsRead;
 
                 function applyUserProfileToUI(user) {
                     if (!user) return;
@@ -708,6 +794,7 @@
                     applyUserProfileToUI(user);
                     loadLatestUserProfile();
                     loadMyEnrollments();
+                    loadMyNotifications();
                 })();
             </script>
     </body>

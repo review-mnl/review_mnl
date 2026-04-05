@@ -105,9 +105,14 @@ CREATE TABLE IF NOT EXISTS enrollment_notifications (
 	center_id INT NOT NULL,
 	status ENUM('pending','approved','rejected') NOT NULL,
 	message VARCHAR(500) NOT NULL,
+	is_read TINYINT(1) DEFAULT 0,
+	read_at TIMESTAMP NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (enrollment_id) REFERENCES enrollments(id) ON DELETE CASCADE,
 	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 	FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE,
 	INDEX idx_enrollment_created_at (enrollment_id, created_at)
 );
+
+ALTER TABLE enrollment_notifications ADD COLUMN is_read TINYINT(1) DEFAULT 0;
+ALTER TABLE enrollment_notifications ADD COLUMN read_at TIMESTAMP NULL;

@@ -111,6 +111,14 @@ const sendMessage = async (req, res) => {
       return res.status(400).json({ message: 'Message content is required.' });
     }
 
+    console.log('[Chat] Send message request', {
+      senderId: sender.id,
+      senderRole: sender.role,
+      receiverId,
+      enrollmentId,
+      length: message.length,
+    });
+
     const ctx = await resolveChatContext({ sender, receiverId, enrollmentId });
     if (ctx.error) return res.status(400).json({ message: ctx.error });
 
@@ -119,6 +127,14 @@ const sendMessage = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, 0)`,
       [ctx.studentId, ctx.centerId, ctx.enrollmentId, ctx.senderId, ctx.receiverId, message]
     );
+
+    console.log('[Chat] Message saved', {
+      messageId: result.insertId,
+      studentId: ctx.studentId,
+      centerId: ctx.centerId,
+      senderId: ctx.senderId,
+      receiverId: ctx.receiverId,
+    });
 
     return res.status(201).json({
       message_id: result.insertId,
@@ -192,6 +208,11 @@ const getConversations = async (req, res) => {
       other_name: row.other_center_name || formatUserName(row),
     }));
 
+    console.log('[Chat] Conversations fetched', {
+      userId,
+      count: conversations.length,
+    });
+
     return res.json({ conversations });
   } catch (err) {
     console.error('Get conversations error:', err);
@@ -216,7 +237,7 @@ const getThreadMessages = async (req, res) => {
       params.push(centerId);
     }
 
-    const [rows] = await db.query(
+    let [rows] = await db.query(
       `SELECT
          cm.id AS message_id,
          cm.student_id,
@@ -234,6 +255,29 @@ const getThreadMessages = async (req, res) => {
       params
     );
 
+    // Fallback: if a strict center filter was provided but no rows matched,
+    // fetch by sender/receiver pair only so valid threads still appear.
+    if (rows.length === 0 && centerClause) {
+      const [fallbackRows] = await db.query(
+        `SELECT
+           cm.id AS message_id,
+           cm.student_id,
+           cm.center_id,
+           cm.enrollment_id,
+           cm.sender_id,
+           cm.receiver_id,
+           cm.message,
+           cm.is_read,
+           cm.read_at,
+           cm.created_at
+         FROM chat_messages cm
+         WHERE ((cm.sender_id = ? AND cm.receiver_id = ?) OR (cm.sender_id = ? AND cm.receiver_id = ?))
+         ORDER BY cm.created_at ASC`,
+        [currentUserId, withUserId, currentUserId, withUserId]
+      );
+      rows = fallbackRows;
+    }
+
     const messages = rows.map((row) => ({
       message_id: row.message_id,
       student_id: row.student_id,
@@ -246,6 +290,13 @@ const getThreadMessages = async (req, res) => {
       read_at: row.read_at,
       created_at: row.created_at,
     }));
+
+    console.log('[Chat] Thread fetched', {
+      currentUserId,
+      withUserId,
+      centerId,
+      count: messages.length,
+    });
 
     return res.json({ messages });
   } catch (err) {

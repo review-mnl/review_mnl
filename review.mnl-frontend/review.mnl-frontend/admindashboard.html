@@ -476,6 +476,10 @@
             try {
                 var res = await MessageAPI.getConversations();
                 var conversations = (res && res.conversations) ? res.conversations : [];
+                console.log('[Chat][Center] Conversations loaded', {
+                    userId: (getUser() && getUser().id) || null,
+                    count: conversations.length,
+                });
                 window._conversationMap = {};
                 conversations.forEach(function(c) {
                     window._conversationMap[(c.other_user_id + ':' + (c.center_id || 0))] = c;
@@ -544,6 +548,11 @@
             try {
                 const res = await MessageAPI.getThread(activeConversation.other_user_id, activeConversation.center_id);
                 const messages = (res && res.messages) ? res.messages : [];
+                console.log('[Chat][Center] Thread loaded', {
+                    withUserId: activeConversation.other_user_id,
+                    centerId: activeConversation.center_id,
+                    count: messages.length,
+                });
                 renderThreadMessages(messages);
                 await MessageAPI.markThreadAsRead(activeConversation.other_user_id, activeConversation.center_id);
                 await loadConversations();
@@ -567,6 +576,14 @@
             const input = document.getElementById('convInput');
             const text = input.value.trim();
             if (!text || !activeConversation) return;
+
+            console.log('[Chat][Center] Sending message', {
+                senderId: (getUser() && getUser().id) || null,
+                receiverId: activeConversation.other_user_id,
+                centerId: activeConversation.center_id,
+                enrollmentId: activeConversation.enrollment_id,
+                length: text.length,
+            });
 
             input.disabled = true;
             try {

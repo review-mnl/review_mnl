@@ -417,6 +417,14 @@ const updateEnrollmentReviewStatus = async (req, res) => {
     }
 
     const enrollment = rows[0];
+    console.log('[EnrollmentReview] Request received', {
+      enrollmentId,
+      reviewerUserId: userId,
+      requestedStatus,
+      studentUserId: enrollment.user_id,
+      centerId: enrollment.center_id,
+    });
+
     if (requestedStatus === 'approved') {
       if (!enrollment.payment_verified) {
         await conn.rollback();
@@ -443,7 +451,21 @@ const updateEnrollmentReviewStatus = async (req, res) => {
       [enrollmentId, enrollment.user_id, enrollment.center_id, requestedStatus, notificationMessage]
     );
 
+    // Also write to chat so approval/rejection appears in the two-way thread.
+    await conn.query(
+      `INSERT INTO chat_messages (student_id, center_id, enrollment_id, sender_id, receiver_id, message, is_read)
+       VALUES (?, ?, ?, ?, ?, ?, 0)`,
+      [enrollment.user_id, enrollment.center_id, enrollmentId, userId, enrollment.user_id, notificationMessage]
+    );
+
     await conn.commit();
+    console.log('[EnrollmentReview] Saved decision message to notifications and chat', {
+      enrollmentId,
+      status: requestedStatus,
+      senderId: userId,
+      receiverId: enrollment.user_id,
+    });
+
     return res.json({
       message: `Enrollment ${requestedStatus}.`,
       enrollment_id: enrollmentId,

@@ -938,15 +938,19 @@
 
         <script>
         // Operating Schedule Enhanced
-var EC_SCHEDULE = [
-    { day: "Sun", open: false, shifts: [] },
-    { day: "Mon", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
-    { day: "Tue", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
-    { day: "Wed", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
-    { day: "Thu", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
-    { day: "Fri", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
-    { day: "Sat", open: true,  shifts: [{from:"09:00", to:"15:00"}] }
-];
+var FULL_SCHEDULE = {
+    default: [
+        { day: "Sun", open: false, shifts: [] },
+        { day: "Mon", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Tue", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Wed", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Thu", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Fri", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Sat", open: true,  shifts: [{from:"09:00", to:"15:00"}] }
+    ],
+    specific: {}
+};
+var EC_SCHEDULE = [];
 var _ecYear, _ecMonth;
 (function(){
     var now = new Date();
@@ -954,6 +958,7 @@ var _ecYear, _ecMonth;
     _ecMonth = now.getMonth();
 })();
 var EC_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
 function fmt12(t) {
     if (!t) return "";
     var pts = t.split(":");
@@ -963,6 +968,17 @@ function fmt12(t) {
     if (h === 0) h = 12;
     return h + ":" + m + " " + ampm;
 }
+
+function updateScheduleView() {
+    var key = _ecYear + "-" + _ecMonth;
+    if (FULL_SCHEDULE.specific && FULL_SCHEDULE.specific[key]) {
+        EC_SCHEDULE = FULL_SCHEDULE.specific[key];
+    } else {
+        EC_SCHEDULE = FULL_SCHEDULE.default;
+    }
+    renderEcSchedule();
+}
+
 function renderEcSchedule() {
     var pillsEl = document.getElementById("ecDayPills");
     if(pillsEl) {
@@ -975,9 +991,13 @@ function renderEcSchedule() {
         });
     }
     renderEcCalendar();
+    
     var listEl = document.getElementById("ecHoursList");
     if(listEl) {
-        listEl.innerHTML = "<h4>Opening Hours</h4>";
+        var key = _ecYear + "-" + _ecMonth;
+        var isSpec = !!(FULL_SCHEDULE.specific && FULL_SCHEDULE.specific[key]);
+        var badge = isSpec ? "<span style=\"font-size:11px; background:#ffe8e8; color:#d32f2f; padding:2px 6px; border-radius:4px; margin-left:8px; vertical-align:middle;\">Custom month schedule</span>" : "";
+        listEl.innerHTML = "<h4>Opening Hours" + badge + "</h4>";
         EC_SCHEDULE.forEach(function(s) {
             var row = document.createElement("div");
             row.className = "ec-hour-row";
@@ -989,6 +1009,7 @@ function renderEcSchedule() {
         });
     }
 }
+
 function renderEcCalendar() {
     var lbl = document.getElementById("ecCalLabel");
     if(lbl) lbl.textContent = EC_MONTHS[_ecMonth] + " " + _ecYear;
@@ -1017,8 +1038,9 @@ function renderEcCalendar() {
         grid.appendChild(cell);
     }
 }
-function ecCalPrev() { _ecMonth--; if (_ecMonth < 0) { _ecMonth = 11; _ecYear--; } renderEcCalendar(); }
-function ecCalNext() { _ecMonth++; if (_ecMonth > 11) { _ecMonth = 0; _ecYear++; } renderEcCalendar(); }
+
+function ecCalPrev() { _ecMonth--; if (_ecMonth < 0) { _ecMonth = 11; _ecYear--; } updateScheduleView(); }
+function ecCalNext() { _ecMonth++; if (_ecMonth > 11) { _ecMonth = 0; _ecYear++; } updateScheduleView(); }
 
 var _origOpenModal = openModal;
 openModal = function(id) {
@@ -1034,6 +1056,20 @@ var _workingSchedule = [];
 function renderScheduleModalInputs() {
     var rows = document.getElementById("scheduleInputRows");
     rows.innerHTML = "";
+    
+    var key = _ecYear + "-" + _ecMonth;
+    var isSpecific = !!(FULL_SCHEDULE.specific && FULL_SCHEDULE.specific[key]);
+    var monthName = EC_MONTHS[_ecMonth];
+    
+    var headerHtml = "<div style=\"background:#f4f6fb; padding:12px; border-radius:8px; margin-bottom:15px; display:flex; align-items:center; gap:8px;\">" +
+        "<input type=\"checkbox\" id=\"wSchedSpecificOpt\" " + (isSpecific ? "checked" : "") + " style=\"width:16px;height:16px;\">" +
+        "<label for=\"wSchedSpecificOpt\" style=\"font-size:13px; color:#0d1b4b; margin:0; cursor:pointer;\">" +
+            "Make hours specific to <strong>" + monthName + " " + _ecYear + "</strong> only" +
+        "</label>" +
+    "</div>";
+    
+    rows.insertAdjacentHTML("beforeend", headerHtml);
+    
     _workingSchedule = JSON.parse(JSON.stringify(EC_SCHEDULE));
     _workingSchedule.forEach(function(s, d) {
         if(!s.shifts) s.shifts = [];
@@ -1054,7 +1090,8 @@ function renderScheduleModalInputs() {
 }
 window.wSchedToggle = function(d, cb) {
     _workingSchedule[d].open = cb.checked;
-    document.getElementById("addShiftBtn" + d).disabled = !cb.checked;
+    var btn = document.getElementById("addShiftBtn" + d);
+    if(btn) btn.disabled = !cb.checked;
     window.renderWorkingShifts(d);
 };
 window.wSchedAddShift = function(d) {
@@ -1094,12 +1131,24 @@ window.renderWorkingShifts = function(d) {
 };
 window.saveSchedule = async function() {
     var btn = document.querySelector(".modal-save-btn");
+    var specificChk = document.getElementById("wSchedSpecificOpt");
     var oldText = "";
     if (btn) { oldText = btn.textContent; btn.textContent = "Saving..."; }
+    
     try {
-        EC_SCHEDULE = JSON.parse(JSON.stringify(_workingSchedule));
-        await CentersAPI.updateMyProfile({ schedule: EC_SCHEDULE });
-        renderEcSchedule();
+        var key = _ecYear + "-" + _ecMonth;
+        var toSave = JSON.parse(JSON.stringify(_workingSchedule));
+        
+        if (specificChk && specificChk.checked) {
+            FULL_SCHEDULE.specific[key] = toSave;
+        } else {
+            // Apply over default, but also delete this month's override if it existed
+            FULL_SCHEDULE.default = toSave;
+            if (FULL_SCHEDULE.specific[key]) delete FULL_SCHEDULE.specific[key];
+        }
+        
+        await CentersAPI.updateMyProfile({ schedule: FULL_SCHEDULE });
+        updateScheduleView();
         closeModal("scheduleModal");
     } catch(err) {
         alert("Failed to save schedule.");
@@ -1112,18 +1161,23 @@ window.saveSchedule = async function() {
         var center = await CentersAPI.getMyProfile();
         if (center && center.schedule) {
             var parsed = typeof center.schedule === "string" ? JSON.parse(center.schedule) : center.schedule;
+            
+            // Detect old array format
             if (Array.isArray(parsed) && parsed.length > 0) {
-                EC_SCHEDULE = parsed.map(function(s) {
+                var fixedArray = parsed.map(function(s) {
                     if (!s.shifts) {
                         s.shifts = [];
                         if (s.from && s.to) s.shifts.push({ from: s.from, to: s.to });
                     }
                     return s;
                 });
+                FULL_SCHEDULE.default = fixedArray;
+            } else if (parsed && parsed.default) {
+                FULL_SCHEDULE = parsed;
             }
         }
     } catch(e) {}
-    renderEcSchedule();
+    updateScheduleView();
 })();
 </script>
         

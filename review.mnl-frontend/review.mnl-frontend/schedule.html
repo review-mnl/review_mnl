@@ -267,6 +267,66 @@
 
         <section class="gap1"></section>
 
+        <!-- Operating Schedule Section -->
+        <section class="ec-schedule-section">
+            <div class="ec-schedule-header">
+                <div>
+                    <h2>Operating Schedule</h2>
+                    <p>Days and hours the review center is open</p>
+                </div>
+                <button class="edit-btn-small" onclick="openModal('scheduleModal')">Edit Schedule</button>
+            </div>
+
+            <div class="ec-schedule-body">
+                <!-- Weekly day pills -->
+                <div class="ec-day-pills" id="ecDayPills"></div>
+
+                <!-- Monthly calendar -->
+                <div class="ec-cal-wrap">
+                    <div class="ec-cal-nav">
+                        <button class="ec-cal-nav-btn" onclick="ecCalPrev()">
+                            <span class="material-symbols-outlined">chevron_left</span>
+                        </button>
+                        <span id="ecCalLabel"></span>
+                        <button class="ec-cal-nav-btn" onclick="ecCalNext()">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                    <div class="ec-cal-weekdays">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div class="ec-cal-grid" id="ecCalGrid"></div>
+                    <div class="ec-cal-legend">
+                        <span class="ec-legend-open"></span> Open &nbsp;&nbsp;
+                        <span class="ec-legend-today"></span> Today &nbsp;&nbsp;
+                        <span class="ec-legend-closed"></span> Closed
+                    </div>
+                </div>
+
+                <!-- Hours list -->
+                <div class="ec-hours-list" id="ecHoursList"></div>
+            </div>
+        </section>
+
+        <section class="gap1"></section>
+
+        <section style="background:#f4f6fb;padding:28px 6% 40px;">
+            <div style="max-width:1200px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(10,76,255,0.07);padding:20px 22px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+                    <h2 style="font-size:20px;font-weight:700;color:#0d1b4b;margin:0;">Student Feedback / Testimonials</h2>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <label for="centerFeedbackSort" style="font-size:12px;color:#666;">Sort:</label>
+                        <select id="centerFeedbackSort" style="padding:7px 10px;border:1.5px solid #dde3f0;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;">
+                            <option value="latest">Latest</option>
+                            <option value="highest">Highest Rating</option>
+                            <option value="lowest">Lowest Rating</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="centerTestimonialsList"></div>
+            </div>
+        </section>
+
         <!-- Modal: Edit Schedule -->
         <div class="modal-overlay" id="scheduleModal">
             <div class="modal-box" style="max-width:520px;">
@@ -747,7 +807,247 @@
                 font-size: 16px;
             }
 
-            
+            /* ── Operating Schedule Section ── */
+            .ec-schedule-section {
+                background: #f4f6fb;
+                padding: 48px 6%;
+            }
+
+            .ec-schedule-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                margin-bottom: 22px;
+                max-width: 1200px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .ec-schedule-header h2 {
+                font-size: 20px;
+                font-weight: 700;
+                color: #0d1b4b;
+                margin-bottom: 4px;
+            }
+
+            .ec-schedule-header p {
+                font-size: 13px;
+                color: #888;
+                margin: 0;
+            }
+
+            .ec-schedule-body {
+                display: grid;
+                grid-template-columns: auto 1fr 1fr;
+                gap: 28px;
+                align-items: start;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            /* Day pills column */
+            .ec-day-pills {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                min-width: 120px;
+            }
+
+            .ec-day-pill {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 14px;
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 600;
+                font-family: 'Poppins', sans-serif;
+                border: none;
+                cursor: default;
+            }
+
+            .ec-day-pill.open {
+                background: #e8eeff;
+                color: #0a4cff;
+            }
+
+            .ec-day-pill.closed {
+                background: #f5f6fb;
+                color: #bbb;
+                text-decoration: line-through;
+            }
+
+            .ec-day-pill-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .ec-day-pill.open  .ec-day-pill-dot  { background: #0a4cff; }
+            .ec-day-pill.closed .ec-day-pill-dot { background: #ddd; }
+
+            /* Calendar */
+            .ec-cal-wrap {
+                background: #fff;
+                border-radius: 14px;
+                box-shadow: 0 2px 12px rgba(10,76,255,0.07);
+                padding: 20px 18px 14px;
+            }
+
+            .ec-cal-nav {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 14px;
+                font-size: 14px;
+                font-weight: 700;
+                color: #0d1b4b;
+            }
+
+            .ec-cal-nav-btn {
+                width: 28px;
+                height: 28px;
+                border: 1.5px solid #e2e8f5;
+                border-radius: 7px;
+                background: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #555;
+                transition: all 0.15s;
+            }
+
+            .ec-cal-nav-btn:hover { background: #0a4cff; color: #fff; border-color: #0a4cff; }
+            .ec-cal-nav-btn .material-symbols-outlined { font-size: 16px; }
+
+            .ec-cal-weekdays {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                margin-bottom: 6px;
+            }
+
+            .ec-cal-weekdays span {
+                text-align: center;
+                font-size: 10px;
+                font-weight: 700;
+                color: #aab;
+                padding: 3px 0;
+                text-transform: uppercase;
+            }
+
+            .ec-cal-grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 3px;
+            }
+
+            .ec-cal-cell {
+                aspect-ratio: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 7px;
+                font-size: 12px;
+                font-weight: 600;
+                color: #ccc;
+                position: relative;
+            }
+
+            .ec-cal-cell.ec-open {
+                background: #e8eeff;
+                color: #0a4cff;
+            }
+
+            .ec-cal-cell.ec-today {
+                background: #0a4cff;
+                color: #fff;
+                border-radius: 50%;
+            }
+
+            .ec-cal-cell.ec-open.ec-today {
+                background: #0a4cff;
+                color: #fff;
+            }
+
+            .ec-cal-legend {
+                display: flex;
+                align-items: center;
+                font-size: 11px;
+                color: #888;
+                margin-top: 12px;
+                gap: 4px;
+            }
+
+            .ec-legend-open {
+                display: inline-block;
+                width: 12px; height: 12px;
+                border-radius: 3px;
+                background: #e8eeff;
+                border: 1.5px solid #0a4cff;
+            }
+
+            .ec-legend-today {
+                display: inline-block;
+                width: 12px; height: 12px;
+                border-radius: 50%;
+                background: #0a4cff;
+            }
+
+            .ec-legend-closed {
+                display: inline-block;
+                width: 12px; height: 12px;
+                border-radius: 3px;
+                background: #f5f6fb;
+                border: 1.5px solid #e0e4f0;
+            }
+
+            /* Hours list */
+            .ec-hours-list {
+                background: #fff;
+                border-radius: 14px;
+                box-shadow: 0 2px 12px rgba(10,76,255,0.07);
+                padding: 20px 22px;
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .ec-hours-list h4 {
+                font-size: 14px;
+                font-weight: 700;
+                color: #0d1b4b;
+                margin-bottom: 14px;
+            }
+
+            .ec-hour-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 9px 0;
+                border-bottom: 1px solid #f5f6fb;
+                font-size: 13px;
+            }
+
+            .ec-hour-row:last-child { border-bottom: none; }
+
+            .ec-hour-day {
+                font-weight: 600;
+                color: #0d1b4b;
+                width: 48px;
+            }
+
+            .ec-hour-time {
+                color: #555;
+            }
+
+            .ec-hour-closed {
+                color: #ccc;
+                font-style: italic;
+            }
+
+            /* Schedule modal rows */
             .sched-row {
                 display: grid;
                 grid-template-columns: 30px 80px 1fr 1fr;
@@ -820,6 +1120,145 @@
         </style>
 
         <script>
+        // ── Operating Schedule state ────────────────────────────────────
+        var EC_SCHEDULE = [
+            { day: 'Sun', open: false, from: '08:00', to: '17:00' },
+            { day: 'Mon', open: true,  from: '08:00', to: '18:00' },
+            { day: 'Tue', open: true,  from: '08:00', to: '18:00' },
+            { day: 'Wed', open: true,  from: '08:00', to: '18:00' },
+            { day: 'Thu', open: true,  from: '08:00', to: '18:00' },
+            { day: 'Fri', open: true,  from: '08:00', to: '17:00' },
+            { day: 'Sat', open: true,  from: '09:00', to: '15:00' },
+        ];
+
+        var _ecYear, _ecMonth;
+        (function(){
+            var now = new Date();
+            _ecYear  = now.getFullYear();
+            _ecMonth = now.getMonth();
+        })();
+
+        var EC_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        function fmt12(t) {
+            if (!t) return '';
+            var parts = t.split(':');
+            var h = parseInt(parts[0]), m = parts[1];
+            var ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return h + ':' + m + ' ' + ampm;
+        }
+
+        function renderEcSchedule() {
+            // Day pills
+            var pillsEl = document.getElementById('ecDayPills');
+            pillsEl.innerHTML = '';
+            EC_SCHEDULE.forEach(function(s) {
+                var pill = document.createElement('div');
+                pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
+                pill.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
+                pillsEl.appendChild(pill);
+            });
+
+            // Calendar
+            renderEcCalendar();
+
+            // Hours list
+            var listEl = document.getElementById('ecHoursList');
+            listEl.innerHTML = '<h4>Opening Hours</h4>';
+            EC_SCHEDULE.forEach(function(s) {
+                var row = document.createElement('div');
+                row.className = 'ec-hour-row';
+                row.innerHTML =
+                    '<span class="ec-hour-day">' + s.day + '</span>' +
+                    (s.open
+                        ? '<span class="ec-hour-time">' + fmt12(s.from) + ' &ndash; ' + fmt12(s.to) + '</span>'
+                        : '<span class="ec-hour-closed">Closed</span>'
+                    );
+                listEl.appendChild(row);
+            });
+        }
+
+        function renderEcCalendar() {
+            document.getElementById('ecCalLabel').textContent = EC_MONTHS[_ecMonth] + ' ' + _ecYear;
+            var openDows = EC_SCHEDULE.map(function(s, i){ return s.open ? i : -1; }).filter(function(i){ return i !== -1; });
+            var firstDow = new Date(_ecYear, _ecMonth, 1).getDay();
+            var daysInMonth = new Date(_ecYear, _ecMonth + 1, 0).getDate();
+            var today = new Date();
+
+            var grid = document.getElementById('ecCalGrid');
+            grid.innerHTML = '';
+
+            for (var e = 0; e < firstDow; e++) {
+                var blank = document.createElement('div');
+                blank.className = 'ec-cal-cell';
+                grid.appendChild(blank);
+            }
+
+            for (var d = 1; d <= daysInMonth; d++) {
+                var cell = document.createElement('div');
+                var dow = new Date(_ecYear, _ecMonth, d).getDay();
+                var isOpen = openDows.indexOf(dow) !== -1;
+                var isToday = today.getFullYear() === _ecYear && today.getMonth() === _ecMonth && today.getDate() === d;
+                var cls = 'ec-cal-cell';
+                if (isOpen) cls += ' ec-open';
+                if (isToday) cls += ' ec-today';
+                cell.className = cls;
+                cell.textContent = d;
+                grid.appendChild(cell);
+            }
+        }
+
+        function ecCalPrev() {
+            if (_ecMonth === 0) { _ecMonth = 11; _ecYear--; } else _ecMonth--;
+            renderEcCalendar();
+        }
+
+        function ecCalNext() {
+            if (_ecMonth === 11) { _ecMonth = 0; _ecYear++; } else _ecMonth++;
+            renderEcCalendar();
+        }
+
+        // ── Schedule modal ──────────────────────────────────────────────
+        var _origOpenModal = openModal;
+        openModal = function(id) {
+            if (id === 'scheduleModal') {
+                var rows = document.getElementById('scheduleInputRows');
+                rows.innerHTML = '';
+                EC_SCHEDULE.forEach(function(s, i) {
+                    var row = document.createElement('div');
+                    row.className = 'sched-row';
+                    row.innerHTML =
+                        '<input type="checkbox" class="sched-toggle" id="st' + i + '" ' + (s.open ? 'checked' : '') + ' onchange="schedToggle(' + i + ', this)">' +
+                        '<label for="st' + i + '">' + s.day + '</label>' +
+                        '<input type="time" id="sf' + i + '" value="' + s.from + '" ' + (s.open ? '' : 'disabled') + '>' +
+                        '<input type="time" id="st2_' + i + '" value="' + s.to + '" ' + (s.open ? '' : 'disabled') + '>';
+                    rows.appendChild(row);
+                });
+                document.getElementById('scheduleModal').classList.add('active');
+                return;
+            }
+            _origOpenModal(id);
+        };
+
+        function schedToggle(i, cb) {
+            document.getElementById('sf' + i).disabled    = !cb.checked;
+            document.getElementById('st2_' + i).disabled  = !cb.checked;
+        }
+
+        function saveSchedule() {
+            EC_SCHEDULE.forEach(function(s, i) {
+                s.open = document.getElementById('st' + i).checked;
+                s.from = document.getElementById('sf' + i).value || s.from;
+                s.to   = document.getElementById('st2_' + i).value || s.to;
+            });
+            renderEcSchedule();
+            closeModal('scheduleModal');
+        }
+
+        // Init schedule render
+        renderEcSchedule();
+
         // ── OpenStreetMap Integration (Free, Leaflet API) ─────────────────
         let map;
         let marker;
@@ -927,6 +1366,7 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     </body>
 </html>
+
 
 
 

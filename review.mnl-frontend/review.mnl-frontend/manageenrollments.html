@@ -32,7 +32,7 @@
     </div>
 
     <!-- Conversation View -->
-    <div class="conversation-panel" id="convPanel" style="display:none;">
+    <div class="conversation-panel" id="convPanel" >
         <div class="conv-header">
             <button class="conv-back-btn" onclick="closeConv()">
                 <span class="material-symbols-outlined">arrow_back</span>
@@ -104,20 +104,27 @@
                     </div>
                 </div>
 
-                <!-- Pending Centers Section -->
-                <div class="activities-section" id="pendingSection" style="display:none;">
-                    <h3>Pending Center Applications</h3>
-                    <div id="pendingList"></div>
+                <!-- Center Enrollment Review Section -->
+                <div class="activities-section" id="centerEnrollmentsSection" >
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+                        <h3 style="margin:0;">Student Enrollments</h3>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <select id="enrollmentStatusFilter" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                <option value="all">All</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                            <select id="enrollmentSort" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                <option value="latest">Latest</option>
+                                <option value="oldest">Oldest</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="centerEnrollmentsList"></div>
                 </div>
 
-                <!-- Pending Testimonials Section -->
-                <div class="activities-section" id="testiSection" style="display:none;">
-                    <h3>Pending Reviews</h3>
-                    <div id="testiList"></div>
-                </div>
-
-            </div>
-        </section>
+                </div></section>
 
         <script src="api.js"></script>
         <script>
@@ -132,10 +139,109 @@
             return '<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;color:' + color + ';background:' + bg + ';">' + escHtml(label) + '</span>';
         }
 
+        function formatPaymentBadge(status, verified) {
+            var s = String(status || 'pending').toLowerCase();
+            var base = s.charAt(0).toUpperCase() + s.slice(1);
+            var ver = verified ? 'Verified' : 'Unverified';
+            var color = verified ? '#1b5e20' : '#92400e';
+            return '<span style="font-size:11px;font-weight:700;color:' + color + ';">' + escHtml(base + ' / ' + ver) + '</span>';
+        }
+
+        function renderCenterEnrollments(enrollments) {
+            var list = document.getElementById('centerEnrollmentsList');
+            if (!list) return;
+
+            if (!enrollments || enrollments.length === 0) {
+                list.innerHTML = '<p style="margin:0;color:#666;font-size:13px;">No enrollments found for this filter.</p>';
+                return;
+            }
+
+            list.innerHTML = enrollments.map(function(item) {
+                var docs = Array.isArray(item.submitted_documents) ? item.submitted_documents : [];
+                var docsHtml = docs.length
+                    ? docs.map(function(d){ return '<li style="margin:0 0 3px;">' + escHtml(d) + '</li>'; }).join('')
+                    : '<li style="margin:0;">No documents submitted</li>';
+
+                var verifyBtn = item.payment && item.payment.verified
+                    ? '<button disabled style="padding:6px 10px;background:#e8f5e9;color:#2e7d32;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;">Payment Verified</button>'
+                    : '<button onclick="verifyPayment(' + item.enrollment_id + ')" style="padding:6px 10px;background:#fff7e6;color:#b26a00;border:1px solid #ffd08a;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Confirm Payment</button>';
+
+                var approveDisabled = item.status !== 'pending' ? 'disabled' : '';
+                var rejectDisabled = item.status !== 'pending' ? 'disabled' : '';
+
+                return '<div style="background:#f9fafb;border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid #e7ecf7;">'
+                    + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">'
+                    + '<div>'
+                    + '<strong style="color:#0d1b4b;font-size:14px;">' + escHtml(item.student_name || ('User #' + item.user_id)) + '</strong>'
+                    + '<p style="margin:3px 0 0;color:#666;font-size:12px;">User ID: ' + escHtml(item.user_id) + ' | Center ID: ' + escHtml(item.review_center_id) + '</p>'
+                    + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Program: ' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
+                    + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Submitted: ' + escHtml(new Date(item.date_submitted).toLocaleString()) + '</p>'
+                    + '</div>'
+                    + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">'
+                    + formatStatusBadge(item.status)
+                    + formatPaymentBadge(item.payment && item.payment.status, item.payment && item.payment.verified)
+                    + '</div>'
+                    + '</div>'
+                    + '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #d9e2f2;display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+                    + '<div>'
+                    + '<p style="margin:0 0 6px;color:#0d1b4b;font-size:12px;font-weight:700;">Payment Details</p>'
+                    + '<p style="margin:0;color:#555;font-size:12px;">Amount: Php ' + escHtml(item.payment && item.payment.amount || 0) + '</p>'
+                    + '<p style="margin:2px 0 0;color:#555;font-size:12px;">Method: ' + escHtml(item.payment && item.payment.method || 'gcash') + '</p>'
+                    + (item.payment && item.payment.gcash_name ? '<p style="margin:2px 0 0;color:#555;font-size:12px;">Acc Name: ' + escHtml(item.payment.gcash_name) + '</p>' : '')
+                    + (item.payment && item.payment.reference_number ? '<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Ref No: ' + escHtml(item.payment.reference_number) + '</p>' : '')
+                    + '</div>'
+                    + '<div>'
+                    + '<p style="margin:0 0 6px;color:#0d1b4b;font-size:12px;font-weight:700;">Submitted Documents</p>'
+                    + '<ul style="margin:0;padding-left:18px;color:#555;font-size:12px;">' + docsHtml + '</ul>'
+                    + '</div>'
+                    + '</div>'
+                    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">'
+                    + verifyBtn
+                    + '<button onclick="openChatFromEnrollment(' + item.user_id + ',' + (item.review_center_id || 0) + ',' + item.enrollment_id + ')" style="padding:6px 12px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Message Student</button>'
+                    + '<button ' + approveDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'approved\')" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>'
+                    + '<button ' + rejectDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'rejected\')" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>'
+                    + '</div>'
+                    + (item.latest_notification ? ('<p style="margin:10px 0 0;color:#555;font-size:12px;">Last notification: ' + escHtml(item.latest_notification) + '</p>') : '')
+                    + '</div>';
+            }).join('');
+        }
+
+        async function loadCenterEnrollments() {
+            try {
+                var status = (document.getElementById('enrollmentStatusFilter') || {}).value || 'all';
+                var sort = (document.getElementById('enrollmentSort') || {}).value || 'latest';
+                var res = await CentersAPI.getMyEnrollments(status, sort);
+                var enrollments = (res && res.enrollments) ? res.enrollments : [];
+
+                var pendingCount = enrollments.filter(function(e){ return e.status === 'pending'; }).length;
+                document.getElementById('statStudentsLabel').textContent = 'Student Enrollments';
+                document.getElementById('statStudents').textContent = enrollments.length;
+                document.getElementById('statDate').textContent = 'As of ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                document.getElementById('statPendingLabel').textContent = 'Pending Enrollments';
+                document.getElementById('statPending').textContent = pendingCount;
+                document.getElementById('statPendingSub').textContent = 'Awaiting your review';
+
+                renderCenterEnrollments(enrollments);
+            } catch (err) {
+                console.error('Center enrollments load error:', err);
+                var list = document.getElementById('centerEnrollmentsList');
+                if (list) list.innerHTML = '<p style="margin:0;color:#b71c1c;font-size:13px;">Failed to load enrollments.</p>';
+            }
+        }
+
+        async function verifyPayment(enrollmentId) {
+            try {
+                await CentersAPI.verifyEnrollmentPayment(enrollmentId, 'paid');
+                await loadCenterEnrollments();
+            } catch (err) {
+                alert(err.message || 'Failed to verify payment.');
+            }
+        }
+
         async function updateEnrollmentStatus(enrollmentId, status) {
             try {
                 await CentersAPI.updateEnrollmentStatus(enrollmentId, status);
-                
+                await loadCenterEnrollments();
             } catch (err) {
                 alert(err.message || 'Failed to update enrollment status.');
             }
@@ -154,7 +260,7 @@
                     if (filterEl) filterEl.addEventListener('change', loadCenterEnrollments);
                     if (sortEl) sortEl.addEventListener('change', loadCenterEnrollments);
 
-                    
+                    await loadCenterEnrollments();
                     return;
                 }
 
@@ -553,6 +659,9 @@
     </body>
 </html>
 ﻿
+
+
+
 
 
 

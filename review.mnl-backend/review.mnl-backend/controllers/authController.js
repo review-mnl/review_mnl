@@ -20,16 +20,8 @@ const db      = require('../config/db');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const crypto   = require('crypto');
-<<<<<<< HEAD
 const path     = require('path');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
-=======
-// Conflict marker removed
-const { sendVerificationEmail, sendPasswordResetEmail, sendOTPEmail } = require('../config/mailer');
-// Conflict marker removed
-const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
-// Conflict marker removed
->>>>>>> 03b8cb9a55b43a65ee2b38f2ffdd770cc85bf797
 require('dotenv').config();
 
 const getRequiredNoDefaultColumns = async (conn, tableName) => {
@@ -359,44 +351,11 @@ const forgotPassword = async (req, res) => {
     if (rows.length === 0)
       return res.status(404).json({ message: 'No account found with that email.' });
     const token = crypto.randomBytes(32).toString('hex');
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-    await db.query('UPDATE users SET verify_token = ? WHERE id = ?', [token, rows[0].id]);
-    await sendPasswordResetEmail(email, token, rows[0].first_name);
-    res.json({ message: 'Password reset link sent to your email.' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error.' });
-  }
-};
-
-const resendVerification = async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email is required.' });
-  try {
-    const [rows] = await db.query('SELECT id, first_name, is_verified FROM users WHERE email = ?', [email]);
-    if (rows.length === 0)
-      return res.status(404).json({ message: 'No account found with that email.' });
-    if (rows[0].is_verified)
-      return res.status(400).json({ message: 'This account is already verified.' });
-    const token = crypto.randomBytes(32).toString('hex');
-    await db.query('UPDATE users SET verify_token = ? WHERE id = ?', [token, rows[0].id]);
-    await sendVerificationEmail(email, token, rows[0].first_name);
-    res.json({ message: 'Verification email resent. Please check your inbox.' });
-  } catch (err) {
-    console.error(err);
-=======
->>>>>>> 03b8cb9a55b43a65ee2b38f2ffdd770cc85bf797
     await db.query('UPDATE users SET reset_token = ? WHERE email = ?', [token, email]);
     await sendPasswordResetEmail(email, token, rows[0].first_name);
     res.json({ message: 'Password reset link sent to your email.' });
   } catch (err) {
     console.error('Forgot password error:', err);
-<<<<<<< HEAD
-=======
->>>>>>> a26df1f57db05daf2267d6580cb76f41b8cc0942
->>>>>>> 03b8cb9a55b43a65ee2b38f2ffdd770cc85bf797
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -420,76 +379,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification };
-=======
-<<<<<<< HEAD
-const googleCallback = async (req, res) => {
-  try {
-    const user = req.user;
-    const otpSession = await issueLoginOTP(user);
-    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5500').replace(/\/$/, '');
-    res.redirect(`${clientUrl}/verifyotp.html?session=${otpSession}`);
-  } catch (err) {
-    console.error('Google OTP error:', err);
-    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5500').replace(/\/$/, '');
-    res.redirect(`${clientUrl}/login.html?error=oauth_failed`);
-  }
-};
-
-const resendOTP = async (req, res) => {
-  const { session } = req.body;
-  if (!session)
-    return res.status(400).json({ message: 'Session is required.' });
-
-  try {
-    const [rows] = await db.query('SELECT * FROM users WHERE otp_session = ?', [session]);
-    if (rows.length === 0)
-      return res.status(400).json({ message: 'Invalid or expired session. Please log in again.' });
-
-    const user = rows[0];
-    const otpSession = await issueLoginOTP(user);
-    res.json({
-      message: 'A new OTP has been sent to your email.',
-      session: otpSession,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error.' });
-  }
-};
-
-const verifyOTP = async (req, res) => {
-  const { session, otp } = req.body;
-  if (!session || !otp)
-    return res.status(400).json({ message: 'Session and OTP are required.' });
-  try {
-    const [rows] = await db.query('SELECT * FROM users WHERE otp_session = ?', [session]);
-    if (rows.length === 0)
-      return res.status(400).json({ message: 'Invalid or expired session. Please log in again.' });
-    const user = rows[0];
-    if (new Date() > new Date(user.otp_expires_at))
-      return res.status(400).json({ message: 'OTP has expired. Please log in again.' });
-    if (user.otp_code !== otp)
-      return res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
-    await db.query(
-      'UPDATE users SET otp_code = NULL, otp_expires_at = NULL, otp_session = NULL WHERE id = ?',
-      [user.id]
-    );
-    const token = jwt.sign(
-      { id: user.id, role: user.role, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
-    res.json({
-      token,
-      user: { id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email, role: user.role },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error.' });
-  }
-};
-
-module.exports = { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification, googleCallback, verifyOTP, resendOTP };
->>>>>>> 03b8cb9a55b43a65ee2b38f2ffdd770cc85bf797

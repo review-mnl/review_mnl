@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const express = require('express');
 const router  = express.Router();
 const upload  = require('../middleware/upload');
@@ -8,63 +7,6 @@ const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, res
 const FRONTEND_URL = process.env.CLIENT_URL || 'https://review-mnl.vercel.app';
 
 router.post('/resend-verification', resendVerification);
-=======
-const express  = require('express');
-const router   = express.Router();
-const jwt      = require('jsonwebtoken');
-const passport = require('../config/passport');
-const upload   = require('../middleware/upload');
-const { registerStudent, registerCenter, verifyEmail, login, forgotPassword, resetPassword, resendVerification, googleCallback, verifyOTP, resendOTP } = require('../controllers/authController');
-
-function hasRealGoogleOAuthConfig() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) return false;
-  if (clientId === 'your_google_client_id.apps.googleusercontent.com') return false;
-  if (clientSecret === 'your_google_client_secret') return false;
-
-  return true;
-}
-
-function appendErrorParam(targetUrl, errorCode) {
-  const url = new URL(targetUrl);
-  url.searchParams.set('error', errorCode);
-  return url.toString();
-}
-
-function buildOAuthErrorRedirect(req, fallbackPage, errorCode) {
-  const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5500').replace(/\/$/, '');
-  const fallbackUrl = `${clientUrl}/${fallbackPage}`;
-  const referer = req.get('referer');
-
-  if (!referer) {
-    return appendErrorParam(fallbackUrl, errorCode);
-  }
-
-  try {
-    const refererUrl = new URL(referer);
-    const clientOrigin = new URL(clientUrl).origin;
-
-    if (refererUrl.origin !== clientOrigin) {
-      return appendErrorParam(fallbackUrl, errorCode);
-    }
-
-    return appendErrorParam(refererUrl.toString(), errorCode);
-  } catch (error) {
-    return appendErrorParam(fallbackUrl, errorCode);
-  }
-}
-
-function ensureGoogleAuthConfigured(req, res, next) {
-  if (hasRealGoogleOAuthConfig()) {
-    return next();
-  }
-
-  const redirectUrl = buildOAuthErrorRedirect(req, 'login.html', 'google_oauth_unavailable');
-  return res.redirect(302, redirectUrl);
-}
->>>>>>> 03b8cb9a55b43a65ee2b38f2ffdd770cc85bf797
 
 router.post('/register/student', registerStudent);
 router.post('/register/center',

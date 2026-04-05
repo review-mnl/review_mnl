@@ -1,7 +1,6 @@
 // review.mnl — shared API helper
 // All fetch calls go through here so only one place needs updating for the base URL.
 
-<<<<<<< HEAD
 // Production-only API routing: all requests go to Railway unless explicitly overridden.
 const API_BASE = window.BACKEND_URL || 'https://reviewmnl-production-67eb.up.railway.app';
 
@@ -19,12 +18,6 @@ const API_BASE = window.BACKEND_URL || 'https://reviewmnl-production-67eb.up.rai
         }
     } catch(e) {}
 })();
-=======
-// Uses production backend URL when deployed, falls back to localhost for development
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
-    : 'https://reviewmnl-production-67eb.up.railway.app';
->>>>>>> 03b8cb9a55b43a65ee2b38f2ffdd770cc85bf797
 
 // ---------------------------------------------------------------------------
 // Auth helpers

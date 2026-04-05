@@ -90,3 +90,24 @@ CREATE TABLE IF NOT EXISTS enrollments (
 	FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE,
 	FOREIGN KEY (payment_id) REFERENCES payments(id)
 );
+
+-- Add center review workflow fields on enrollments
+ALTER TABLE enrollments ADD COLUMN review_status ENUM('pending','approved','rejected') DEFAULT 'pending';
+ALTER TABLE enrollments ADD COLUMN payment_verified TINYINT(1) DEFAULT 0;
+ALTER TABLE enrollments ADD COLUMN reviewed_at TIMESTAMP NULL;
+ALTER TABLE enrollments ADD COLUMN reviewed_by INT NULL;
+
+-- Notifications sent to students when center updates enrollment decision
+CREATE TABLE IF NOT EXISTS enrollment_notifications (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	enrollment_id INT NOT NULL,
+	user_id INT NOT NULL,
+	center_id INT NOT NULL,
+	status ENUM('pending','approved','rejected') NOT NULL,
+	message VARCHAR(500) NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (enrollment_id) REFERENCES enrollments(id) ON DELETE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE,
+	INDEX idx_enrollment_created_at (enrollment_id, created_at)
+);

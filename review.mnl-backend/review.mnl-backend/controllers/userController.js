@@ -1,6 +1,13 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 
+const toReviewStatus = (reviewStatus, legacyStatus) => {
+  if (reviewStatus === 'approved' || reviewStatus === 'rejected' || reviewStatus === 'pending') return reviewStatus;
+  if (legacyStatus === 'active') return 'approved';
+  if (legacyStatus === 'cancelled') return 'rejected';
+  return 'pending';
+};
+
 const getMyProfile = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -27,14 +34,31 @@ const getMyEnrollments = async (req, res) => {
          e.user_id,
          e.center_id AS review_center_id,
          e.status AS enrollment_status,
+         e.review_status,
+         e.payment_verified,
          e.created_at AS enrollment_created_at,
+         e.reviewed_at,
          rc.business_name AS review_center_name,
          rc.logo_url AS review_center_logo,
          p.amount,
          p.status AS payment_status,
          p.provider AS payment_method,
          p.metadata,
-         p.created_at AS payment_created_at
+         p.created_at AS payment_created_at,
+         (
+           SELECT en.message
+           FROM enrollment_notifications en
+           WHERE en.enrollment_id = e.id
+           ORDER BY en.created_at DESC
+           LIMIT 1
+         ) AS latest_notification,
+         (
+           SELECT en.created_at
+           FROM enrollment_notifications en
+           WHERE en.enrollment_id = e.id
+           ORDER BY en.created_at DESC
+           LIMIT 1
+         ) AS latest_notification_at
        FROM enrollments e
        JOIN review_centers rc ON rc.id = e.center_id
        LEFT JOIN payments p ON p.id = e.payment_id
@@ -62,6 +86,11 @@ const getMyEnrollments = async (req, res) => {
         payment_status: row.payment_status || 'pending',
         payment_method: row.payment_method || 'gcash',
         amount: row.amount || 0,
+        review_status: toReviewStatus(row.review_status, row.enrollment_status),
+        payment_verified: Boolean(row.payment_verified),
+        latest_notification: row.latest_notification || null,
+        latest_notification_at: row.latest_notification_at || null,
+        reviewed_at: row.reviewed_at || null,
         created_at: row.enrollment_created_at,
       };
     });

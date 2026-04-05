@@ -1,5 +1,22 @@
 const db = require('../config/db');
 
+const toReviewStatus = (reviewStatus, legacyStatus) => {
+  if (reviewStatus === 'approved' || reviewStatus === 'rejected' || reviewStatus === 'pending') return reviewStatus;
+  if (legacyStatus === 'active') return 'approved';
+  if (legacyStatus === 'cancelled') return 'rejected';
+  return 'pending';
+};
+
+const parseMetadata = (raw) => {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+};
+
 const getApprovedCenters = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -224,4 +241,233 @@ const getMyCenterProfile = async (req, res) => {
   }
 };
 
-module.exports = { getApprovedCenters, getCenterById, getCentersNearby, searchCenters, updateCenterLocation, updateCenterProfile, updateCenterLogo, getMyCenterProfile };
+const getMyCenterEnrollments = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const statusFilter = String(req.query.status || 'all').toLowerCase();
+    const sortOrder = String(req.query.sort || 'latest').toLowerCase() === 'oldest' ? 'ASC' : 'DESC';
+
+    const [rows] = await db.query(
+      `SELECT
+         e.id AS enrollment_id,
+         e.user_id,
+         e.center_id AS review_center_id,
+         e.status AS enrollment_legacy_status,
+         e.review_status,
+         e.payment_verified,
+         e.created_at AS date_submitted,
+         e.reviewed_at,
+         u.first_name,
+         u.last_name,
+         u.email AS student_email,
+         p.id AS payment_id,
+         p.amount,
+         p.provider AS payment_method,
+         p.status AS payment_status,
+         p.metadata,
+         COALESCE((
+           SELECT en.message
+           FROM enrollment_notifications en
+           WHERE en.enrollment_id = e.id
+           ORDER BY en.created_at DESC
+           LIMIT 1
+         ), NULL) AS latest_notification,
+         COALESCE((
+           SELECT en.created_at
+           FROM enrollment_notifications en
+           WHERE en.enrollment_id = e.id
+           ORDER BY en.created_at DESC
+           LIMIT 1
+         ), NULL) AS latest_notification_at
+       FROM enrollments e
+       JOIN review_centers rc ON rc.id = e.center_id
+       JOIN users u ON u.id = e.user_id
+       LEFT JOIN payments p ON p.id = e.payment_id
+       WHERE rc.user_id = ?
+       ORDER BY e.created_at ${sortOrder}`,
+      [userId]
+    );
+
+    const enrollments = rows
+      .map((row) => {
+        const metadata = parseMetadata(row.metadata);
+        const reviewStatus = toReviewStatus(row.review_status, row.enrollment_legacy_status);
+        const documents = metadata.submitted_documents || metadata.documents || [];
+        return {
+          enrollment_id: row.enrollment_id,
+          user_id: row.user_id,
+          student_name: [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || row.student_email || 'Student',
+          student_email: row.student_email,
+          review_center_id: row.review_center_id,
+          program_enrolled: metadata.program_enrolled || 'Program not specified',
+          submitted_documents: Array.isArray(documents) ? documents : (documents ? [documents] : []),
+          payment: {
+            payment_id: row.payment_id,
+            amount: row.amount || 0,
+            method: row.payment_method || 'gcash',
+            status: row.payment_status || 'pending',
+            verified: Boolean(row.payment_verified),
+          },
+          status: reviewStatus,
+          date_submitted: row.date_submitted,
+          reviewed_at: row.reviewed_at,
+          latest_notification: row.latest_notification,
+          latest_notification_at: row.latest_notification_at,
+        };
+      })
+      .filter((item) => statusFilter === 'all' ? true : item.status === statusFilter);
+
+    return res.json({ enrollments });
+  } catch (err) {
+    console.error('Get my center enrollments error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const verifyEnrollmentPayment = async (req, res) => {
+  let conn;
+  try {
+    const userId = req.user.id;
+    const enrollmentId = Number(req.params.enrollmentId);
+    const requestedPaymentStatus = req.body && req.body.payment_status ? String(req.body.payment_status).toLowerCase() : null;
+    const allowedPaymentStatuses = ['pending', 'paid', 'failed', 'cancelled'];
+
+    if (!Number.isInteger(enrollmentId) || enrollmentId <= 0) {
+      return res.status(400).json({ message: 'Invalid enrollment id.' });
+    }
+    if (requestedPaymentStatus && !allowedPaymentStatuses.includes(requestedPaymentStatus)) {
+      return res.status(400).json({ message: 'Invalid payment status.' });
+    }
+
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    const [rows] = await conn.query(
+      `SELECT e.id, e.payment_id, e.payment_verified, p.status AS payment_status
+       FROM enrollments e
+       JOIN review_centers rc ON rc.id = e.center_id
+       LEFT JOIN payments p ON p.id = e.payment_id
+       WHERE e.id = ? AND rc.user_id = ?
+       FOR UPDATE`,
+      [enrollmentId, userId]
+    );
+
+    if (!rows.length) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Enrollment not found.' });
+    }
+
+    const enrollment = rows[0];
+    let nextPaymentStatus = enrollment.payment_status || 'pending';
+
+    if (enrollment.payment_id && requestedPaymentStatus) {
+      await conn.query('UPDATE payments SET status = ? WHERE id = ?', [requestedPaymentStatus, enrollment.payment_id]);
+      nextPaymentStatus = requestedPaymentStatus;
+    }
+
+    await conn.query('UPDATE enrollments SET payment_verified = 1 WHERE id = ?', [enrollmentId]);
+
+    await conn.commit();
+    return res.json({
+      message: 'Payment verified successfully.',
+      enrollment_id: enrollmentId,
+      payment_status: nextPaymentStatus,
+      payment_verified: true,
+    });
+  } catch (err) {
+    if (conn) try { await conn.rollback(); } catch (e) {}
+    console.error('Verify enrollment payment error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  } finally {
+    if (conn) try { conn.release(); } catch (e) {}
+  }
+};
+
+const updateEnrollmentReviewStatus = async (req, res) => {
+  let conn;
+  try {
+    const userId = req.user.id;
+    const enrollmentId = Number(req.params.enrollmentId);
+    const requestedStatus = String((req.body && req.body.status) || '').toLowerCase();
+
+    if (!Number.isInteger(enrollmentId) || enrollmentId <= 0) {
+      return res.status(400).json({ message: 'Invalid enrollment id.' });
+    }
+    if (!['approved', 'rejected'].includes(requestedStatus)) {
+      return res.status(400).json({ message: 'Status must be approved or rejected.' });
+    }
+
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    const [rows] = await conn.query(
+      `SELECT e.id, e.user_id, e.center_id, e.payment_verified, e.review_status, e.status AS enrollment_legacy_status,
+              p.status AS payment_status, rc.business_name
+       FROM enrollments e
+       JOIN review_centers rc ON rc.id = e.center_id
+       LEFT JOIN payments p ON p.id = e.payment_id
+       WHERE e.id = ? AND rc.user_id = ?
+       FOR UPDATE`,
+      [enrollmentId, userId]
+    );
+
+    if (!rows.length) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Enrollment not found.' });
+    }
+
+    const enrollment = rows[0];
+    if (requestedStatus === 'approved') {
+      if (!enrollment.payment_verified) {
+        await conn.rollback();
+        return res.status(400).json({ message: 'Please verify payment before approving enrollment.' });
+      }
+      if ((enrollment.payment_status || 'pending') !== 'paid') {
+        await conn.rollback();
+        return res.status(400).json({ message: 'Payment status must be paid before approval.' });
+      }
+    }
+
+    const nextLegacyStatus = requestedStatus === 'approved' ? 'active' : 'cancelled';
+    const notificationMessage = requestedStatus === 'approved'
+      ? `Your enrollment has been approved by ${enrollment.business_name}.`
+      : `Your enrollment has been rejected by ${enrollment.business_name}.`;
+
+    await conn.query(
+      'UPDATE enrollments SET review_status = ?, status = ?, reviewed_at = NOW(), reviewed_by = ? WHERE id = ?',
+      [requestedStatus, nextLegacyStatus, userId, enrollmentId]
+    );
+
+    await conn.query(
+      'INSERT INTO enrollment_notifications (enrollment_id, user_id, center_id, status, message) VALUES (?, ?, ?, ?, ?)',
+      [enrollmentId, enrollment.user_id, enrollment.center_id, requestedStatus, notificationMessage]
+    );
+
+    await conn.commit();
+    return res.json({
+      message: `Enrollment ${requestedStatus}.`,
+      enrollment_id: enrollmentId,
+      status: requestedStatus,
+    });
+  } catch (err) {
+    if (conn) try { await conn.rollback(); } catch (e) {}
+    console.error('Update enrollment review status error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  } finally {
+    if (conn) try { conn.release(); } catch (e) {}
+  }
+};
+
+module.exports = {
+  getApprovedCenters,
+  getCenterById,
+  getCentersNearby,
+  searchCenters,
+  updateCenterLocation,
+  updateCenterProfile,
+  updateCenterLogo,
+  getMyCenterProfile,
+  getMyCenterEnrollments,
+  verifyEnrollmentPayment,
+  updateEnrollmentReviewStatus,
+};

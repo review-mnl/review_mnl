@@ -299,6 +299,16 @@ const CentersAPI = {
         apiRequest('PUT', '/api/centers/me', data),
     uploadLogo: (formData) =>
         apiRequest('PUT', '/api/centers/me/logo', formData, true),
+    getMyEnrollments: (status, sort) => {
+        var qs = [];
+        if (status) qs.push('status=' + encodeURIComponent(status));
+        if (sort) qs.push('sort=' + encodeURIComponent(sort));
+        return apiRequest('GET', '/api/centers/me/enrollments' + (qs.length ? ('?' + qs.join('&')) : ''));
+    },
+    verifyEnrollmentPayment: (enrollmentId, paymentStatus) =>
+        apiRequest('PUT', '/api/centers/me/enrollments/' + enrollmentId + '/payment/verify', paymentStatus ? { payment_status: paymentStatus } : {}),
+    updateEnrollmentStatus: (enrollmentId, status) =>
+        apiRequest('PUT', '/api/centers/me/enrollments/' + enrollmentId + '/status', { status }),
     
     enrollWithGcash: (centerId, payload) =>
         apiRequest('POST', '/api/centers/' + centerId + '/enroll/gcash', payload),

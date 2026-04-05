@@ -74,7 +74,10 @@ const createGcashEnrollment = async (req, res) => {
 
     // On successful payment, activate enrollment.
     if (!shouldFail) {
-      await conn.query('INSERT INTO enrollments (user_id, center_id, payment_id, status) VALUES (?, ?, ?, ?)', [userId, centerId, paymentId, 'active']);
+      await conn.query(
+        'INSERT INTO enrollments (user_id, center_id, payment_id, status, review_status, payment_verified) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, centerId, paymentId, 'pending', 'pending', 0]
+      );
     }
 
     console.log('[Enrollment] Saved', {
@@ -93,6 +96,7 @@ const createGcashEnrollment = async (req, res) => {
       review_center_id: Number(centerId),
       program_enrolled: programEnrolled,
       enrollment_date: enrollmentDate,
+      enrollment_status: 'pending',
       amount,
       payment_method: 'GCash',
       transaction_status: status,
@@ -158,7 +162,10 @@ const completeMockPayment = async (req, res) => {
     await conn.query('UPDATE payments SET status = ?, provider_payment_id = ? WHERE id = ?', ['paid', providerPaymentId, paymentId]);
 
     // Create enrollment
-    await conn.query('INSERT INTO enrollments (user_id, center_id, payment_id, status) VALUES (?, ?, ?, ?)', [p.user_id, p.center_id, paymentId, 'active']);
+    await conn.query(
+      'INSERT INTO enrollments (user_id, center_id, payment_id, status, review_status, payment_verified) VALUES (?, ?, ?, ?, ?, ?)',
+      [p.user_id, p.center_id, paymentId, 'pending', 'pending', 0]
+    );
 
     await conn.commit();
     return res.json({ message: 'Payment completed and enrollment created.' });

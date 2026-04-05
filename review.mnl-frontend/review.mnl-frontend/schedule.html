@@ -40,10 +40,7 @@
                 <div class="center-info">
                     <div class="center-name-row">
                         <h1 id="centerNameDisplay">Name of Review Center</h1>
-                        <button class="edit-center-profile-btn" onclick="openModal('profileModal')">
-                            <span class="material-symbols-outlined">edit</span>
-                            Edit Profile
-                        </button>
+                        
                     </div>
                     <p class="center-description" id="centerDescDisplay">Description.....</p>
                     <div class="center-rating">
@@ -225,48 +222,6 @@
             });
         </script>
 
-        <section class="center-details">
-            <div class="center-left">
-                <div class="about-section">
-                    <div class="section-header-edit">
-                        <h2>About</h2>
-                        <button class="edit-btn-small" onclick="openModal('aboutModal')">Edit</button>
-                    </div>
-                    <p id="aboutDisplay">Description</p>
-                </div>
-
-                <div class="programs-section">
-                    <div class="section-header-edit">
-                        <h2>Programs Offered</h2>
-                        <button class="edit-btn-small" onclick="openModal('programsModal')">Edit</button>
-                    </div>
-                    <div class="program-tags" id="programTagsDisplay">
-                        <button class="program-tag">Civil Engineering</button>
-                        <button class="program-tag">Architecture</button>
-                        <button class="program-tag">Nursing</button>
-                        <button class="program-tag">Accountancy</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="achievements-card">
-                <div class="section-header-edit">
-                    <h2>Achievements</h2>
-                    <button class="edit-btn-small" onclick="openModal('achievementsModal')">Edit</button>
-                </div>
-                <div class="achievement-list" id="achievementListDisplay">
-                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
-                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
-                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
-                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
-                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
-                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
-                </div>
-            </div>
-        </section>
-
-        <section class="gap1"></section>
-
         <!-- Operating Schedule Section -->
         <section class="ec-schedule-section">
             <div class="ec-schedule-header">
@@ -310,23 +265,6 @@
 
         <section class="gap1"></section>
 
-        <section style="background:#f4f6fb;padding:28px 6% 40px;">
-            <div style="max-width:1200px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(10,76,255,0.07);padding:20px 22px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
-                    <h2 style="font-size:20px;font-weight:700;color:#0d1b4b;margin:0;">Student Feedback / Testimonials</h2>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <label for="centerFeedbackSort" style="font-size:12px;color:#666;">Sort:</label>
-                        <select id="centerFeedbackSort" style="padding:7px 10px;border:1.5px solid #dde3f0;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;">
-                            <option value="latest">Latest</option>
-                            <option value="highest">Highest Rating</option>
-                            <option value="lowest">Lowest Rating</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="centerTestimonialsList"></div>
-            </div>
-        </section>
-
         <!-- Modal: Edit Schedule -->
         <div class="modal-overlay" id="scheduleModal">
             <div class="modal-box" style="max-width:520px;">
@@ -341,112 +279,6 @@
                 <div class="modal-footer">
                     <button class="modal-cancel-btn" onclick="closeModal('scheduleModal')">Cancel</button>
                     <button class="modal-save-btn" onclick="saveSchedule()">Save Changes</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Edit Center Profile -->
-        <div class="modal-overlay" id="profileModal">
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>Edit Center Profile</h3>
-                    <button class="modal-close" onclick="closeModal('profileModal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <label>Center Name</label>
-                    <input type="text" id="centerNameInput" placeholder="Name of Review Center">
-                    <label>Location</label>
-                    <div style="position: relative;">
-                        <input type="text" id="centerLocationInput" placeholder="Search for your location..." style="width: 100%; border: 1.5px solid #ddd; padding: 10px 14px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13.5px; margin-bottom: 12px; transition: border-color 0.2s;" onfocus="this.style.border='1.5px solid #0a4cff'" onblur="this.style.border='1.5px solid #ddd'">
-                        <div id="locationSuggestions" style="position: absolute; top: 43px; left: 0; right: 0; background: white; border: 1.5px solid #ddd; border-radius: 8px; z-index: 9999; max-height: 160px; overflow-y: auto; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>
-                    </div>
-                    <div id="mapPreview" style="height: 200px; width: 100%; border-radius: 8px; margin-bottom: 15px; background: #e8eaed; z-index: 1;"></div>
-                    <label>Profile Image</label>
-                    <input type="file" id="centerImageInput" accept="image/*">
-                    <div class="modal-img-preview" id="modalImgPreview"></div>
-                    <div id="centerProfileFeedback" class="profile-feedback" style="display:none;"></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-cancel-btn" onclick="closeModal('profileModal')">Cancel</button>
-                    <button class="modal-save-btn" onclick="saveProfile()">Save Changes</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Edit About -->
-        <div class="modal-overlay" id="aboutModal">
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>Edit About</h3>
-                    <button class="modal-close" onclick="closeModal('aboutModal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <label>About the Center</label>
-                    <textarea id="aboutInput" rows="6" placeholder="Write about the review center..."></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-cancel-btn" onclick="closeModal('aboutModal')">Cancel</button>
-                    <button class="modal-save-btn" onclick="saveAbout()">Save Changes</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Edit Programs Offered -->
-        <div class="modal-overlay" id="programsModal">
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>Edit Programs Offered</h3>
-                    <button class="modal-close" onclick="closeModal('programsModal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p style="font-size:13px;color:#666;margin-bottom:14px;">Select the programs to display:</p>
-                    <div class="program-checklist">
-                        <label class="program-check-item"><input type="checkbox" value="Civil Engineering" checked> Civil Engineering</label>
-                        <label class="program-check-item"><input type="checkbox" value="Architecture" checked> Architecture</label>
-                        <label class="program-check-item"><input type="checkbox" value="Nursing" checked> Nursing</label>
-                        <label class="program-check-item"><input type="checkbox" value="Accountancy" checked> Accountancy</label>
-                        <label class="program-check-item"><input type="checkbox" value="Medical Technology"> Medical Technology</label>
-                        <label class="program-check-item"><input type="checkbox" value="Education"> Education</label>
-                        <label class="program-check-item"><input type="checkbox" value="Electrical Engineering"> Electrical Engineering</label>
-                        <label class="program-check-item"><input type="checkbox" value="Mechanical Engineering"> Mechanical Engineering</label>
-                        <label class="program-check-item"><input type="checkbox" value="Electronics Engineering"> Electronics Engineering</label>
-                        <label class="program-check-item"><input type="checkbox" value="Chemical Engineering"> Chemical Engineering</label>
-                        <label class="program-check-item"><input type="checkbox" value="Geodetic Engineering"> Geodetic Engineering</label>
-                        <label class="program-check-item"><input type="checkbox" value="Dentistry"> Dentistry</label>
-                        <label class="program-check-item"><input type="checkbox" value="Pharmacy"> Pharmacy</label>
-                        <label class="program-check-item"><input type="checkbox" value="Physical Therapy"> Physical Therapy</label>
-                        <label class="program-check-item"><input type="checkbox" value="Law"> Law</label>
-                    </div>
-                    <label class="program-check-item program-check-others">
-                        <input type="checkbox" id="othersCheckbox" onchange="toggleOthersInput(this)"> Others:
-                        <input type="text" id="othersInput" placeholder="Type program name..." disabled
-                            style="margin-left:8px;flex:1;padding:4px 10px;border:1.5px solid #ddd;border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px;">
-                    </label>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-cancel-btn" onclick="closeModal('programsModal')">Cancel</button>
-                    <button class="modal-save-btn" onclick="savePrograms()">Save Changes</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Edit Achievements -->
-        <div class="modal-overlay" id="achievementsModal">
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>Edit Achievements</h3>
-                    <button class="modal-close" onclick="closeModal('achievementsModal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p style="font-size:13px;color:#666;margin-bottom:14px;">Add or remove achievements. Each entry will show with a 🏆 icon.</p>
-                    <div id="achievementsInputList" style="display:flex;flex-direction:column;gap:10px;"></div>
-                    <button onclick="addAchievementInput()" style="margin-top:14px;display:inline-flex;align-items:center;gap:6px;background:none;border:1.5px dashed #0a4cff;color:#0a4cff;padding:8px 16px;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;cursor:pointer;">
-                        <span class="material-symbols-outlined" style="font-size:16px;">add</span> Add Achievement
-                    </button>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-cancel-btn" onclick="closeModal('achievementsModal')">Cancel</button>
-                    <button class="modal-save-btn" onclick="saveAchievements()">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -1366,6 +1198,8 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     </body>
 </html>
+
+
 
 
 

@@ -3,9 +3,11 @@ require('dotenv').config();
 
 const optionalAuth = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  const queryToken = String((req.query && req.query.token) || '').trim();
+  const headerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : '';
+  const token = headerToken || queryToken;
+  if (token) {
     try {
-      const token = authHeader.split(' ')[1];
       req.user = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {}
   }
@@ -14,11 +16,13 @@ const optionalAuth = (req, res, next) => {
 
 const protect = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const queryToken = String((req.query && req.query.token) || '').trim();
+  const headerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : '';
+  const token = headerToken || queryToken;
+  if (!token) {
     return res.status(401).json({ message: 'No token. Access denied.' });
   }
   try {
-    const token = authHeader.split(' ')[1];
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (err) {

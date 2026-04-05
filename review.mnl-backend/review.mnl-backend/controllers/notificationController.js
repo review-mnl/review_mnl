@@ -1,4 +1,32 @@
 const db = require('../config/db');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+const sseClientsByUser = new Map();
+
+const addClient = (userId, res) => {
+  const key = String(userId);
+  if (!sseClientsByUser.has(key)) sseClientsByUser.set(key, new Set());
+  sseClientsByUser.get(key).add(res);
+};
+
+const removeClient = (userId, res) => {
+  const key = String(userId);
+  if (!sseClientsByUser.has(key)) return;
+  const set = sseClientsByUser.get(key);
+  set.delete(res);
+  if (set.size === 0) sseClientsByUser.delete(key);
+};
+
+const broadcastToUser = (userId, payload) => {
+  const key = String(userId);
+  const set = sseClientsByUser.get(key);
+  if (!set || set.size === 0) return;
+  const message = 'data: ' + JSON.stringify(payload || {}) + '\n\n';
+  set.forEach((res) => {
+    try { res.write(message); } catch (e) {}
+  });
+};
 
 const normalizeStatus = (status) => {
   const s = String(status || '').toLowerCase();
@@ -65,6 +93,15 @@ const createNotification = async (req, res) => {
     );
 
     await conn.commit();
+    broadcastToUser(userId, {
+      type: 'notification_created',
+      notification_id: result.insertId,
+      enrollment_id: enrollmentId,
+      status,
+      message: finalMessage,
+      is_read: false,
+      timestamp: new Date().toISOString(),
+    });
     return res.status(201).json({
       notification_id: result.insertId,
       enrollment_id: enrollmentId,
@@ -148,6 +185,11 @@ const markNotificationAsRead = async (req, res) => {
         'UPDATE enrollment_notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?',
         [notificationId, userId]
       );
+      broadcastToUser(userId, {
+        type: 'notification_read',
+        notification_id: notificationId,
+        timestamp: new Date().toISOString(),
+      });
     }
 
     return res.json({ message: 'Notification marked as read.', notification_id: notificationId });
@@ -157,8 +199,59 @@ const markNotificationAsRead = async (req, res) => {
   }
 };
 
+const streamMyNotifications = async (req, res) => {
+  try {
+    let userId = req.user && req.user.id;
+    if (!userId) {
+      const authHeader = req.headers.authorization;
+      const queryToken = String((req.query && req.query.token) || '').trim();
+      const headerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : '';
+      const token = headerToken || queryToken;
+      if (!token) {
+        return res.status(401).json({ message: 'No token. Access denied.' });
+      }
+
+      let user;
+      try {
+        user = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (err) {
+        return res.status(401).json({ message: 'Invalid or expired token.' });
+      }
+      userId = user.id;
+    }
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Invalid token payload.' });
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    if (res.flushHeaders) res.flushHeaders();
+
+    addClient(userId, res);
+    res.write('data: ' + JSON.stringify({ type: 'connected', ts: new Date().toISOString() }) + '\n\n');
+
+    const keepAlive = setInterval(() => {
+      try { res.write(': ping\n\n'); } catch (e) {}
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      removeClient(userId, res);
+      try { res.end(); } catch (e) {}
+    });
+  } catch (err) {
+    console.error('Stream notifications error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 module.exports = {
   createNotification,
   getMyNotifications,
   markNotificationAsRead,
+  streamMyNotifications,
 };

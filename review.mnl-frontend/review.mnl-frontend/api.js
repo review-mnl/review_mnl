@@ -389,7 +389,7 @@ function initGlobalNotificationBell(options) {
             + '    <span class="rmnl-global-unread" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;">0 Unread</span>'
             + '  </div>'
             + '  <div class="rmnl-global-drop-list"></div>'
-            + '  <div class="rmnl-global-drop-foot"><a href="userdashboard.html#fullNotificationsSection" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a></div>'
+            + '  <div class="rmnl-global-drop-foot"><a href="notifications.html" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a></div>'
             + '</div>';
 
         // Keep the bell in the right-side nav cluster (next to profile icon)
@@ -503,8 +503,85 @@ function initGlobalNotificationBell(options) {
         if (window.__rmnlGlobalNotifTimer) {
             clearInterval(window.__rmnlGlobalNotifTimer);
         }
+
+        if (window.__rmnlGlobalNotifStream) {
+            try { window.__rmnlGlobalNotifStream.close(); } catch (e) {}
+            window.__rmnlGlobalNotifStream = null;
+        }
+
         refresh();
-        window.__rmnlGlobalNotifTimer = setInterval(refresh, 8000);
+
+        function ensurePollingFallback() {
+            if (window.__rmnlGlobalNotifTimer) return;
+            window.__rmnlGlobalNotifTimer = setInterval(refresh, 8000);
+        }
+
+        function stopPollingFallback() {
+            if (!window.__rmnlGlobalNotifTimer) return;
+            clearInterval(window.__rmnlGlobalNotifTimer);
+            window.__rmnlGlobalNotifTimer = null;
+        }
+
+        function setupRealtime() {
+            if (typeof window.EventSource === 'undefined') {
+                ensurePollingFallback();
+                return;
+            }
+
+            var token = localStorage.getItem('token') || '';
+            if (!token) {
+                ensurePollingFallback();
+                return;
+            }
+
+            var streamUrl = API_BASE_URL + '/api/notifications/stream?token=' + encodeURIComponent(token);
+            var es = new EventSource(streamUrl);
+            window.__rmnlGlobalNotifStream = es;
+
+            es.onopen = function() {
+                stopPollingFallback();
+            };
+
+            es.onmessage = function(event) {
+                if (!event || !event.data) return;
+                try {
+                    var payload = JSON.parse(event.data);
+                    if (!payload || payload.type === 'connected') return;
+                    refresh();
+                } catch (e) {
+                    refresh();
+                }
+            };
+
+            es.onerror = function() {
+                ensurePollingFallback();
+                try { es.close(); } catch (e) {}
+                if (window.__rmnlGlobalNotifStream === es) {
+                    window.__rmnlGlobalNotifStream = null;
+                }
+                setTimeout(function() {
+                    if (!window.__rmnlGlobalNotifStream) {
+                        setupRealtime();
+                    }
+                }, 3000);
+            };
+        }
+
+        setupRealtime();
+
+        if (!window.__rmnlNotifUnloadBound) {
+            window.__rmnlNotifUnloadBound = true;
+            window.addEventListener('beforeunload', function() {
+                if (window.__rmnlGlobalNotifStream) {
+                    try { window.__rmnlGlobalNotifStream.close(); } catch (e) {}
+                    window.__rmnlGlobalNotifStream = null;
+                }
+                if (window.__rmnlGlobalNotifTimer) {
+                    clearInterval(window.__rmnlGlobalNotifTimer);
+                    window.__rmnlGlobalNotifTimer = null;
+                }
+            });
+        }
     } catch (e) {
         console.warn('initGlobalNotificationBell failed', e);
     }

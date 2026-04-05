@@ -76,7 +76,7 @@
                         </div>
                         <div id="notificationDropdownList" style="max-height:360px;overflow-y:auto;padding:10px 12px;"></div>
                         <div style="padding:10px 12px;border-top:1px solid #eef2ff;background:#f8faff;">
-                            <a href="userdashboard.html#fullNotificationsSection" id="viewAllNotificationsLink" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a>
+                            <a href="notifications.html" id="viewAllNotificationsLink" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a>
                         </div>
                     </div>
                 </div>
@@ -311,13 +311,8 @@
 
                     if (viewAllLink) {
                         viewAllLink.addEventListener('click', function(e) {
-                            e.preventDefault();
                             if (bellDd) bellDd.style.display = 'none';
                             if (bellBtn) bellBtn.setAttribute('aria-expanded', 'false');
-                            var fullSection = document.getElementById('fullNotificationsSection');
-                            if (fullSection && typeof fullSection.scrollIntoView === 'function') {
-                                fullSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }
                         });
                     }
 
@@ -853,6 +848,74 @@
                     }
                 }
 
+                function stopDashboardNotificationRealtime() {
+                    if (window._dashboardNotifEventSource) {
+                        try { window._dashboardNotifEventSource.close(); } catch (e) {}
+                        window._dashboardNotifEventSource = null;
+                    }
+                    if (window._dashboardNotifPollTimer) {
+                        clearInterval(window._dashboardNotifPollTimer);
+                        window._dashboardNotifPollTimer = null;
+                    }
+                }
+
+                function ensureDashboardNotificationPolling() {
+                    if (window._dashboardNotifPollTimer) return;
+                    window._dashboardNotifPollTimer = setInterval(loadMyNotifications, 8000);
+                }
+
+                function startDashboardNotificationRealtime() {
+                    if (typeof window.EventSource === 'undefined') {
+                        ensureDashboardNotificationPolling();
+                        return;
+                    }
+
+                    var token = localStorage.getItem('token') || '';
+                    if (!token) {
+                        ensureDashboardNotificationPolling();
+                        return;
+                    }
+
+                    if (window._dashboardNotifEventSource) {
+                        try { window._dashboardNotifEventSource.close(); } catch (e) {}
+                    }
+
+                    var es = new EventSource(API_BASE_URL + '/api/notifications/stream?token=' + encodeURIComponent(token));
+                    window._dashboardNotifEventSource = es;
+
+                    es.onopen = function() {
+                        if (window._dashboardNotifPollTimer) {
+                            clearInterval(window._dashboardNotifPollTimer);
+                            window._dashboardNotifPollTimer = null;
+                        }
+                    };
+
+                    es.onmessage = function(event) {
+                        if (!event || !event.data) return;
+                        try {
+                            var payload = JSON.parse(event.data);
+                            if (payload && payload.type !== 'connected') {
+                                loadMyNotifications();
+                            }
+                        } catch (e) {
+                            loadMyNotifications();
+                        }
+                    };
+
+                    es.onerror = function() {
+                        ensureDashboardNotificationPolling();
+                        try { es.close(); } catch (e) {}
+                        if (window._dashboardNotifEventSource === es) {
+                            window._dashboardNotifEventSource = null;
+                        }
+                        setTimeout(function() {
+                            if (!window._dashboardNotifEventSource) {
+                                startDashboardNotificationRealtime();
+                            }
+                        }, 3000);
+                    };
+                }
+
                 async function openChatFromNotification(notificationId) {
                     var item = window._notificationsById && window._notificationsById[notificationId];
                     if (!item) return;
@@ -1024,11 +1087,19 @@
                     loadMyEnrollments();
                     loadConversations();
                     loadMyNotifications();
-                    setInterval(function(){
+                    startDashboardNotificationRealtime();
+                    window._dashboardConversationPollTimer = setInterval(function(){
                         loadConversations();
-                        loadMyNotifications();
                     }, 8000);
                 })();
+
+                window.addEventListener('beforeunload', function() {
+                    stopDashboardNotificationRealtime();
+                    if (window._dashboardConversationPollTimer) {
+                        clearInterval(window._dashboardConversationPollTimer);
+                        window._dashboardConversationPollTimer = null;
+                    }
+                });
             </script>
     </body>
 </html>

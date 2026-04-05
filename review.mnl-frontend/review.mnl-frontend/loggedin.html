@@ -153,6 +153,15 @@
         // Load featured centers from API
         (async function(){
             try {
+                function resolveImageUrl(raw) {
+                    if (!raw) return '';
+                    var value = String(raw).trim();
+                    if (!value) return '';
+                    if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+                    if (value.charAt(0) === '/') return API_BASE + value;
+                    return API_BASE + '/' + value.replace(/^\/+/, '');
+                }
+
                 const centers = await CentersAPI.getAll();
                 const container = document.getElementById('featuredCards');
                 const loading = document.getElementById('featuredLoading');
@@ -165,10 +174,15 @@
                 top.forEach(function(c) {
                     var stars = Math.round(c.avg_rating || 0);
                     var starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+                    var imgUrl = resolveImageUrl(c.logo_url || c.image_url || c.profile_picture_url);
                     var card = document.createElement('div');
                     card.className = 'review-card';
                     card.innerHTML =
-                        '<div class="card-image"></div>'
+                        '<div class="card-image">'
+                        + (imgUrl
+                            ? ('<img src="' + imgUrl + '" alt="' + (c.business_name || 'Review Center') + ' logo" loading="lazy" onerror="this.style.display=\'none\'; this.parentElement.classList.add(\'card-image-fallback\'); this.parentElement.innerHTML=\'<span>No Image</span>\';">')
+                            : '<span>No Image</span>')
+                        + '</div>'
                         + '<h3>' + c.business_name + '</h3>'
                         + '<span class="location">' + (c.address || 'Manila') + '</span>'
                         + '<div class="card-footer">'

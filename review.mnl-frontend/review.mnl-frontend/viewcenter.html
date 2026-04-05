@@ -393,15 +393,11 @@
                                 <label class="sch-label">GCash Account Name</label>
                                 <input id="schGcashName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
                             </div>
-                            <p id="schPaymentMsg" style="display:none;font-size:12px;margin:0;padding:8px 10px;border-radius:8px;"></p>
-                        </div>
-
-                        <div style="display:flex;justify-content:space-between;">
-                            <button onclick="schGoStep(2)" class="sch-btn-ghost">&larr; Back</button>
-                            <button id="gcashPayBtn" onclick="startGcashPayment()" class="sch-btn-primary">Process GCash Payment</button>
-                        </div>
-                    </div>
-
+                            <div>
+                                <label class="sch-label" style="color: #0a4cff; font-weight: bold;">GCash Reference Number</label>
+                                <input id="schReferenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
+                                <p style="font-size:11px;color:#888;margin-top:4px;">Transfer the amount to the Center's GCash and input the reference number here.</p>
+                            </div>
                     <!-- STEP 4: Confirmation -->
                     <div id="schStep4" style="display:none;text-align:center;padding:10px 0 4px;">
                         <span class="material-symbols-outlined" style="font-size:56px;color:#0a4cff;display:block;margin-bottom:10px;">check_circle</span>
@@ -1052,9 +1048,10 @@
                 if (!centerId) return alert('Missing center id.');
                 const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
                 const gcashName = (document.getElementById('schGcashName').value || '').trim();
-                if (!gcashNumber || !gcashName) {
+                const referenceNumber = (document.getElementById('schReferenceNumber').value || '').trim();
+                if (!gcashNumber || !gcashName || !referenceNumber) {
                     if (msgEl) {
-                        msgEl.textContent = 'Please enter your GCash number and account name.';
+                        msgEl.textContent = 'Please enter your GCash number, account name, and Reference Number.';
                         msgEl.style.display = 'block';
                         msgEl.style.background = '#ffe8e8';
                         msgEl.style.color = '#b71c1c';
@@ -1091,6 +1088,7 @@
                     amount: amount,
                     gcash_number: gcashNumber,
                     gcash_name: gcashName,
+                    reference_number: referenceNumber,
                     program_enrolled: programEnrolled,
                     enrollment_date: enrollmentDate,
                 };
@@ -1104,11 +1102,11 @@
                 const resp = await CentersAPI.enrollWithGcash(centerId, payload);
                 console.log('[Enrollment] Enrollment response', resp);
 
-                if (resp && resp.transaction_status === 'paid') {
+                if (resp && (resp.transaction_status === 'paid' || resp.transaction_status === 'pending')) {
                     _schPaymentMethod = resp.payment_method || 'GCash';
-                    _schPaymentStatus = 'Paid';
+                    _schPaymentStatus = resp.transaction_status === 'pending' ? 'Pending Admin Approval' : 'Paid';
                     if (msgEl) {
-                        msgEl.textContent = resp.message || 'GCash payment successful.';
+                        msgEl.textContent = resp.message || 'GCash payment processing.';
                         msgEl.style.display = 'block';
                         msgEl.style.background = '#e8f5e9';
                         msgEl.style.color = '#2e7d32';

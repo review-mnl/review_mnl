@@ -12,9 +12,9 @@ const createGcashEnrollment = async (req, res) => {
     const amount = parseInt(req.body.amount, 10) || 1550; // default in PHP pesos
     const gcashNumber = String(req.body.gcash_number || '').trim();
     const gcashName = String(req.body.gcash_name || '').trim();
-    const simulateFail = Boolean(req.body.simulate_fail);
-    const programEnrolled = String(req.body.program_enrolled || '').trim();
-    const enrollmentDateRaw = String(req.body.enrollment_date || '').trim();
+    const referenceNumber = String(req.body.reference_number || '').trim();
+    const programEnrolled = String(req.body.program_enrolled || '').trim();     
+    const enrollmentDateRaw = String(req.body.enrollment_date || '').trim();    
     const enrollmentDate = enrollmentDateRaw || new Date().toISOString().slice(0, 10);
 
     console.log('[Enrollment] Request received', {
@@ -23,18 +23,23 @@ const createGcashEnrollment = async (req, res) => {
       amount,
       programEnrolled,
       enrollmentDate,
+      referenceNumber
     });
+
+    if (!referenceNumber) {
+      return res.status(400).json({ message: 'GCash Reference Number is required.' });
+    }
 
     if (!gcashNumber || !gcashName) {
       return res.status(400).json({ message: 'GCash number and account name are required.' });
     }
 
-    // Basic local validation for PH mobile format (11 digits starting with 09)
+    // Basic local validation for PH mobile format (11 digits starting with 09) 
     if (!/^09\d{9}$/.test(gcashNumber)) {
       return res.status(400).json({ message: 'Please enter a valid GCash number (e.g., 09XXXXXXXXX).' });
     }
     if (amount <= 0) {
-      return res.status(400).json({ message: 'Invalid payment amount.' });
+      return res.status(400).json({ message: 'Invalid payment amount.' });      
     }
 
     // Ensure center exists
@@ -42,9 +47,10 @@ const createGcashEnrollment = async (req, res) => {
     if (!centerRows || centerRows.length === 0) return res.status(404).json({ message: 'Center not found.' });
 
     const maskedNumber = gcashNumber.replace(/\d(?=\d{4})/g, '*');
-    const shouldFail = simulateFail;
-    const status = shouldFail ? 'failed' : 'paid';
-    const providerPaymentId = 'GCASH_MOCK_' + Date.now();
+    
+    // Status is 'pending' because the admin needs to verify the reference number manually
+    const status = 'pending';
+    const providerPaymentId = referenceNumber;
 
     conn = await db.getConnection();
     await conn.beginTransaction();
@@ -55,7 +61,7 @@ const createGcashEnrollment = async (req, res) => {
       [
         userId,
         centerId,
-        'gcash',
+        'gcash_manual',
         providerPaymentId,
         amount,
         'PHP',
@@ -64,29 +70,28 @@ const createGcashEnrollment = async (req, res) => {
           payment_method: 'GCash',
           gcash_number_masked: maskedNumber,
           gcash_name: gcashName,
+          reference_number: referenceNumber,
           program_enrolled: programEnrolled,
           enrollment_date: enrollmentDate,
-          mock: true,
+          manual_verification_required: true,
         }),
       ]
     );
     const paymentId = result.insertId;
 
-    // On successful payment, activate enrollment.
-    if (!shouldFail) {
-      await conn.query(
-        'INSERT INTO enrollments (user_id, center_id, payment_id, status, review_status, payment_verified) VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, centerId, paymentId, 'pending', 'pending', 0]
-      );
-    }
+    // Create the enrollment with payment_verified = 0 and status = pending
+    await conn.query(
+      'INSERT INTO enrollments (user_id, center_id, payment_id, status, review_status, payment_verified) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, centerId, paymentId, 'pending', 'pending', 0]
+    );
 
-    console.log('[Enrollment] Saved', {
+    console.log('[Enrollment] Saved Pending Manual GCash Payment', {
       userId,
       centerId,
       paymentId,
       transactionStatus: status,
       programEnrolled,
-      enrollmentDate,
+      referenceNumber,
     });
 
     await conn.commit();
@@ -95,22 +100,11 @@ const createGcashEnrollment = async (req, res) => {
       user_id: userId,
       review_center_id: Number(centerId),
       program_enrolled: programEnrolled,
-      enrollment_date: enrollmentDate,
       enrollment_status: 'pending',
       amount,
-      payment_method: 'GCash',
+      payment_method: 'GCash Manual',
       transaction_status: status,
-      timestamp: new Date().toISOString(),
-      message: shouldFail ? 'GCash payment failed. Please try again.' : 'GCash payment successful.',
-    });
-  } catch (err) {
-    if (conn) try { await conn.rollback(); } catch (e) {}
-    console.error('createGcashEnrollment error:', err);
-    return res.status(500).json({ message: 'Server error.' });
-  } finally {
-    if (conn) try { conn.release(); } catch (e) {}
-  }
-};
+      message: 'Payment tracking saved. Please wait for the Center Admin to verify your GCash Reference Number.',
 
 // Render a small mock payment page where the user can "complete" the payment (for testing)
 const getMockPaymentPage = async (req, res) => {

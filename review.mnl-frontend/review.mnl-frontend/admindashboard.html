@@ -199,6 +199,8 @@
                     + '<p style="margin:0 0 6px;color:#0d1b4b;font-size:12px;font-weight:700;">Payment Details</p>'
                     + '<p style="margin:0;color:#555;font-size:12px;">Amount: Php ' + escHtml(item.payment && item.payment.amount || 0) + '</p>'
                     + '<p style="margin:2px 0 0;color:#555;font-size:12px;">Method: ' + escHtml(item.payment && item.payment.method || 'gcash') + '</p>'
+                    + (item.payment && item.payment.gcash_name ? '<p style="margin:2px 0 0;color:#555;font-size:12px;">Acc Name: ' + escHtml(item.payment.gcash_name) + '</p>' : '')
+                    + (item.payment && item.payment.reference_number ? '<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Ref No: ' + escHtml(item.payment.reference_number) + '</p>' : '')
                     + '</div>'
                     + '<div>'
                     + '<p style="margin:0 0 6px;color:#0d1b4b;font-size:12px;font-weight:700;">Submitted Documents</p>'

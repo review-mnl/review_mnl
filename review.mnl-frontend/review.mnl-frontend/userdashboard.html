@@ -432,7 +432,6 @@
 
                     input.disabled = true;
                     try {
-                        appendOutgoingMessage(text);
                         await MessageAPI.send({
                             receiver_id: activeConversation.other_user_id,
                             enrollment_id: activeConversation.enrollment_id,

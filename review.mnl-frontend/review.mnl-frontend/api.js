@@ -405,6 +405,34 @@ function initGlobalNotificationBell(options) {
         var dropList = wrapper.querySelector('.rmnl-global-drop-list');
         var unreadEl = wrapper.querySelector('.rmnl-global-unread');
 
+        function closeProfileDropdowns() {
+            var profileDropdowns = document.querySelectorAll('#profileDropdown, #contactProfileDropdown, .profile-dropdown');
+            profileDropdowns.forEach(function(el) {
+                el.style.display = 'none';
+            });
+            var profileButtons = document.querySelectorAll('#profileBtn, #contactProfileBtn');
+            profileButtons.forEach(function(el) {
+                el.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        window.closeGlobalNotificationBell = function() {
+            drop.style.display = 'none';
+            btn.setAttribute('aria-expanded', 'false');
+        };
+
+        if (!window.__rmnlProfileNotifMutexBound) {
+            window.__rmnlProfileNotifMutexBound = true;
+            document.addEventListener('click', function(ev) {
+                var target = ev && ev.target;
+                if (!target || !target.closest) return;
+                if (!target.closest('#profileBtn, #contactProfileBtn, .profile-icon')) return;
+                if (typeof window.closeGlobalNotificationBell === 'function') {
+                    window.closeGlobalNotificationBell();
+                }
+            });
+        }
+
         function statusStyle(status) {
             var s = String(status || 'pending').toLowerCase();
             return {
@@ -487,6 +515,9 @@ function initGlobalNotificationBell(options) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
             var isOpen = drop.style.display === 'block';
+            if (!isOpen) {
+                closeProfileDropdowns();
+            }
             drop.style.display = isOpen ? 'none' : 'block';
             btn.setAttribute('aria-expanded', String(!isOpen));
         });

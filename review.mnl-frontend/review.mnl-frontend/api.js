@@ -194,6 +194,9 @@ function getLastSuperadminEmail() {
 // ---------------------------------------------------------------------------
 async function apiRequest(method, path, body, isFormData) {
     const opts = { method, credentials: 'include' };
+    if (String(method || '').toUpperCase() === 'GET') {
+        opts.cache = 'no-store';
+    }
     if (isFormData) {
         // Let browser set multipart boundary automatically — no Content-Type header
         const token = getActiveToken();

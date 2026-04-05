@@ -171,14 +171,27 @@
                 const CENTER = {
                     id: new URLSearchParams(window.location.search).get('id') || 'center_unknown',
                     name: 'Review Center',
-                    location: ''
+                    location: '',
+                    logo_url: ''
                 };
 
                 // Allow the API loader to update center details for accurate save data
-                window._updateSaveCenterId = function(id, name, location) {
+                window._updateSaveCenterId = function(id, name, location, logoUrl) {
                     CENTER.id = id;
                     CENTER.name = name;
                     CENTER.location = location;
+                    CENTER.logo_url = logoUrl || '';
+
+                    // If this center is already saved, keep the stored card data updated.
+                    try {
+                        var savedList = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                        var idx = savedList.findIndex(function(c){ return c && c.id === CENTER.id; });
+                        if (idx >= 0) {
+                            savedList[idx] = Object.assign({}, savedList[idx], CENTER);
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedList));
+                        }
+                    } catch(e) {}
+
                     updateBtn();
                 };
 
@@ -915,7 +928,7 @@
 
                 // Keep save-center payload in sync with selected center.
                 if (window._updateSaveCenterId) {
-                    window._updateSaveCenterId(String(center.id || centerId), centerName, center.address || '');
+                    window._updateSaveCenterId(String(center.id || centerId), centerName, center.address || '', center.logo_url || center.image_url || center.profile_picture_url || '');
                 }
 
                 // Make the Back button return to previous search results context when possible.
@@ -1016,7 +1029,7 @@
                 }
 
                 // Update save button center ID
-                if (window._updateSaveCenterId) window._updateSaveCenterId(String(centerId), centerName, center.address || '');
+                if (window._updateSaveCenterId) window._updateSaveCenterId(String(centerId), centerName, center.address || '', center.logo_url || center.image_url || center.profile_picture_url || '');
 
             } catch (err) {
                 console.error('Failed to load center:', err);

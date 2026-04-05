@@ -161,6 +161,16 @@
                     function getSaved() {
                         try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
                     }
+
+                    function resolveSavedImageUrl(raw) {
+                        if (!raw) return '';
+                        var value = String(raw).trim();
+                        if (!value) return '';
+                        if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+                        if (value.charAt(0) === '/') return API_BASE + value;
+                        return API_BASE + '/' + value.replace(/^\/+/, '');
+                    }
+
                     function renderSaved() {
                         const list = document.getElementById('savedCentersList');
                         const saved = getSaved();
@@ -170,8 +180,12 @@
                             return;
                         }
                         list.innerHTML = saved.map(function(c) {
+                            var img = resolveSavedImageUrl(c.logo_url || c.image_url || c.profile_picture_url);
+                            var avatarStyle = img
+                                ? (' style="background-image:url(\'' + img.replace(/'/g, '%27') + '\');background-size:cover;background-position:center;"')
+                                : '';
                             return '<div class="saved-item">'
-                                + '<div class="review-avatar"></div>'
+                                + '<div class="review-avatar"' + avatarStyle + '></div>'
                                 + '<div class="review-info"><h4>' + c.name + '</h4><p>' + c.location + '</p></div>'
                                 + '<div class="saved-buttons">'
                                 + '<button class="btn-delete" onclick="deleteSaved(\'' + c.id + '\')" >Delete</button>'
@@ -179,12 +193,42 @@
                                 + '</div></div>';
                         }).join('');
                     }
+
+                    async function hydrateSavedCenterImages() {
+                        if (typeof CentersAPI === 'undefined') return;
+                        var saved = getSaved();
+                        if (!saved.length) return;
+                        var changed = false;
+
+                        for (var i = 0; i < saved.length; i++) {
+                            var center = saved[i];
+                            var hasImage = center && (center.logo_url || center.image_url || center.profile_picture_url);
+                            if (hasImage || !center || !center.id) continue;
+                            try {
+                                var latest = await CentersAPI.getById(center.id);
+                                var logoUrl = latest && (latest.logo_url || latest.image_url || latest.profile_picture_url);
+                                if (logoUrl) {
+                                    saved[i] = Object.assign({}, center, { logo_url: logoUrl });
+                                    changed = true;
+                                }
+                            } catch (e) {}
+                        }
+
+                        if (changed) {
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                            renderSaved();
+                        }
+                    }
+
                     window.deleteSaved = function(id) {
                         let saved = getSaved().filter(function(c){ return c.id !== id; });
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
                         renderSaved();
                     };
                     renderSaved();
+                    window.addEventListener('load', function() {
+                        hydrateSavedCenterImages();
+                    });
                 })();
             </script>
 

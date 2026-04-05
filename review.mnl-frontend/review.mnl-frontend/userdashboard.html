@@ -64,6 +64,22 @@
                         <li><a href="search.html">SEARCH</a></li>
                     </ul>
                 </div>
+                <div class="notification-wrapper" style="position:relative;margin-right:10px;">
+                    <button id="notificationBellBtn" aria-label="Open notifications" aria-expanded="false" style="position:relative;background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:28px;">notifications</span>
+                        <span id="notificationBellBadge" style="display:none;position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#d32f2f;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;">0</span>
+                    </button>
+                    <div id="notificationDropdown" style="display:none;position:absolute;right:0;top:40px;width:360px;max-width:86vw;background:#fff;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.2);padding:0;overflow:hidden;z-index:1500;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eef2ff;">
+                            <strong style="font-size:14px;color:#0d1b4b;">Enrollment Notifications</strong>
+                            <span id="notificationDropdownUnread" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;">0 Unread</span>
+                        </div>
+                        <div id="notificationDropdownList" style="max-height:360px;overflow-y:auto;padding:10px 12px;"></div>
+                        <div style="padding:10px 12px;border-top:1px solid #eef2ff;background:#f8faff;">
+                            <a href="userdashboard.html#fullNotificationsSection" id="viewAllNotificationsLink" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a>
+                        </div>
+                    </div>
+                </div>
                 <div class="profile-wrapper" style="position:relative;">
                     <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#fff;">
                         <span class="material-symbols-outlined">account_circle</span>
@@ -186,7 +202,7 @@
             <div class="recent-grid" id="enrolledCentersGrid"></div>
         </div>
 
-        <div class="recent-section" style="margin-top:20px;">
+        <div class="recent-section" id="fullNotificationsSection" style="margin-top:20px;">
             <div class="card-header">
                 <h3>Enrollment Notifications</h3>
                 <span id="dashboardUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;">0 Unread</span>
@@ -254,21 +270,66 @@
             <script>
                 if (!isAuthenticated()) { window.location.href = 'login.html'; }
                 (function(){
-                    const btn = document.getElementById('profileBtn');
-                    const dd = document.getElementById('profileDropdown');
+                    const profileBtn = document.getElementById('profileBtn');
+                    const profileDd = document.getElementById('profileDropdown');
                     const logout = document.getElementById('logoutBtn');
-                    if(!btn || !dd) return;
-                    btn.addEventListener('click', function(e){
+                    const bellBtn = document.getElementById('notificationBellBtn');
+                    const bellDd = document.getElementById('notificationDropdown');
+                    const viewAllLink = document.getElementById('viewAllNotificationsLink');
+
+                    if(!profileBtn || !profileDd) return;
+
+                    profileBtn.addEventListener('click', function(e){
                         e.stopPropagation();
-                        const isOpen = dd.style.display === 'block';
-                        dd.style.display = isOpen ? 'none' : 'block';
-                        btn.setAttribute('aria-expanded', String(!isOpen));
+                        const isOpen = profileDd.style.display === 'block';
+                        profileDd.style.display = isOpen ? 'none' : 'block';
+                        profileBtn.setAttribute('aria-expanded', String(!isOpen));
+
+                        if (!isOpen && bellDd) {
+                            bellDd.style.display = 'none';
+                            if (bellBtn) bellBtn.setAttribute('aria-expanded', 'false');
+                        }
                     });
+
+                    if (bellBtn && bellDd) {
+                        bellBtn.addEventListener('click', function(e){
+                            e.stopPropagation();
+                            const isOpen = bellDd.style.display === 'block';
+                            bellDd.style.display = isOpen ? 'none' : 'block';
+                            bellBtn.setAttribute('aria-expanded', String(!isOpen));
+
+                            if (!isOpen) {
+                                profileDd.style.display = 'none';
+                                profileBtn.setAttribute('aria-expanded', 'false');
+                            }
+                        });
+                    }
+
+                    if (viewAllLink) {
+                        viewAllLink.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (bellDd) bellDd.style.display = 'none';
+                            if (bellBtn) bellBtn.setAttribute('aria-expanded', 'false');
+                            var fullSection = document.getElementById('fullNotificationsSection');
+                            if (fullSection && typeof fullSection.scrollIntoView === 'function') {
+                                fullSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        });
+                    }
+
                     logout.addEventListener('click', function(){
                         clearSession();
                         window.location.href = 'index.html';
                     });
-                    document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+
+                    document.addEventListener('click', function(){
+                        profileDd.style.display='none';
+                        profileBtn.setAttribute('aria-expanded','false');
+                        if (bellDd && bellBtn) {
+                            bellDd.style.display='none';
+                            bellBtn.setAttribute('aria-expanded','false');
+                        }
+                    });
                 })();
                 var activeConversation = null;
                 var activeConversationKey = null;
@@ -652,6 +713,70 @@
 
                 window.openConvByKey = openConvByKey;
 
+                function getNotificationStatusStyle(status) {
+                    var s = String(status || 'pending').toLowerCase();
+                    return {
+                        status: s,
+                        bg: s === 'approved' ? '#e8f5e9' : (s === 'rejected' ? '#ffebee' : '#e3f2fd'),
+                        color: s === 'approved' ? '#1b5e20' : (s === 'rejected' ? '#b71c1c' : '#0d47a1')
+                    };
+                }
+
+                function renderNotificationBellDropdown(notifications) {
+                    var list = document.getElementById('notificationDropdownList');
+                    var bellBadge = document.getElementById('notificationBellBadge');
+                    var dropUnread = document.getElementById('notificationDropdownUnread');
+                    if (!list) return;
+
+                    var data = Array.isArray(notifications) ? notifications : [];
+                    var unreadCount = data.filter(function(n){ return !n.is_read; }).length;
+
+                    if (bellBadge) {
+                        bellBadge.style.display = unreadCount > 0 ? 'block' : 'none';
+                        bellBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                    }
+
+                    if (dropUnread) {
+                        dropUnread.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                        dropUnread.textContent = unreadCount + ' Unread';
+                    }
+
+                    if (!data.length) {
+                        list.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:4px 2px;">No notifications yet.</p>';
+                        return;
+                    }
+
+                    var latest = data.slice(0, 8);
+                    list.innerHTML = latest.map(function(item) {
+                        var style = getNotificationStatusStyle(item.status);
+                        var isUnread = !item.is_read;
+                        return '<div onclick="handleNotificationItemClick(' + Number(item.notification_id) + ')" style="cursor:pointer;border:1px solid ' + (isUnread ? '#b9d0ff' : '#e5e7eb') + ';background:' + (isUnread ? '#f5f9ff' : '#fff') + ';border-radius:10px;padding:10px 11px;margin-bottom:9px;">'
+                            + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">'
+                            + '<p style="margin:0;font-size:12px;color:#111827;font-weight:' + (isUnread ? '700' : '500') + ';line-height:1.45;">' + escHtml(item.message || '') + '</p>'
+                            + '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;color:' + style.color + ';background:' + style.bg + ';">' + escHtml(style.status.charAt(0).toUpperCase() + style.status.slice(1)) + '</span>'
+                            + '</div>'
+                            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;">'
+                            + '<span style="font-size:11px;color:#6b7280;">' + escHtml(formatDateTime(item.created_at)) + '</span>'
+                            + (item.center_user_id
+                                ? '<button onclick="event.stopPropagation(); openChatFromNotification(' + Number(item.notification_id) + ');" style="padding:5px 9px;border:1px solid #d0dcff;background:#fff;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">Open Chat</button>'
+                                : '<span style="font-size:10px;color:' + (isUnread ? '#b45309' : '#6b7280') + ';font-weight:600;">' + (isUnread ? 'Unread' : 'Read') + '</span>')
+                            + '</div>'
+                            + '</div>';
+                    }).join('');
+                }
+
+                async function handleNotificationItemClick(notificationId) {
+                    try {
+                        var item = window._notificationsById && window._notificationsById[notificationId];
+                        if (item && !item.is_read) {
+                            await NotificationAPI.markAsRead(notificationId);
+                            await loadMyNotifications();
+                        }
+                    } catch (e) {
+                        console.warn('Failed to mark notification as read from dropdown', e);
+                    }
+                }
+
                 function renderDashboardNotifications(notifications) {
                     var list = document.getElementById('notificationsList');
                     var empty = document.getElementById('notificationsEmptyMessage');
@@ -673,9 +798,8 @@
 
                     if (empty) empty.style.display = 'none';
                     list.innerHTML = data.map(function(item) {
-                        var status = String(item.status || 'pending').toLowerCase();
-                        var statusBg = status === 'approved' ? '#e8f5e9' : (status === 'rejected' ? '#ffebee' : '#e3f2fd');
-                        var statusColor = status === 'approved' ? '#1b5e20' : (status === 'rejected' ? '#b71c1c' : '#0d47a1');
+                        var statusStyle = getNotificationStatusStyle(item.status);
+                        var status = statusStyle.status;
                         var isUnread = !item.is_read;
                         return '<div style="border:1px solid ' + (isUnread ? '#b9d0ff' : '#e5e7eb') + ';background:' + (isUnread ? '#f5f9ff' : '#fff') + ';border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
                             + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">'
@@ -683,7 +807,7 @@
                             + '<p style="margin:0 0 5px;color:#111827;font-size:13px;font-weight:' + (isUnread ? '700' : '500') + ';">' + escHtml(item.message || '') + '</p>'
                             + '<p style="margin:0;color:#6b7280;font-size:12px;">Enrollment #' + escHtml(item.enrollment_id) + ' • ' + escHtml(formatDateTime(item.created_at)) + '</p>'
                             + '</div>'
-                            + '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;color:' + statusColor + ';background:' + statusBg + ';">' + escHtml(status.charAt(0).toUpperCase() + status.slice(1)) + '</span>'
+                            + '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;color:' + statusStyle.color + ';background:' + statusStyle.bg + ';">' + escHtml(status.charAt(0).toUpperCase() + status.slice(1)) + '</span>'
                             + '</div>'
                             + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;">'
                             + '<span style="font-size:11px;color:' + (isUnread ? '#b45309' : '#6b7280') + ';font-weight:600;">' + (isUnread ? 'Unread' : 'Read') + '</span>'
@@ -705,10 +829,12 @@
                         window._notificationsById = {};
                         notifications.forEach(function(n){ window._notificationsById[n.notification_id] = n; });
                         renderDashboardNotifications(notifications);
+                        renderNotificationBellDropdown(notifications);
                     } catch (e) {
                         console.warn('Failed to load notifications', e);
                         window._notificationsById = {};
                         renderDashboardNotifications([]);
+                        renderNotificationBellDropdown([]);
                     }
                 }
 
@@ -731,6 +857,10 @@
                         await loadConversations();
                         var sidebar = document.getElementById('sidebar');
                         var overlay = document.querySelector('.sidebar-overlay');
+                        var bellDd = document.getElementById('notificationDropdown');
+                        var bellBtn = document.getElementById('notificationBellBtn');
+                        if (bellDd) bellDd.style.display = 'none';
+                        if (bellBtn) bellBtn.setAttribute('aria-expanded', 'false');
                         if (sidebar && !sidebar.classList.contains('active')) sidebar.classList.add('active');
                         if (overlay && !overlay.classList.contains('active')) overlay.classList.add('active');
                         await openConv(conversation);
@@ -749,6 +879,7 @@
 
                 window.markNotificationAsRead = markNotificationAsRead;
                 window.openChatFromNotification = openChatFromNotification;
+                window.handleNotificationItemClick = handleNotificationItemClick;
 
                 function applyUserProfileToUI(user) {
                     if (!user) return;
@@ -880,6 +1011,7 @@
                     loadMyNotifications();
                     setInterval(function(){
                         loadConversations();
+                        loadMyNotifications();
                     }, 8000);
                 })();
             </script>

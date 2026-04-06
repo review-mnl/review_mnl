@@ -434,11 +434,29 @@
                         </div>
 
                     <!-- STEP 4: Confirmation -->
-                    <div id="schStep4" style="display:none;text-align:center;padding:40px 20px;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
-                        <div style="font-size:64px;color:#16a34a;line-height:1;">&#10003;</div>
-                        <h2 style="font-size:28px;font-weight:800;color:#0d1b4b;margin:0;">Schedule Confirmed</h2>
-                        <p style="font-size:14px;color:#5b6473;line-height:1.6;margin:0;max-width:420px;">Your enrollment has been successfully submitted.</p>
-                        <button onclick="goToDashboard()" class="sch-btn-primary" style="margin-top:10px;min-width:200px;">Go to Dashboard</button>
+                    <div id="schStep4" style="display:none;text-align:center;padding:32px 20px;min-height:320px;">
+                        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;max-width:520px;margin:0 auto;">
+                            <div style="font-size:68px;color:#16a34a;line-height:1;">&#10003;</div>
+                            <h2 style="font-size:28px;font-weight:800;color:#0d1b4b;margin:0;">Enrollment Successful!</h2>
+                            <p style="font-size:14px;color:#5b6473;line-height:1.6;margin:0;max-width:460px;">Your enrollment has been submitted and is awaiting approval.</p>
+
+                            <div style="width:100%;background:#f8f9fc;border:1px solid #e2e8f5;border-radius:12px;padding:14px 16px;text-align:left;margin-top:4px;">
+                                <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.04em;color:#7a859f;text-transform:uppercase;">Enrollment Summary</p>
+                                <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Payment Method</span><span id="confPaymentMethod" style="font-weight:600;color:#0d1b4b;text-align:right;">GCash</span></div>
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Date</span><span id="confDate" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                </div>
+                            </div>
+
+                            <div id="confStatusBadge" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;background:#fff4d6;color:#9a5b00;">Pending Approval</div>
+
+                            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%;margin-top:4px;">
+                                <button onclick="goToDashboard()" class="sch-btn-primary" style="min-width:160px;">Go to Dashboard</button>
+                                <button onclick="goToMessages()" class="sch-btn-primary" style="min-width:160px;">Message Review Center</button>
+                                <button onclick="goToEnrollments()" class="sch-btn-primary" style="min-width:160px;">View Enrollment</button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -609,11 +627,37 @@
                 document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
                 updatePaymentMethodUI();
             }
+            if (n === 4) {
+                var confProgram = document.getElementById('confProgram');
+                var confPaymentMethod = document.getElementById('confPaymentMethod');
+                var confDate = document.getElementById('confDate');
+                var confStatusBadge = document.getElementById('confStatusBadge');
+                var statusLower = String(_schPaymentStatus || '').toLowerCase();
+                var isApproved = statusLower.indexOf('approved') >= 0 && statusLower.indexOf('pending') < 0;
+
+                if (confProgram) confProgram.textContent = document.getElementById('schProgram').value || '—';
+                if (confPaymentMethod) confPaymentMethod.textContent = _schPaymentMethod || 'GCash';
+                if (confDate) confDate.textContent = schFmtDate(_schSelectedDate);
+
+                if (confStatusBadge) {
+                    confStatusBadge.textContent = isApproved ? 'Approved' : 'Pending Approval';
+                    confStatusBadge.style.background = isApproved ? '#e8f5e9' : '#fff4d6';
+                    confStatusBadge.style.color = isApproved ? '#1f7a3a' : '#9a5b00';
+                }
+            }
             schSetStep(n);
         }
 
         function goToDashboard() {
-            window.location.href = 'userdashboard.html';
+            window.location.href = '/dashboard';
+        }
+
+        function goToMessages() {
+            window.location.href = '/messages';
+        }
+
+        function goToEnrollments() {
+            window.location.href = '/enrollments';
         }
 
         function showBankComingSoonMessage() {

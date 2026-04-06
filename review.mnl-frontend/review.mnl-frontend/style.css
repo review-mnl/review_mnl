@@ -503,9 +503,15 @@ nav img{
 .footer-container {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     max-width: 1200px;
     margin: 0 auto;
+    gap: 20px;
+}
+
+.footer-left,
+.footer-right {
+    flex: 1;
 }
 
 .footer-left h2 {
@@ -521,20 +527,23 @@ nav img{
 }
 
 .footer-center {
+    flex: 1;
     display: flex;
+    justify-content: center;
     gap: 48px;
 }
 
 .footer-column {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .footer-column a {
     color: #666;
     text-decoration: none;
     font-size: 13px;
+    line-height: 1.35;
 }
 
 .footer-column a:hover {
@@ -543,6 +552,7 @@ nav img{
 
 .footer-right {
     display: flex;
+    justify-content: flex-end;
     gap: 15px;
 }
 
@@ -572,6 +582,11 @@ nav img{
     .footer-container {
         gap: 24px;
         flex-wrap: wrap;
+    }
+
+    .footer-left,
+    .footer-right {
+        flex: 0 1 auto;
     }
 
     .footer-center {

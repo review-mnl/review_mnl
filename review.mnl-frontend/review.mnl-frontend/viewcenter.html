@@ -387,17 +387,26 @@
                         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                             <div>
                                 <label class="sch-label">GCash Number</label>
-                                <input id="schGcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
+                                <input id="schGcashNumber" name="gcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
                             </div>
                             <div>
                                 <label class="sch-label">GCash Account Name</label>
-                                <input id="schGcashName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
+                                <input id="schGcashName" name="accountName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
                             </div>
                             <div>
                                 <label class="sch-label" style="color: #0a4cff; font-weight: bold;">GCash Reference Number</label>
-                                <input id="schReferenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
+                                <input id="schReferenceNumber" name="referenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
                                 <p style="font-size:11px;color:#888;margin-top:4px;">Transfer the amount to the Center's GCash and input the reference number here.</p>
                             </div>
+                        </div>
+
+                        <div id="schPaymentMsg" style="display:none;font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;"></div>
+
+                        <div style="display:flex;justify-content:space-between;gap:10px;margin-top:20px;">
+                            <button onclick="schGoStep(2)" class="sch-btn-ghost">&larr; Back</button>
+                            <button id="proceedPaymentBtn" class="sch-btn-primary" style="min-width:160px;">Proceed Payment</button>
+                        </div>
+
                     <!-- STEP 4: Confirmation -->
                     <div id="schStep4" style="display:none;text-align:center;padding:10px 0 4px;">
                         <span class="material-symbols-outlined" style="font-size:56px;color:#0a4cff;display:block;margin-bottom:10px;">check_circle</span>
@@ -651,6 +660,44 @@
             if (gcashRadio) gcashRadio.addEventListener('change', updatePaymentMethodUI);
             if (bankRadio) bankRadio.addEventListener('change', updatePaymentMethodUI);
             updatePaymentMethodUI();
+        }
+
+        function goToStep(stepNumber) {
+            schGoStep(stepNumber);
+        }
+
+        function setupProceedPaymentButton() {
+            var proceedBtn = document.getElementById('proceedPaymentBtn');
+            if (!proceedBtn || proceedBtn.dataset.bound === '1') return;
+
+            proceedBtn.addEventListener('click', function () {
+                var gcashNumberEl = document.querySelector('input[name="gcashNumber"]') || document.getElementById('schGcashNumber');
+                var accountNameEl = document.querySelector('input[name="accountName"]') || document.getElementById('schGcashName');
+                var referenceNumberEl = document.querySelector('input[name="referenceNumber"]') || document.getElementById('schReferenceNumber');
+                var gcashNumber = (gcashNumberEl && gcashNumberEl.value ? gcashNumberEl.value : '').trim();
+                var accountName = (accountNameEl && accountNameEl.value ? accountNameEl.value : '').trim();
+                var referenceNumber = (referenceNumberEl && referenceNumberEl.value ? referenceNumberEl.value : '').trim();
+
+                if (!gcashNumber || !accountName || !referenceNumber) {
+                    alert('Please complete all payment details.');
+                    return;
+                }
+
+                const paymentData = {
+                    gcashNumber: gcashNumber,
+                    accountName: accountName,
+                    referenceNumber: referenceNumber,
+                    method: 'GCash',
+                    status: 'pending'
+                };
+
+                console.log('Payment Submitted:', paymentData);
+                _schPaymentMethod = 'GCash';
+                _schPaymentStatus = 'Pending Admin Approval';
+                goToStep(4);
+            });
+
+            proceedBtn.dataset.bound = '1';
         }
 
         function schFmtDate(d) {
@@ -1147,7 +1194,10 @@
             return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
-        document.addEventListener('DOMContentLoaded', setupPaymentMethodListeners);
+        document.addEventListener('DOMContentLoaded', function() {
+            setupPaymentMethodListeners();
+            setupProceedPaymentButton();
+        });
         initGlobalNotificationBell();
         </script>
         

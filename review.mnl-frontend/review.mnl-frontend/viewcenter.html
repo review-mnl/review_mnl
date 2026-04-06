@@ -446,6 +446,8 @@
                                     <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                     <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Payment Method</span><span id="confPaymentMethod" style="font-weight:600;color:#0d1b4b;text-align:right;">GCash</span></div>
                                     <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Date</span><span id="confDate" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Amount</span><span id="confAmount" style="font-weight:600;color:#0d1b4b;text-align:right;">₱ 0.00</span></div>
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Reference Number</span><span id="confReferenceNumber" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                 </div>
                             </div>
 
@@ -574,6 +576,8 @@
         ];
         var _schYear, _schMonth, _schSelectedDate = null, _schStep = 1;
         var _schPaymentMethod = 'GCash', _schPaymentStatus = 'Pending';
+        var _schEnrollmentResp = null;
+        var _schReferenceNumber = '';
         var SCH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
         function openScheduleModal() {
@@ -582,6 +586,8 @@
             _schSelectedDate = null; _schStep = 1;
             _schPaymentMethod = 'GCash';
             _schPaymentStatus = 'Pending';
+            _schEnrollmentResp = null;
+            _schReferenceNumber = '';
             var gcashRadio = document.getElementById('schPayGcash');
             var bankRadio = document.getElementById('schPayBank');
             if (gcashRadio) gcashRadio.checked = true;
@@ -631,15 +637,26 @@
                 var confProgram = document.getElementById('confProgram');
                 var confPaymentMethod = document.getElementById('confPaymentMethod');
                 var confDate = document.getElementById('confDate');
+                var confAmount = document.getElementById('confAmount');
+                var confReferenceNumber = document.getElementById('confReferenceNumber');
                 var confStatusBadge = document.getElementById('confStatusBadge');
-                var statusLower = String(_schPaymentStatus || '').toLowerCase();
-                var isApproved = statusLower.indexOf('approved') >= 0 && statusLower.indexOf('pending') < 0;
+                var programValue = (_schEnrollmentResp && _schEnrollmentResp.program_enrolled)
+                    || document.getElementById('schProgram').value
+                    || '—';
+                var paymentMethodValue = (_schEnrollmentResp && _schEnrollmentResp.payment_method)
+                    || _schPaymentMethod
+                    || 'GCash Manual';
+                var amountValue = Number((_schEnrollmentResp && _schEnrollmentResp.amount) || 0);
+                var enrollmentStatus = String((_schEnrollmentResp && _schEnrollmentResp.enrollment_status) || 'pending').toLowerCase();
 
-                if (confProgram) confProgram.textContent = document.getElementById('schProgram').value || '—';
-                if (confPaymentMethod) confPaymentMethod.textContent = _schPaymentMethod || 'GCash';
+                if (confProgram) confProgram.textContent = programValue;
+                if (confPaymentMethod) confPaymentMethod.textContent = paymentMethodValue;
                 if (confDate) confDate.textContent = schFmtDate(_schSelectedDate);
+                if (confAmount) confAmount.textContent = '₱ ' + amountValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (confReferenceNumber) confReferenceNumber.textContent = _schReferenceNumber || '—';
 
                 if (confStatusBadge) {
+                    var isApproved = enrollmentStatus === 'approved';
                     confStatusBadge.textContent = isApproved ? 'Approved' : 'Pending Approval';
                     confStatusBadge.style.background = isApproved ? '#e8f5e9' : '#fff4d6';
                     confStatusBadge.style.color = isApproved ? '#1f7a3a' : '#9a5b00';
@@ -732,34 +749,7 @@
             if (!proceedBtn || proceedBtn.dataset.bound === '1') return;
 
             proceedBtn.addEventListener('click', function () {
-                if (getSelectedPaymentMethod() === 'bank') {
-                    return;
-                }
-
-                var gcashNumberEl = document.querySelector('input[name="gcashNumber"]') || document.getElementById('schGcashNumber');
-                var accountNameEl = document.querySelector('input[name="accountName"]') || document.getElementById('schGcashName');
-                var referenceNumberEl = document.querySelector('input[name="referenceNumber"]') || document.getElementById('schReferenceNumber');
-                var gcashNumber = (gcashNumberEl && gcashNumberEl.value ? gcashNumberEl.value : '').trim();
-                var accountName = (accountNameEl && accountNameEl.value ? accountNameEl.value : '').trim();
-                var referenceNumber = (referenceNumberEl && referenceNumberEl.value ? referenceNumberEl.value : '').trim();
-
-                if (!gcashNumber || !accountName || !referenceNumber) {
-                    alert('Please complete all payment details.');
-                    return;
-                }
-
-                const paymentData = {
-                    gcashNumber: gcashNumber,
-                    accountName: accountName,
-                    referenceNumber: referenceNumber,
-                    method: 'GCash',
-                    status: 'pending'
-                };
-
-                console.log('Payment Submitted:', paymentData);
-                _schPaymentMethod = 'GCash';
-                _schPaymentStatus = 'Pending Admin Approval';
-                goToStep(4);
+                startGcashPayment();
             });
 
             proceedBtn.dataset.bound = '1';
@@ -1121,7 +1111,7 @@
 
         async function startGcashPayment() {
             const msgEl = document.getElementById('schPaymentMsg');
-            const payBtn = document.getElementById('gcashPayBtn');
+            const payBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
             try {
                 const token = getActiveToken();
                 if (!token) { alert('Please login to continue to payment.'); return; }
@@ -1136,6 +1126,7 @@
                 const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
                 const gcashName = (document.getElementById('schGcashName').value || '').trim();
                 const referenceNumber = (document.getElementById('schReferenceNumber').value || '').trim();
+                _schReferenceNumber = referenceNumber;
                 if (!gcashNumber || !gcashName || !referenceNumber) {
                     if (msgEl) {
                         msgEl.textContent = 'Please enter your GCash number, account name, and Reference Number.';
@@ -1186,10 +1177,11 @@
                     enrollment_date: payload.enrollment_date,
                     amount: payload.amount,
                 });
-                const resp = await CentersAPI.enrollWithGcash(centerId, payload);
+                const resp = await PaymentsAPI.createGcashEnrollment(centerId, payload);
                 console.log('[Enrollment] Enrollment response', resp);
 
                 if (resp && (resp.transaction_status === 'paid' || resp.transaction_status === 'pending')) {
+                    _schEnrollmentResp = resp;
                     _schPaymentMethod = resp.payment_method || 'GCash';
                     _schPaymentStatus = resp.transaction_status === 'pending' ? 'Pending Admin Approval' : 'Paid';
                     if (msgEl) {
@@ -1225,7 +1217,7 @@
             } finally {
                 if (payBtn) {
                     payBtn.disabled = false;
-                    payBtn.textContent = 'Process GCash Payment';
+                    payBtn.textContent = 'Proceed Payment';
                 }
             }
         }

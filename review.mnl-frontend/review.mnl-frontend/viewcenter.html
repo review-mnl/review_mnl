@@ -1121,7 +1121,11 @@
                     return;
                 }
                 const params = new URLSearchParams(window.location.search);
-                const centerId = params.get('id');
+                let centerId = params.get('id') || params.get('centerId');
+                if (!centerId) {
+                    var pathMatch = (window.location.pathname || '').match(/(?:\/|^)viewcenter(?:\.html)?\/(\d+)(?:\/)?$/i);
+                    if (pathMatch && pathMatch[1]) centerId = pathMatch[1];
+                }
                 if (!centerId) return alert('Missing center id.');
                 const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
                 const gcashName = (document.getElementById('schGcashName').value || '').trim();
@@ -1172,6 +1176,8 @@
                 };
                 console.log('[Enrollment] Sending enrollment payload', {
                     centerId: centerId,
+                    endpoint: '/api/payments/gcash/' + String(centerId),
+                    hasAuthToken: !!token,
                     userId: (getUser() && getUser().id) || null,
                     program_enrolled: payload.program_enrolled,
                     enrollment_date: payload.enrollment_date,

@@ -343,8 +343,18 @@ const UserAPI = {
 // Payments API
 // ---------------------------------------------------------------------------
 const PaymentsAPI = {
-    createGcashEnrollment: (centerId, payload) =>
-        apiRequest('POST', '/api/payments/gcash/' + centerId, payload),
+    createGcashEnrollment: (centerId, payload) => {
+        var resolvedCenterId = encodeURIComponent(String(centerId || '').trim());
+        var body = {
+            amount: Number((payload && payload.amount) || 1550),
+            gcash_number: String((payload && payload.gcash_number) || '').trim(),
+            gcash_name: String((payload && payload.gcash_name) || '').trim(),
+            reference_number: String((payload && payload.reference_number) || '').trim(),
+            program_enrolled: String((payload && payload.program_enrolled) || '').trim(),
+            enrollment_date: String((payload && payload.enrollment_date) || '').trim(),
+        };
+        return apiRequest('POST', '/api/payments/gcash/' + resolvedCenterId, body);
+    },
 };
 
 // ---------------------------------------------------------------------------

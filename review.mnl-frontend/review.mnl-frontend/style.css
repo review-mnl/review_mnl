@@ -1906,7 +1906,7 @@ nav img{
 .testimonials-section {
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 10px 28px rgba(6, 22, 82, 0.16);
+    box-shadow: none;
 }
 
 .testimonials-section h2 {
@@ -1920,7 +1920,11 @@ nav img{
     border-radius: 12px;
     padding: 16px 20px;
     margin-bottom: 14px;
-    box-shadow: 0 4px 12px rgba(6, 22, 82, 0.10);
+    box-shadow: none;
+}
+
+.testimonials-section .testimonial-card:last-child {
+    margin-bottom: 0;
 }
 
 /* DASHBOARD SECTION */

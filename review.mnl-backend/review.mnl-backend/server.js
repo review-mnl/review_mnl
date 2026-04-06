@@ -66,6 +66,7 @@ app.use('/api/admin',   require('./routes/admin'));
 app.use('/api/centers', require('./routes/centers'));
 app.use('/api/users',   require('./routes/users'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/enrollments', require('./routes/enrollments'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/messages', require('./routes/messages'));
 

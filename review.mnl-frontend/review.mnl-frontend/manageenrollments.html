@@ -172,8 +172,8 @@
                 return '<div style="background:#f9fafb;border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid #e7ecf7;">'
                     + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">'
                     + '<div>'
-                    + '<strong style="color:#0d1b4b;font-size:14px;">' + escHtml(item.student_name || ('User #' + item.user_id)) + '</strong>'
-                    + '<p style="margin:3px 0 0;color:#666;font-size:12px;">User ID: ' + escHtml(item.user_id) + ' | Center ID: ' + escHtml(item.review_center_id) + '</p>'
+                    + '<strong style="color:#0d1b4b;font-size:14px;">' + escHtml(item.student_name || 'Student') + '</strong>'
+                    + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Email: ' + escHtml(item.student_email || 'N/A') + '</p>'
                     + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Program: ' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
                     + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Submitted: ' + escHtml(new Date(item.date_submitted).toLocaleString()) + '</p>'
                     + '</div>'
@@ -197,7 +197,7 @@
                     + '</div>'
                     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">'
                     + verifyBtn
-                    + '<button onclick="openChatFromEnrollment(' + item.user_id + ',' + (item.review_center_id || 0) + ',' + item.enrollment_id + ')" style="padding:6px 12px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Message Student</button>'
+                    + '<button onclick="openChatFromEnrollment(' + item.user_id + ',' + (window._myCenterId || 0) + ',' + item.enrollment_id + ')" style="padding:6px 12px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Message Student</button>'
                     + '<button ' + approveDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'approved\')" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>'
                     + '<button ' + rejectDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'rejected\')" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>'
                     + '</div>'
@@ -208,20 +208,67 @@
 
         async function loadCenterEnrollments() {
             try {
+                if (!window._myCenterId) {
+                    var profile = await CentersAPI.getMyProfile();
+                    window._myCenterId = profile && profile.id ? Number(profile.id) : 0;
+                }
+                if (!window._myCenterId) {
+                    throw new Error('Could not determine review center id for enrollment fetch.');
+                }
+
                 var status = (document.getElementById('enrollmentStatusFilter') || {}).value || 'all';
                 var sort = (document.getElementById('enrollmentSort') || {}).value || 'latest';
-                var res = await CentersAPI.getMyEnrollments(status, sort);
-                var enrollments = (res && res.enrollments) ? res.enrollments : [];
+                var res = await EnrollmentsAPI.getCenterEnrollments(window._myCenterId);
+                var rawEnrollments = (res && res.enrollments) ? res.enrollments : [];
+
+                var enrollments = rawEnrollments.map(function(row) {
+                    var metadata = {};
+                    try {
+                        metadata = row.metadata && typeof row.metadata === 'string' ? JSON.parse(row.metadata) : (row.metadata || {});
+                    } catch (e) {
+                        metadata = {};
+                    }
+                    var reviewStatus = String(row.review_status || row.status || 'pending').toLowerCase();
+                    var docs = metadata.submitted_documents || metadata.documents || [];
+
+                    return {
+                        enrollment_id: Number(row.id),
+                        user_id: Number(row.user_id || 0),
+                        student_name: row.student_name || row.student_email || 'Student',
+                        student_email: row.student_email || '',
+                        review_center_id: window._myCenterId,
+                        program_enrolled: metadata.program_enrolled || 'Program not specified',
+                        submitted_documents: Array.isArray(docs) ? docs : (docs ? [docs] : []),
+                        payment: {
+                            amount: Number(row.amount || 0),
+                            method: row.provider || 'gcash_manual',
+                            status: String((metadata.transaction_status || 'pending')).toLowerCase(),
+                            verified: Boolean(row.payment_verified),
+                            reference_number: row.reference_number || (metadata.reference_number || null),
+                            gcash_name: metadata.gcash_name || null,
+                        },
+                        status: reviewStatus,
+                        date_submitted: row.created_at,
+                        latest_notification: null,
+                    };
+                });
 
                 var pendingCount = enrollments.filter(function(e){ return e.status === 'pending'; }).length;
-                document.getElementById('statStudentsLabel').textContent = 'Student Enrollments';
+                var filtered = enrollments.filter(function(item){ return status === 'all' ? true : item.status === status; });
+                if (sort === 'oldest') {
+                    filtered.sort(function(a, b){ return new Date(a.date_submitted) - new Date(b.date_submitted); });
+                } else {
+                    filtered.sort(function(a, b){ return new Date(b.date_submitted) - new Date(a.date_submitted); });
+                }
+
+                document.getElementById('statStudentsLabel').textContent = 'Total Students Enrolled';
                 document.getElementById('statStudents').textContent = enrollments.length;
                 document.getElementById('statDate').textContent = 'As of ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                document.getElementById('statPendingLabel').textContent = 'Pending Enrollments';
+                document.getElementById('statPendingLabel').textContent = 'Pending Center Applications';
                 document.getElementById('statPending').textContent = pendingCount;
                 document.getElementById('statPendingSub').textContent = 'Awaiting your review';
 
-                renderCenterEnrollments(enrollments);
+                renderCenterEnrollments(filtered);
             } catch (err) {
                 console.error('Center enrollments load error:', err);
                 var list = document.getElementById('centerEnrollmentsList');

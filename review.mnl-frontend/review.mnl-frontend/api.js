@@ -368,6 +368,14 @@ const PaymentsAPI = {
 };
 
 // ---------------------------------------------------------------------------
+// Enrollments API
+// ---------------------------------------------------------------------------
+const EnrollmentsAPI = {
+    getCenterEnrollments: (centerId) =>
+        apiRequest('GET', '/api/enrollments/center/' + encodeURIComponent(centerId)),
+};
+
+// ---------------------------------------------------------------------------
 // Notifications API
 // ---------------------------------------------------------------------------
 const NotificationAPI = {

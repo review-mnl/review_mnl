@@ -23,12 +23,7 @@
 
 <!-- Sidebar Panel -->
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-avatar"></div>
-        <h3>Name</h3>
-    </div>
-
-    <div class="messages-panel" id="msgList">
+    <div class="messages-panel" id="msgList" style="padding-top:6px;">
         <h4 class="messages-panel-title">Messages <span id="sidebarUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;"></span></h4>
         <div id="sidebarMessagesList"></div>
     </div>
@@ -39,7 +34,6 @@
             <button class="conv-back-btn" onclick="closeConv()">
                 <span class="material-symbols-outlined">arrow_back</span>
             </button>
-            <div class="message-avatar" style="width:32px;height:32px;"></div>
             <span class="conv-name" id="convName"></span>
         </div>
         <div class="conv-messages" id="convMessages"></div>
@@ -291,6 +285,11 @@
                     const viewAllLink = document.getElementById('viewAllNotificationsLink');
 
                     if(!profileBtn || !profileDd) return;
+
+                    console.log('[Chat][Student] Profile header in chat sidebar removed', {
+                        hasSidebarHeader: !!document.querySelector('.sidebar-header'),
+                        hasConvAvatar: !!document.querySelector('#convPanel .message-avatar'),
+                    });
 
                     profileBtn.addEventListener('click', function(e){
                         e.stopPropagation();

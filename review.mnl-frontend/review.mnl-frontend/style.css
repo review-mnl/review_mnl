@@ -1328,7 +1328,7 @@ nav img{
     padding: 40px 60px;
     display: flex;
     gap: 40px;
-    min-height: 55vh;
+    min-height: auto;
 }
 
 @media (max-width: 900px) {

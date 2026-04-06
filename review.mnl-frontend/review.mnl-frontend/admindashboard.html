@@ -380,18 +380,26 @@
             const wrap = document.getElementById('convMessages');
             if (!wrap) return;
             const me = getUser();
+            var myId = me ? Number(me.id) : null;
+            var senderStats = { mine: 0, other: 0, unknown: 0 };
             console.log('[Chat][Center] Messages before render', messages || []);
             console.log('[Chat][Center] Rendering messages', {
                 count: (messages || []).length,
                 conversationKey: activeConversationKey,
+                currentUserId: myId,
             });
             wrap.innerHTML = (messages || []).map(function(msg) {
-                var outgoing = me && Number(msg.sender_id) === Number(me.id);
+                var senderId = Number((msg && (msg.sender_id != null ? msg.sender_id : msg.senderId)) || 0);
+                var outgoing = myId != null && senderId === myId;
+                if (senderId <= 0) senderStats.unknown += 1;
+                else if (outgoing) senderStats.mine += 1;
+                else senderStats.other += 1;
                 return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
                     + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(msg.message || '') + '</div>'
                     + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:' + (outgoing ? 'right' : 'left') + ';">' + escHtml(formatDateTime(msg.created_at)) + '</div>'
                     + '</div>';
             }).join('');
+            console.log('[Chat][Center] Ownership split', senderStats);
             wrap.scrollTop = wrap.scrollHeight;
         }
 

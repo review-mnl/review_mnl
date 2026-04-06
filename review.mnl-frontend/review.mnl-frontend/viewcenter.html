@@ -430,7 +430,7 @@
 
                         <div style="display:flex;justify-content:space-between;gap:10px;margin-top:20px;">
                             <button onclick="schGoStep(2)" class="sch-btn-ghost">&larr; Back</button>
-                            <button id="proceedPaymentBtn" class="sch-btn-primary" style="min-width:160px;">Proceed Payment</button>
+                            <button id="proceed-btn" class="sch-btn-primary" style="min-width:160px;">Proceed Payment</button>
                         </div>
 
                     <!-- STEP 4: Confirmation -->
@@ -636,12 +636,24 @@
             msgEl.style.border = '';
         }
 
+        function getSelectedPaymentMethod() {
+            var bankRadio = document.getElementById('schPayBank');
+            return bankRadio && bankRadio.checked ? 'bank' : 'gcash';
+        }
+
+        function updateProceedButton() {
+            var selectedMethod = getSelectedPaymentMethod();
+            var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
+            if (!proceedBtn) return;
+            proceedBtn.disabled = selectedMethod === 'bank';
+        }
+
         function updatePaymentMethodUI() {
             var gcashRadio = document.getElementById('schPayGcash');
             var bankRadio = document.getElementById('schPayBank');
             var gcashOption = document.getElementById('schPayGcashOption');
             var bankOption = document.getElementById('schPayBankOption');
-            var payBtn = document.getElementById('gcashPayBtn');
+            var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
 
             if (gcashOption) gcashOption.classList.toggle('sch-pay-selected', !!(gcashRadio && gcashRadio.checked));
             if (bankOption) bankOption.classList.toggle('sch-pay-selected', !!(bankRadio && bankRadio.checked));
@@ -649,12 +661,14 @@
             if (bankRadio && bankRadio.checked) {
                 _schPaymentMethod = 'Bank Payment';
                 showBankComingSoonMessage();
-                if (payBtn) payBtn.textContent = 'Bank Payment Coming Soon';
+                if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
             } else {
                 _schPaymentMethod = 'GCash';
                 hidePaymentMessage();
-                if (payBtn) payBtn.textContent = 'Process GCash Payment';
+                if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
             }
+
+            updateProceedButton();
         }
 
         function setupPaymentMethodListeners() {
@@ -670,10 +684,14 @@
         }
 
         function setupProceedPaymentButton() {
-            var proceedBtn = document.getElementById('proceedPaymentBtn');
+            var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
             if (!proceedBtn || proceedBtn.dataset.bound === '1') return;
 
             proceedBtn.addEventListener('click', function () {
+                if (getSelectedPaymentMethod() === 'bank') {
+                    return;
+                }
+
                 var gcashNumberEl = document.querySelector('input[name="gcashNumber"]') || document.getElementById('schGcashNumber');
                 var accountNameEl = document.querySelector('input[name="accountName"]') || document.getElementById('schGcashName');
                 var referenceNumberEl = document.querySelector('input[name="referenceNumber"]') || document.getElementById('schReferenceNumber');
@@ -701,6 +719,7 @@
             });
 
             proceedBtn.dataset.bound = '1';
+            updateProceedButton();
         }
 
         function schFmtDate(d) {

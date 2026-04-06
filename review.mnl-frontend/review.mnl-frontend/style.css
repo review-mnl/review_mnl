@@ -564,6 +564,49 @@ nav img{
     background: #0836cc;
 }
 
+@media (max-width: 900px) {
+    .footer {
+        padding: 36px 24px;
+    }
+
+    .footer-container {
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .footer-center {
+        gap: 28px;
+    }
+}
+
+@media (max-width: 640px) {
+    .footer {
+        padding: 28px 18px;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .footer-center {
+        width: 100%;
+        justify-content: center;
+        gap: 36px;
+    }
+
+    .footer-column {
+        align-items: center;
+    }
+
+    .footer-right {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
 
 /* SEARCH FILTERS */
 .filter-container {

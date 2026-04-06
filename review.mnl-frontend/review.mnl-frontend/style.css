@@ -903,7 +903,6 @@ nav img{
 .clear-all-filters-btn:active {
     transform: scale(0.95);
 }
-}
 
 .filter-tag.rating-tag {
     background: #f5a623;
@@ -1296,6 +1295,7 @@ nav img{
     max-width: 800px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1906,6 +1906,7 @@ nav img{
 .testimonials-section {
     background: #fff;
     border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(6, 22, 82, 0.16);
 }
 
 .testimonials-section h2 {
@@ -1919,6 +1920,7 @@ nav img{
     border-radius: 12px;
     padding: 16px 20px;
     margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(6, 22, 82, 0.10);
 }
 
 /* DASHBOARD SECTION */

@@ -343,7 +343,7 @@ const UserAPI = {
 // Payments API
 // ---------------------------------------------------------------------------
 const PaymentsAPI = {
-    createGcashEnrollment: (centerId, payload) => {
+    createGcashEnrollment: async (centerId, payload) => {
         var resolvedCenterId = encodeURIComponent(String(centerId || '').trim());
         var body = {
             amount: Number((payload && payload.amount) || 1550),
@@ -353,7 +353,17 @@ const PaymentsAPI = {
             program_enrolled: String((payload && payload.program_enrolled) || '').trim(),
             enrollment_date: String((payload && payload.enrollment_date) || '').trim(),
         };
-        return apiRequest('POST', '/api/payments/gcash/' + resolvedCenterId, body);
+        try {
+            return await apiRequest('POST', '/api/payments/gcash/' + resolvedCenterId, body);
+        } catch (err) {
+            var msg = String((err && err.message) || '');
+            var is404 = /404/.test(msg) || /not found/i.test(msg);
+            if (!is404) throw err;
+
+            // Fallback for deployments still exposing the older centers enrollment route.
+            console.warn('[PaymentsAPI] Primary GCash endpoint returned 404. Falling back to /api/centers/:id/enroll/gcash');
+            return apiRequest('POST', '/api/centers/' + resolvedCenterId + '/enroll/gcash', body);
+        }
     },
 };
 

@@ -445,9 +445,8 @@
                                 <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
                                     <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                     <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Payment Method</span><span id="confPaymentMethod" style="font-weight:600;color:#0d1b4b;text-align:right;">GCash</span></div>
-                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Date</span><span id="confDate" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                     <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Amount</span><span id="confAmount" style="font-weight:600;color:#0d1b4b;text-align:right;">₱ 0.00</span></div>
-                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Reference Number</span><span id="confReferenceNumber" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Reference No</span><span id="confReferenceNumber" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                 </div>
                             </div>
 
@@ -636,7 +635,6 @@
             if (n === 4) {
                 var confProgram = document.getElementById('confProgram');
                 var confPaymentMethod = document.getElementById('confPaymentMethod');
-                var confDate = document.getElementById('confDate');
                 var confAmount = document.getElementById('confAmount');
                 var confReferenceNumber = document.getElementById('confReferenceNumber');
                 var confStatusBadge = document.getElementById('confStatusBadge');
@@ -651,7 +649,6 @@
 
                 if (confProgram) confProgram.textContent = programValue;
                 if (confPaymentMethod) confPaymentMethod.textContent = paymentMethodValue;
-                if (confDate) confDate.textContent = schFmtDate(_schSelectedDate);
                 if (confAmount) confAmount.textContent = '₱ ' + amountValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 if (confReferenceNumber) confReferenceNumber.textContent = _schReferenceNumber || '—';
 

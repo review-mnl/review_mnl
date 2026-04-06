@@ -347,6 +347,52 @@
                 var activeConversationKey = null;
                 var chatPollTimer = null;
 
+                async function resolveReviewCenterHeaderName(conversation) {
+                    var fallback = 'Review Center';
+                    var centerId = Number((conversation && conversation.center_id) || 0);
+                    window._chatCenterNameCache = window._chatCenterNameCache || {};
+
+                    if (centerId > 0 && window._chatCenterNameCache[String(centerId)]) {
+                        var cachedName = window._chatCenterNameCache[String(centerId)];
+                        console.log('[Chat][Student] Header center name (cache)', {
+                            reviewCenterId: centerId,
+                            reviewCenterName: cachedName,
+                            usedCurrentUserName: false,
+                        });
+                        return cachedName;
+                    }
+
+                    if (centerId > 0) {
+                        try {
+                            var centerRes = await CentersAPI.getById(centerId);
+                            var centerName = (centerRes && centerRes.center && centerRes.center.business_name)
+                                || (centerRes && centerRes.business_name)
+                                || '';
+                            if (centerName) {
+                                window._chatCenterNameCache[String(centerId)] = centerName;
+                                console.log('[Chat][Student] Header center name (fetched)', {
+                                    reviewCenterId: centerId,
+                                    reviewCenterName: centerName,
+                                    usedCurrentUserName: false,
+                                });
+                                return centerName;
+                            }
+                        } catch (e) {
+                            console.warn('[Chat][Student] Failed to fetch center name for header', {
+                                reviewCenterId: centerId,
+                                error: e,
+                            });
+                        }
+                    }
+
+                    console.log('[Chat][Student] Header center name fallback', {
+                        reviewCenterId: centerId,
+                        reviewCenterName: fallback,
+                        usedCurrentUserName: false,
+                    });
+                    return fallback;
+                }
+
                 function toggleSidebar() {
                     const sidebar = document.getElementById('sidebar');
                     const overlay = document.querySelector('.sidebar-overlay');
@@ -388,13 +434,18 @@
                     var isSwitchingConversation = activeConversationKey !== nextKey;
                     activeConversation = conversation;
                     activeConversationKey = nextKey;
-                    document.getElementById('convName').textContent = conversation.other_name || 'Chat';
+                    document.getElementById('convName').textContent = 'Review Center';
                     document.getElementById('msgList').style.display = 'none';
                     document.getElementById('convPanel').style.display = 'flex';
+
+                    var headerName = await resolveReviewCenterHeaderName(conversation);
+                    document.getElementById('convName').textContent = headerName || 'Review Center';
 
                     console.log('[Chat][Student] Opening conversation', {
                         conversationKey: nextKey,
                         switching: isSwitchingConversation,
+                        reviewCenterId: Number(conversation.center_id || 0),
+                        headerName: headerName || 'Review Center',
                     });
                     await loadActiveThread();
 

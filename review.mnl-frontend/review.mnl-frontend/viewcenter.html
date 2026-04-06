@@ -408,20 +408,11 @@
                         </div>
 
                     <!-- STEP 4: Confirmation -->
-                    <div id="schStep4" style="display:none;text-align:center;padding:10px 0 4px;">
-                        <span class="material-symbols-outlined" style="font-size:56px;color:#0a4cff;display:block;margin-bottom:10px;">check_circle</span>
-                        <h3 style="font-size:20px;font-weight:800;color:#0d1b4b;margin-bottom:8px;">Booking Submitted!</h3>
-                        <p style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">Your scheduling request has been sent to the review center. You will receive a confirmation once the admin approves your enrollment.</p>
-                        <div style="background:#f8f9fc;border-radius:12px;padding:16px 20px;text-align:left;margin-bottom:22px;">
-                            <div style="font-size:13px;display:flex;flex-direction:column;gap:7px;">
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Booked Date</span><span id="confDate" style="font-weight:600;color:#0d1b4b;"></span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="confName" style="font-weight:600;color:#0d1b4b;"></span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Payment</span><span id="confPaymentMethod" style="font-weight:600;color:#0a4cff;">GCash</span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Status</span><span id="confPaymentStatus" style="font-weight:600;background:#e8f5e9;color:#2e7d32;padding:2px 10px;border-radius:10px;font-size:11px;">Paid</span></div>
-                            </div>
-                        </div>
-                        <button onclick="closeScheduleModal()" class="sch-btn-primary" style="width:100%;">Done</button>
+                    <div id="schStep4" style="display:none;text-align:center;padding:40px 20px;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
+                        <div style="font-size:64px;color:#16a34a;line-height:1;">&#10003;</div>
+                        <h2 style="font-size:28px;font-weight:800;color:#0d1b4b;margin:0;">Schedule Confirmed</h2>
+                        <p style="font-size:14px;color:#5b6473;line-height:1.6;margin:0;max-width:420px;">Your enrollment has been successfully submitted.</p>
+                        <button onclick="goToDashboard()" class="sch-btn-primary" style="margin-top:10px;min-width:200px;">Go to Dashboard</button>
                     </div>
 
                 </div>
@@ -592,25 +583,11 @@
                 document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
                 updatePaymentMethodUI();
             }
-            if (n === 4) {
-                document.getElementById('confDate').textContent    = schFmtDate(_schSelectedDate);
-                document.getElementById('confName').textContent    = document.getElementById('schName').value.trim() || '—';
-                document.getElementById('confProgram').textContent = document.getElementById('schProgram').value || '—';
-                var paymentMethodEl = document.getElementById('confPaymentMethod');
-                var paymentStatusEl = document.getElementById('confPaymentStatus');
-                if (paymentMethodEl) paymentMethodEl.textContent = _schPaymentMethod;
-                if (paymentStatusEl) {
-                    paymentStatusEl.textContent = _schPaymentStatus;
-                    if (_schPaymentStatus === 'Paid') {
-                        paymentStatusEl.style.background = '#e8f5e9';
-                        paymentStatusEl.style.color = '#2e7d32';
-                    } else {
-                        paymentStatusEl.style.background = '#fff8e1';
-                        paymentStatusEl.style.color = '#e65100';
-                    }
-                }
-            }
             schSetStep(n);
+        }
+
+        function goToDashboard() {
+            window.location.href = 'userdashboard.html';
         }
 
         function showBankComingSoonMessage() {

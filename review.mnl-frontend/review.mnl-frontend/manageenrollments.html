@@ -166,6 +166,10 @@
                     ? '<button disabled style="padding:6px 10px;background:#e8f5e9;color:#2e7d32;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;">Payment Verified</button>'
                     : '<button onclick="verifyPayment(' + item.enrollment_id + ')" style="padding:6px 10px;background:#fff7e6;color:#b26a00;border:1px solid #ffd08a;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Confirm Payment</button>';
 
+                var rejectPaymentBtn = (item.payment && String(item.payment.status || '').toLowerCase() === 'paid')
+                    ? ''
+                    : '<button onclick="rejectPayment(' + item.enrollment_id + ')" style="padding:6px 10px;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject Payment</button>';
+
                 var approveDisabled = item.status !== 'pending' ? 'disabled' : '';
                 var rejectDisabled = item.status !== 'pending' ? 'disabled' : '';
 
@@ -189,6 +193,7 @@
                     + '<p style="margin:2px 0 0;color:#555;font-size:12px;">Method: ' + escHtml(item.payment && item.payment.method || 'gcash') + '</p>'
                     + (item.payment && item.payment.gcash_name ? '<p style="margin:2px 0 0;color:#555;font-size:12px;">Acc Name: ' + escHtml(item.payment.gcash_name) + '</p>' : '')
                     + (item.payment && item.payment.reference_number ? '<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Ref No: ' + escHtml(item.payment.reference_number) + '</p>' : '')
+                    + (item.payment && item.payment.review_reason ? '<p style="margin:6px 0 0;color:#7f1d1d;font-size:12px;">Reason: ' + escHtml(item.payment.review_reason) + '</p>' : '')
                     + '</div>'
                     + '<div>'
                     + '<p style="margin:0 0 6px;color:#0d1b4b;font-size:12px;font-weight:700;">Submitted Documents</p>'
@@ -197,6 +202,7 @@
                     + '</div>'
                     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">'
                     + verifyBtn
+                    + rejectPaymentBtn
                     + '<button onclick="openChatFromEnrollment(' + item.user_id + ',' + (window._myCenterId || 0) + ',' + item.enrollment_id + ')" style="padding:6px 12px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Message Student</button>'
                     + '<button ' + approveDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'approved\')" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>'
                     + '<button ' + rejectDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'rejected\')" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>'
@@ -249,6 +255,22 @@
                 await loadCenterEnrollments();
             } catch (err) {
                 alert(err.message || 'Failed to verify payment.');
+            }
+        }
+
+        async function rejectPayment(enrollmentId) {
+            var reason = prompt('Provide a reason for rejecting this payment:');
+            if (reason === null) return;
+            reason = String(reason || '').trim();
+            if (!reason) {
+                alert('A rejection reason is required.');
+                return;
+            }
+            try {
+                await CentersAPI.verifyEnrollmentPayment(enrollmentId, 'failed', reason);
+                await loadCenterEnrollments();
+            } catch (err) {
+                alert(err.message || 'Failed to reject payment.');
             }
         }
 

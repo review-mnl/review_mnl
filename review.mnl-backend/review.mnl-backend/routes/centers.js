@@ -32,6 +32,6 @@ router.put('/me', protect, centerOnly, updateCenterProfile);
 router.put('/me/logo', protect, centerOnly, upload.single('logo'), updateCenterLogo);
 router.post('/:id/testimonials', protect, postTestimonial);
 // Enrollment: student initiates a GCash payment to enroll in a center
-router.post('/:id/enroll/gcash', protect, studentOnly, createGcashEnrollment);
+router.post('/:id/enroll/gcash', protect, studentOnly, upload.single('payment_proof'), createGcashEnrollment);
 
 module.exports = router;

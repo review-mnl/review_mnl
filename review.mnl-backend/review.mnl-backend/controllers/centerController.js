@@ -322,6 +322,7 @@ const getMyCenterEnrollments = async (req, res) => {
             reference_number: metadata.reference_number || null,
             gcash_name: metadata.gcash_name || null,
             gcash_number_masked: metadata.gcash_number_masked || null,
+            review_reason: metadata.payment_review_reason || null,
           },
           enrollmentStatus: reviewStatus,
           status: reviewStatus,
@@ -355,6 +356,7 @@ const verifyEnrollmentPayment = async (req, res) => {
     const userId = req.user.id;
     const enrollmentId = Number(req.params.enrollmentId);
     const requestedPaymentStatus = req.body && req.body.payment_status ? String(req.body.payment_status).toLowerCase() : null;
+    const paymentReason = req.body && req.body.payment_reason ? String(req.body.payment_reason).trim() : '';
     const allowedPaymentStatuses = ['pending', 'paid', 'failed', 'cancelled'];
 
     if (!Number.isInteger(enrollmentId) || enrollmentId <= 0) {
@@ -363,12 +365,18 @@ const verifyEnrollmentPayment = async (req, res) => {
     if (requestedPaymentStatus && !allowedPaymentStatuses.includes(requestedPaymentStatus)) {
       return res.status(400).json({ message: 'Invalid payment status.' });
     }
+    if ((requestedPaymentStatus === 'failed' || requestedPaymentStatus === 'cancelled') && !paymentReason) {
+      return res.status(400).json({ message: 'Please provide a reason when rejecting a payment.' });
+    }
+    if (paymentReason.length > 500) {
+      return res.status(400).json({ message: 'Payment reason is too long (maximum 500 characters).' });
+    }
 
     conn = await db.getConnection();
     await conn.beginTransaction();
 
     const [rows] = await conn.query(
-      `SELECT e.id, e.payment_id, e.payment_verified, p.status AS payment_status
+      `SELECT e.id, e.user_id, e.center_id, e.payment_id, e.payment_verified, p.status AS payment_status, rc.business_name
        FROM enrollments e
        JOIN review_centers rc ON rc.id = e.center_id
        LEFT JOIN payments p ON p.id = e.payment_id
@@ -383,21 +391,74 @@ const verifyEnrollmentPayment = async (req, res) => {
     }
 
     const enrollment = rows[0];
-    let nextPaymentStatus = enrollment.payment_status || 'pending';
+    const currentPaymentStatus = enrollment.payment_status || 'pending';
+    let nextPaymentStatus = requestedPaymentStatus || currentPaymentStatus;
 
-    if (enrollment.payment_id && requestedPaymentStatus) {
-      await conn.query('UPDATE payments SET status = ? WHERE id = ?', [requestedPaymentStatus, enrollment.payment_id]);
-      nextPaymentStatus = requestedPaymentStatus;
+    if (!enrollment.payment_id) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'No payment record is linked to this enrollment.' });
     }
 
-    await conn.query('UPDATE enrollments SET payment_verified = 1 WHERE id = ?', [enrollmentId]);
+    if (String(currentPaymentStatus).toLowerCase() === 'paid' && nextPaymentStatus !== 'paid') {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Paid payments cannot be downgraded through this endpoint.' });
+    }
+
+    if (requestedPaymentStatus) {
+      if (paymentReason) {
+        await conn.query(
+          `UPDATE payments
+           SET status = ?,
+               metadata = JSON_SET(
+                 COALESCE(metadata, JSON_OBJECT()),
+                 '$.payment_review_reason', ?,
+                 '$.payment_reviewed_by', ?,
+                 '$.payment_reviewed_at', ?
+               )
+           WHERE id = ?`,
+          [requestedPaymentStatus, paymentReason, userId, new Date().toISOString(), enrollment.payment_id]
+        );
+      } else {
+        await conn.query('UPDATE payments SET status = ? WHERE id = ?', [requestedPaymentStatus, enrollment.payment_id]);
+      }
+    }
+
+    if ((nextPaymentStatus === 'failed' || nextPaymentStatus === 'cancelled') && paymentReason) {
+      const rejectionMessage = 'Your payment was marked as ' + nextPaymentStatus + '. Reason: ' + paymentReason;
+
+      await conn.query(
+        'INSERT INTO enrollment_notifications (enrollment_id, user_id, center_id, status, message, is_read) VALUES (?, ?, ?, ?, ?, 0)',
+        [enrollmentId, enrollment.user_id, enrollment.center_id, 'rejected', rejectionMessage]
+      );
+
+      await conn.query(
+        `INSERT INTO chat_messages (student_id, center_id, enrollment_id, sender_id, receiver_id, message, is_read)
+         VALUES (?, ?, ?, ?, ?, ?, 0)`,
+        [enrollment.user_id, enrollment.center_id, enrollmentId, userId, enrollment.user_id, rejectionMessage]
+      );
+    }
+
+    const shouldVerify = nextPaymentStatus === 'paid' ? 1 : 0;
+    await conn.query('UPDATE enrollments SET payment_verified = ? WHERE id = ?', [shouldVerify, enrollmentId]);
+
+    console.log('[EnrollmentPayment] verifyEnrollmentPayment', {
+      enrollmentId,
+      reviewerUserId: userId,
+      studentUserId: enrollment.user_id,
+      centerId: enrollment.center_id,
+      previousPaymentStatus: currentPaymentStatus,
+      nextPaymentStatus,
+      paymentVerified: Boolean(shouldVerify),
+      paymentReason: paymentReason || null,
+    });
 
     await conn.commit();
     return res.json({
-      message: 'Payment verified successfully.',
+      message: nextPaymentStatus === 'paid' ? 'Payment verified successfully.' : 'Payment status updated successfully.',
       enrollment_id: enrollmentId,
       payment_status: nextPaymentStatus,
-      payment_verified: true,
+      payment_verified: Boolean(shouldVerify),
+      payment_reason: paymentReason || null,
     });
   } catch (err) {
     if (conn) try { await conn.rollback(); } catch (e) {}

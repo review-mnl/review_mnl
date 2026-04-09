@@ -124,12 +124,49 @@
                     <div id="centerEnrollmentsList"></div>
                 </div>
 
+                <div class="ms-modal-overlay" id="paymentVerifyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9000;align-items:center;justify-content:center;">
+                    <div class="ms-modal" style="max-width:640px;width:92%;padding:24px 22px;max-height:88vh;overflow-y:auto;">
+                        <button class="ms-modal-close" onclick="closePaymentModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:#888;font-size:22px;line-height:1;">&#10005;</button>
+                        <h2 style="margin:0 0 14px;font-size:20px;color:#0d1b4b;">Verify Payment</h2>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:14px;">
+                            <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Student Name</p><p id="pvStudentName" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
+                            <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Program</p><p id="pvProgram" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
+                            <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Date Uploaded</p><p id="pvUploadedAt" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
+                            <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Payment Status</p><p id="pvPaymentStatus" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
+                        </div>
+                        <div style="border:1px solid #e2e8f5;border-radius:10px;padding:10px;background:#f8faff;">
+                            <p style="margin:0 0 8px;color:#0d1b4b;font-size:12px;font-weight:700;">Payment Screenshot</p>
+                            <div id="pvImageWrap" style="display:flex;align-items:center;justify-content:center;min-height:160px;background:#fff;border-radius:8px;border:1px dashed #d9e2f2;overflow:hidden;">
+                                <span id="pvNoImage" style="font-size:12px;color:#888;">No screenshot uploaded.</span>
+                                <img id="pvImage" alt="Payment proof" style="max-width:100%;max-height:360px;display:none;" />
+                            </div>
+                        </div>
+                        <div style="margin-top:12px;">
+                            <label for="pvRejectReason" style="font-size:12px;font-weight:600;color:#0d1b4b;display:block;margin-bottom:6px;">Rejection Reason (required only when rejecting)</label>
+                            <textarea id="pvRejectReason" rows="3" placeholder="State why the payment was rejected..." style="width:100%;box-sizing:border-box;border:1px solid #d8e0f2;border-radius:8px;padding:8px 10px;font-family:Poppins,sans-serif;font-size:12px;resize:vertical;"></textarea>
+                        </div>
+                        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap;">
+                            <button onclick="closePaymentModal()" style="padding:8px 12px;border:1px solid #d8e0f2;background:#fff;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:#334155;">Close</button>
+                            <button id="pvApproveBtn" onclick="approvePaymentFromModal()" style="padding:8px 12px;border:none;background:#2e7d32;color:#fff;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>
+                            <button id="pvRejectBtn" onclick="rejectPaymentFromModal()" style="padding:8px 12px;border:none;background:#d32f2f;color:#fff;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>
+                        </div>
+                    </div>
+                </div>
+
                 </div></section>
 
         <script src="api.js"></script>
         <script>
         if (!isAuthenticated()) { window.location.href = 'login.html'; }
         var dashboardRole = (getUser() && getUser().role) || 'review_center';
+        var _activePaymentEnrollment = null;
+
+        function paymentStatusBadge(status) {
+            var s = String(status || 'pending').toLowerCase();
+            if (s === 'paid') return '<span style="font-size:11px;font-weight:700;color:#166534;">🟢 Paid</span>';
+            if (s === 'failed' || s === 'cancelled' || s === 'rejected') return '<span style="font-size:11px;font-weight:700;color:#b91c1c;">🔴 Rejected</span>';
+            return '<span style="font-size:11px;font-weight:700;color:#a16207;">🟡 Pending</span>';
+        }
 
         function formatStatusBadge(status) {
             var s = String(status || 'pending').toLowerCase();
@@ -140,11 +177,74 @@
         }
 
         function formatPaymentBadge(status, verified) {
-            var s = String(status || 'pending').toLowerCase();
-            var base = s.charAt(0).toUpperCase() + s.slice(1);
-            var ver = verified ? 'Verified' : 'Unverified';
-            var color = verified ? '#1b5e20' : '#92400e';
-            return '<span style="font-size:11px;font-weight:700;color:' + color + ';">' + escHtml(base + ' / ' + ver) + '</span>';
+            return paymentStatusBadge(status);
+        }
+
+        function showToast(message) {
+            alert(message);
+        }
+
+        function openPaymentModal(enrollment) {
+            _activePaymentEnrollment = enrollment;
+            document.getElementById('pvStudentName').textContent = enrollment.student_name || 'Student';
+            document.getElementById('pvProgram').textContent = enrollment.program_enrolled || 'Program not specified';
+            document.getElementById('pvUploadedAt').textContent = enrollment.payment && enrollment.payment.uploaded_at
+                ? new Date(enrollment.payment.uploaded_at).toLocaleString()
+                : '—';
+            document.getElementById('pvPaymentStatus').innerHTML = paymentStatusBadge(enrollment.payment && enrollment.payment.status);
+            document.getElementById('pvRejectReason').value = '';
+
+            var imageUrl = enrollment.payment && enrollment.payment.payment_screenshot_url;
+            var imageEl = document.getElementById('pvImage');
+            var noImageEl = document.getElementById('pvNoImage');
+            if (imageUrl) {
+                imageEl.src = imageUrl;
+                imageEl.style.display = 'block';
+                noImageEl.style.display = 'none';
+            } else {
+                imageEl.removeAttribute('src');
+                imageEl.style.display = 'none';
+                noImageEl.style.display = 'block';
+            }
+
+            var pending = String((enrollment.payment && enrollment.payment.status) || 'pending').toLowerCase() === 'pending';
+            document.getElementById('pvApproveBtn').disabled = !pending;
+            document.getElementById('pvRejectBtn').disabled = !pending;
+            document.getElementById('paymentVerifyModal').style.display = 'flex';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentVerifyModal').style.display = 'none';
+            _activePaymentEnrollment = null;
+        }
+
+        async function approvePaymentFromModal() {
+            if (!_activePaymentEnrollment) return;
+            try {
+                await CentersAPI.verifyEnrollmentPayment(_activePaymentEnrollment.enrollment_id, 'paid');
+                closePaymentModal();
+                await loadCenterEnrollments();
+                showToast('Payment Approved Successfully');
+            } catch (err) {
+                alert(err.message || 'Failed to approve payment.');
+            }
+        }
+
+        async function rejectPaymentFromModal() {
+            if (!_activePaymentEnrollment) return;
+            var reason = String(document.getElementById('pvRejectReason').value || '').trim();
+            if (!reason) {
+                alert('Please provide a rejection reason.');
+                return;
+            }
+            try {
+                await CentersAPI.verifyEnrollmentPayment(_activePaymentEnrollment.enrollment_id, 'failed', reason);
+                closePaymentModal();
+                await loadCenterEnrollments();
+                showToast('Payment Rejected');
+            } catch (err) {
+                alert(err.message || 'Failed to reject payment.');
+            }
         }
 
         function renderCenterEnrollments(enrollments) {
@@ -164,11 +264,9 @@
 
                 var verifyBtn = item.payment && item.payment.verified
                     ? '<button disabled style="padding:6px 10px;background:#e8f5e9;color:#2e7d32;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;">Payment Verified</button>'
-                    : '<button onclick="verifyPayment(' + item.enrollment_id + ')" style="padding:6px 10px;background:#fff7e6;color:#b26a00;border:1px solid #ffd08a;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Confirm Payment</button>';
+                    : '<button onclick="openPaymentModalById(' + item.enrollment_id + ')" style="padding:6px 10px;background:#fff7e6;color:#b26a00;border:1px solid #ffd08a;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Verify Payment</button>';
 
-                var rejectPaymentBtn = (item.payment && String(item.payment.status || '').toLowerCase() === 'paid')
-                    ? ''
-                    : '<button onclick="rejectPayment(' + item.enrollment_id + ')" style="padding:6px 10px;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject Payment</button>';
+                var viewPaymentBtn = '<button onclick="openPaymentModalById(' + item.enrollment_id + ')" style="padding:6px 10px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">View Payment</button>';
 
                 var approveDisabled = item.status !== 'pending' ? 'disabled' : '';
                 var rejectDisabled = item.status !== 'pending' ? 'disabled' : '';
@@ -201,8 +299,8 @@
                     + '</div>'
                     + '</div>'
                     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">'
+                    + viewPaymentBtn
                     + verifyBtn
-                    + rejectPaymentBtn
                     + '<button onclick="openChatFromEnrollment(' + item.user_id + ',' + (window._myCenterId || 0) + ',' + item.enrollment_id + ')" style="padding:6px 12px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Message Student</button>'
                     + '<button ' + approveDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'approved\')" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>'
                     + '<button ' + rejectDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'rejected\')" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>'
@@ -242,6 +340,7 @@
                 document.getElementById('statPendingSub').textContent = 'Awaiting your review';
 
                 renderCenterEnrollments(filtered);
+                window._latestCenterEnrollments = filtered;
             } catch (err) {
                 console.error('Center enrollments load error:', err);
                 var list = document.getElementById('centerEnrollmentsList');
@@ -249,29 +348,14 @@
             }
         }
 
-        async function verifyPayment(enrollmentId) {
-            try {
-                await CentersAPI.verifyEnrollmentPayment(enrollmentId, 'paid');
-                await loadCenterEnrollments();
-            } catch (err) {
-                alert(err.message || 'Failed to verify payment.');
-            }
-        }
-
-        async function rejectPayment(enrollmentId) {
-            var reason = prompt('Provide a reason for rejecting this payment:');
-            if (reason === null) return;
-            reason = String(reason || '').trim();
-            if (!reason) {
-                alert('A rejection reason is required.');
+        function openPaymentModalById(enrollmentId) {
+            var list = Array.isArray(window._latestCenterEnrollments) ? window._latestCenterEnrollments : [];
+            var enrollment = list.find(function(item) { return Number(item.enrollment_id) === Number(enrollmentId); });
+            if (!enrollment) {
+                alert('Enrollment data not found. Please refresh and try again.');
                 return;
             }
-            try {
-                await CentersAPI.verifyEnrollmentPayment(enrollmentId, 'failed', reason);
-                await loadCenterEnrollments();
-            } catch (err) {
-                alert(err.message || 'Failed to reject payment.');
-            }
+            openPaymentModal(enrollment);
         }
 
         async function updateEnrollmentStatus(enrollmentId, status) {

@@ -266,6 +266,7 @@ const getMyCenterEnrollments = async (req, res) => {
          p.amount,
          p.provider AS payment_method,
          p.status AS payment_status,
+         p.created_at AS payment_uploaded_at,
          p.metadata,
          COALESCE((
            SELECT en.message
@@ -322,6 +323,8 @@ const getMyCenterEnrollments = async (req, res) => {
             reference_number: metadata.reference_number || null,
             gcash_name: metadata.gcash_name || null,
             gcash_number_masked: metadata.gcash_number_masked || null,
+            payment_screenshot_url: metadata.payment_proof_url || null,
+            uploaded_at: row.payment_uploaded_at || metadata.created_at || null,
             review_reason: metadata.payment_review_reason || null,
           },
           enrollmentStatus: reviewStatus,

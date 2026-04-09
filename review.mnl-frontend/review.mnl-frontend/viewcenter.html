@@ -427,20 +427,28 @@
                             <div>
                                 <label class="sch-label">GCash Number</label>
                                 <input id="schGcashNumber" name="gcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
+                                <p id="schGcashNumberError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
                             <div>
                                 <label class="sch-label">GCash Account Name</label>
                                 <input id="schGcashName" name="accountName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
+                                <p id="schGcashNameError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
                             <div>
                                 <label class="sch-label" style="color: #0a4cff; font-weight: bold;">GCash Reference Number</label>
                                 <input id="schReferenceNumber" name="referenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
                                 <p style="font-size:11px;color:#888;margin-top:4px;">Transfer the amount to the Center's GCash and input the reference number here.</p>
+                                <p id="schReferenceNumberError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
                             <div>
-                                <label class="sch-label">Payment Proof <span style="color:#aaa;font-weight:400;">(optional)</span></label>
-                                <input id="schPaymentProof" name="paymentProof" type="file" class="sch-input" accept="image/*,.pdf">
-                                <p style="font-size:11px;color:#888;margin-top:4px;">Upload receipt screenshot or PDF to speed up manual verification.</p>
+                                <label class="sch-label">Payment Proof</label>
+                                <input id="schPaymentProof" name="paymentProof" type="file" class="sch-input" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                                <p style="font-size:11px;color:#888;margin-top:4px;">Upload receipt screenshot (JPG or PNG only).</p>
+                                <p id="schPaymentProofError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">Please upload proof of payment</p>
+                                <div id="schPaymentProofPreview" style="display:none;margin-top:8px;padding:8px;border:1px dashed #d8e0f2;border-radius:8px;background:#f8fbff;">
+                                    <p id="schPaymentProofFileName" style="margin:0 0 6px;font-size:11px;color:#334155;font-weight:600;"></p>
+                                    <img id="schPaymentProofImg" alt="Uploaded payment proof preview" style="display:none;max-width:100%;max-height:180px;border-radius:8px;border:1px solid #e2e8f5;" />
+                                </div>
                             </div>
                         </div>
 
@@ -547,6 +555,7 @@
                 background: #fff;
             }
             .sch-input:focus { border-color: #0a4cff; }
+            .sch-input-error { border-color: #d32f2f !important; box-shadow: 0 0 0 2px rgba(211,47,47,0.12); }
             textarea.sch-input {
                 resize: none;
                 overflow-y: auto;
@@ -721,7 +730,96 @@
             var selectedMethod = getSelectedPaymentMethod();
             var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
             if (!proceedBtn) return;
-            proceedBtn.disabled = selectedMethod === 'bank';
+            if (selectedMethod === 'bank') {
+                proceedBtn.disabled = true;
+                return;
+            }
+            proceedBtn.disabled = !validateGcashPaymentFields(false).valid;
+        }
+
+        function setFieldError(inputId, errorId, message, showErrors) {
+            var input = document.getElementById(inputId);
+            var err = document.getElementById(errorId);
+            if (!input || !err) return;
+            if (showErrors && message) {
+                input.classList.add('sch-input-error');
+                err.textContent = message;
+                err.style.display = 'block';
+            } else {
+                input.classList.remove('sch-input-error');
+                err.style.display = 'none';
+            }
+        }
+
+        function renderPaymentProofPreview(file) {
+            var wrap = document.getElementById('schPaymentProofPreview');
+            var fileName = document.getElementById('schPaymentProofFileName');
+            var img = document.getElementById('schPaymentProofImg');
+            if (!wrap || !fileName || !img) return;
+
+            if (!file) {
+                wrap.style.display = 'none';
+                fileName.textContent = '';
+                img.style.display = 'none';
+                img.removeAttribute('src');
+                return;
+            }
+
+            wrap.style.display = 'block';
+            fileName.textContent = 'Selected file: ' + file.name;
+
+            if (/^image\/(jpeg|png)$/i.test(file.type)) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                img.style.display = 'none';
+                img.removeAttribute('src');
+            }
+        }
+
+        function validateGcashPaymentFields(showErrors) {
+            var gcashNumber = String((document.getElementById('schGcashNumber').value || '')).trim();
+            var gcashName = String((document.getElementById('schGcashName').value || '')).trim();
+            var referenceNumber = String((document.getElementById('schReferenceNumber').value || '')).trim();
+            var paymentProofInput = document.getElementById('schPaymentProof');
+            var paymentProofFile = paymentProofInput && paymentProofInput.files && paymentProofInput.files[0] ? paymentProofInput.files[0] : null;
+
+            var numberError = '';
+            var nameError = '';
+            var refError = '';
+            var proofError = '';
+
+            if (!gcashNumber) numberError = 'This field is required';
+            else if (!/^09\d{9}$/.test(gcashNumber)) numberError = 'Please enter a valid GCash number (09XXXXXXXXX)';
+
+            if (!gcashName) nameError = 'This field is required';
+            if (!referenceNumber) refError = 'This field is required';
+
+            if (!paymentProofFile) {
+                proofError = 'Please upload proof of payment';
+            } else {
+                var fileType = String(paymentProofFile.type || '').toLowerCase();
+                var validMime = fileType === 'image/jpeg' || fileType === 'image/png';
+                var validExt = /\.(jpg|jpeg|png)$/i.test(String(paymentProofFile.name || ''));
+                if (!validMime && !validExt) {
+                    proofError = 'Only JPG and PNG files are accepted';
+                }
+            }
+
+            setFieldError('schGcashNumber', 'schGcashNumberError', numberError, showErrors);
+            setFieldError('schGcashName', 'schGcashNameError', nameError, showErrors);
+            setFieldError('schReferenceNumber', 'schReferenceNumberError', refError, showErrors);
+            setFieldError('schPaymentProof', 'schPaymentProofError', proofError, showErrors);
+
+            return {
+                valid: !numberError && !nameError && !refError && !proofError,
+                paymentProofFile: paymentProofFile,
+                primaryError: proofError || numberError || nameError || refError || 'Please complete all required fields before proceeding.'
+            };
         }
 
         function updatePaymentMethodUI() {
@@ -772,6 +870,28 @@
             var bankRadio = document.getElementById('schPayBank');
             if (gcashRadio) gcashRadio.addEventListener('change', updatePaymentMethodUI);
             if (bankRadio) bankRadio.addEventListener('change', updatePaymentMethodUI);
+
+            var gcashNumberInput = document.getElementById('schGcashNumber');
+            var gcashNameInput = document.getElementById('schGcashName');
+            var referenceInput = document.getElementById('schReferenceNumber');
+            var proofInput = document.getElementById('schPaymentProof');
+
+            function handlePaymentFieldChange() {
+                validateGcashPaymentFields(false);
+                updateProceedButton();
+            }
+
+            if (gcashNumberInput) gcashNumberInput.addEventListener('input', handlePaymentFieldChange);
+            if (gcashNameInput) gcashNameInput.addEventListener('input', handlePaymentFieldChange);
+            if (referenceInput) referenceInput.addEventListener('input', handlePaymentFieldChange);
+            if (proofInput) {
+                proofInput.addEventListener('change', function() {
+                    var file = proofInput.files && proofInput.files[0] ? proofInput.files[0] : null;
+                    renderPaymentProofPreview(file);
+                    handlePaymentFieldChange();
+                });
+            }
+
             updatePaymentMethodUI();
         }
 
@@ -1165,22 +1285,12 @@
                 const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
                 const gcashName = (document.getElementById('schGcashName').value || '').trim();
                 const referenceNumber = (document.getElementById('schReferenceNumber').value || '').trim();
-                const paymentProofInput = document.getElementById('schPaymentProof');
-                const paymentProofFile = paymentProofInput && paymentProofInput.files && paymentProofInput.files[0] ? paymentProofInput.files[0] : null;
+                const validation = validateGcashPaymentFields(true);
+                const paymentProofFile = validation.paymentProofFile;
                 _schReferenceNumber = referenceNumber;
-                if (!gcashNumber || !gcashName || !referenceNumber) {
+                if (!validation.valid) {
                     if (msgEl) {
-                        msgEl.textContent = 'Please enter your GCash number, account name, and Reference Number.';
-                        msgEl.style.display = 'block';
-                        msgEl.style.background = '#ffe8e8';
-                        msgEl.style.color = '#b71c1c';
-                        msgEl.style.border = '1px solid #ef9a9a';
-                    }
-                    return;
-                }
-                if (!/^09\d{9}$/.test(gcashNumber)) {
-                    if (msgEl) {
-                        msgEl.textContent = 'Please enter a valid GCash number (09XXXXXXXXX).';
+                        msgEl.textContent = validation.primaryError || 'Please complete all required fields before proceeding.';
                         msgEl.style.display = 'block';
                         msgEl.style.background = '#ffe8e8';
                         msgEl.style.color = '#b71c1c';
@@ -1261,7 +1371,7 @@
                 }
             } finally {
                 if (payBtn) {
-                    payBtn.disabled = false;
+                    updateProceedButton();
                     payBtn.textContent = 'Proceed Payment';
                 }
             }

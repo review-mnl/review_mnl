@@ -410,6 +410,19 @@
                             </label>
                         </div>
 
+                        <div id="schGcashDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+                            <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0d1b4b;">Pay via GCash</h4>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Account Name:</strong> <span id="schGcashDisplayName">Review Center test1</span></p>
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                                <p style="margin:0;font-size:12px;color:#334155;"><strong>GCash Number:</strong> <span id="schGcashDisplayNumber">091234567899</span></p>
+                                <button type="button" onclick="copyGcashNumber()" style="padding:4px 10px;border:1px solid #c7d6ff;background:#fff;color:#1d4ed8;border-radius:999px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">Copy Number</button>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;">
+                                <img src="https://via.placeholder.com/200x200?text=GCash+QR" alt="GCash QR placeholder" style="width:160px;height:160px;border-radius:10px;border:1px solid #dbe7ff;background:#fff;" />
+                                <p style="margin:0;max-width:280px;font-size:11px;line-height:1.5;color:#64748b;">Send the exact amount and upload proof of payment after sending.</p>
+                            </div>
+                        </div>
+
                         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                             <div>
                                 <label class="sch-label">GCash Number</label>
@@ -717,6 +730,7 @@
             var gcashOption = document.getElementById('schPayGcashOption');
             var bankOption = document.getElementById('schPayBankOption');
             var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
+            var gcashDetailsCard = document.getElementById('schGcashDetailsCard');
 
             if (gcashOption) gcashOption.classList.toggle('sch-pay-selected', !!(gcashRadio && gcashRadio.checked));
             if (bankOption) bankOption.classList.toggle('sch-pay-selected', !!(bankRadio && bankRadio.checked));
@@ -725,13 +739,32 @@
                 _schPaymentMethod = 'Bank Payment';
                 showBankComingSoonMessage();
                 if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
+                if (gcashDetailsCard) gcashDetailsCard.style.display = 'none';
             } else {
                 _schPaymentMethod = 'GCash';
                 hidePaymentMessage();
                 if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
+                if (gcashDetailsCard) gcashDetailsCard.style.display = 'block';
             }
 
             updateProceedButton();
+        }
+
+        function copyGcashNumber() {
+            var numberEl = document.getElementById('schGcashDisplayNumber');
+            var value = numberEl ? String(numberEl.textContent || '').trim() : '';
+            if (!value) return;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(value).then(function() {
+                        alert('GCash number copied');
+                    }).catch(function() {
+                        alert('Unable to copy. Please copy manually: ' + value);
+                    });
+                    return;
+                }
+            } catch (e) {}
+            alert('Copy this GCash number: ' + value);
         }
 
         function setupPaymentMethodListeners() {

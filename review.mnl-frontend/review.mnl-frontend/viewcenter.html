@@ -424,6 +424,11 @@
                                 <input id="schReferenceNumber" name="referenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
                                 <p style="font-size:11px;color:#888;margin-top:4px;">Transfer the amount to the Center's GCash and input the reference number here.</p>
                             </div>
+                            <div>
+                                <label class="sch-label">Payment Proof <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                                <input id="schPaymentProof" name="paymentProof" type="file" class="sch-input" accept="image/*,.pdf">
+                                <p style="font-size:11px;color:#888;margin-top:4px;">Upload receipt screenshot or PDF to speed up manual verification.</p>
+                            </div>
                         </div>
 
                         <div id="schPaymentMsg" style="display:none;font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;"></div>
@@ -1127,6 +1132,8 @@
                 const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
                 const gcashName = (document.getElementById('schGcashName').value || '').trim();
                 const referenceNumber = (document.getElementById('schReferenceNumber').value || '').trim();
+                const paymentProofInput = document.getElementById('schPaymentProof');
+                const paymentProofFile = paymentProofInput && paymentProofInput.files && paymentProofInput.files[0] ? paymentProofInput.files[0] : null;
                 _schReferenceNumber = referenceNumber;
                 if (!gcashNumber || !gcashName || !referenceNumber) {
                     if (msgEl) {
@@ -1170,6 +1177,7 @@
                     reference_number: referenceNumber,
                     program_enrolled: programEnrolled,
                     enrollment_date: enrollmentDate,
+                    payment_proof: paymentProofFile,
                 };
                 console.log('[Enrollment] Sending enrollment payload', {
                     centerId: centerId,
@@ -1179,6 +1187,7 @@
                     program_enrolled: payload.program_enrolled,
                     enrollment_date: payload.enrollment_date,
                     amount: payload.amount,
+                    hasPaymentProof: Boolean(paymentProofFile),
                 });
                 const resp = await PaymentsAPI.createGcashEnrollment(centerId, payload);
                 console.log('[Enrollment] Enrollment response', resp);

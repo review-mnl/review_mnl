@@ -78,6 +78,9 @@ CREATE TABLE IF NOT EXISTS payments (
 	FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE
 );
 
+CREATE UNIQUE INDEX uniq_provider_provider_payment_id ON payments(provider, provider_payment_id);
+CREATE INDEX idx_payments_center_status_created ON payments(center_id, status, created_at);
+
 -- Enrollments table — links students to centers after successful payment/approval
 CREATE TABLE IF NOT EXISTS enrollments (
 	id INT AUTO_INCREMENT PRIMARY KEY,
@@ -91,11 +94,15 @@ CREATE TABLE IF NOT EXISTS enrollments (
 	FOREIGN KEY (payment_id) REFERENCES payments(id)
 );
 
+CREATE INDEX idx_enrollments_payment_id ON enrollments(payment_id);
+
 -- Add center review workflow fields on enrollments
 ALTER TABLE enrollments ADD COLUMN review_status ENUM('pending','approved','rejected') DEFAULT 'pending';
 ALTER TABLE enrollments ADD COLUMN payment_verified TINYINT(1) DEFAULT 0;
 ALTER TABLE enrollments ADD COLUMN reviewed_at TIMESTAMP NULL;
 ALTER TABLE enrollments ADD COLUMN reviewed_by INT NULL;
+
+CREATE INDEX idx_enrollments_center_review_created ON enrollments(center_id, review_status, created_at);
 
 -- Notifications sent to students when center updates enrollment decision
 CREATE TABLE IF NOT EXISTS enrollment_notifications (

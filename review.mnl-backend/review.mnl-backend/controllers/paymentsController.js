@@ -16,6 +16,7 @@ const createGcashEnrollment = async (req, res) => {
     const gcashNumber = String(req.body.gcash_number || '').trim();
     const gcashName = String(req.body.gcash_name || '').trim();
     const referenceNumber = String(req.body.reference_number || '').trim();
+    const paymentProofUrl = req.file ? String(req.file.path || req.file.url || req.file.secure_url || '').trim() : '';
     const programEnrolled = String(req.body.program_enrolled || '').trim();     
     const enrollmentDateRaw = String(req.body.enrollment_date || '').trim();    
     const enrollmentDate = enrollmentDateRaw || new Date().toISOString().slice(0, 10);
@@ -26,7 +27,8 @@ const createGcashEnrollment = async (req, res) => {
       amount,
       programEnrolled,
       enrollmentDate,
-      referenceNumber
+      referenceNumber,
+      hasPaymentProof: Boolean(paymentProofUrl)
     });
 
     if (!referenceNumber) {
@@ -53,6 +55,15 @@ const createGcashEnrollment = async (req, res) => {
     const [studentRows] = await db.query('SELECT first_name, last_name, email FROM users WHERE id = ?', [userId]);
     const student = studentRows && studentRows.length ? studentRows[0] : null;
     const studentName = [student && student.first_name, student && student.last_name].filter(Boolean).join(' ').trim() || (student && student.email) || 'Student';
+
+    // Manual GCash references should be globally unique per provider.
+    const [existingReferenceRows] = await db.query(
+      'SELECT id, status, user_id, center_id FROM payments WHERE provider = ? AND provider_payment_id = ? LIMIT 1',
+      ['gcash_manual', referenceNumber]
+    );
+    if (existingReferenceRows.length > 0) {
+      return res.status(409).json({ message: 'This GCash reference number has already been submitted. Please check your reference and try again.' });
+    }
 
     const maskedNumber = gcashNumber.replace(/\d(?=\d{4})/g, '*');
     
@@ -84,6 +95,7 @@ const createGcashEnrollment = async (req, res) => {
           gcash_number_masked: maskedNumber,
           gcash_name: gcashName,
           reference_number: referenceNumber,
+          payment_proof_url: paymentProofUrl || null,
           program_enrolled: programEnrolled,
           enrollment_date: enrollmentDate,
           payment_status: 'pending',
@@ -137,12 +149,16 @@ const createGcashEnrollment = async (req, res) => {
       program_enrolled: programEnrolled,
       enrollment_status: 'pending',
       payment_status: 'pending',
+      payment_proof_url: paymentProofUrl || null,
       amount,
       payment_method: 'GCash Manual',
       transaction_status: status,
       message: 'Payment tracking saved. Please wait for the Center Admin to verify your GCash Reference Number.',
     });
   } catch (err) {
+    if (err && err.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ message: 'This GCash reference number has already been submitted. Please use a unique reference number.' });
+    }
     if (conn) try { await conn.rollback(); } catch (e) {}
     console.error('createGcashEnrollment error:', err);
     return res.status(500).json({ message: 'Server error.' });

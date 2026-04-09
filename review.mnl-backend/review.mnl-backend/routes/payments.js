@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const { getMockPaymentPage, completeMockPayment } = require('../controllers/paymentsController');
+const upload = require('../middleware/upload');
+const { protect, studentOnly } = require('../middleware/auth');
+const { getMockPaymentPage, completeMockPayment, createGcashEnrollment } = require('../controllers/paymentsController');
+
+// Student enrollment payment endpoint (primary route).
+router.post('/gcash/:id', protect, studentOnly, upload.single('payment_proof'), createGcashEnrollment);
 
 // Public mock payment page (development/testing)
 router.get('/mock/:id', getMockPaymentPage);

@@ -78,6 +78,8 @@ CREATE TABLE IF NOT EXISTS payments (
   metadata JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_provider_provider_payment_id (provider, provider_payment_id),
+  INDEX idx_payments_center_status_created (center_id, status, created_at),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE
 );
@@ -93,6 +95,8 @@ CREATE TABLE IF NOT EXISTS enrollments (
   reviewed_at TIMESTAMP NULL,
   reviewed_by INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_enrollments_center_review_created (center_id, review_status, created_at),
+  INDEX idx_enrollments_payment_id (payment_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE,
   FOREIGN KEY (payment_id) REFERENCES payments(id),

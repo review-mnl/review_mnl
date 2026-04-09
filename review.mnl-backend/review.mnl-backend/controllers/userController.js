@@ -85,6 +85,7 @@ const getMyEnrollments = async (req, res) => {
         enrollment_date: metadata.enrollment_date || (row.enrollment_created_at ? new Date(row.enrollment_created_at).toISOString().slice(0, 10) : null),
         payment_status: row.payment_status || 'pending',
         payment_method: row.payment_method || 'gcash',
+        payment_review_reason: metadata.payment_review_reason || null,
         amount: row.amount || 0,
         review_status: toReviewStatus(row.review_status, row.enrollment_status),
         payment_verified: Boolean(row.payment_verified),

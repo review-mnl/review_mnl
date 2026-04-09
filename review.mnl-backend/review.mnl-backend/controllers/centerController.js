@@ -253,6 +253,7 @@ const getMyCenterEnrollments = async (req, res) => {
          e.id AS enrollment_id,
          e.user_id,
          e.center_id AS review_center_id,
+         rc.business_name AS review_center_name,
          e.status AS enrollment_legacy_status,
          e.review_status,
          e.payment_verified,
@@ -294,14 +295,24 @@ const getMyCenterEnrollments = async (req, res) => {
         const metadata = parseMetadata(row.metadata);
         const reviewStatus = toReviewStatus(row.review_status, row.enrollment_legacy_status);
         const documents = metadata.submitted_documents || metadata.documents || [];
+        const createdAt = row.date_submitted;
+        const studentName = [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || row.student_email || 'Student';
         return {
+          enrollmentId: row.enrollment_id,
           enrollment_id: row.enrollment_id,
+          studentId: row.user_id,
           user_id: row.user_id,
-          student_name: [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || row.student_email || 'Student',
+          studentName,
+          student_name: studentName,
           student_email: row.student_email,
+          reviewCenterId: row.review_center_id,
           review_center_id: row.review_center_id,
+          reviewCenterName: row.review_center_name,
+          review_center_name: row.review_center_name,
+          program: metadata.program_enrolled || 'Program not specified',
           program_enrolled: metadata.program_enrolled || 'Program not specified',
           submitted_documents: Array.isArray(documents) ? documents : (documents ? [documents] : []),
+          paymentStatus: row.payment_status || 'pending',
           payment: {
             payment_id: row.payment_id,
             amount: row.amount || 0,
@@ -312,7 +323,9 @@ const getMyCenterEnrollments = async (req, res) => {
             gcash_name: metadata.gcash_name || null,
             gcash_number_masked: metadata.gcash_number_masked || null,
           },
+          enrollmentStatus: reviewStatus,
           status: reviewStatus,
+          createdAt,
           date_submitted: row.date_submitted,
           reviewed_at: row.reviewed_at,
           latest_notification: row.latest_notification,
@@ -320,6 +333,14 @@ const getMyCenterEnrollments = async (req, res) => {
         };
       })
       .filter((item) => statusFilter === 'all' ? true : item.status === statusFilter);
+
+    console.log('[Enrollment][Center] getMyCenterEnrollments', {
+      reviewCenterUserId: userId,
+      requestedStatus: statusFilter,
+      sortOrder,
+      count: enrollments.length,
+      sampleReviewCenterId: enrollments[0] ? enrollments[0].review_center_id : null,
+    });
 
     return res.json({ enrollments });
   } catch (err) {

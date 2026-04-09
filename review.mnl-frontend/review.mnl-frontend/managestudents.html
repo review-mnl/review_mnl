@@ -887,10 +887,10 @@
                             <thead>
                                 <tr>
                                     <th>Student</th>
-                                    <th>Schedule</th>
+                                    <th>Program</th>
                                     <th>Enrollment Status</th>
                                     <th>Payment Status</th>
-                                    <th>Date Registered</th>
+                                    <th>Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -900,7 +900,7 @@
                         </table>
                         <div class="ms-empty" id="msEmpty" style="display:none;">
                             <span class="material-symbols-outlined">group_off</span>
-                            No students found.
+                            No enrolled students yet.
                         </div>
                     </div>
                     <div class="ms-pagination" id="msPagination"></div>
@@ -1006,6 +1006,7 @@
         const PAGE_SIZE = 8;
         let currentStudentId = null;
         let _pendingAction = null;
+        let _liveRefreshTimer = null;
 
         // ── Calendar state ────────────────────────────────────────────────
         var _calYear, _calMonth, _calSelectedKey = null;
@@ -1139,6 +1140,79 @@
         }
 
         // ── Init ──────────────────────────────────────────────────────────
+        function toUiEnrollmentStatus(value) {
+            var v = String(value || '').toLowerCase();
+            if (v === 'approved' || v === 'active' || v === 'enrolled') return 'Enrolled';
+            if (v === 'rejected' || v === 'cancelled') return 'Cancelled';
+            if (v === 'scheduled') return 'Scheduled';
+            return 'Pending';
+        }
+
+        function toUiPaymentStatus(value) {
+            var v = String(value || '').toLowerCase();
+            if (v === 'paid') return 'Paid';
+            if (v === 'failed' || v === 'cancelled') return 'Unpaid';
+            return 'Processing';
+        }
+
+        function formatDisplayDate(value) {
+            if (!value) return '—';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        }
+
+        function mapEnrollmentToStudent(enrollment) {
+            var enrollmentId = Number(enrollment.enrollmentId || enrollment.enrollment_id || enrollment.id || 0);
+            var studentName = String(enrollment.studentName || enrollment.student_name || enrollment.student_email || 'Student').trim();
+            var statusValue = enrollment.enrollmentStatus || enrollment.status || enrollment.review_status;
+            var paymentValue = enrollment.paymentStatus || (enrollment.payment && enrollment.payment.status) || enrollment.payment_status;
+            var program = String(enrollment.program || enrollment.program_enrolled || 'Program not specified').trim();
+            var createdAt = enrollment.createdAt || enrollment.created_at || enrollment.date_submitted || null;
+
+            return {
+                id: enrollmentId,
+                enrollmentId: enrollmentId,
+                reviewCenterId: Number(enrollment.reviewCenterId || enrollment.review_center_id || 0),
+                name: studentName || 'Student',
+                email: String(enrollment.student_email || '').trim(),
+                program: program,
+                schedule: program,
+                scheduleDays: [],
+                status: toUiEnrollmentStatus(statusValue),
+                payment: toUiPaymentStatus(paymentValue),
+                rawEnrollmentStatus: String(statusValue || 'pending').toLowerCase(),
+                rawPaymentStatus: String(paymentValue || 'pending').toLowerCase(),
+                date: formatDisplayDate(createdAt),
+                contact: '',
+            };
+        }
+
+        async function loadCenterStudents() {
+            var response = await CentersAPI.getMyEnrollments('all', 'latest');
+            var rows = (response && response.enrollments) ? response.enrollments : [];
+
+            console.log('[Enrollments][ReviewCenter] fetched enrollments for manage students', {
+                count: rows.length,
+                sampleReviewCenterId: rows[0] ? (rows[0].reviewCenterId || rows[0].review_center_id || null) : null,
+            });
+
+            STUDENTS = rows.map(mapEnrollmentToStudent);
+            _students = STUDENTS.slice();
+        }
+
+        async function refreshStudentsAndRender() {
+            try {
+                await loadCenterStudents();
+                updateSummary();
+                renderTable();
+                renderCalendar();
+            } catch (e) {
+                console.error('Failed to load center enrollments:', e);
+                document.getElementById('msEmpty').style.display = 'block';
+            }
+        }
+
         (async function init() {
             // Profile dropdown
             const btn = document.getElementById('profileBtn');
@@ -1155,32 +1229,12 @@
             }
             if (lo) lo.addEventListener('click', function(){ clearSession(); window.location.href='index.html'; });
 
-            // Load students from API
-            try {
-                const rows = await AdminAPI.getStudents();
-                STUDENTS = rows.map(function(s) {
-                    var d = new Date(s.created_at);
-                    var dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-                    return {
-                        id: s.id,
-                        name: s.first_name + ' ' + s.last_name,
-                        email: s.email,
-                        program: 'N/A',
-                        schedule: 'N/A',
-                        scheduleDays: [],
-                        status: s.is_verified ? 'Enrolled' : 'Pending',
-                        payment: 'N/A',
-                        date: dateStr,
-                        contact: ''
-                    };
-                });
-                _students = STUDENTS.slice();
-            } catch(e) {
-                console.error('Failed to load students:', e);
-            }
-            updateSummary();
-            renderTable();
-            renderCalendar();
+            await refreshStudentsAndRender();
+
+            if (_liveRefreshTimer) clearInterval(_liveRefreshTimer);
+            _liveRefreshTimer = setInterval(function() {
+                refreshStudentsAndRender();
+            }, 15000);
         })();
 
         function updateSummary() {
@@ -1316,10 +1370,9 @@
         function confirmApprove(id) {
             const s = _students.find(function(x){ return x.id === id; });
             if (!s) return;
-            _pendingAction = function() {
-                s.status = 'Enrolled';
-                renderTable();
-                updateSummary();
+            _pendingAction = async function() {
+                await CentersAPI.updateEnrollmentStatus(s.enrollmentId, 'approved');
+                await refreshStudentsAndRender();
             };
             document.getElementById('confirmTitle').textContent = 'Approve Enrollment';
             document.getElementById('confirmMsg').textContent   = 'Approve enrollment for ' + s.name + '? Their status will be set to Enrolled.';
@@ -1330,19 +1383,25 @@
         function confirmRemove(id) {
             const s = _students.find(function(x){ return x.id === id; });
             if (!s) return;
-            _pendingAction = function() {
-                _students = _students.filter(function(x){ return x.id !== id; });
-                renderTable();
-                updateSummary();
+            _pendingAction = async function() {
+                await CentersAPI.updateEnrollmentStatus(s.enrollmentId, 'rejected');
+                await refreshStudentsAndRender();
             };
             document.getElementById('confirmTitle').textContent = 'Remove Student';
-            document.getElementById('confirmMsg').textContent   = 'Remove ' + s.name + ' from the list? This cannot be undone.';
+            document.getElementById('confirmMsg').textContent   = 'Reject enrollment for ' + s.name + '?';
             document.getElementById('confirmOkBtn').style.background = '#b71c1c';
             document.getElementById('confirmModal').classList.add('open');
         }
 
-        document.getElementById('confirmOkBtn').addEventListener('click', function() {
-            if (_pendingAction) { _pendingAction(); _pendingAction = null; }
+        document.getElementById('confirmOkBtn').addEventListener('click', async function() {
+            if (_pendingAction) {
+                try {
+                    await _pendingAction();
+                } catch (e) {
+                    alert(e && e.message ? e.message : 'Failed to update enrollment.');
+                }
+                _pendingAction = null;
+            }
             closeConfirm();
         });
 

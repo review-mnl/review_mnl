@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ReviewMnl</string>
+    <string name="title_activity_main">ReviewMnl</string>
+    <string name="package_name">com.review.mnl</string>
+    <string name="custom_url_scheme">com.review.mnl</string>
+</resources>

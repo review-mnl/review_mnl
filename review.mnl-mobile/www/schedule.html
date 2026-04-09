@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Edit Center - review.mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    </head>
+    <body>
+        <section class="header header-admindashboard">
+            <nav>
+                <a href="admindashboard.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
+                <div class="nav-links">
+                    <ul>
+                        <li><a href="manageenrollments.html">MANAGE ENROLLMENTS</a></li>
+                        <li><a href="schedule.html">SCHEDULE</a></li>
+                        <li><a href="admindashboard.html">DASHBOARD</a></li>
+                        <li><a href="editcenter.html">MY PROFILE</a></li>
+                    </ul>
+                </div>
+                <div class="profile-wrapper" style="position:relative;">
+                    <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#fff;cursor:pointer;">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <div id="profileDropdown" class="profile-dropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">
+                        <a href="editcenter.html" style="display:block;padding:12px 16px;color:#0a4cff;text-decoration:none;border-bottom:1px solid #eee;">My Profile</a>
+                        <button id="logoutBtn" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;font-family:Poppins,sans-serif;font-size:14px;">Logout</button>
+                    </div>
+                </div>
+            </nav>
+            <div class="textbox">
+                <h1 class="welcome-heading">Schedule</h1>
+            </div>
+        </section>
+        <script src="api.js"></script>
+        <script>
+            if (!isAuthenticated()) { window.location.href = 'login.html'; }
+            (function(){
+                const btn = document.getElementById('profileBtn');
+                const dd = document.getElementById('profileDropdown');
+                const logout = document.getElementById('logoutBtn');
+                if(!btn || !dd) return;
+                btn.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    const isOpen = dd.style.display === 'block';
+                    dd.style.display = isOpen ? 'none' : 'block';
+                    btn.setAttribute('aria-expanded', String(!isOpen));
+                });
+                logout.addEventListener('click', function(){
+                    clearSession();
+                    window.location.href = 'index.html';
+                });
+                document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+            })();
+
+            function escHtml(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function starText(rating) {
+                const r = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+                return '★'.repeat(r) + '☆'.repeat(5 - r);
+            }
+
+            function renderCenterTestimonials(items) {
+                const listEl = document.getElementById('centerTestimonialsList');
+                if (!listEl) return;
+                if (!items || items.length === 0) {
+                    listEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">No feedback yet for your review center.</p>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                items.forEach(function(t) {
+                    const fallbackName = [t.first_name || '', t.last_name || ''].join(' ').trim();
+                    const name = (t.username || fallbackName || 'Anonymous').trim();
+                    const date = t.created_at ? new Date(t.created_at) : new Date();
+                    const dateText = date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const card = document.createElement('div');
+                    card.className = 'testimonial-card';
+                    card.style.marginBottom = '10px';
+                    card.innerHTML =
+                        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;">' +
+                            '<strong style="color:#0d1b4b;">' + escHtml(name) + '</strong>' +
+                            '<span style="font-size:12px;color:#6b7280;">' + escHtml(dateText) + '</span>' +
+                        '</div>' +
+                        '<div style="color:#f59e0b;margin-bottom:8px;">' + starText(t.rating) + '</div>' +
+                        '<p style="color:#555;font-size:0.92rem;margin:0;">' + escHtml(t.content || '') + '</p>';
+                    listEl.appendChild(card);
+                });
+            }
+
+            async function loadCenterTestimonials() {
+                const listEl = document.getElementById('centerTestimonialsList');
+                const sortEl = document.getElementById('centerFeedbackSort');
+                if (!listEl) return;
+                listEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">Loading feedback...</p>';
+                try {
+                    const sort = sortEl ? sortEl.value : 'latest';
+                    const resp = await CentersAPI.getMyTestimonials(sort);
+                    const items = Array.isArray(resp) ? resp : (resp.testimonials || []);
+                    renderCenterTestimonials(items);
+                } catch (e) {
+                    listEl.innerHTML = '<p style="color:#d32f2f;font-size:0.95rem;">Failed to load feedback.</p>';
+                }
+            }
+
+            // Load center profile from API
+            (async function(){
+                function parseArrayField(raw) {
+                    if (!raw) return [];
+                    if (Array.isArray(raw)) return raw;
+                    if (typeof raw === 'string') {
+                        const trimmed = raw.trim();
+                        if (!trimmed) return [];
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            return Array.isArray(parsed) ? parsed : [];
+                        } catch (e) {
+                            return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                        }
+                    }
+                    return [];
+                }
+
+                try {
+                    const center = await CentersAPI.getMyProfile();
+                    if (center.business_name) {
+                        document.getElementById('centerNameDisplay').textContent = center.business_name;
+                        // Use center business name for welcome if present
+                        try { if (document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = center.business_name; } catch(e){}
+                    }
+                    if (center.address) {
+                        document.getElementById('centerDescDisplay').textContent = center.address;
+                    }
+                    if (center.logo_url) {
+                        const logo = document.getElementById('centerLogoPreview');
+                        if (logo) {
+                            logo.style.backgroundImage = 'url(' + center.logo_url + ')';
+                            logo.style.backgroundSize = 'cover';
+                            logo.style.backgroundPosition = 'center';
+                        }
+                    }
+                    if (center.description) {
+                        document.getElementById('aboutDisplay').textContent = center.description;
+                    }
+                    
+                    const programTagsEl = document.getElementById('programTagsDisplay');
+                    if (programTagsEl) {
+                        const programs = parseArrayField(center.programs);
+                        if (programs.length > 0) {
+                            programTagsEl.innerHTML = '';
+                            programs.forEach(function(program) {
+                                const btn = document.createElement('button');
+                                btn.className = 'program-tag';
+                                btn.textContent = String(program).trim();
+                                programTagsEl.appendChild(btn);
+                            });
+                        }
+                    }
+
+                    const achievementsEl = document.getElementById('achievementListDisplay');
+                    if (achievementsEl) {
+                        const achievements = parseArrayField(center.achievements);
+                        if (achievements.length > 0) {
+                            achievementsEl.innerHTML = '';
+                            achievements.forEach(function(itemText) {
+                                const item = document.createElement('div');
+                                item.className = 'achievement-item';
+                                item.innerHTML = '<span class="trophy-icon">🏆</span><p></p>';
+                                item.querySelector('p').textContent = String(itemText).trim();
+                                achievementsEl.appendChild(item);
+                            });
+                        }
+                    }
+
+                    var rating = Math.round(center.avg_rating || 0);
+                    var starsEl = document.querySelector('.center-rating .stars');
+                    if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+                    var ratingCount = document.querySelector('.center-rating .rating-count');
+                    if (ratingCount) ratingCount.textContent = (center.avg_rating || 0).toFixed(1) + ' (' + (center.review_count || 0) + ')';
+                } catch(e) {
+                    // Not yet approved or no internet — display defaults are fine
+                }
+            })();
+                // set welcome name from session (like student profile)
+                (function(){
+                    try{
+                        var user = getUser();
+                        if (user && document.getElementById('welcomeName')) {
+                            document.getElementById('welcomeName').textContent = user.name || 'Admin';
+                        }
+                    }catch(e){}
+                })();
+
+            window.addEventListener('load', function() {
+                const sortEl = document.getElementById('centerFeedbackSort');
+                if (sortEl) sortEl.addEventListener('change', loadCenterTestimonials);
+                loadCenterTestimonials();
+            });
+        </script>
+
+        <!-- Operating Schedule Section -->
+        <section class="ec-schedule-section">
+            <div class="ec-schedule-header">
+                <div>
+                    <h2>Operating Schedule</h2>
+                    <p>Days and hours the review center is open</p>
+                </div>
+            </div>
+
+            <div class="ec-schedule-body">
+                <!-- Weekly day pills -->
+                <div class="ec-day-pills" id="ecDayPills"></div>
+
+                <!-- Monthly calendar -->
+                <div class="ec-cal-wrap">
+                    <div class="ec-cal-nav">
+                        <button class="ec-cal-nav-btn" onclick="ecCalPrev()">
+                            <span class="material-symbols-outlined">chevron_left</span>
+                        </button>
+                        <span id="ecCalLabel"></span>
+                        <button class="ec-cal-nav-btn" onclick="ecCalNext()">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                    <div class="ec-cal-weekdays">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div class="ec-cal-grid" id="ecCalGrid"></div>
+                    <div class="ec-cal-legend">
+                        <span class="ec-legend-open"></span> Open &nbsp;&nbsp;
+                        <span class="ec-legend-today"></span> Today &nbsp;&nbsp;
+                        <span class="ec-legend-closed"></span> Closed
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="gap1"></section>
+
+        <!-- Modal: Edit Schedule -->
+        <div class="modal-overlay" id="scheduleModal">
+            <div class="modal-box" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3>Edit Operating Schedule</h3>
+                    <button class="modal-close" onclick="closeModal('scheduleModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:13px;color:#666;margin-bottom:16px;">Toggle days open and set operating hours for each.</p>
+                    <div id="scheduleInputRows" style="display:flex;flex-direction:column;gap:12px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('scheduleModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveSchedule()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <section class="footer">
+            <div class="footer-container">
+                <div class="footer-left">
+                    <h2>review.mnl</h2>
+                    <p>Manila, Philippines</p>
+                </div>
+                
+                <div class="footer-center">
+                    <div class="footer-column">
+                        <a href="manageenrollments.html">Manage Enrollments</a>
+                        <a href="schedule.html">Schedule</a>
+                        <a href="admindashboard.html">Dashboard</a>
+                        <a href="editcenter.html">My Profile</a>
+                    </div>
+                </div>
+                
+                <div class="footer-right">
+                    <a href="#" class="social-icon">f</a>
+                    <a href="#" class="social-icon">in</a>
+                    <a href="#" class="social-icon">▶</a>
+                    <a href="#" class="social-icon">✉</a>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            function openModal(id) {
+                if (id === 'profileModal') {
+                    const nameInput = document.getElementById('centerNameInput');
+                    const descInput = document.getElementById('centerLocationInput');
+                    const dispName = document.getElementById('centerNameDisplay').innerText;
+                    const dispDesc = document.getElementById('centerDescDisplay').innerText;
+                    nameInput.value = dispName !== 'Name of Review Center' ? dispName : '';
+                    descInput.value = dispDesc !== 'Description.....' ? dispDesc : '';
+                }
+                if (id === 'aboutModal') {
+                    const aboutInput = document.getElementById('aboutInput');
+                    const dispAbout = document.getElementById('aboutDisplay').innerText;
+                    aboutInput.value = dispAbout !== 'Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description' ? dispAbout : '';
+                }
+                if (id === 'achievementsModal') {
+                    const inputList = document.getElementById('achievementsInputList');
+                    inputList.innerHTML = '';
+                    const items = document.querySelectorAll('#achievementListDisplay .achievement-item p');
+                    items.forEach(function(p) {
+                        addAchievementInput(p.textContent.trim());
+                    });
+                    if (items.length === 0) addAchievementInput('');
+                }
+                if (id === 'programsModal') {
+                    const tags = document.querySelectorAll('#programTagsDisplay .program-tag');
+                    const currentPrograms = Array.from(tags).map(t => t.textContent.trim());
+                    
+                    const checkboxes = document.querySelectorAll('#programsModal .program-checklist input[type=checkbox]:not(#othersCheckbox)');
+                    const predefined = Array.from(checkboxes).map(cb => cb.value);
+                    
+                    checkboxes.forEach(cb => {
+                        cb.checked = currentPrograms.includes(cb.value);
+                    });
+                    
+                    const others = currentPrograms.filter(p => !predefined.includes(p));
+                    const othersCb = document.getElementById('othersCheckbox');
+                    const othersInput = document.getElementById('othersInput');
+                    
+                    if (others.length > 0) {
+                        othersCb.checked = true;
+                        othersInput.value = others.join(', ');
+                        toggleOthersInput(othersCb);
+                    } else {
+                        othersCb.checked = false;
+                        othersInput.value = '';
+                        toggleOthersInput(othersCb);
+                    }
+                }
+                document.getElementById(id).classList.add('active');
+            }
+            function closeModal(id) {
+                if (id === 'profileModal') {
+                    clearCenterProfileFeedback();
+                    const saveBtn = document.querySelector('#profileModal .modal-save-btn');
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                    }
+                }
+                document.getElementById(id).classList.remove('active');
+            }
+
+            function showCenterProfileFeedback(type, message) {
+                var el = document.getElementById('centerProfileFeedback');
+                if (!el) return;
+                el.className = 'profile-feedback ' + (type === 'success' ? 'profile-feedback-success' : 'profile-feedback-error');
+                el.textContent = message || '';
+                el.style.display = message ? 'block' : 'none';
+            }
+
+            function clearCenterProfileFeedback() {
+                var el = document.getElementById('centerProfileFeedback');
+                if (!el) return;
+                el.className = 'profile-feedback';
+                el.textContent = '';
+                el.style.display = 'none';
+            }
+            // Close modal when clicking outside box
+            document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) overlay.classList.remove('active');
+                });
+            });
+            // Live image preview inside modal
+            document.getElementById('centerImageInput').addEventListener('change', function() {
+                const file = this.files[0];
+                const preview = document.getElementById('modalImgPreview');
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.style.backgroundImage = 'url(' + e.target.result + ')';
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            async function saveProfile() {
+                const saveBtn = document.querySelector('#profileModal .modal-save-btn');
+                const originalBtnText = saveBtn ? saveBtn.textContent : 'Save Changes';
+                const name = document.getElementById('centerNameInput').value.trim();
+                const location = document.getElementById('centerLocationInput').value.trim();
+                const file = document.getElementById('centerImageInput').files[0];
+                clearCenterProfileFeedback();
+
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+                }
+
+                if (name) document.getElementById('centerNameDisplay').innerText = name;
+                if (location) document.getElementById('centerDescDisplay').innerText = location;
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const logo = document.getElementById('centerLogoPreview');
+                        logo.style.backgroundImage = 'url(' + e.target.result + ')';
+                        logo.style.backgroundSize = 'cover';
+                        logo.style.backgroundPosition = 'center';
+                    };
+                    reader.readAsDataURL(file);
+                }
+                // persist profile changes to session (explicit profile edit)
+                try {
+                    var u = getUser() || {};
+                    if (name) { u.name = name; u.business_name = name; }
+                    if (location) u.address = location;
+                    setSessionUser(u, true);
+                } catch(e) {}
+
+                // Persist to backend; upload logo first (if present), then update other fields
+                try {
+                    if (file) {
+                        const fd = new FormData();
+                        fd.append('logo', file);
+                        const centerResp = await CentersAPI.uploadLogo(fd);
+                        if (centerResp && centerResp.logo_url) {
+                            const logo = document.getElementById('centerLogoPreview');
+                            logo.style.backgroundImage = 'url(' + centerResp.logo_url + ')';
+                            logo.style.backgroundSize = 'cover';
+                            logo.style.backgroundPosition = 'center';
+                        }
+                        // Update session user with returned center info
+                        try {
+                            const u2 = getUser() || {};
+                            if (centerResp.business_name) u2.business_name = centerResp.business_name;
+                            if (centerResp.logo_url) u2.logo_url = centerResp.logo_url;
+                            setSessionUser(u2, true);
+                        } catch(e) {}
+                    }
+                    const body = {};
+                    if (name) body.business_name = name;
+                    if (location) body.address = location;
+                    if (Object.keys(body).length > 0) {
+                        const updated = await CentersAPI.updateMyProfile(body);
+                        // Refresh session user from server if available
+                        try {
+                            const u3 = getUser() || {};
+                            if (updated && updated.business_name) u3.business_name = updated.business_name;
+                            if (updated && updated.address) u3.address = updated.address;
+                            setSessionUser(u3, true);
+                        } catch(e) {}
+                    }
+                    showCenterProfileFeedback('success', 'Profile saved successfully.');
+                    setTimeout(function(){ closeModal('profileModal'); }, 800);
+                } catch(e) {
+                    console.warn('Saving center profile failed', e);
+                    showCenterProfileFeedback('error', (e && e.message) ? e.message : 'Failed to save profile. Please try again.');
+                } finally {
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = originalBtnText;
+                    }
+                }
+            }
+            async function saveAbout() {
+                const text = document.getElementById('aboutInput').value.trim();
+                if (text) document.getElementById('aboutDisplay').innerText = text;
+                closeModal('aboutModal');
+                
+                // Persist to session
+                try {
+                    var u = getUser() || {};
+                    if (text) u.description = text;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    if (text) {
+                        const updated = await CentersAPI.updateMyProfile({ description: text });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.description) u2.description = updated.description;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save about section', e);
+                }
+            }
+            async function savePrograms() {
+                const checked = Array.from(document.querySelectorAll('#programsModal .program-checklist input[type=checkbox]:checked')).map(cb => cb.value);
+                const container = document.getElementById('programTagsDisplay');
+                container.innerHTML = '';
+                checked.forEach(function(prog) {
+                    const btn = document.createElement('button');
+                    btn.className = 'program-tag';
+                    btn.textContent = prog;
+                    container.appendChild(btn);
+                });
+                // Handle Others
+                const othersChecked = document.getElementById('othersCheckbox').checked;
+                const othersText = document.getElementById('othersInput').value.trim();
+                if (othersChecked && othersText) {
+                    const btn = document.createElement('button');
+                    btn.className = 'program-tag';
+                    btn.textContent = othersText;
+                    container.appendChild(btn);
+                }
+                closeModal('programsModal');
+                
+                // Persist to session
+                try {
+                    const allPrograms = [...checked];
+                    if (othersChecked && othersText) allPrograms.push(othersText);
+                    var u = getUser() || {};
+                    if (allPrograms.length > 0) u.programs = allPrograms;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    const allPrograms = [...checked];
+                    if (othersChecked && othersText) allPrograms.push(othersText);
+                    if (allPrograms.length > 0) {
+                        const updated = await CentersAPI.updateMyProfile({ programs: allPrograms });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.programs) u2.programs = updated.programs;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save programs', e);
+                }
+            }
+            function toggleOthersInput(cb) {
+                const input = document.getElementById('othersInput');
+                input.disabled = !cb.checked;
+                if (cb.checked) {
+                    input.focus();
+                    input.style.borderColor = '#0a4cff';
+                } else {
+                    input.value = '';
+                    input.style.borderColor = '#ddd';
+                }
+            }
+            function addAchievementInput(value) {
+                const list = document.getElementById('achievementsInputList');
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+                row.innerHTML = '<span style="font-size:18px;">\ud83c\udfc6</span>'
+                    + '<input type="text" value="' + (value || '') + '" placeholder="Enter achievement..." style="flex:1;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor=\'#0a4cff\'" onblur="this.style.borderColor=\'#ddd\'">'
+                    + '<button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#e53935;font-size:18px;line-height:1;" title="Remove">&times;</button>';
+                list.appendChild(row);
+            }
+            async function saveAchievements() {
+                const inputs = document.querySelectorAll('#achievementsInputList input[type=text]');
+                const container = document.getElementById('achievementListDisplay');
+                container.innerHTML = '';
+                const achievements = [];
+                inputs.forEach(function(input) {
+                    const val = input.value.trim();
+                    if (!val) return;
+                    achievements.push(val);
+                    const item = document.createElement('div');
+                    item.className = 'achievement-item';
+                    item.innerHTML = '<span class="trophy-icon">🏆</span><p>' + val + '</p>';
+                    container.appendChild(item);
+                });
+                closeModal('achievementsModal');
+                
+                // Persist to session
+                try {
+                    var u = getUser() || {};
+                    if (achievements.length > 0) u.achievements = achievements;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    if (achievements.length > 0 || inputs.length > 0) {
+                        const updated = await CentersAPI.updateMyProfile({ achievements: achievements });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.achievements) u2.achievements = updated.achievements;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save achievements', e);
+                }
+            }
+        </script>
+
+        <style>
+            /* ── Back button inside nav (inline, not absolute) ── */
+            .header-admindashboard .back-btn-viewcenter {
+                position: static;
+                padding: 7px 16px;
+                font-size: 13px;
+                font-weight: 600;
+                border-radius: 20px;
+                flex-shrink: 0;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: rgba(255,255,255,0.2);
+                color: #fff;
+                text-decoration: none;
+                border: 1.5px solid rgba(255,255,255,0.5);
+                transition: background 0.2s;
+            }
+            .header-admindashboard .back-btn-viewcenter:hover {
+                background: rgba(255,255,255,0.35);
+            }
+            .header-admindashboard .back-btn-viewcenter .material-symbols-outlined {
+                font-size: 16px;
+            }
+
+            /* ── Operating Schedule Section ── */
+            .ec-schedule-section {
+                background: #f4f6fb;
+                padding: 48px 6%;
+            }
+
+            .ec-schedule-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                margin-bottom: 22px;
+                max-width: 1200px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .ec-schedule-header h2 {
+                font-size: 20px;
+                font-weight: 700;
+                color: #0d1b4b;
+                margin-bottom: 4px;
+            }
+
+            .ec-schedule-header p {
+                font-size: 13px;
+                color: #888;
+                margin: 0;
+            }
+
+            .ec-schedule-body {
+                display: grid;
+                grid-template-columns: auto minmax(350px, 500px);
+                gap: 32px;
+                align-items: start;
+                justify-content: center;
+                max-width: 900px;
+                margin: 0 auto;
+            }
+
+            /* Day pills column */
+            .ec-day-pills {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                min-width: 120px;
+            }
+
+            .ec-day-pill {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 14px;
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 600;
+                font-family: 'Poppins', sans-serif;
+                border: none;
+                cursor: default;
+            }
+
+            .ec-day-pill.open {
+                background: #e8eeff;
+                color: #0a4cff;
+            }
+
+            .ec-day-pill.closed {
+                background: #f5f6fb;
+                color: #bbb;
+                text-decoration: line-through;
+            }
+
+            .ec-day-pill-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .ec-day-pill.open  .ec-day-pill-dot  { background: #0a4cff; }
+            .ec-day-pill.closed .ec-day-pill-dot { background: #ddd; }
+
+            /* Calendar */
+            .ec-cal-wrap {
+                background: #fff;
+                border-radius: 14px;
+                box-shadow: 0 2px 12px rgba(10,76,255,0.07);
+                padding: 20px 18px 14px;
+            }
+
+            .ec-cal-nav {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 14px;
+                font-size: 14px;
+                font-weight: 700;
+                color: #0d1b4b;
+            }
+
+            .ec-cal-nav-btn {
+                width: 28px;
+                height: 28px;
+                border: 1.5px solid #e2e8f5;
+                border-radius: 7px;
+                background: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #555;
+                transition: all 0.15s;
+            }
+
+            .ec-cal-nav-btn:hover { background: #0a4cff; color: #fff; border-color: #0a4cff; }
+            .ec-cal-nav-btn .material-symbols-outlined { font-size: 16px; }
+
+            .ec-cal-weekdays {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                margin-bottom: 6px;
+            }
+
+            .ec-cal-weekdays span {
+                text-align: center;
+                font-size: 10px;
+                font-weight: 700;
+                color: #aab;
+                padding: 3px 0;
+                text-transform: uppercase;
+            }
+
+            .ec-cal-grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 3px;
+            }
+
+            .ec-cal-cell {
+                aspect-ratio: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 7px;
+                font-size: 12px;
+                font-weight: 600;
+                color: #ccc;
+                position: relative;
+            }
+
+            .ec-cal-cell.ec-open {
+                background: #e8eeff;
+                color: #0a4cff;
+            }
+
+            .ec-cal-cell.ec-today {
+                background: #0a4cff;
+                color: #fff;
+                border-radius: 50%;
+            }
+
+            .ec-cal-cell.ec-open.ec-today {
+                background: #0a4cff;
+                color: #fff;
+            }
+
+            .ec-cal-legend {
+                display: flex;
+                align-items: center;
+                font-size: 11px;
+                color: #888;
+                margin-top: 12px;
+                gap: 4px;
+            }
+
+            .ec-legend-open {
+                display: inline-block;
+                width: 12px; height: 12px;
+                border-radius: 3px;
+                background: #e8eeff;
+                border: 1.5px solid #0a4cff;
+            }
+
+            .ec-legend-today {
+                display: inline-block;
+                width: 12px; height: 12px;
+                border-radius: 50%;
+                background: #0a4cff;
+            }
+
+            .ec-legend-closed {
+                display: inline-block;
+                width: 12px; height: 12px;
+                border-radius: 3px;
+                background: #f5f6fb;
+                border: 1.5px solid #e0e4f0;
+            }
+
+            /* Hours list */
+            .ec-hours-list {
+                background: #fff;
+                border-radius: 14px;
+                box-shadow: 0 2px 12px rgba(10,76,255,0.07);
+                padding: 20px 22px;
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .ec-hours-list h4 {
+                font-size: 14px;
+                font-weight: 700;
+                color: #0d1b4b;
+                margin-bottom: 14px;
+            }
+
+            .ec-hour-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 9px 0;
+                border-bottom: 1px solid #f5f6fb;
+                font-size: 13px;
+            }
+
+            .ec-hour-row:last-child { border-bottom: none; }
+
+            .ec-hour-day {
+                font-weight: 600;
+                color: #0d1b4b;
+                width: 48px;
+            }
+
+            .ec-hour-time {
+                color: #555;
+            }
+
+            .ec-hour-closed {
+                color: #ccc;
+                font-style: italic;
+            }
+
+            /* Schedule modal rows */
+            .sched-row {
+                display: grid;
+                grid-template-columns: 30px 80px 1fr 1fr;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 10px;
+                border-radius: 8px;
+                background: #f8f9fc;
+            }
+
+            .sched-row label {
+                font-size: 13px;
+                font-weight: 600;
+                color: #0d1b4b;
+                margin: 0;
+            }
+
+            .sched-row input[type="time"] {
+                padding: 7px 10px;
+                border: 1.5px solid #dde3f0;
+                border-radius: 7px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 12px;
+                outline: none;
+                width: 100%;
+                box-sizing: border-box;
+                transition: border 0.2s;
+            }
+
+            .sched-row input[type="time"]:focus { border-color: #0a4cff; }
+            .sched-row input[type="time"]:disabled { background: #f5f6fb; color: #bbb; }
+
+            .sched-toggle {
+                width: 36px;
+                height: 20px;
+                appearance: none;
+                -webkit-appearance: none;
+                background: #dde3f0;
+                border-radius: 20px;
+                cursor: pointer;
+                position: relative;
+                transition: background 0.2s;
+                flex-shrink: 0;
+            }
+
+            .sched-toggle:checked { background: #0a4cff; }
+
+            .sched-toggle::after {
+                content: '';
+                position: absolute;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: #fff;
+                top: 3px;
+                left: 3px;
+                transition: left 0.2s;
+            }
+
+            .sched-toggle:checked::after { left: 19px; }
+
+            @media (max-width: 900px) {
+                .ec-schedule-body { grid-template-columns: 1fr; align-items: stretch; justify-items: center; }
+                .ec-day-pills { flex-direction: row; flex-wrap: wrap; min-width: unset; grid-column: 1 / -1; justify-content: center; }
+                .ec-cal-wrap { width: 100%; max-width: 500px; }
+            }
+
+            @media (max-width: 600px) {
+                .ec-schedule-body { grid-template-columns: 1fr; }
+            }
+        </style>
+
+        <script>
+        // Operating Schedule Enhanced
+var FULL_SCHEDULE = {
+    default: [
+        { day: "Sun", open: false, shifts: [] },
+        { day: "Mon", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Tue", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Wed", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Thu", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Fri", open: true,  shifts: [{from:"08:00", to:"17:00"}] },
+        { day: "Sat", open: true,  shifts: [{from:"09:00", to:"15:00"}] }
+    ],
+    specific: {},
+    dateOverrides: {}
+};
+var EC_SCHEDULE = [];
+var _ecYear, _ecMonth;
+(function(){
+    var now = new Date();
+    _ecYear  = now.getFullYear();
+    _ecMonth = now.getMonth();
+})();
+var EC_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function fmt12(t) {
+    if (!t) return "";
+    var pts = t.split(":");
+    var h = parseInt(pts[0], 10), m = pts[1];
+    var ampm = h >= 12 ? "pm" : "am";
+    h = h % 12;
+    if (h === 0) h = 12;
+    return h + ":" + m + " " + ampm;
+}
+
+function updateScheduleView() {
+    var key = _ecYear + "-" + _ecMonth;
+    if (FULL_SCHEDULE.specific && FULL_SCHEDULE.specific[key]) {
+        EC_SCHEDULE = FULL_SCHEDULE.specific[key];
+    } else {
+        EC_SCHEDULE = FULL_SCHEDULE.default;
+    }
+    renderEcSchedule();
+}
+
+function renderEcSchedule() {
+    var pillsEl = document.getElementById("ecDayPills");
+    if(pillsEl) {
+        pillsEl.innerHTML = "";
+        EC_SCHEDULE.forEach(function(s) {
+            var pill = document.createElement("div");
+            pill.className = "ec-day-pill " + (s.open ? "open" : "closed");
+            pill.innerHTML = "<span class=\"ec-day-pill-dot\"></span>" + s.day;
+            pillsEl.appendChild(pill);
+        });
+    }
+    renderEcCalendar();
+}
+
+function renderEcCalendar() {
+    var lbl = document.getElementById("ecCalLabel");
+    if(lbl) lbl.textContent = EC_MONTHS[_ecMonth] + " " + _ecYear;
+    var openDows = EC_SCHEDULE.map(function(s, i){ return s.open ? i : -1; }).filter(function(i){ return i !== -1; });
+    var firstDow = new Date(_ecYear, _ecMonth, 1).getDay();
+    var daysInMonth = new Date(_ecYear, _ecMonth + 1, 0).getDate();
+    var today = new Date();
+    var grid = document.getElementById("ecCalGrid");
+    if(!grid) return;
+    grid.innerHTML = "";
+    for (var e = 0; e < firstDow; e++) {
+        var blank = document.createElement("div");
+        blank.className = "ec-cal-cell";
+        grid.appendChild(blank);
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+        var cell = document.createElement("div");
+        var dow = new Date(_ecYear, _ecMonth, d).getDay();
+        
+        var dateKey = _ecYear + "-" + _ecMonth + "-" + d;
+        if (!FULL_SCHEDULE.dateOverrides) FULL_SCHEDULE.dateOverrides = {};
+        
+        var over = FULL_SCHEDULE.dateOverrides[dateKey];
+        var isOpen = over ? over.open : (openDows.indexOf(dow) !== -1);
+        
+        var isToday = today.getFullYear() === _ecYear && today.getMonth() === _ecMonth && today.getDate() === d;
+        var cls = "ec-cal-cell";
+        if (isOpen) cls += " ec-open";
+        else cls += " ec-closed";
+        if (isToday) cls += " ec-today";
+        cell.className = cls;
+        cell.innerHTML = "<span>" + d + "</span>";
+        cell.style.cursor = "pointer";
+        cell.title = "Click to set custom hours for this date";
+        cell.setAttribute("onclick", "openDateModal(" + d + ")");
+        
+        if (over) {
+            var dot = document.createElement("div");
+            dot.style.cssText = "width:6px;height:6px;border-radius:50%;background:#d32f2f;position:absolute;bottom:4px;left:calc(50% - 3px);";
+            cell.style.position = "relative";
+            cell.appendChild(dot);
+        }
+        
+        grid.appendChild(cell);
+    }
+}
+
+function ecCalPrev() { _ecMonth--; if (_ecMonth < 0) { _ecMonth = 11; _ecYear--; } updateScheduleView(); }
+function ecCalNext() { _ecMonth++; if (_ecMonth > 11) { _ecMonth = 0; _ecYear++; } updateScheduleView(); }
+
+var _origOpenModal = openModal;
+openModal = function(id) {
+    if (id === "scheduleModal") {
+        renderScheduleModalInputs();
+        document.getElementById("scheduleModal").classList.add("active");
+        return;
+    }
+    _origOpenModal(id);
+};
+
+var _workingSchedule = [];
+function renderScheduleModalInputs() {
+    var rows = document.getElementById("scheduleInputRows");
+    rows.innerHTML = "";
+    
+    var key = _ecYear + "-" + _ecMonth;
+    var isSpecific = !!(FULL_SCHEDULE.specific && FULL_SCHEDULE.specific[key]);
+    var monthName = EC_MONTHS[_ecMonth];
+    
+    var headerHtml = "<div style=\"background:#f4f6fb; padding:12px; border-radius:8px; margin-bottom:15px; display:flex; align-items:center; gap:8px;\">" +
+        "<input type=\"checkbox\" id=\"wSchedSpecificOpt\" " + (isSpecific ? "checked" : "") + " style=\"width:16px;height:16px;\">" +
+        "<label for=\"wSchedSpecificOpt\" style=\"font-size:13px; color:#0d1b4b; margin:0; cursor:pointer;\">" +
+            "Make hours specific to <strong>" + monthName + " " + _ecYear + "</strong> only" +
+        "</label>" +
+    "</div>";
+    
+    rows.insertAdjacentHTML("beforeend", headerHtml);
+    
+    _workingSchedule = JSON.parse(JSON.stringify(EC_SCHEDULE));
+    _workingSchedule.forEach(function(s, d) {
+        if(!s.shifts) s.shifts = [];
+        var row = document.createElement("div");
+        row.style.cssText = "border: 1px solid #dde3f0; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #fff;";
+        var header = document.createElement("div");
+        header.style.cssText = "display: flex; justify-content: space-between; align-items: center;";
+        var dsbl = s.open ? "" : "disabled";
+        header.innerHTML = "<label style=\"font-weight:600; font-size:14px; margin:0; display:flex; align-items:center; gap:8px;\"><input type=\"checkbox\" " + (s.open ? "checked" : "") + " onchange=\"wSchedToggle(" + d + ", this)\"> " + s.day + "</label><button type=\"button\" class=\"btn-outline-small\" style=\"font-size:12px; padding:4px 8px;\" onclick=\"wSchedAddShift(" + d + ")\" id=\"addShiftBtn" + d + "\" " + dsbl + ">+ Add Shift</button>";
+        var shiftCont = document.createElement("div");
+        shiftCont.id = "wSchedShifts_" + d;
+        shiftCont.style.cssText = "margin-top: 10px; display:flex; flex-direction:column; gap:8px;";
+        row.appendChild(header);
+        row.appendChild(shiftCont);
+        rows.appendChild(row);
+        setTimeout(function(){ window.renderWorkingShifts(d); }, 1);
+    });
+}
+window.wSchedToggle = function(d, cb) {
+    _workingSchedule[d].open = cb.checked;
+    var btn = document.getElementById("addShiftBtn" + d);
+    if(btn) btn.disabled = !cb.checked;
+    window.renderWorkingShifts(d);
+};
+window.wSchedAddShift = function(d) {
+    _workingSchedule[d].shifts.push({ from: "08:00", to: "17:00" });
+    window.renderWorkingShifts(d);
+};
+window.wSchedRemoveShift = function(d, shIdx) {
+    _workingSchedule[d].shifts.splice(shIdx, 1);
+    window.renderWorkingShifts(d);
+};
+window.wSchedUpdate = function(d, shIdx, field, val) {
+    _workingSchedule[d].shifts[shIdx][field] = val;
+};
+window.renderWorkingShifts = function(d) {
+    var cont = document.getElementById("wSchedShifts_" + d);
+    if (!cont) return;
+    cont.innerHTML = "";
+    var s = _workingSchedule[d];
+    if (!s.open) {
+        cont.innerHTML = "<p style=\"font-size:12px; color:#bbb; margin:0; font-style:italic;\">Closed on this day.</p>";
+        return;
+    }
+    if (s.shifts.length === 0) {
+        cont.innerHTML = "<p style=\"font-size:12px; color:#bbb; margin:0; font-style:italic;\">No shifts added.</p>";
+        return;
+    }
+    s.shifts.forEach(function(sh, shIdx) {
+        var shiftDiv = document.createElement("div");
+        shiftDiv.style.cssText = "display:flex; gap:8px; align-items:center;";
+        shiftDiv.innerHTML = 
+            "<input type=\"time\" style=\"flex:1; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.from + "\" onchange=\"wSchedUpdate(" + d + ", " + shIdx + ", 'from', this.value)\">" +
+            "<span style=\"color:#666; font-size:12px;\">to</span>" +
+            "<input type=\"time\" style=\"flex:1; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.to + "\" onchange=\"wSchedUpdate(" + d + ", " + shIdx + ", 'to', this.value)\">" +
+            "<button type=\"button\" style=\"background:#ffe8e8; color:#d32f2f; border:none; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;\" onclick=\"wSchedRemoveShift(" + d + ", " + shIdx + ")\">&times;</button>";
+        cont.appendChild(shiftDiv);
+    });
+};
+window.saveSchedule = async function() {
+    var btn = document.querySelector(".modal-save-btn");
+    var specificChk = document.getElementById("wSchedSpecificOpt");
+    var oldText = "";
+    if (btn) { oldText = btn.textContent; btn.textContent = "Saving..."; }
+    
+    try {
+        var key = _ecYear + "-" + _ecMonth;
+        var toSave = JSON.parse(JSON.stringify(_workingSchedule));
+        
+        if (specificChk && specificChk.checked) {
+            FULL_SCHEDULE.specific[key] = toSave;
+        } else {
+            // Apply over default, but also delete this month's override if it existed
+            FULL_SCHEDULE.default = toSave;
+            if (FULL_SCHEDULE.specific[key]) delete FULL_SCHEDULE.specific[key];
+        }
+        
+        await CentersAPI.updateMyProfile({ schedule: FULL_SCHEDULE });
+        updateScheduleView();
+        closeModal("scheduleModal");
+    } catch(err) {
+        alert("Failed to save schedule.");
+    } finally {
+        if (btn) btn.textContent = oldText;
+    }
+};
+
+var _workingDate = 1;
+var _workingDateSched = null;
+
+window.openDateModal = function(d) {
+    if(!d) return;
+    _workingDate = d;
+    var dateKey = _ecYear + "-" + _ecMonth + "-" + d;
+    
+    if (!FULL_SCHEDULE.dateOverrides) FULL_SCHEDULE.dateOverrides = {};
+    
+    if (FULL_SCHEDULE.dateOverrides[dateKey]) {
+        _workingDateSched = JSON.parse(JSON.stringify(FULL_SCHEDULE.dateOverrides[dateKey]));
+    } else {
+        var dow = new Date(_ecYear, _ecMonth, d).getDay();
+        var isSpec = !!(FULL_SCHEDULE.specific && FULL_SCHEDULE.specific[_ecYear + "-" + _ecMonth]);
+        var mSchedule = isSpec ? FULL_SCHEDULE.specific[_ecYear + "-" + _ecMonth] : FULL_SCHEDULE.default;
+        _workingDateSched = JSON.parse(JSON.stringify(mSchedule[dow]));
+    }
+    
+    var lbl = document.getElementById("dateModalLabel");
+    if(lbl) lbl.innerHTML = "Schedule for <strong>" + EC_MONTHS[_ecMonth] + " " + d + ", " + _ecYear + "</strong>";
+    
+    renderDateModalInputs();
+    document.getElementById("dateModal").classList.add("active");
+};
+
+function renderDateModalInputs() {
+    var cont = document.getElementById("dateModalBody");
+    if (!cont) return;
+    cont.innerHTML = "";
+    
+    var s = _workingDateSched;
+    if(!s.shifts) s.shifts = [];
+    
+    var dsbl = s.open ? "" : "disabled";
+    
+    var div = document.createElement("div");
+    div.style.cssText = "border: 1px solid #dde3f0; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #fff;";
+    
+    var header = document.createElement("div");
+    header.style.cssText = "display: flex; justify-content: space-between; align-items: center;";
+    header.innerHTML = "<label style=\"font-weight:600; font-size:14px; margin:0; display:flex; align-items:center; gap:8px;\"><input type=\"checkbox\" " + (s.open ? "checked" : "") + " onchange=\"dSchedToggle(this)\"> Open on this date</label>" +
+        "<button type=\"button\" class=\"btn-outline-small\" style=\"font-size:12px; padding:4px 8px;\" onclick=\"dSchedAddShift()\" id=\"dAddShiftBtn\" " + dsbl + ">+ Add Shift</button>";
+        
+    var shiftCont = document.createElement("div");
+    shiftCont.id = "dSchedShifts";
+    shiftCont.style.cssText = "margin-top: 10px; display:flex; flex-direction:column; gap:8px;";
+    
+    div.appendChild(header);
+    div.appendChild(shiftCont);
+    cont.appendChild(div);
+    
+    var dateKey = _ecYear + "-" + _ecMonth + "-" + _workingDate;
+    if (FULL_SCHEDULE.dateOverrides && FULL_SCHEDULE.dateOverrides[dateKey]) {
+        var removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.style.cssText = "width:100%; padding:10px; border:1px solid #d32f2f; background:transparent; color:#d32f2f; border-radius:8px; cursor:pointer; font-weight:600;";
+        removeBtn.textContent = "Remove specific override for this date";
+        removeBtn.onclick = function() { dSchedReset(); };
+        cont.appendChild(removeBtn);
+    }
+    
+    renderDateWorkingShifts();
+}
+
+window.dSchedToggle = function(cb) {
+    _workingDateSched.open = cb.checked;
+    var btn = document.getElementById("dAddShiftBtn");
+    if(btn) btn.disabled = !cb.checked;
+    renderDateWorkingShifts();
+};
+window.dSchedAddShift = function() {
+    _workingDateSched.shifts.push({ from: "08:00", to: "17:00" });
+    renderDateWorkingShifts();
+};
+window.dSchedRemoveShift = function(shIdx) {
+    _workingDateSched.shifts.splice(shIdx, 1);
+    renderDateWorkingShifts();
+};
+window.dSchedUpdate = function(shIdx, field, val) {
+    _workingDateSched.shifts[shIdx][field] = val;
+};
+window.renderDateWorkingShifts = function() {
+    var cont = document.getElementById("dSchedShifts");
+    if (!cont) return;
+    cont.innerHTML = "";
+    var s = _workingDateSched;
+    if (!s.open) {
+        cont.innerHTML = "<p style=\"font-size:12px; color:#bbb; margin:0; font-style:italic;\">Closed on this date.</p>";
+        return;
+    }
+    if (!s.shifts || s.shifts.length === 0) {
+        cont.innerHTML = "<p style=\"font-size:12px; color:#bbb; margin:0; font-style:italic;\">No shifts added.</p>";
+        return;
+    }
+    s.shifts.forEach(function(sh, shIdx) {
+        var shiftDiv = document.createElement("div");
+        shiftDiv.style.cssText = "display:flex; gap:8px; align-items:center;";
+        shiftDiv.innerHTML = 
+            "<input type=\"time\" style=\"flex:1; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.from + "\" onchange=\"dSchedUpdate(" + shIdx + ", 'from', this.value)\">" +
+            "<span style=\"color:#666; font-size:12px;\">to</span>" +
+            "<input type=\"time\" style=\"flex:1; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.to + "\" onchange=\"dSchedUpdate(" + shIdx + ", 'to', this.value)\">" +
+            "<button type=\"button\" style=\"background:#ffe8e8; color:#d32f2f; border:none; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;\" onclick=\"dSchedRemoveShift(" + shIdx + ")\">&times;</button>";
+        cont.appendChild(shiftDiv);
+    });
+};
+
+window.dSchedReset = async function() {
+    var dateKey = _ecYear + "-" + _ecMonth + "-" + _workingDate;
+    if (FULL_SCHEDULE.dateOverrides && FULL_SCHEDULE.dateOverrides[dateKey]) {
+        delete FULL_SCHEDULE.dateOverrides[dateKey];
+    }
+    await dSchedSaveBackend();
+};
+
+window.saveDateSchedule = async function() {
+    var btn = document.querySelector("#dateModal .modal-save-btn");
+    var oldText = "";
+    if (btn) { oldText = btn.textContent; btn.textContent = "Saving..."; }
+    
+    var dateKey = _ecYear + "-" + _ecMonth + "-" + _workingDate;
+    if (!FULL_SCHEDULE.dateOverrides) FULL_SCHEDULE.dateOverrides = {};
+    FULL_SCHEDULE.dateOverrides[dateKey] = JSON.parse(JSON.stringify(_workingDateSched));
+    
+    await dSchedSaveBackend();
+    
+    if (btn) btn.textContent = oldText;
+};
+
+window.dSchedSaveBackend = async function() {
+    try {
+        await CentersAPI.updateMyProfile({ schedule: FULL_SCHEDULE });
+        updateScheduleView();
+        closeModal("dateModal");
+    } catch(err) {
+        alert("Failed to save schedule.");
+    }
+};
+
+(async function() {
+    try {
+        var center = await CentersAPI.getMyProfile();
+        if (center && center.schedule) {
+            var parsed = typeof center.schedule === "string" ? JSON.parse(center.schedule) : center.schedule;
+            
+            // Detect old array format
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                var fixedArray = parsed.map(function(s) {
+                    if (!s.shifts) {
+                        s.shifts = [];
+                        if (s.from && s.to) s.shifts.push({ from: s.from, to: s.to });
+                    }
+                    return s;
+                });
+                FULL_SCHEDULE.default = fixedArray;
+            } else if (parsed && parsed.default) {
+                FULL_SCHEDULE = parsed;
+            }
+        }
+    } catch(e) {}
+    updateScheduleView();
+})();
+</script>
+        
+        
+        <!-- Modal: Edit Date Schedule -->
+        <div class="modal-overlay" id="dateModal">
+            <div class="modal-box" style="max-width:400px;">
+                <div class="modal-header">
+                    <h3 id="dateModalLabel">Edit Date</h3>
+                    <button class="modal-close" onclick="closeModal('dateModal')">&times;</button>
+                </div>
+                <div class="modal-body" id="dateModalBody"></div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('dateModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveDateSchedule()">Save Date</button>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+
+
+
+
+
+
+
+
+
+

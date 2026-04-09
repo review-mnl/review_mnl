@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>View Center - review.mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    </head>
+    <body>
+        <section class="header header-viewcenter">
+            <nav>
+                <a href="loggedin.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
+                <div class="nav-links">
+                    <ul>
+                        <li><a href="loggedin.html">HOME</a></li>
+                        <li><a href="search.html">VIEW REVIEW CENTERS</a></li>
+                        <li><a href="contact.html">CONTACT</a></li>
+                        <li><a href="search.html">SEARCH</a></li>
+                    </ul>
+                </div>
+                <div class="profile-wrapper" style="position:relative;">
+                    <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#fff;">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <div id="profileDropdown" class="profile-dropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">
+                        <a href="userdashboard.html" style="display:block;padding:12px 16px;color:#0a4cff;text-decoration:none;border-bottom:1px solid #eee;">My Profile</a>
+                        <button id="logoutBtn" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;">Logout</button>
+                    </div>
+                </div>
+            </nav>
+            <div style="padding: 0 6%; margin-top: 10px; position: relative; z-index: 1;">
+                <a href="search.html" id="backToResultsBtn" class="back-btn-viewcenter">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Back
+                </a>
+            </div>
+            <div class="center-header-content" style="display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;">
+                <div style="display:flex;align-items:center;gap:20px;flex:1;min-width:0;">
+                    <div class="center-logo" id="centerLogo"></div>
+                    <div class="center-info">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+                            <h1 id="centerName" style="margin:0;">Name of Review Center</h1>
+                            <button id="saveCenterBtn" onclick="toggleSaveCenter()" title="Save Center" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;">
+                                <span class="material-symbols-outlined" id="saveIcon" style="font-size:28px;text-shadow:1px 1px 3px rgba(0,0,0,0.4);transition:font-variation-settings 0.2s, color 0.2s, text-shadow 0.2s;">bookmark</span>
+                            </button>
+                            <div id="saveToast" style="display:none;padding:5px 12px;background:rgba(0,0,0,0.65);color:#fff;border-radius:6px;font-size:0.75rem;font-family:Poppins,sans-serif;"></div>
+                        </div>
+                        <p class="center-description" id="centerShortDescription">Location.....</p>
+                        <div class="center-rating">
+                            <span class="stars" id="centerStars">★★★★★</span>
+                            <span class="rating-count" id="centerRatingCount">5.0 (10)</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="headerMapContainer" style="width: 400px; height: 200px; border-radius: 12px; background: #e8eaed; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; flex-shrink: 0; align-self: center; display: none; position: relative;">
+                    <div id="viewMap" style="width: 100%; height: 100%; z-index: 1;"></div>
+                    <div id="mapClickOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer;" title="Click to view large map" onclick="openLargeMap()"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Map Modal -->
+        <div id="largeMapModal" class="modal-overlay">
+            <div class="modal-box" style="width: 800px; max-width: 95vw; height: 600px; max-height: 90vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3 id="largeMapTitle">Review Center Location</h3>
+                    <button class="modal-close" onclick="closeLargeMap()">&times;</button>
+                </div>
+                <div class="modal-body" style="flex: 1; padding: 0;">
+                    <div id="largeMap" style="width: 100%; height: 100%; z-index: 1;"></div>
+                </div>
+            </div>
+        </div>
+        <script>
+            (function(){
+                const btn = document.getElementById('profileBtn');
+                const dd = document.getElementById('profileDropdown');
+                const logout = document.getElementById('logoutBtn');
+                if(!btn || !dd) return;
+                btn.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    const isOpen = dd.style.display === 'block';
+                    dd.style.display = isOpen ? 'none' : 'block';
+                    btn.setAttribute('aria-expanded', String(!isOpen));
+                });
+                logout.addEventListener('click', function(){ clearSession(); window.location.href = 'index.html'; });
+                document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+            })();
+        </script>
+
+        <section class="center-details">
+            <div class="center-left">
+                <div class="about-section">
+                    <h2>About</h2>
+                    <p id="centerAbout">Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description</p>
+                </div>
+
+                <div class="programs-section">
+                    <h2>Programs Offered</h2>
+                    <div class="program-tags" id="programTags">
+                        <button class="program-tag">Category 1</button>
+                        <button class="program-tag">Category 1</button>
+                        <button class="program-tag">Category 1</button>
+                        <button class="program-tag">Category 1</button>
+                    </div>
+                </div>
+
+                <button class="schedule-review-btn" onclick="openScheduleModal()" style="margin-top: 20px;">Schedule a review</button>
+            </div>
+
+            <div class="center-right flex-column" style="display:flex;flex-direction:column;gap:24px;width:400px;flex-shrink:0;">
+                <div class="achievements-card" style="width:100%;box-sizing:border-box;">
+                    <h2>Achievements</h2>
+                <div class="achievement-list" id="achievementList">
+                    <div class="achievement-item">
+                        <span class="trophy-icon">🏆</span>
+                        <p>Achievement Achievement Achievement</p>
+                    </div>
+                    <div class="achievement-item">
+                        <span class="trophy-icon">🏆</span>
+                        <p>Achievement Achievement Achievement</p>
+                    </div>
+                    <div class="achievement-item">
+                        <span class="trophy-icon">🏆</span>
+                        <p>Achievement Achievement Achievement</p>
+                    </div>
+                    <div class="achievement-item">
+                        <span class="trophy-icon">🏆</span>
+                        <p>Achievement Achievement Achievement</p>
+                    </div>
+                    <div class="achievement-item">
+                        <span class="trophy-icon">🏆</span>
+                        <p>Achievement Achievement Achievement</p>
+                    </div>
+                    <div class="achievement-item">
+                        <span class="trophy-icon">🏆</span>
+                        <p>Achievement Achievement Achievement</p>
+                    </div>
+                </div>
+                </div> <!-- Closing achievements card -->
+            </div>
+        </section>
+
+        <section class="testimonials-section" style="padding:40px 6%;max-width:900px;margin:20px auto;">
+            <h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews / Testimonials</h2>
+            <button id="writeFeedbackBtn" style="display:none;padding:10px 18px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">Write Feedback / Testimonial</button>
+            <div id="testimonialFormWrap" style="display:none;margin:0 auto 16px;background:#f0f4ff;border-radius:12px;padding:16px;width:100%;max-width:760px;box-sizing:border-box;">
+                <p id="testiError" style="display:none;color:#d32f2f;font-size:12px;margin-bottom:8px;"></p>
+                <p id="testiSuccess" style="display:none;color:#2e7d32;font-size:12px;margin-bottom:8px;"></p>
+                <select id="testiRating" style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;margin-bottom:10px;">
+                    <option value="">Select rating (1-5)...</option>
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Average</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Very Poor</option>
+                </select>
+                <textarea id="testiContent" rows="4" placeholder="Write your feedback..." style="width:100%;height:170px;min-height:170px;max-height:170px;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;box-sizing:border-box;resize:none;overflow-y:auto;margin-bottom:10px;"></textarea>
+                <button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Feedback</button>
+            </div>
+            <div id="testimonialsList"></div>
+        </section>
+
+        <script>
+            (function(){
+                const STORAGE_KEY = 'rmnl_saved_centers';
+                // Center data — updated dynamically once API response arrives
+                const CENTER = {
+                    id: new URLSearchParams(window.location.search).get('id') || 'center_unknown',
+                    name: 'Review Center',
+                    location: '',
+                    logo_url: ''
+                };
+
+                // Allow the API loader to update center details for accurate save data
+                window._updateSaveCenterId = function(id, name, location, logoUrl) {
+                    CENTER.id = id;
+                    CENTER.name = name;
+                    CENTER.location = location;
+                    CENTER.logo_url = logoUrl || '';
+
+                    // If this center is already saved, keep the stored card data updated.
+                    try {
+                        var savedList = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                        var idx = savedList.findIndex(function(c){ return c && c.id === CENTER.id; });
+                        if (idx >= 0) {
+                            savedList[idx] = Object.assign({}, savedList[idx], CENTER);
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedList));
+                        }
+                    } catch(e) {}
+
+                    updateBtn();
+                };
+
+                function getSaved() {
+                    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
+                }
+                function isSaved() {
+                    return getSaved().some(function(c){ return c.id === CENTER.id; });
+                }
+                function updateBtn() {
+                    const saved = isSaved();
+                    const btn = document.getElementById('saveCenterBtn');
+                    const icon = document.getElementById('saveIcon');
+                    if (!btn) return;
+                    if (saved) {
+                        icon.textContent = 'bookmark';
+                        // Use font-variation-settings to make it exactly shaded (filled)
+                        icon.style.fontVariationSettings = "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+                        icon.style.color = '#ffe27a';
+                        icon.style.textShadow = '0 0 14px rgba(255, 196, 66, 0.95), 0 0 22px rgba(255, 215, 128, 0.65), 1px 1px 3px rgba(0,0,0,0.35)';
+                        btn.style.background = 'rgba(255, 204, 92, 0.22)';
+                        btn.style.borderRadius = '8px';
+                        btn.style.boxShadow = '0 0 0 1px rgba(255, 225, 145, 0.55), 0 0 16px rgba(255, 198, 80, 0.45)';
+                        btn.style.transform = 'scale(1.06)';
+                    } else {
+                        icon.textContent = 'bookmark'; // Changed to always use bookmark
+                        icon.style.fontVariationSettings = "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+                        icon.style.color = '#fff';
+                        icon.style.textShadow = '1px 1px 3px rgba(0,0,0,0.4)';
+                        btn.style.background = 'none';
+                        btn.style.borderRadius = '0';
+                        btn.style.boxShadow = 'none';
+                        btn.style.transform = 'scale(1)';
+                    }
+                }
+                function showToast(msg) {
+                    const toast = document.getElementById('saveToast');
+                    toast.textContent = msg;
+                    toast.style.display = 'block';
+                    setTimeout(function(){ toast.style.display = 'none'; }, 2500);
+                }
+                window.toggleSaveCenter = function() {
+                    let saved = getSaved();
+                    if (isSaved()) {
+                        saved = saved.filter(function(c){ return c.id !== CENTER.id; });
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                        showToast('Center removed from saved.');
+                    } else {
+                        saved.push(CENTER);
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                        showToast('Center saved! View it in your dashboard.');
+                    }
+                    updateBtn();
+                };
+                document.addEventListener('DOMContentLoaded', updateBtn);
+                updateBtn();
+            })();
+        </script>
+
+        <section class="gap1"></section>
+
+        <!-- ── Schedule Modal ─────────────────────────────────────────── -->
+        <div id="scheduleOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
+            <div id="scheduleBox" style="background:#fff;border-radius:18px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.22);font-family:'Poppins',sans-serif;position:relative;">
+
+                <!-- Header -->
+                <div style="padding:24px 28px 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #f0f2f8;padding-bottom:16px;">
+                    <div>
+                        <h2 id="schModalTitle" style="font-size:17px;font-weight:700;color:#0d1b4b;margin:0 0 2px;">Schedule a Review</h2>
+                        <p id="schModalSub" style="font-size:12px;color:#888;margin:0;"></p>
+                    </div>
+                    <button onclick="closeScheduleModal()" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:22px;line-height:1;padding:4px;">&#10005;</button>
+                </div>
+
+                <!-- Step indicators -->
+                <div style="display:flex;align-items:center;padding:16px 28px 0;gap:0;">
+                    <div class="sch-step-dot active" id="sd1">1</div>
+                    <div class="sch-step-line" id="sl1"></div>
+                    <div class="sch-step-dot" id="sd2">2</div>
+                    <div class="sch-step-line" id="sl2"></div>
+                    <div class="sch-step-dot" id="sd3">3</div>
+                    <div class="sch-step-line" id="sl3"></div>
+                    <div class="sch-step-dot" id="sd4">4</div>
+                </div>
+
+                <!-- Step bodies -->
+                <div style="padding:22px 28px 28px;">
+
+                    <!-- STEP 1: Pick date -->
+                    <div id="schStep1">
+                        <p style="font-size:13px;color:#555;margin-bottom:16px;">Select an available date. Greyed-out days are closed.</p>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                            <button onclick="schCalPrev()" class="sch-nav-btn"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>
+                            <span id="schCalLabel" style="font-weight:700;font-size:14px;color:#0d1b4b;"></span>
+                            <button onclick="schCalNext()" class="sch-nav-btn"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;">
+                            <span class="sch-wd">Su</span><span class="sch-wd">Mo</span><span class="sch-wd">Tu</span><span class="sch-wd">We</span><span class="sch-wd">Th</span><span class="sch-wd">Fr</span><span class="sch-wd">Sa</span>
+                        </div>
+                        <div id="schCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+                        <div style="display:flex;gap:16px;margin-top:14px;font-size:11px;color:#888;align-items:center;">
+                            <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#e8eeff;border:1.5px solid #0a4cff;vertical-align:middle;margin-right:4px;"></span>Available</span>
+                            <span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#0a4cff;vertical-align:middle;margin-right:4px;"></span>Today</span>
+                            <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#f0f2f8;border:1.5px solid #e2e8f5;vertical-align:middle;margin-right:4px;"></span>Closed</span>
+                        </div>
+                        <p id="schSelectedDateLabel" style="display:none;margin-top:14px;padding:10px 14px;background:#e8eeff;border-radius:8px;font-size:13px;font-weight:600;color:#0a4cff;"></p>
+                        <div style="display:flex;justify-content:flex-end;margin-top:18px;">
+                            <button id="schStep1Next" onclick="schGoStep(2)" disabled class="sch-btn-primary">Next &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: Your details -->
+                    <div id="schStep2" style="display:none;">
+                        <div style="display:flex;flex-direction:column;gap:13px;">
+                            <div>
+                                <label class="sch-label">Full Name</label>
+                                <input id="schName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
+                            </div>
+                            <div>
+                                <label class="sch-label">Email Address</label>
+                                <input id="schEmail" type="email" class="sch-input" placeholder="juan@email.com">
+                            </div>
+                            <div>
+                                <label class="sch-label">Contact Number</label>
+                                <input id="schContact" type="tel" class="sch-input" placeholder="09XXXXXXXXX">
+                            </div>
+                            <div>
+                                <label class="sch-label">Program / Course of Interest</label>
+                                <select id="schProgram" class="sch-input">
+                                    <option value="">Select a program...</option>
+                                    <option>Civil Engineering</option>
+                                    <option>Architecture</option>
+                                    <option>Nursing</option>
+                                    <option>Accountancy</option>
+                                    <option>Medical Technology</option>
+                                    <option>Electrical Engineering</option>
+                                    <option>Mechanical Engineering</option>
+                                    <option>Pharmacy</option>
+                                    <option>Physical Therapy</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="sch-label">Additional Notes <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                                <textarea id="schNotes" class="sch-input" rows="3" placeholder="Any questions or special requests..." style="height:150px;min-height:150px;max-height:150px;resize:none;overflow-y:auto;"></textarea>
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:20px;">
+                            <button onclick="schGoStep(1)" class="sch-btn-ghost">&larr; Back</button>
+                            <button onclick="schValidateStep2()" class="sch-btn-primary">Next &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Payment -->
+                    <div id="schStep3" style="display:none;">
+                        <!-- Notice -->
+                        <div style="background:#fffbea;border:1.5px dashed #f6c344;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#7a5a00;">
+                            <span class="material-symbols-outlined" style="font-size:18px;color:#e6a800;flex-shrink:0;margin-top:1px;">info</span>
+                            <span>GCash is currently the only available payment method. Bank payment will be available soon.</span>
+                        </div>
+
+                        <!-- Booking summary -->
+                        <div style="background:#f8f9fc;border-radius:10px;padding:16px 18px;margin-bottom:18px;">
+                            <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Booking Summary</h4>
+                            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Date</span><span id="summDate" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="summName" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="summProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="border-top:1px solid #e2e8f5;margin:4px 0;"></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Enrollment Fee</span><span style="font-weight:600;color:#0d1b4b;">₱ 1,500.00</span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Processing Fee</span><span style="font-weight:600;color:#0d1b4b;">₱ 50.00</span></div>
+                                <div style="display:flex;justify-content:space-between;border-top:1.5px solid #0a4cff;padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#0d1b4b;">Total</span><span style="font-weight:800;color:#0a4cff;font-size:15px;">₱ 1,550.00</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Payment methods -->
+                        <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Payment Method</h4>
+                        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                            <label class="sch-pay-option sch-pay-selected" id="schPayGcashOption" for="schPayGcash">
+                                <input type="radio" id="schPayGcash" name="schPayMethod" value="gcash" checked>
+                                <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance_wallet</span>
+                                <span>GCash</span>
+                                <span style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
+                            </label>
+
+                            <label class="sch-pay-option" id="schPayBankOption" for="schPayBank">
+                                <input type="radio" id="schPayBank" name="schPayMethod" value="bank">
+                                <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance</span>
+                                <span>Bank Payment</span>
+                                <span class="sch-pay-coming">Coming Soon</span>
+                            </label>
+                        </div>
+
+                        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+                            <div>
+                                <label class="sch-label">GCash Number</label>
+                                <input id="schGcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
+                            </div>
+                            <div>
+                                <label class="sch-label">GCash Account Name</label>
+                                <input id="schGcashName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
+                            </div>
+                            <div>
+                                <label class="sch-label" style="color: #0a4cff; font-weight: bold;">GCash Reference Number</label>
+                                <input id="schReferenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
+                                <p style="font-size:11px;color:#888;margin-top:4px;">Transfer the amount to the Center's GCash and input the reference number here.</p>
+                            </div>
+                    <!-- STEP 4: Confirmation -->
+                    <div id="schStep4" style="display:none;text-align:center;padding:10px 0 4px;">
+                        <span class="material-symbols-outlined" style="font-size:56px;color:#0a4cff;display:block;margin-bottom:10px;">check_circle</span>
+                        <h3 style="font-size:20px;font-weight:800;color:#0d1b4b;margin-bottom:8px;">Booking Submitted!</h3>
+                        <p style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">Your scheduling request has been sent to the review center. You will receive a confirmation once the admin approves your enrollment.</p>
+                        <div style="background:#f8f9fc;border-radius:12px;padding:16px 20px;text-align:left;margin-bottom:22px;">
+                            <div style="font-size:13px;display:flex;flex-direction:column;gap:7px;">
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Booked Date</span><span id="confDate" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="confName" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Payment</span><span id="confPaymentMethod" style="font-weight:600;color:#0a4cff;">GCash</span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Status</span><span id="confPaymentStatus" style="font-weight:600;background:#e8f5e9;color:#2e7d32;padding:2px 10px;border-radius:10px;font-size:11px;">Paid</span></div>
+                            </div>
+                        </div>
+                        <button onclick="closeScheduleModal()" class="sch-btn-primary" style="width:100%;">Done</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .sch-step-dot {
+                width: 28px; height: 28px; border-radius: 50%;
+                background: #e2e8f5; color: #aaa;
+                font-size: 12px; font-weight: 700;
+                display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0; font-family: 'Poppins', sans-serif;
+                transition: background 0.2s, color 0.2s;
+            }
+            .sch-step-dot.active { background: #0a4cff; color: #fff; }
+            .sch-step-dot.done   { background: #e8eeff; color: #0a4cff; }
+            .sch-step-line {
+                flex: 1; height: 2px; background: #e2e8f5;
+                transition: background 0.2s;
+            }
+            .sch-step-line.active { background: #0a4cff; }
+
+            .sch-nav-btn {
+                width: 30px; height: 30px; border: 1.5px solid #e2e8f5;
+                border-radius: 7px; background: #fff; cursor: pointer;
+                display: flex; align-items: center; justify-content: center;
+                color: #555; transition: all 0.15s;
+            }
+            .sch-nav-btn:hover { background: #0a4cff; color: #fff; border-color: #0a4cff; }
+
+            .sch-wd {
+                text-align: center; font-size: 10px; font-weight: 700;
+                color: #aab; padding: 3px 0;
+                font-family: 'Poppins', sans-serif; text-transform: uppercase;
+            }
+
+            .sch-cal-cell {
+                aspect-ratio: 1; display: flex; align-items: center;
+                justify-content: center; border-radius: 7px;
+                font-size: 12px; font-weight: 600; cursor: not-allowed;
+                color: #ccc; background: #f0f2f8;
+                font-family: 'Poppins', sans-serif;
+                transition: background 0.15s;
+            }
+            .sch-cal-cell.sch-open {
+                background: #e8eeff; color: #0a4cff; cursor: pointer;
+            }
+            .sch-cal-cell.sch-open:hover { background: #c5d4ff; }
+            .sch-cal-cell.sch-today {
+                background: #0a4cff; color: #fff; cursor: pointer;
+            }
+            .sch-cal-cell.sch-selected {
+                background: #0a4cff; color: #fff; outline: 3px solid #7aaaff;
+            }
+            .sch-cal-cell.sch-past {
+                opacity: 0.4; cursor: not-allowed;
+            }
+
+            .sch-label {
+                display: block; font-size: 12px; font-weight: 600;
+                color: #555; margin-bottom: 5px; font-family: 'Poppins', sans-serif;
+            }
+            .sch-input {
+                width: 100%; padding: 10px 13px; border: 1.5px solid #dde3f0;
+                border-radius: 8px; font-family: 'Poppins', sans-serif;
+                font-size: 13px; color: #222; outline: none;
+                box-sizing: border-box; transition: border 0.2s;
+                background: #fff;
+            }
+            .sch-input:focus { border-color: #0a4cff; }
+            textarea.sch-input {
+                resize: none;
+                overflow-y: auto;
+            }
+
+            .sch-btn-primary {
+                padding: 10px 24px; background: #0a4cff; color: #fff;
+                border: none; border-radius: 8px; font-family: 'Poppins', sans-serif;
+                font-size: 13px; font-weight: 600; cursor: pointer;
+                transition: opacity 0.2s; min-width: 110px;
+            }
+            .sch-btn-primary:hover { opacity: 0.85; }
+            .sch-btn-primary:disabled { background: #c0ccf0; cursor: not-allowed; opacity: 1; }
+
+            .sch-btn-ghost {
+                padding: 10px 20px; background: #f0f2f8; color: #555;
+                border: none; border-radius: 8px; font-family: 'Poppins', sans-serif;
+                font-size: 13px; font-weight: 600; cursor: pointer;
+                transition: background 0.2s;
+            }
+            .sch-btn-ghost:hover { background: #e2e8f5; }
+
+            .sch-pay-option {
+                display: flex; align-items: center; gap: 10px;
+                padding: 12px 14px; border: 1.5px solid #e2e8f5;
+                border-radius: 10px; cursor: pointer;
+                font-size: 13px; font-weight: 600; color: #555;
+                font-family: 'Poppins', sans-serif;
+            }
+            .sch-pay-option.sch-pay-selected { border-color: #0a4cff; background: #f5f8ff; }
+            .sch-pay-coming {
+                margin-left: auto; font-size: 11px; background: #ffe8e8;
+                color: #b71c1c; padding: 2px 8px; border-radius: 10px; font-weight: 600;
+            }
+        </style>
+
+        <script>
+        // ── Schedule modal state ──────────────────────────────────────────
+        var SCH_SCHEDULE = [
+            { dow: 0, open: false }, { dow: 1, open: true },
+            { dow: 2, open: true  }, { dow: 3, open: true },
+            { dow: 4, open: true  }, { dow: 5, open: true },
+            { dow: 6, open: true  }
+        ];
+        var _schYear, _schMonth, _schSelectedDate = null, _schStep = 1;
+        var _schPaymentMethod = 'GCash', _schPaymentStatus = 'Pending';
+        var SCH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        function openScheduleModal() {
+            var now = new Date();
+            _schYear = now.getFullYear(); _schMonth = now.getMonth();
+            _schSelectedDate = null; _schStep = 1;
+            _schPaymentMethod = 'GCash';
+            _schPaymentStatus = 'Pending';
+            var gcashRadio = document.getElementById('schPayGcash');
+            var bankRadio = document.getElementById('schPayBank');
+            if (gcashRadio) gcashRadio.checked = true;
+            if (bankRadio) bankRadio.checked = false;
+            renderSchCal();
+            schSetStep(1);
+            var ov = document.getElementById('scheduleOverlay');
+            ov.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            updatePaymentMethodUI();
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('scheduleOverlay').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('scheduleOverlay').addEventListener('click', function(e){
+            if (e.target === this) closeScheduleModal();
+        });
+
+        function schSetStep(n) {
+            _schStep = n;
+            [1,2,3,4].forEach(function(i){
+                document.getElementById('schStep' + i).style.display = i === n ? 'block' : 'none';
+                var dot = document.getElementById('sd' + i);
+                dot.className = 'sch-step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+                if (i < 4) {
+                    var line = document.getElementById('sl' + i);
+                    line.className = 'sch-step-line' + (i < n ? ' active' : '');
+                }
+            });
+            var titles = ['Choose a Date', 'Your Details', 'Payment', 'Confirmed!'];
+            var subs   = ['Step 1 of 4', 'Step 2 of 4', 'Step 3 of 4', 'Booking Complete'];
+            document.getElementById('schModalTitle').textContent = 'Schedule a Review — ' + titles[n-1];
+            document.getElementById('schModalSub').textContent   = subs[n-1];
+        }
+
+        function schGoStep(n) {
+            if (n === 3) {
+                document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
+                document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
+                document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
+                updatePaymentMethodUI();
+            }
+            if (n === 4) {
+                document.getElementById('confDate').textContent    = schFmtDate(_schSelectedDate);
+                document.getElementById('confName').textContent    = document.getElementById('schName').value.trim() || '—';
+                document.getElementById('confProgram').textContent = document.getElementById('schProgram').value || '—';
+                var paymentMethodEl = document.getElementById('confPaymentMethod');
+                var paymentStatusEl = document.getElementById('confPaymentStatus');
+                if (paymentMethodEl) paymentMethodEl.textContent = _schPaymentMethod;
+                if (paymentStatusEl) {
+                    paymentStatusEl.textContent = _schPaymentStatus;
+                    if (_schPaymentStatus === 'Paid') {
+                        paymentStatusEl.style.background = '#e8f5e9';
+                        paymentStatusEl.style.color = '#2e7d32';
+                    } else {
+                        paymentStatusEl.style.background = '#fff8e1';
+                        paymentStatusEl.style.color = '#e65100';
+                    }
+                }
+            }
+            schSetStep(n);
+        }
+
+        function showBankComingSoonMessage() {
+            var msgEl = document.getElementById('schPaymentMsg');
+            if (!msgEl) return;
+            msgEl.textContent = 'This payment method will be available soon';
+            msgEl.style.display = 'block';
+            msgEl.style.background = '#fff8e1';
+            msgEl.style.color = '#7a5a00';
+            msgEl.style.border = '1px solid #f6c344';
+        }
+
+        function hidePaymentMessage() {
+            var msgEl = document.getElementById('schPaymentMsg');
+            if (!msgEl) return;
+            msgEl.style.display = 'none';
+            msgEl.textContent = '';
+            msgEl.style.background = '';
+            msgEl.style.color = '';
+            msgEl.style.border = '';
+        }
+
+        function updatePaymentMethodUI() {
+            var gcashRadio = document.getElementById('schPayGcash');
+            var bankRadio = document.getElementById('schPayBank');
+            var gcashOption = document.getElementById('schPayGcashOption');
+            var bankOption = document.getElementById('schPayBankOption');
+            var payBtn = document.getElementById('gcashPayBtn');
+
+            if (gcashOption) gcashOption.classList.toggle('sch-pay-selected', !!(gcashRadio && gcashRadio.checked));
+            if (bankOption) bankOption.classList.toggle('sch-pay-selected', !!(bankRadio && bankRadio.checked));
+
+            if (bankRadio && bankRadio.checked) {
+                _schPaymentMethod = 'Bank Payment';
+                showBankComingSoonMessage();
+                if (payBtn) payBtn.textContent = 'Bank Payment Coming Soon';
+            } else {
+                _schPaymentMethod = 'GCash';
+                hidePaymentMessage();
+                if (payBtn) payBtn.textContent = 'Process GCash Payment';
+            }
+        }
+
+        function setupPaymentMethodListeners() {
+            var gcashRadio = document.getElementById('schPayGcash');
+            var bankRadio = document.getElementById('schPayBank');
+            if (gcashRadio) gcashRadio.addEventListener('change', updatePaymentMethodUI);
+            if (bankRadio) bankRadio.addEventListener('change', updatePaymentMethodUI);
+            updatePaymentMethodUI();
+        }
+
+        function schFmtDate(d) {
+            if (!d) return '—';
+            var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+            return days[d.getDay()] + ', ' + SCH_MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+        }
+
+        function schValidateStep2() {
+            var name    = document.getElementById('schName').value.trim();
+            var email   = document.getElementById('schEmail').value.trim();
+            var contact = document.getElementById('schContact').value.trim();
+            var program = document.getElementById('schProgram').value;
+            if (!name || !email || !contact || !program) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            schGoStep(3);
+        }
+
+        // ── Calendar ──────────────────────────────────────────────────────
+        function renderSchCal() {
+            document.getElementById('schCalLabel').textContent = SCH_MONTHS[_schMonth] + ' ' + _schYear;
+            var grid = document.getElementById('schCalGrid');
+            grid.innerHTML = '';
+            var firstDow = new Date(_schYear, _schMonth, 1).getDay();
+            var daysInMonth = new Date(_schYear, _schMonth + 1, 0).getDate();
+            var today = new Date(); today.setHours(0,0,0,0);
+
+            for (var e = 0; e < firstDow; e++) {
+                var blank = document.createElement('div');
+                blank.className = 'sch-cal-cell';
+                blank.style.background = 'transparent';
+                blank.style.cursor = 'default';
+                grid.appendChild(blank);
+            }
+
+            for (var d = 1; d <= daysInMonth; d++) {
+                var date = new Date(_schYear, _schMonth, d);
+                var dow  = date.getDay();
+                var isOpen = SCH_SCHEDULE.find(function(s){ return s.dow === dow; }).open;
+                var isPast = date < today;
+                var isToday = date.getTime() === today.getTime();
+                var isSelected = _schSelectedDate && date.getTime() === _schSelectedDate.getTime();
+
+                var cell = document.createElement('div');
+                var cls = 'sch-cal-cell';
+                if (!isOpen || isPast) cls += ' sch-past';
+                else if (isSelected) cls += ' sch-selected';
+                else if (isToday)    cls += ' sch-today sch-open';
+                else                 cls += ' sch-open';
+                if (!isOpen || isPast) { cell.style.background = '#f0f2f8'; cell.style.color = '#ccc'; }
+                cell.className = cls;
+                cell.textContent = d;
+
+                if (isOpen && !isPast) {
+                    (function(dt){ cell.addEventListener('click', function(){
+                        _schSelectedDate = dt;
+                        var lbl = document.getElementById('schSelectedDateLabel');
+                        lbl.textContent = '📅 ' + schFmtDate(dt);
+                        lbl.style.display = 'block';
+                        document.getElementById('schStep1Next').disabled = false;
+                        renderSchCal();
+                    }); })(date);
+                }
+                grid.appendChild(cell);
+            }
+        }
+
+        function schCalPrev() {
+            if (_schMonth === 0) { _schMonth = 11; _schYear--; } else _schMonth--;
+            renderSchCal();
+        }
+        function schCalNext() {
+            if (_schMonth === 11) { _schMonth = 0; _schYear++; } else _schMonth++;
+            renderSchCal();
+        }
+        </script>
+
+        <section class="footer">
+			<div class="footer-container">
+				<div class="footer-left">
+					<h2>review.mnl</h2>
+					<p>Manila, Philippines</p>
+				</div>
+				<div class="footer-center">
+					<div class="footer-column">
+						<a href="loggedin.html">Home</a>
+						<a href="search.html">Review Centers</a>
+						<a href="contact.html">Contact</a>
+					</div>
+					<div class="footer-column">
+						<a href="search.html">Search</a>
+						<a href="userdashboard.html">Dashboard</a>
+					</div>
+				</div>
+				<div class="footer-right">
+					<a href="#" class="social-icon">f</a>
+					<a href="#" class="social-icon">in</a>
+					<a href="#" class="social-icon">▶</a>
+					<a href="#" class="social-icon">✉</a>
+				</div>
+			</div>
+		</section>
+
+        <script src="api.js"></script>
+        <script>
+        // ── Load center data from API ──────────────────────────────────────
+        (async function loadCenter() {
+            const params = new URLSearchParams(window.location.search);
+            const centerId = params.get('id');
+            if (!centerId) return;
+
+            function parseArrayField(raw) {
+                if (!raw) return [];
+                if (Array.isArray(raw)) return raw;
+                if (typeof raw === 'string') {
+                    const trimmed = raw.trim();
+                    if (!trimmed) return [];
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        return Array.isArray(parsed) ? parsed : [];
+                    } catch (e) {
+                        return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                    }
+                }
+                return [];
+            }
+
+            function stars(rating) {
+                const r = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+                return '★'.repeat(r) + '☆'.repeat(5 - r);
+            }
+
+            function resolveImageUrl(raw) {
+                if (!raw) return '';
+                const value = String(raw).trim();
+                if (!value) return '';
+                if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+                if (value.startsWith('/')) return API_BASE + value;
+                return API_BASE + '/' + value;
+            }
+
+            try {
+                const center = await CentersAPI.getById(centerId);
+                const centerName = center.business_name || center.name || 'Review Center';
+                const centerAbout = center.description || 'No description provided yet.';
+                const centerShort = center.address || 'Location unavailable';
+                const ratingValue = Number(center.avg_rating || center.average_rating || 0);
+
+                // --- Map Integration ---
+                let cachedLat, cachedLon, cachedAddress;
+                if (center.address && typeof L !== 'undefined') {
+                    cachedAddress = center.address;
+                    // Try to fetch coordinates using address
+                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(center.address)}&limit=1`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let mapDiv = document.getElementById('viewMap');
+                            let mapContainer = document.getElementById('headerMapContainer');
+                            if(data && data.length > 0) {
+                                mapContainer.style.display = 'block';
+                                cachedLat = data[0].lat;
+                                cachedLon = data[0].lon;
+                                const map = L.map(mapDiv, { zoomControl: false, scrollWheelZoom: false, dragging: false, doubleClickZoom: false }).setView([cachedLat, cachedLon], 16);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: ''
+                                }).addTo(map);
+                                L.marker([cachedLat, cachedLon]).addTo(map).bindPopup(`<div style="font-family:'Poppins',sans-serif;font-size:12px;"><b>${escHtml(centerName)}</b><br><span style="color:#555;font-size:11px;">${escHtml(center.address)}</span></div>`);
+                            } else {
+                                mapContainer.style.display = 'block';
+                                document.getElementById('mapClickOverlay').style.display = 'none'; // Don't let users click if map failed
+                                mapDiv.innerHTML = '<div style="padding:15px;color:#888;text-align:center;padding-top:40px;font-size:12px;">Location preview unavailable</div>';
+                            }
+                        })
+                        .catch(err => {
+                            document.getElementById('headerMapContainer').style.display = 'none';
+                        });
+                } else {
+                    document.getElementById('headerMapContainer').style.display = 'none';
+                }
+
+                let largeMapInstance;
+                window.openLargeMap = function() {
+                    const modal = document.getElementById('largeMapModal');
+                    if (modal) {
+                        modal.classList.add('active');
+                        // Ensure Map initializes properly once container is visible
+                        setTimeout(() => {
+                            if (!largeMapInstance && cachedLat !== undefined) {
+                                largeMapInstance = L.map('largeMap').setView([cachedLat, cachedLon], 16);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; OpenStreetMap'
+                                }).addTo(largeMapInstance);
+                                L.marker([cachedLat, cachedLon]).addTo(largeMapInstance).bindPopup(`<div style="font-family:'Poppins',sans-serif;font-size:12px;"><b>${escHtml(centerName)}</b><br><span style="color:#555;font-size:11px;">${escHtml(cachedAddress)}</span></div>`).openPopup();
+                            }
+                            if (largeMapInstance) {
+                                largeMapInstance.invalidateSize();
+                            }
+                        }, 50);
+                    }
+                }
+                window.closeLargeMap = function() {
+                    const modal = document.getElementById('largeMapModal');
+                    if (modal) modal.classList.remove('active');
+                }
+
+                const nameEl = document.getElementById('centerName');
+                const shortDescEl = document.getElementById('centerShortDescription');
+                const aboutEl = document.getElementById('centerAbout');
+                const starsEl = document.getElementById('centerStars');
+                const ratingCountEl = document.getElementById('centerRatingCount');
+                const averageRatingEl = document.getElementById('centerAverageRating');
+                const ratingStarsSummaryEl = document.getElementById('centerRatingStarsSummary');
+                const reviewCountSummaryEl = document.getElementById('centerReviewCountSummary');
+                const logoEl = document.getElementById('centerLogo');
+                const programTagsEl = document.getElementById('programTags');
+                const achievementsEl = document.getElementById('achievementList');
+                const testimonialsListEl = document.getElementById('testimonialsList');
+                const writeFeedbackBtn = document.getElementById('writeFeedbackBtn');
+                const testimonialFormWrap = document.getElementById('testimonialFormWrap');
+
+                if (nameEl) nameEl.textContent = centerName;
+                if (shortDescEl) shortDescEl.textContent = centerShort;
+                if (aboutEl) aboutEl.textContent = centerAbout;
+                if (starsEl) starsEl.textContent = stars(ratingValue);
+                if (ratingCountEl) ratingCountEl.textContent = ratingValue.toFixed(1) + ' (' + Number(center.review_count || 0) + ')';
+                if (averageRatingEl) averageRatingEl.textContent = ratingValue.toFixed(1);
+                if (ratingStarsSummaryEl) ratingStarsSummaryEl.textContent = stars(ratingValue);
+                if (reviewCountSummaryEl) reviewCountSummaryEl.textContent = '(' + Number(center.review_count || 0) + ' reviews)';
+
+                if (logoEl) {
+                    const logoUrl = resolveImageUrl(center.logo_url);
+                    if (logoUrl) {
+                        logoEl.style.backgroundImage = 'url(' + logoUrl + ')';
+                        logoEl.style.backgroundSize = 'cover';
+                        logoEl.style.backgroundPosition = 'center';
+                    }
+                }
+
+                if (programTagsEl) {
+                    const programs = parseArrayField(center.programs);
+                    programTagsEl.innerHTML = '';
+                    if (programs.length === 0) {
+                        programTagsEl.innerHTML = '<button class="program-tag">No programs listed yet</button>';
+                    } else {
+                        programs.forEach(function(program) {
+                            const btn = document.createElement('button');
+                            btn.className = 'program-tag';
+                            btn.textContent = String(program).trim();
+                            programTagsEl.appendChild(btn);
+                        });
+                    }
+                }
+
+                if (achievementsEl) {
+                    const achievements = parseArrayField(center.achievements);
+                    achievementsEl.innerHTML = '';
+                    if (achievements.length === 0) {
+                        achievementsEl.innerHTML =
+                            '<div class="achievement-item"><span class="trophy-icon">🏆</span><p>No achievements listed yet.</p></div>';
+                    } else {
+                        achievements.forEach(function(itemText) {
+                            const item = document.createElement('div');
+                            item.className = 'achievement-item';
+                            item.innerHTML = '<span class="trophy-icon">🏆</span><p>' + escHtml(String(itemText)) + '</p>';
+                            achievementsEl.appendChild(item);
+                        });
+                    }
+                }
+
+                // Keep save-center payload in sync with selected center.
+                if (window._updateSaveCenterId) {
+                    window._updateSaveCenterId(String(center.id || centerId), centerName, center.address || '', center.logo_url || center.image_url || center.profile_picture_url || '');
+                }
+
+                // Make the Back button return to previous search results context when possible.
+                const backBtn = document.getElementById('backToResultsBtn');
+                if (backBtn && document.referrer && document.referrer.indexOf('search.html') !== -1) {
+                    backBtn.href = document.referrer;
+                }
+
+                // Testimonials (always render this section)
+                if (testimonialsListEl) {
+                    testimonialsListEl.innerHTML = '';
+                }
+
+                function renderTestimonialItem(t, prepend) {
+                    if (!testimonialsListEl || !t) return;
+                    const r = Math.max(1, Math.min(5, Math.round(Number(t.rating) || 0)));
+                    const studentName = [t.first_name || '', t.last_name || ''].join(' ').trim() || t.username || 'Anonymous';
+                    const created = t.created_at ? new Date(t.created_at) : new Date();
+                    const dateLabel = created.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                    const card = document.createElement('div');
+                    card.className = 'testimonial-card';
+                    card.innerHTML =
+                        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">' +
+                            '<strong style="color:#0d1b4b;">' + escHtml(studentName) + '</strong>' +
+                            '<span style="font-size:12px;color:#6b7280;">' + escHtml(dateLabel) + '</span>' +
+                        '</div>' +
+                        '<div style="color:#f59e0b;margin-bottom:8px;">' + '★'.repeat(r) + '☆'.repeat(5 - r) + '</div>' +
+                        '<p style="color:#555;font-size:0.9rem;margin:0;">' + escHtml(t.content || t.feedback || '') + '</p>';
+                    if (prepend && testimonialsListEl.firstChild) {
+                        testimonialsListEl.insertBefore(card, testimonialsListEl.firstChild);
+                    } else {
+                        testimonialsListEl.appendChild(card);
+                    }
+                }
+
+                if (center.testimonials && center.testimonials.length && testimonialsListEl) {
+                    center.testimonials.forEach(function(t) { renderTestimonialItem(t, false); });
+                } else if (testimonialsListEl) {
+                    testimonialsListEl.innerHTML = '<p id="noTestimonialsMsg" style="color:#6b7280;font-size:0.95rem;">No reviews yet for this review center.</p>';
+                }
+
+                // Simple testimonial form for logged-in students (no approval flow)
+                const user = getUser();
+                if (user && user.role === 'student' && writeFeedbackBtn && testimonialFormWrap) {
+                    writeFeedbackBtn.style.display = 'inline-block';
+                    writeFeedbackBtn.addEventListener('click', function() {
+                        testimonialFormWrap.style.display = testimonialFormWrap.style.display === 'none' ? 'block' : 'none';
+                    });
+
+                    const submitBtn = document.getElementById('testiSubmitBtn');
+                    if (submitBtn) {
+                        submitBtn.addEventListener('click', async function() {
+                            const content = document.getElementById('testiContent').value.trim();
+                            const rating = document.getElementById('testiRating').value;
+                            const errEl = document.getElementById('testiError');
+                            const okEl = document.getElementById('testiSuccess');
+                            errEl.style.display = 'none';
+                            okEl.style.display = 'none';
+
+                            if (!content || !rating) {
+                                errEl.textContent = 'Rating and feedback are required.';
+                                errEl.style.display = 'block';
+                                return;
+                            }
+
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Submitting...';
+                            try {
+                                const resp = await CentersAPI.postTestimonial(centerId, content, parseInt(rating, 10));
+                                okEl.textContent = (resp && resp.message) ? resp.message : 'Feedback submitted successfully.';
+                                okEl.style.display = 'block';
+
+                                document.getElementById('testiContent').value = '';
+                                document.getElementById('testiRating').value = '';
+
+                                const emptyMsg = document.getElementById('noTestimonialsMsg');
+                                if (emptyMsg) emptyMsg.remove();
+
+                                const firstName = (user.first_name || '').trim();
+                                const lastName = (user.last_name || '').trim();
+                                renderTestimonialItem((resp && resp.testimonial) || {
+                                    first_name: firstName,
+                                    last_name: lastName,
+                                    username: (user.name || user.email || 'You'),
+                                    rating: parseInt(rating, 10),
+                                    content: content,
+                                    created_at: new Date().toISOString(),
+                                }, true);
+                            } catch (err) {
+                                errEl.textContent = err.message || 'Failed to submit feedback.';
+                                errEl.style.display = 'block';
+                            } finally {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit Feedback';
+                            }
+                        });
+                    }
+                }
+
+                // Update save button center ID
+                if (window._updateSaveCenterId) window._updateSaveCenterId(String(centerId), centerName, center.address || '', center.logo_url || center.image_url || center.profile_picture_url || '');
+
+            } catch (err) {
+                console.error('Failed to load center:', err);
+            }
+        })();
+
+        async function startGcashPayment() {
+            const msgEl = document.getElementById('schPaymentMsg');
+            const payBtn = document.getElementById('gcashPayBtn');
+            try {
+                const token = getActiveToken();
+                if (!token) { alert('Please login to continue to payment.'); return; }
+                const bankRadio = document.getElementById('schPayBank');
+                if (bankRadio && bankRadio.checked) {
+                    showBankComingSoonMessage();
+                    return;
+                }
+                const params = new URLSearchParams(window.location.search);
+                const centerId = params.get('id');
+                if (!centerId) return alert('Missing center id.');
+                const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
+                const gcashName = (document.getElementById('schGcashName').value || '').trim();
+                const referenceNumber = (document.getElementById('schReferenceNumber').value || '').trim();
+                if (!gcashNumber || !gcashName || !referenceNumber) {
+                    if (msgEl) {
+                        msgEl.textContent = 'Please enter your GCash number, account name, and Reference Number.';
+                        msgEl.style.display = 'block';
+                        msgEl.style.background = '#ffe8e8';
+                        msgEl.style.color = '#b71c1c';
+                        msgEl.style.border = '1px solid #ef9a9a';
+                    }
+                    return;
+                }
+                if (!/^09\d{9}$/.test(gcashNumber)) {
+                    if (msgEl) {
+                        msgEl.textContent = 'Please enter a valid GCash number (09XXXXXXXXX).';
+                        msgEl.style.display = 'block';
+                        msgEl.style.background = '#ffe8e8';
+                        msgEl.style.color = '#b71c1c';
+                        msgEl.style.border = '1px solid #ef9a9a';
+                    }
+                    return;
+                }
+                // Use booking total displayed in the UI or default amount
+                const amount = 1550; // ₱1,550 default — replace with dynamic value if available
+                const programEnrolled = (document.getElementById('schProgram').value || '').trim();
+                const enrollmentDate = _schSelectedDate
+                    ? _schSelectedDate.toISOString().slice(0, 10)
+                    : new Date().toISOString().slice(0, 10);
+                if (payBtn) {
+                    payBtn.disabled = true;
+                    payBtn.textContent = 'Processing...';
+                }
+                if (msgEl) {
+                    msgEl.style.display = 'none';
+                    msgEl.textContent = '';
+                }
+
+                const payload = {
+                    amount: amount,
+                    gcash_number: gcashNumber,
+                    gcash_name: gcashName,
+                    reference_number: referenceNumber,
+                    program_enrolled: programEnrolled,
+                    enrollment_date: enrollmentDate,
+                };
+                console.log('[Enrollment] Sending enrollment payload', {
+                    centerId: centerId,
+                    userId: (getUser() && getUser().id) || null,
+                    program_enrolled: payload.program_enrolled,
+                    enrollment_date: payload.enrollment_date,
+                    amount: payload.amount,
+                });
+                const resp = await CentersAPI.enrollWithGcash(centerId, payload);
+                console.log('[Enrollment] Enrollment response', resp);
+
+                if (resp && (resp.transaction_status === 'paid' || resp.transaction_status === 'pending')) {
+                    _schPaymentMethod = resp.payment_method || 'GCash';
+                    _schPaymentStatus = resp.transaction_status === 'pending' ? 'Pending Admin Approval' : 'Paid';
+                    if (msgEl) {
+                        msgEl.textContent = resp.message || 'GCash payment processing.';
+                        msgEl.style.display = 'block';
+                        msgEl.style.background = '#e8f5e9';
+                        msgEl.style.color = '#2e7d32';
+                        msgEl.style.border = '1px solid #81c784';
+                    }
+                    schGoStep(4);
+                } else {
+                    _schPaymentMethod = 'GCash';
+                    _schPaymentStatus = 'Failed';
+                    if (msgEl) {
+                        msgEl.textContent = (resp && resp.message) ? resp.message : 'GCash payment failed. Please try again.';
+                        msgEl.style.display = 'block';
+                        msgEl.style.background = '#ffe8e8';
+                        msgEl.style.color = '#b71c1c';
+                        msgEl.style.border = '1px solid #ef9a9a';
+                    }
+                }
+            } catch (err) {
+                console.error('startGcashPayment error', err);
+                _schPaymentMethod = 'GCash';
+                _schPaymentStatus = 'Failed';
+                if (msgEl) {
+                    msgEl.textContent = 'Payment request failed: ' + (err && err.message ? err.message : String(err));
+                    msgEl.style.display = 'block';
+                    msgEl.style.background = '#ffe8e8';
+                    msgEl.style.color = '#b71c1c';
+                    msgEl.style.border = '1px solid #ef9a9a';
+                }
+            } finally {
+                if (payBtn) {
+                    payBtn.disabled = false;
+                    payBtn.textContent = 'Process GCash Payment';
+                }
+            }
+        }
+
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        document.addEventListener('DOMContentLoaded', setupPaymentMethodListeners);
+        initGlobalNotificationBell();
+        </script>
+        
+        <!-- OpenStreetMap Leaflet Integrations -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    </body>

@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>User Dashboard - review.mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    </head>
+    <body>
+
+
+
+<!-- Overlay -->
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Dashboard Toggle Button -->
+<div class="dashboard-toggle" onclick="toggleSidebar()">
+    <span>Messages</span>
+</div>
+
+<!-- Sidebar Panel -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-avatar"></div>
+        <h3>Name</h3>
+    </div>
+
+    <div class="messages-panel" id="msgList">
+        <h4 class="messages-panel-title">Messages <span id="sidebarUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;"></span></h4>
+        <div id="sidebarMessagesList"></div>
+    </div>
+
+    <!-- Conversation View -->
+    <div class="conversation-panel" id="convPanel" style="display:none;">
+        <div class="conv-header">
+            <button class="conv-back-btn" onclick="closeConv()">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div class="message-avatar" style="width:32px;height:32px;"></div>
+            <span class="conv-name" id="convName"></span>
+        </div>
+        <div class="conv-messages" id="convMessages"></div>
+        <div class="conv-input-row">
+            <input type="text" id="convInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+            <button class="conv-send-btn" onclick="sendMsg()">
+                <span class="material-symbols-outlined">send</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+        <section class="header header-userdashboard">
+            <nav>
+                <a href="loggedin.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
+                <div class="nav-links">
+                    <ul>
+                        <li><a href="loggedin.html">HOME</a></li>
+                        <li><a href="search.html">VIEW REVIEW CENTERS</a></li>
+                        <li><a href="contact.html">CONTACT</a></li>
+                        <li><a href="search.html">SEARCH</a></li>
+                    </ul>
+                </div>
+                <div class="notification-wrapper" style="position:relative;margin-right:10px;">
+                    <button id="notificationBellBtn" aria-label="Open notifications" aria-expanded="false" style="position:relative;background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <span class="material-symbols-outlined" style="font-size:28px;">notifications</span>
+                        <span id="notificationBellBadge" style="display:none;position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#d32f2f;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;">0</span>
+                    </button>
+                    <div id="notificationDropdown" style="display:none;position:absolute;right:0;top:40px;width:360px;max-width:86vw;background:#fff;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.2);padding:0;overflow:hidden;z-index:1500;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eef2ff;">
+                            <strong style="font-size:14px;color:#0d1b4b;">Enrollment Notifications</strong>
+                            <span id="notificationDropdownUnread" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;">0 Unread</span>
+                        </div>
+                        <div id="notificationDropdownList" style="max-height:360px;overflow-y:auto;padding:10px 12px;"></div>
+                        <div style="padding:10px 12px;border-top:1px solid #eef2ff;background:#f8faff;">
+                            <a href="notifications.html" id="viewAllNotificationsLink" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-wrapper" style="position:relative;">
+                    <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#fff;">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <div id="profileDropdown" class="profile-dropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">
+                        <a href="userdashboard.html" style="display:block;padding:12px 16px;color:#0a4cff;text-decoration:none;border-bottom:1px solid #eee;">My Profile</a>
+                        <button id="logoutBtn" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;">Logout</button>
+                    </div>
+                </div>
+            </nav>
+            <div class="textbox">
+                <h1>Welcome, <span id="welcomeName">Juan Dela Cruz</span>!</h1>
+            </div>
+        </section>
+
+        <section class="dashboard">
+    <div class="dashboard-container">
+
+        <!-- User Profile Card -->
+        <div class="user-profile-card">
+            <div class="user-profile-avatar" id="userAvatarPreview"></div>
+            <div class="user-profile-info">
+                <div class="user-profile-name-row">
+                    <h2 id="userNameDisplay">Juan Dela Cruz</h2>
+                    <button class="edit-btn-small" onclick="openUserModal()">Edit Profile</button>
+                </div>
+                <p id="userEmailDisplay">juan.delacruz@email.com</p>
+                <p id="userBioDisplay" style="color:#888;font-size:12px;margin-top:4px;">Student | review.mnl member</p>
+            </div>
+        </div>
+
+        <!-- Top Cards -->
+        <div class="dashboard-top">
+
+            <!-- My Reviews -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>My Reviews</h3>
+                </div>
+
+                <div id="myReviewsList" class="vertical-scroll-list">
+                    <div class="review-item">
+                        <div class="review-avatar"></div>
+                        <div class="review-info">
+                            <h4>Name of Review Center</h4>
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                        </div>
+                    </div>
+
+                    <div class="review-item">
+                        <div class="review-avatar"></div>
+                        <div class="review-info">
+                            <h4>Name of Review Center</h4>
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                        </div>
+                    </div>
+
+                    <div class="review-item">
+                        <div class="review-avatar"></div>
+                        <div class="review-info">
+                            <h4>Name of Review Center</h4>
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Saved Centers -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>Saved Centers</h3>
+                </div>
+                <div id="savedCentersList" class="vertical-scroll-list"></div>
+            </div>
+            <script>
+                (function(){
+                    const STORAGE_KEY = 'rmnl_saved_centers';
+                    function getSaved() {
+                        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
+                    }
+
+                    function resolveSavedImageUrl(raw) {
+                        if (!raw) return '';
+                        var value = String(raw).trim();
+                        if (!value) return '';
+                        if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+                        if (value.charAt(0) === '/') return API_BASE + value;
+                        return API_BASE + '/' + value.replace(/^\/+/, '');
+                    }
+
+                    function renderSaved() {
+                        const list = document.getElementById('savedCentersList');
+                        const saved = getSaved();
+                        if (!list) return;
+                        if (saved.length === 0) {
+                            list.innerHTML = '<p style="color:#6b7280;font-size:0.85rem;padding:8px 0;">No saved centers yet. Browse and save review centers to see them here.</p>';
+                            return;
+                        }
+                        list.innerHTML = saved.map(function(c) {
+                            var img = resolveSavedImageUrl(c.logo_url || c.image_url || c.profile_picture_url);
+                            var avatarStyle = img
+                                ? (' style="background-image:url(\'' + img.replace(/'/g, '%27') + '\');background-size:cover;background-position:center;"')
+                                : '';
+                            return '<div class="saved-item">'
+                                + '<div class="review-avatar"' + avatarStyle + '></div>'
+                                + '<div class="review-info"><h4>' + c.name + '</h4><p>' + c.location + '</p></div>'
+                                + '<div class="saved-buttons">'
+                                + '<button class="btn-delete" onclick="deleteSaved(\'' + c.id + '\')" >Delete</button>'
+                                + '<a href="viewcenter.html?id=' + c.id + '" class="btn-view">View</a>'
+                                + '</div></div>';
+                        }).join('');
+                    }
+
+                    async function hydrateSavedCenterImages() {
+                        if (typeof CentersAPI === 'undefined') return;
+                        var saved = getSaved();
+                        if (!saved.length) return;
+                        var changed = false;
+
+                        for (var i = 0; i < saved.length; i++) {
+                            var center = saved[i];
+                            var hasImage = center && (center.logo_url || center.image_url || center.profile_picture_url);
+                            if (hasImage || !center || !center.id) continue;
+                            try {
+                                var latest = await CentersAPI.getById(center.id);
+                                var logoUrl = latest && (latest.logo_url || latest.image_url || latest.profile_picture_url);
+                                if (logoUrl) {
+                                    saved[i] = Object.assign({}, center, { logo_url: logoUrl });
+                                    changed = true;
+                                }
+                            } catch (e) {}
+                        }
+
+                        if (changed) {
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                            renderSaved();
+                        }
+                    }
+
+                    window.deleteSaved = function(id) {
+                        let saved = getSaved().filter(function(c){ return c.id !== id; });
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                        renderSaved();
+                    };
+                    renderSaved();
+                    window.addEventListener('load', function() {
+                        hydrateSavedCenterImages();
+                    });
+                })();
+            </script>
+
+        </div>
+
+
+        <!-- Enrolled Review Centers -->
+        <div class="recent-section">
+            <div class="card-header">
+                <h3>Enrolled Review Centers</h3>
+                <span id="enrolledSlideArrow" class="material-symbols-outlined enrolled-slide-arrow" role="button" tabindex="0" aria-label="Show more enrolled review centers">arrow_forward_ios</span>
+            </div>
+            <p id="enrolledEmptyMessage" style="display:none;font-size:0.85rem;color:#6b7280;margin:-4px 0 14px 0;">Review centers you've scheduled a review with will appear here.</p>
+
+            <div class="recent-grid" id="enrolledCentersGrid"></div>
+        </div>
+
+    </div>
+</section>
+
+        <!-- Modal: Edit User Profile -->
+        <div class="modal-overlay" id="userProfileModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Edit Profile</h3>
+                    <button class="modal-close" onclick="closeUserModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label>Full Name</label>
+                    <input type="text" id="userNameInput" placeholder="Juan Dela Cruz">
+                    <label>Email Address</label>
+                    <input type="email" id="userEmailInput" placeholder="juan.delacruz@email.com">
+                    <label>Bio / Short Info</label>
+                    <input type="text" id="userBioInput" placeholder="Student | review.mnl member">
+                    <label>Profile Photo</label>
+                    <input type="file" id="userImageInput" accept="image/*">
+                    <div class="modal-img-preview" id="userImgPreview"></div>
+                    <div id="userProfileFeedback" class="profile-feedback" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeUserModal()">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveUserProfile()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+        <section class="footer">
+            <div class="footer-container">
+                <div class="footer-left">
+                    <h2>review.mnl</h2>
+                    <p>Manila, Philippines</p>
+                </div>
+                
+                <div class="footer-center">
+                    <div class="footer-column">
+                        <a href="loggedin.html">Home</a>
+                        <a href="search.html">Review Centers</a>
+                        <a href="contact.html">Contact</a>
+                    </div>
+                    <div class="footer-column">
+                        <a href="search.html">Search</a>
+                        <a href="userdashboard.html">Dashboard</a>
+                    </div>
+                </div>
+                
+                <div class="footer-right">
+                    <a href="#" class="social-icon">f</a>
+                    <a href="#" class="social-icon">in</a>
+                    <a href="#" class="social-icon">▶</a>
+                    <a href="#" class="social-icon">✉</a>
+                </div>
+            </div>
+        </section>
+            <script src="api.js"></script>
+            <script>
+                if (!isAuthenticated()) { window.location.href = 'login.html'; }
+                (function(){
+                    const profileBtn = document.getElementById('profileBtn');
+                    const profileDd = document.getElementById('profileDropdown');
+                    const logout = document.getElementById('logoutBtn');
+                    const bellBtn = document.getElementById('notificationBellBtn');
+                    const bellDd = document.getElementById('notificationDropdown');
+                    const viewAllLink = document.getElementById('viewAllNotificationsLink');
+
+                    if(!profileBtn || !profileDd) return;
+
+                    profileBtn.addEventListener('click', function(e){
+                        e.stopPropagation();
+                        const isOpen = profileDd.style.display === 'block';
+                        profileDd.style.display = isOpen ? 'none' : 'block';
+                        profileBtn.setAttribute('aria-expanded', String(!isOpen));
+
+                        if (!isOpen && bellDd) {
+                            bellDd.style.display = 'none';
+                            if (bellBtn) bellBtn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+
+                    if (bellBtn && bellDd) {
+                        bellBtn.addEventListener('click', function(e){
+                            e.stopPropagation();
+                            const isOpen = bellDd.style.display === 'block';
+                            bellDd.style.display = isOpen ? 'none' : 'block';
+                            bellBtn.setAttribute('aria-expanded', String(!isOpen));
+
+                            if (!isOpen) {
+                                profileDd.style.display = 'none';
+                                profileBtn.setAttribute('aria-expanded', 'false');
+                            }
+                        });
+
+                        bellDd.addEventListener('click', function(e){
+                            e.stopPropagation();
+                        });
+                    }
+
+                    if (viewAllLink) {
+                        viewAllLink.addEventListener('click', function(e) {
+                            if (bellDd) bellDd.style.display = 'none';
+                            if (bellBtn) bellBtn.setAttribute('aria-expanded', 'false');
+                        });
+                    }
+
+                    logout.addEventListener('click', function(){
+                        clearSession();
+                        window.location.href = 'index.html';
+                    });
+
+                    document.addEventListener('click', function(){
+                        profileDd.style.display='none';
+                        profileBtn.setAttribute('aria-expanded','false');
+                        if (bellDd && bellBtn) {
+                            bellDd.style.display='none';
+                            bellBtn.setAttribute('aria-expanded','false');
+                        }
+                    });
+                })();
+                var activeConversation = null;
+                var activeConversationKey = null;
+                var chatPollTimer = null;
+
+                function toggleSidebar() {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                }
+
+                function renderThreadMessages(messages) {
+                    const wrap = document.getElementById('convMessages');
+                    if (!wrap) return;
+                    const me = getUser();
+                    console.log('[Chat][Student] Messages before render', messages || []);
+                    console.log('[Chat][Student] Rendering messages', {
+                        count: (messages || []).length,
+                        conversationKey: activeConversationKey,
+                    });
+                    wrap.innerHTML = (messages || []).map(function(msg) {
+                        var outgoing = me && Number(msg.sender_id) === Number(me.id);
+                        var ts = formatDateTime(msg.created_at);
+                        return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
+                            + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(msg.message || '') + '</div>'
+                            + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:' + (outgoing ? 'right' : 'left') + ';">' + escHtml(ts) + '</div>'
+                            + '</div>';
+                    }).join('');
+                    wrap.scrollTop = wrap.scrollHeight;
+                }
+
+                async function openConv(conversation) {
+                    if (!conversation || !conversation.other_user_id) return;
+                    var nextKey = String(conversation.other_user_id);
+                    var isSwitchingConversation = activeConversationKey !== nextKey;
+                    activeConversation = conversation;
+                    activeConversationKey = nextKey;
+                    document.getElementById('convName').textContent = conversation.other_name || 'Chat';
+                    document.getElementById('msgList').style.display = 'none';
+                    document.getElementById('convPanel').style.display = 'flex';
+
+                    console.log('[Chat][Student] Opening conversation', {
+                        conversationKey: nextKey,
+                        switching: isSwitchingConversation,
+                    });
+                    await loadActiveThread();
+
+                    if (chatPollTimer) clearInterval(chatPollTimer);
+                    chatPollTimer = setInterval(function() {
+                        if (activeConversation) loadActiveThread();
+                    }, 5000);
+                }
+
+                function closeConv() {
+                    activeConversation = null;
+                    activeConversationKey = null;
+                    if (chatPollTimer) {
+                        clearInterval(chatPollTimer);
+                        chatPollTimer = null;
+                    }
+                    document.getElementById('convPanel').style.display = 'none';
+                    document.getElementById('msgList').style.display = 'block';
+                    document.getElementById('convInput').value = '';
+                }
+
+                async function loadActiveThread() {
+                    if (!activeConversation) return;
+                    try {
+                        const res = await MessageAPI.getThread(activeConversation.other_user_id, null);
+                        const messages = (res && res.messages) ? res.messages : [];
+                        console.log('[Chat][Student] Thread loaded', {
+                            withUserId: activeConversation.other_user_id,
+                            centerId: activeConversation.center_id,
+                            count: messages.length,
+                        });
+                        renderThreadMessages(messages);
+                        await MessageAPI.markThreadAsRead(activeConversation.other_user_id, null);
+                        await loadConversations();
+                    } catch (e) {
+                        console.warn('Failed to load active thread', e);
+                    }
+                }
+
+                function appendOutgoingMessage(text) {
+                    const wrap = document.getElementById('convMessages');
+                    if (!wrap) return;
+                    var ts = formatDateTime(new Date().toISOString());
+                    var html = '<div class="conv-bubble outgoing">'
+                        + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(text) + '</div>'
+                        + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:right;">' + escHtml(ts) + '</div>'
+                        + '</div>';
+                    wrap.insertAdjacentHTML('beforeend', html);
+                    wrap.scrollTop = wrap.scrollHeight;
+                }
+
+                async function sendMsg() {
+                    const input = document.getElementById('convInput');
+                    const text = input.value.trim();
+                    if (!text) return;
+                    if (!activeConversation) return;
+
+                    console.log('[Chat][Student] Sending message', {
+                        senderId: (getUser() && getUser().id) || null,
+                        receiverId: activeConversation.other_user_id,
+                        centerId: activeConversation.center_id,
+                        enrollmentId: activeConversation.enrollment_id,
+                        length: text.length,
+                    });
+
+                    input.disabled = true;
+                    try {
+                        await MessageAPI.send({
+                            receiver_id: activeConversation.other_user_id,
+                            enrollment_id: activeConversation.enrollment_id,
+                            message: text,
+                        });
+                        input.value = '';
+                        await loadActiveThread();
+                    } catch (e) {
+                        alert((e && e.message) ? e.message : 'Failed to send message.');
+                    } finally {
+                        input.disabled = false;
+                        input.focus();
+                    }
+                }
+
+                function scrollEnrolledCenters() {
+                    var grid = document.getElementById('enrolledCentersGrid');
+                    if (!grid) return;
+                    var step = Math.max(240, Math.floor(grid.clientWidth * 0.7));
+                    var maxLeft = Math.max(0, grid.scrollWidth - grid.clientWidth);
+                    var nextLeft = grid.scrollLeft + step;
+                    if (nextLeft >= maxLeft - 2) nextLeft = 0;
+                    grid.scrollTo({ left: nextLeft, behavior: 'smooth' });
+                }
+
+                (function setupEnrolledCenterArrow() {
+                    var arrow = document.getElementById('enrolledSlideArrow');
+                    if (!arrow) return;
+                    arrow.addEventListener('click', scrollEnrolledCenters);
+                    arrow.addEventListener('keydown', function(event) {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            scrollEnrolledCenters();
+                        }
+                    });
+                })();
+
+                function openUserModal() {
+                    var nameText = document.getElementById('userNameDisplay').textContent || '';
+                    var emailText = document.getElementById('userEmailDisplay').textContent || '';
+                    var bioText = document.getElementById('userBioDisplay').textContent || '';
+                    document.getElementById('userNameInput').placeholder = nameText;
+                    document.getElementById('userEmailInput').placeholder = emailText;
+                    document.getElementById('userBioInput').placeholder = bioText;
+                    document.getElementById('userNameInput').value = nameText;
+                    document.getElementById('userEmailInput').value = emailText;
+                    document.getElementById('userBioInput').value = bioText;
+                    document.getElementById('userProfileModal').style.display = 'flex';
+                }
+                function closeUserModal() {
+                    clearProfileFeedback();
+                    document.getElementById('userProfileModal').style.display = 'none';
+                }
+
+                function showProfileFeedback(type, message) {
+                    var el = document.getElementById('userProfileFeedback');
+                    if (!el) return;
+                    el.className = 'profile-feedback ' + (type === 'success' ? 'profile-feedback-success' : 'profile-feedback-error');
+                    el.textContent = message || '';
+                    el.style.display = message ? 'block' : 'none';
+                }
+
+                function clearProfileFeedback() {
+                    var el = document.getElementById('userProfileFeedback');
+                    if (!el) return;
+                    el.textContent = '';
+                    el.className = 'profile-feedback';
+                    el.style.display = 'none';
+                }
+
+                function splitName(fullName) {
+                    var trimmed = (fullName || '').trim();
+                    if (!trimmed) return { first: '', last: '' };
+                    var parts = trimmed.split(/\s+/);
+                    return { first: parts.shift(), last: parts.join(' ') };
+                }
+
+                function toDisplayName(user) {
+                    if (!user) return '';
+                    var explicit = (user.name || '').trim();
+                    if (explicit) return explicit;
+                    var first = (user.first_name || '').trim();
+                    var last = (user.last_name || '').trim();
+                    var joined = (first + ' ' + last).trim();
+                    return joined || user.business_name || user.email || '';
+                }
+
+                function resolveProfilePhotoUrl(rawUrl) {
+                    if (!rawUrl) return '';
+                    var url = String(rawUrl).trim();
+                    if (!url) return '';
+                    if (/^data:/i.test(url) || /^https?:\/\//i.test(url)) return url;
+                    if (/^\/\//.test(url)) return window.location.protocol + url;
+                    var normalized = url.replace(/\\/g, '/');
+                    if (normalized.charAt(0) === '/') return API_BASE + normalized;
+                    return API_BASE + '/' + normalized.replace(/^\/+/, '');
+                }
+
+                function escHtml(str) {
+                    return String(str || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                }
+
+                function formatDate(value) {
+                    if (!value) return 'Unknown date';
+                    var d = new Date(value);
+                    if (isNaN(d.getTime())) return String(value);
+                    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                }
+
+                function formatDateTime(value) {
+                    if (!value) return 'Unknown time';
+                    var d = new Date(value);
+                    if (isNaN(d.getTime())) return String(value);
+                    return d.toLocaleString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    });
+                }
+
+                function resolveCenterLogo(rawUrl) {
+                    if (!rawUrl) return '';
+                    var url = String(rawUrl).trim();
+                    if (!url) return '';
+                    if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+                    if (url.charAt(0) === '/') return API_BASE + url;
+                    return API_BASE + '/' + url.replace(/^\/+/, '');
+                }
+
+                function renderMyEnrollments(enrollments) {
+                    var grid = document.getElementById('enrolledCentersGrid');
+                    var emptyMsg = document.getElementById('enrolledEmptyMessage');
+                    var arrow = document.getElementById('enrolledSlideArrow');
+                    if (!grid) return;
+
+                    var validEnrollments = (enrollments || []).filter(function(item) {
+                        var program = String((item && item.program_enrolled) || '').trim();
+                        if (!program) return false;
+                        var normalized = program.toLowerCase();
+                        return normalized !== 'program not specified' && normalized !== 'not specified';
+                    });
+
+                    if (validEnrollments.length === 0) {
+                        grid.innerHTML = '';
+                        if (emptyMsg) emptyMsg.style.display = 'block';
+                        if (arrow) arrow.style.visibility = 'hidden';
+                        return;
+                    }
+
+                    if (emptyMsg) emptyMsg.style.display = 'none';
+                    if (arrow) arrow.style.visibility = 'visible';
+
+                    grid.innerHTML = validEnrollments.map(function(item) {
+                        var logo = resolveCenterLogo(item.review_center_logo);
+                        var paymentStatus = String(item.payment_status || 'pending').toLowerCase();
+                        var statusColor = paymentStatus === 'paid' ? '#d7ffe6' : (paymentStatus === 'failed' ? '#ffe0e0' : '#e6f0ff');
+                        var statusText = paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1);
+                        var reviewStatus = String(item.review_status || 'pending').toLowerCase();
+                        var reviewText = reviewStatus.charAt(0).toUpperCase() + reviewStatus.slice(1);
+                        var reviewColor = reviewStatus === 'approved' ? '#c9f7d8' : (reviewStatus === 'rejected' ? '#ffd4d4' : '#d7e7ff');
+                        var latestNote = item.latest_notification ? ('<p style="font-size:0.72rem;color:rgba(255,255,255,0.95);margin:6px 0 0;line-height:1.35;">' + escHtml(item.latest_notification) + '</p>') : '';
+                        return '<div class="recent-card">'
+                            + '<div class="recent-img" style="' + (logo ? ('background-image:url(' + logo + ');background-size:cover;background-position:center;') : '') + '"></div>'
+                            + '<h4>' + escHtml(item.review_center_name || 'Review Center') + '</h4>'
+                            + '<p>' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
+                            + '<p style="font-size:0.75rem;color:rgba(255,255,255,0.92);opacity:1;margin:4px 0;">Enrolled: ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
+                            + '<span style="font-size:0.77rem;color:' + statusColor + ';font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.28);">Payment: ' + escHtml(statusText) + '</span>'
+                            + '<p style="font-size:0.77rem;color:' + reviewColor + ';font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.28);margin:6px 0 0;">Status: ' + escHtml(reviewText) + '</p>'
+                            + latestNote
+                            + '</div>';
+                    }).join('');
+                }
+
+                async function loadMyEnrollments() {
+                    try {
+                        var res = await UserAPI.getMyEnrollments();
+                        var enrollments = (res && res.enrollments) ? res.enrollments : [];
+                        console.log('[Enrollment] Fetched enrollments for profile', {
+                            userId: (getUser() && getUser().id) || null,
+                            count: enrollments.length
+                        });
+                        renderMyEnrollments(enrollments);
+                    } catch (e) {
+                        console.warn('[Enrollment] Failed to fetch enrollments for profile', e);
+                        renderMyEnrollments([]);
+                    }
+                }
+
+                function renderConversationList(conversations) {
+                    var wrap = document.getElementById('sidebarMessagesList');
+                    var unreadBadge = document.getElementById('sidebarUnreadCount');
+                    if (!wrap) return;
+
+                    var data = Array.isArray(conversations) ? conversations : [];
+                    var unreadCount = data.reduce(function(acc, item){ return acc + Number(item.unread_count || 0); }, 0);
+
+                    if (unreadBadge) {
+                        unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                        unreadBadge.textContent = String(unreadCount);
+                    }
+
+                    if (!data.length) {
+                        wrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">No messages yet.</p>';
+                        return;
+                    }
+
+                    wrap.innerHTML = data.slice(0, 12).map(function(item){
+                        var hasUnread = Number(item.unread_count || 0) > 0;
+                        var lineBg = hasUnread ? '#eef4ff' : '#fff';
+                        var weight = hasUnread ? '700' : '500';
+                        return '<div class="message-thread" style="background:' + lineBg + ';cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
+                            + '<div class="message-avatar"></div>'
+                            + '<div class="message-info">'
+                            + '<span class="message-sender" style="font-weight:' + weight + ';">' + escHtml(item.other_name || 'Conversation') + '</span>'
+                            + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
+                            + '</div>'
+                            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+                            + '<span class="message-time">' + escHtml(formatDate(item.last_timestamp)) + '</span>'
+                            + (hasUnread ? ('<span style="font-size:10px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 6px;font-weight:700;">' + Number(item.unread_count) + '</span>') : '')
+                            + '</div>'
+                            + '</div>';
+                    }).join('');
+                }
+
+                async function loadConversations() {
+                    try {
+                        var res = await MessageAPI.getConversations();
+                        var conversations = (res && res.conversations) ? res.conversations : [];
+                        console.log('[Chat][Student] Conversations loaded', {
+                            userId: (getUser() && getUser().id) || null,
+                            count: conversations.length,
+                        });
+                        window._conversationMap = {};
+                        conversations.forEach(function(c) {
+                            window._conversationMap[String(c.other_user_id)] = c;
+                        });
+                        renderConversationList(conversations);
+                    } catch (e) {
+                        console.warn('Failed to load conversations', e);
+                        renderConversationList([]);
+                    }
+                }
+
+                function openConvByKey(otherUserId, centerId) {
+                    console.log('[Chat][Student] Conversation click', {
+                        otherUserId,
+                        centerId,
+                    });
+                    var key = String(otherUserId);
+                    var conv = window._conversationMap && window._conversationMap[key];
+                    if (!conv) {
+                        conv = {
+                        other_user_id: Number(otherUserId),
+                        center_id: Number(centerId || 0),
+                        enrollment_id: null,
+                        other_name: 'Conversation',
+                        };
+                    }
+                    openConv(conv);
+                }
+
+                window.openConvByKey = openConvByKey;
+
+                function getNotificationStatusStyle(status) {
+                    var s = String(status || 'pending').toLowerCase();
+                    return {
+                        status: s,
+                        bg: s === 'approved' ? '#e8f5e9' : (s === 'rejected' ? '#ffebee' : '#e3f2fd'),
+                        color: s === 'approved' ? '#1b5e20' : (s === 'rejected' ? '#b71c1c' : '#0d47a1')
+                    };
+                }
+
+                function renderNotificationBellDropdown(notifications) {
+                    var list = document.getElementById('notificationDropdownList');
+                    var bellBadge = document.getElementById('notificationBellBadge');
+                    var dropUnread = document.getElementById('notificationDropdownUnread');
+                    if (!list) return;
+
+                    var data = Array.isArray(notifications) ? notifications : [];
+                    var unreadCount = data.filter(function(n){ return !n.is_read; }).length;
+
+                    if (bellBadge) {
+                        bellBadge.style.display = unreadCount > 0 ? 'block' : 'none';
+                        bellBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                    }
+
+                    if (dropUnread) {
+                        dropUnread.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                        dropUnread.textContent = unreadCount + ' Unread';
+                    }
+
+                    if (!data.length) {
+                        list.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:4px 2px;">No notifications yet.</p>';
+                        return;
+                    }
+
+                    var latest = data.slice(0, 8);
+                    list.innerHTML = latest.map(function(item) {
+                        var style = getNotificationStatusStyle(item.status);
+                        var isUnread = !item.is_read;
+                        return '<div onclick="handleNotificationItemClick(' + Number(item.notification_id) + ')" style="cursor:pointer;border:1px solid ' + (isUnread ? '#b9d0ff' : '#e5e7eb') + ';background:' + (isUnread ? '#f5f9ff' : '#fff') + ';border-radius:10px;padding:10px 11px;margin-bottom:9px;">'
+                            + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">'
+                            + '<p style="margin:0;font-size:12px;color:#111827;font-weight:' + (isUnread ? '700' : '500') + ';line-height:1.45;">' + escHtml(item.message || '') + '</p>'
+                            + '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;color:' + style.color + ';background:' + style.bg + ';">' + escHtml(style.status.charAt(0).toUpperCase() + style.status.slice(1)) + '</span>'
+                            + '</div>'
+                            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;">'
+                            + '<span style="font-size:11px;color:#6b7280;">' + escHtml(formatDateTime(item.created_at)) + '</span>'
+                            + (item.center_user_id
+                                ? '<button onclick="event.stopPropagation(); openChatFromNotification(' + Number(item.notification_id) + ');" style="padding:5px 9px;border:1px solid #d0dcff;background:#fff;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">Open Chat</button>'
+                                : '<span style="font-size:10px;color:' + (isUnread ? '#b45309' : '#6b7280') + ';font-weight:600;">' + (isUnread ? 'Unread' : 'Read') + '</span>')
+                            + '</div>'
+                            + '</div>';
+                    }).join('');
+                }
+
+                async function handleNotificationItemClick(notificationId) {
+                    try {
+                        var item = window._notificationsById && window._notificationsById[notificationId];
+                        if (item && !item.is_read) {
+                            await NotificationAPI.markAsRead(notificationId);
+                            await loadMyNotifications();
+                        }
+                    } catch (e) {
+                        console.warn('Failed to mark notification as read from dropdown', e);
+                    }
+                }
+
+                async function loadMyNotifications() {
+                    try {
+                        var res = await NotificationAPI.getMy();
+                        var notifications = (res && res.notifications) ? res.notifications : [];
+                        window._notificationsById = {};
+                        notifications.forEach(function(n){ window._notificationsById[n.notification_id] = n; });
+                        renderNotificationBellDropdown(notifications);
+                        if (!window._handledOpenChatNotificationParam) {
+                            window._handledOpenChatNotificationParam = true;
+                            var params = new URLSearchParams(window.location.search || '');
+                            var targetId = Number(params.get('openChatNotification') || 0);
+                            if (targetId > 0 && window._notificationsById[targetId]) {
+                                params.delete('openChatNotification');
+                                var cleanUrl = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+                                window.history.replaceState({}, '', cleanUrl);
+                                await openChatFromNotification(targetId);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load notifications', e);
+                        window._notificationsById = {};
+                        renderNotificationBellDropdown([]);
+                    }
+                }
+
+                function stopDashboardNotificationRealtime() {
+                    if (window._dashboardNotifEventSource) {
+                        try { window._dashboardNotifEventSource.close(); } catch (e) {}
+                        window._dashboardNotifEventSource = null;
+                    }
+                    if (window._dashboardNotifPollTimer) {
+                        clearInterval(window._dashboardNotifPollTimer);
+                        window._dashboardNotifPollTimer = null;
+                    }
+                }
+
+                function ensureDashboardNotificationPolling() {
+                    if (window._dashboardNotifPollTimer) return;
+                    window._dashboardNotifPollTimer = setInterval(loadMyNotifications, 8000);
+                }
+
+                function startDashboardNotificationRealtime() {
+                    if (typeof window.EventSource === 'undefined') {
+                        ensureDashboardNotificationPolling();
+                        return;
+                    }
+
+                    var token = localStorage.getItem('token') || '';
+                    if (!token) {
+                        ensureDashboardNotificationPolling();
+                        return;
+                    }
+
+                    if (window._dashboardNotifEventSource) {
+                        try { window._dashboardNotifEventSource.close(); } catch (e) {}
+                    }
+
+                    var es = new EventSource(API_BASE_URL + '/api/notifications/stream?token=' + encodeURIComponent(token));
+                    window._dashboardNotifEventSource = es;
+
+                    es.onopen = function() {
+                        if (window._dashboardNotifPollTimer) {
+                            clearInterval(window._dashboardNotifPollTimer);
+                            window._dashboardNotifPollTimer = null;
+                        }
+                    };
+
+                    es.onmessage = function(event) {
+                        if (!event || !event.data) return;
+                        try {
+                            var payload = JSON.parse(event.data);
+                            if (payload && payload.type !== 'connected') {
+                                loadMyNotifications();
+                            }
+                        } catch (e) {
+                            loadMyNotifications();
+                        }
+                    };
+
+                    es.onerror = function() {
+                        ensureDashboardNotificationPolling();
+                        try { es.close(); } catch (e) {}
+                        if (window._dashboardNotifEventSource === es) {
+                            window._dashboardNotifEventSource = null;
+                        }
+                        setTimeout(function() {
+                            if (!window._dashboardNotifEventSource) {
+                                startDashboardNotificationRealtime();
+                            }
+                        }, 3000);
+                    };
+                }
+
+                async function openChatFromNotification(notificationId) {
+                    var item = window._notificationsById && window._notificationsById[notificationId];
+                    if (!item) return;
+                    try {
+                        if (!item.is_read) {
+                            await NotificationAPI.markAsRead(notificationId);
+                        }
+                    } catch (e) {}
+
+                    var conversation = {
+                        other_user_id: Number(item.center_user_id),
+                        center_id: Number(item.center_id || 0),
+                        enrollment_id: Number(item.enrollment_id || 0) || null,
+                        other_name: item.center_name || 'Review Center',
+                    };
+                    if (conversation.other_user_id > 0) {
+                        await loadConversations();
+                        var sidebar = document.getElementById('sidebar');
+                        var overlay = document.querySelector('.sidebar-overlay');
+                        var bellDd = document.getElementById('notificationDropdown');
+                        var bellBtn = document.getElementById('notificationBellBtn');
+                        if (bellDd) bellDd.style.display = 'none';
+                        if (bellBtn) bellBtn.setAttribute('aria-expanded', 'false');
+                        if (sidebar && !sidebar.classList.contains('active')) sidebar.classList.add('active');
+                        if (overlay && !overlay.classList.contains('active')) overlay.classList.add('active');
+                        await openConv(conversation);
+                        await loadMyNotifications();
+                    }
+                }
+
+                async function markNotificationAsRead(notificationId) {
+                    try {
+                        await NotificationAPI.markAsRead(notificationId);
+                        await loadMyNotifications();
+                    } catch (e) {
+                        alert((e && e.message) ? e.message : 'Failed to mark notification as read.');
+                    }
+                }
+
+                window.markNotificationAsRead = markNotificationAsRead;
+                window.openChatFromNotification = openChatFromNotification;
+                window.handleNotificationItemClick = handleNotificationItemClick;
+
+                function applyUserProfileToUI(user) {
+                    if (!user) return;
+                    var displayName = toDisplayName(user);
+                    var email = user.email || '';
+                    var bio = (user.bio || '').trim() || 'Student | review.mnl member';
+                    if (displayName) {
+                        document.getElementById('welcomeName').textContent = displayName;
+                        document.getElementById('userNameDisplay').textContent = displayName;
+                        var sidebarName = document.querySelector('.sidebar-header h3');
+                        if (sidebarName) sidebarName.textContent = displayName;
+                    }
+                    if (email) document.getElementById('userEmailDisplay').textContent = email;
+                    document.getElementById('userBioDisplay').textContent = bio;
+                    if (user.profile_picture_url) {
+                        var avatar = document.getElementById('userAvatarPreview');
+                        if (avatar) {
+                            var resolvedPhotoUrl = resolveProfilePhotoUrl(user.profile_picture_url);
+                            avatar.style.backgroundImage = resolvedPhotoUrl ? 'url(' + resolvedPhotoUrl + ')' : 'none';
+                            avatar.style.backgroundSize = 'cover';
+                            avatar.style.backgroundPosition = 'center';
+                        }
+                    }
+                }
+
+                async function loadLatestUserProfile() {
+                    try {
+                        var res = await UserAPI.getMyProfile();
+                        if (res && res.user) {
+                            setSessionUser(res.user, true);
+                            applyUserProfileToUI(res.user);
+                        }
+                    } catch (e) {
+                        console.warn('Could not load latest user profile', e);
+                    }
+                }
+
+                async function saveUserProfile() {
+                    const name = document.getElementById('userNameInput').value.trim();
+                    const email = document.getElementById('userEmailInput').value.trim();
+                    const bio = document.getElementById('userBioInput').value.trim();
+                    const file = document.getElementById('userImageInput').files[0];
+                    const currentUser = getUser() || {};
+                    const saveBtn = document.querySelector('#userProfileModal .modal-save-btn');
+                    const originalBtnText = saveBtn ? saveBtn.textContent : 'Save Changes';
+                    clearProfileFeedback();
+
+                    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        showProfileFeedback('error', 'Please enter a valid email address.');
+                        return;
+                    }
+
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const avatar = document.getElementById('userAvatarPreview');
+                            avatar.style.backgroundImage = 'url(' + e.target.result + ')';
+                            avatar.style.backgroundSize = 'cover';
+                            avatar.style.backgroundPosition = 'center';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+
+                    if (saveBtn) {
+                        saveBtn.disabled = true;
+                        saveBtn.textContent = 'Saving...';
+                    }
+
+                    // Persist to backend
+                    try {
+                        // If there's a profile photo, upload it first
+                        if (file) {
+                            const fd = new FormData();
+                            fd.append('profile_picture', file);
+                            const uploadRes = await UserAPI.uploadProfilePhoto(fd);
+                            if (uploadRes && uploadRes.user) {
+                                try { setSessionUser(uploadRes.user, true); } catch(e) {}
+                            }
+                        }
+
+                        const body = {};
+                        if (name && name !== toDisplayName(currentUser)) {
+                            const parts = splitName(name);
+                            body.first_name = parts.first;
+                            body.last_name = parts.last;
+                        }
+                        if (email && email !== (currentUser.email || '')) body.email = email;
+                        if (bio !== ((currentUser.bio || '').trim())) body.bio = bio;
+                        if (Object.keys(body).length > 0) {
+                            await UserAPI.updateMyProfile(body);
+                        }
+                        await loadLatestUserProfile();
+                        showProfileFeedback('success', 'Profile saved successfully.');
+                        setTimeout(function(){ closeUserModal(); }, 800);
+                    } catch (e) {
+                        console.warn('Failed to save user profile', e);
+                        showProfileFeedback('error', e && e.message ? e.message : 'Failed to save profile. Please try again.');
+                    } finally {
+                        if (saveBtn) {
+                            saveBtn.disabled = false;
+                            saveBtn.textContent = originalBtnText;
+                        }
+                    }
+                }
+                document.getElementById('userImageInput').addEventListener('change', function() {
+                    const file = this.files[0];
+                    const preview = document.getElementById('userImgPreview');
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.style.backgroundImage = 'url(' + e.target.result + ')';
+                            preview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                document.getElementById('userProfileModal').addEventListener('click', function(e) {
+                    if (e.target === this) closeUserModal();
+                });
+
+                // Personalize from session
+                (function(){
+                    var user = getUser();
+                    if (!user) { window.location.href = 'login.html'; return; }
+                    applyUserProfileToUI(user);
+                    loadLatestUserProfile();
+                    loadMyEnrollments();
+                    loadConversations();
+                    loadMyNotifications();
+                    startDashboardNotificationRealtime();
+                    window._dashboardConversationPollTimer = setInterval(function(){
+                        loadConversations();
+                    }, 8000);
+                })();
+
+                window.addEventListener('beforeunload', function() {
+                    stopDashboardNotificationRealtime();
+                    if (window._dashboardConversationPollTimer) {
+                        clearInterval(window._dashboardConversationPollTimer);
+                        window._dashboardConversationPollTimer = null;
+                    }
+                });
+            </script>
+    </body>
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Contact - review.mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+        <style>
+            .contact-page {
+                background: #f4f6fb;
+                padding: 70px 6% 80px;
+            }
+
+            .contact-wrapper {
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+
+            .contact-wrapper > h1 {
+                color: #0a4cff;
+                font-size: 32px;
+                font-weight: 700;
+                margin-bottom: 10px;
+            }
+
+            .contact-wrapper > p.contact-sub {
+                color: #666;
+                font-size: 14px;
+                margin-bottom: 48px;
+            }
+
+            .contact-grid {
+                display: grid;
+                grid-template-columns: 1fr 1.6fr;
+                gap: 32px;
+                align-items: start;
+            }
+
+            /* Info cards */
+            .contact-info {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .contact-info-card {
+                background: #fff;
+                border-radius: 16px;
+                padding: 24px 28px;
+                display: flex;
+                align-items: flex-start;
+                gap: 18px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            }
+
+            .contact-info-icon {
+                width: 46px;
+                height: 46px;
+                border-radius: 12px;
+                background: #e8eeff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .contact-info-icon .material-symbols-outlined {
+                color: #0a4cff;
+                font-size: 22px;
+            }
+
+            .contact-info-text h4 {
+                font-size: 13px;
+                font-weight: 700;
+                color: #0a4cff;
+                margin: 0 0 4px;
+            }
+
+            .contact-info-text p,
+            .contact-info-text a {
+                font-size: 12px;
+                color: #555;
+                margin: 0;
+                text-decoration: none;
+                line-height: 1.6;
+            }
+
+            .contact-info-text a:hover {
+                color: #0a4cff;
+                text-decoration: underline;
+            }
+
+            /* Contact form */
+            .contact-form-card {
+                background: #fff;
+                border-radius: 16px;
+                padding: 40px 44px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            }
+
+            .contact-form-card h2 {
+                color: #0a4cff;
+                font-size: 20px;
+                font-weight: 700;
+                margin-bottom: 6px;
+            }
+
+            .contact-form-card p.form-sub {
+                color: #888;
+                font-size: 12px;
+                margin-bottom: 28px;
+            }
+
+            .contact-form-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+
+            .contact-form-group {
+                display: flex;
+                flex-direction: column;
+                margin-bottom: 16px;
+            }
+
+            .contact-form-group.full {
+                grid-column: 1 / -1;
+            }
+
+            .contact-form-group label {
+                font-size: 11px;
+                font-weight: 600;
+                color: #0a4cff;
+                margin-bottom: 6px;
+            }
+
+            .contact-form-group input,
+            .contact-form-group select,
+            .contact-form-group textarea {
+                padding: 10px 14px;
+                border: 2px solid #e0e0e0;
+                border-radius: 12px;
+                font-size: 12px;
+                font-family: 'Poppins', sans-serif;
+                color: #333;
+                transition: border-color 0.25s;
+                resize: none;
+                background: #fff;
+            }
+
+            .contact-form-group input:focus,
+            .contact-form-group select:focus,
+            .contact-form-group textarea:focus {
+                outline: none;
+                border-color: #0a4cff;
+            }
+
+            .contact-submit-btn {
+                width: 100%;
+                padding: 14px;
+                background: #0a4cff;
+                color: #fff;
+                border: none;
+                border-radius: 50px;
+                font-size: 14px;
+                font-weight: 700;
+                font-family: 'Poppins', sans-serif;
+                cursor: pointer;
+                margin-top: 8px;
+                transition: background 0.25s;
+            }
+
+            .contact-submit-btn:disabled {
+                background: #b0bec5;
+                cursor: not-allowed;
+                opacity: 0.7;
+            }
+
+            .contact-field-hint {
+                font-size: 10px;
+                color: #e53935;
+                margin-top: 4px;
+                display: none;
+            }
+
+            .contact-form-group input.invalid,
+            .contact-form-group select.invalid,
+            .contact-form-group textarea.invalid {
+                border-color: #e53935;
+            }
+
+            .contact-success {
+                display: none;
+                background: #e8f5e9;
+                border-radius: 10px;
+                padding: 14px 18px;
+                color: #2e7d32;
+                font-size: 13px;
+                margin-top: 16px;
+                text-align: center;
+            }
+
+            @media (max-width: 768px) {
+                .contact-grid { grid-template-columns: 1fr; }
+                .contact-form-grid { grid-template-columns: 1fr; }
+                .contact-form-card { padding: 28px 20px; }
+            }
+        </style>
+    </head>
+    <body>
+        <section class="header header-home">
+            <nav>
+                <a href="index.html" id="contactHomeLi" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
+                <div class="nav-links">
+                    <ul>
+                        <li><a href="index.html" id="contactHomeNav">HOME</a></li>
+                        <li><a href="search.html">VIEW REVIEW CENTERS</a></li>
+                        <li><a href="contact.html">CONTACT</a></li>
+                        <li><a href="search.html">SEARCH</a></li>
+                    </ul>
+                </div>
+                <!-- Public nav -->
+                <a href="login.html" class="register-btn" id="contactRegisterBtn">REGISTER / LOGIN</a>
+                <!-- Logged-in nav -->
+                <div class="profile-wrapper" id="contactProfileWrapper" style="display:none;position:relative;">
+                    <button id="contactProfileBtn" class="profile-icon" style="background:none;border:none;color:#fff;cursor:pointer;">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <div id="contactProfileDropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">
+                        <a id="contactMyProfileLink" href="userdashboard.html" style="display:block;padding:12px 16px;color:#0a4cff;text-decoration:none;border-bottom:1px solid #eee;">My Profile</a>
+                        <button id="contactLogoutBtn" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;font-family:Poppins,sans-serif;font-size:14px;">Logout</button>
+                    </div>
+                </div>
+            </nav>
+            <div class="textbox">
+                <h1>Contact Us</h1>
+                <p>We'd love to hear from you</p>
+            </div>
+        </section>
+
+        <section class="contact-page">
+            <div class="contact-wrapper">
+                <h1>Get in Touch</h1>
+                <p class="contact-sub">Have questions, feedback, or need help? Send us a message and we'll get back to you as soon as possible.</p>
+
+                <div class="contact-grid">
+
+                    <!-- Info Cards -->
+                    <div class="contact-info">
+
+                        <div class="contact-info-card">
+                            <div class="contact-info-icon">
+                                <span class="material-symbols-outlined">mail</span>
+                            </div>
+                            <div class="contact-info-text">
+                                <h4>Email Us</h4>
+                                <a href="mailto:support@review.mnl">support@review.mnl</a>
+                                <p>We reply within 24–48 hours</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-info-card">
+                            <div class="contact-info-icon">
+                                <span class="material-symbols-outlined">location_on</span>
+                            </div>
+                            <div class="contact-info-text">
+                                <h4>Location</h4>
+                                <p>Manila, Philippines</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-info-card">
+                            <div class="contact-info-icon">
+                                <span class="material-symbols-outlined">schedule</span>
+                            </div>
+                            <div class="contact-info-text">
+                                <h4>Support Hours</h4>
+                                <p>Monday – Friday<br>8:00 AM – 5:00 PM (PHT)</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-info-card">
+                            <div class="contact-info-icon">
+                                <span class="material-symbols-outlined">help</span>
+                            </div>
+                            <div class="contact-info-text">
+                                <h4>For Review Centers</h4>
+                                <p>Interested in listing your center?<br>
+                                <a href="signup.html">Register now!</a><br>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Contact Form -->
+                    <div class="contact-form-card">
+                        <h2>Send a Message</h2>
+                        <p class="form-sub">Fill out the form below and we'll respond as soon as we can.</p>
+
+                        <form id="contactForm" onsubmit="submitContact(event)">
+                            <div class="contact-form-grid">
+                                <div class="contact-form-group">
+                                    <label for="contactName">Full Name <span style="color:#e53935;">*</span></label>
+                                    <input type="text" id="contactName" placeholder="Your full name">
+                                    <span class="contact-field-hint" id="hintName">Please enter your full name.</span>
+                                </div>
+                                <div class="contact-form-group">
+                                    <label for="contactEmail">Email Address <span style="color:#e53935;">*</span></label>
+                                    <input type="email" id="contactEmail" placeholder="your@email.com">
+                                    <span class="contact-field-hint" id="hintEmail">Please enter a valid email address.</span>
+                                </div>
+                                <div class="contact-form-group full">
+                                    <label for="contactSubject">Subject <span style="color:#e53935;">*</span></label>
+                                    <select id="contactSubject">
+                                        <option value="" disabled selected>Select a subject</option>
+                                        <option value="general">General Inquiry</option>
+                                        <option value="account">Account Help</option>
+                                        <option value="center">Review Center Listing</option>
+                                        <option value="review">Review / Rating Issue</option>
+                                        <option value="bug">Bug Report</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <span class="contact-field-hint" id="hintSubject">Please select a subject.</span>
+                                </div>
+                                <div class="contact-form-group full">
+                                    <label for="contactMessage">Message <span style="color:#e53935;">*</span></label>
+                                    <textarea id="contactMessage" rows="6" placeholder="Write your message here... (min. 10 characters)"></textarea>
+                                    <span class="contact-field-hint" id="hintMessage">Message must be at least 10 characters.</span>
+                                </div>
+                            </div>
+                            <button type="submit" class="contact-submit-btn" id="contactSubmitBtn" disabled>Send Message</button>
+                            <div class="contact-success" id="contactSuccess">
+                                <span class="material-symbols-outlined" style="vertical-align:middle;margin-right:6px;">check_circle</span>
+                                Your message has been sent! We'll get back to you soon.
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section class="footer">
+            <div class="footer-container">
+                <div class="footer-left">
+                    <h2>review.mnl</h2>
+                    <p>Manila, Philippines</p>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-column">
+                        <a href="index.html" id="contactFooterHome">Home</a>
+                        <a href="search.html">Review Centers</a>
+                        <a href="contact.html">Contact</a>
+                    </div>
+                    <div class="footer-column">
+                        <a href="search.html">Search</a>
+                        <a href="login.html">Dashboard</a>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <a href="#" class="social-icon">f</a>
+                    <a href="#" class="social-icon">in</a>
+                    <a href="#" class="social-icon">▶</a>
+                    <a href="#" class="social-icon">✉</a>
+                </div>
+            </div>
+        </section>
+
+        <script src="api.js"></script>
+        <script>
+            // Real-time form validation — enable button only when all fields are valid
+            (function() {
+                const btn = document.getElementById('contactSubmitBtn');
+                const name = document.getElementById('contactName');
+                const email = document.getElementById('contactEmail');
+                const subject = document.getElementById('contactSubject');
+                const message = document.getElementById('contactMessage');
+
+                function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+                function validate() {
+                    const ok = name.value.trim().length > 0
+                        && isValidEmail(email.value.trim())
+                        && subject.value !== ''
+                        && message.value.trim().length >= 10;
+                    btn.disabled = !ok;
+                }
+
+                function showHint(field, hintId, condition) {
+                    const hint = document.getElementById(hintId);
+                    if (!condition && field.value.trim() !== '') {
+                        hint.style.display = 'block';
+                        field.classList.add('invalid');
+                    } else {
+                        hint.style.display = 'none';
+                        field.classList.remove('invalid');
+                    }
+                }
+
+                name.addEventListener('input', function() {
+                    showHint(name, 'hintName', name.value.trim().length > 0);
+                    validate();
+                });
+                email.addEventListener('input', function() {
+                    showHint(email, 'hintEmail', isValidEmail(email.value.trim()));
+                    validate();
+                });
+                subject.addEventListener('change', function() {
+                    showHint(subject, 'hintSubject', subject.value !== '');
+                    validate();
+                });
+                message.addEventListener('input', function() {
+                    showHint(message, 'hintMessage', message.value.trim().length >= 10);
+                    validate();
+                });
+            })();
+
+            // Nav context: swap between public and logged-in based on localStorage
+            (function() {
+                const user = getActiveUser();
+                const role = user && user.role ? user.role : null;
+                if (role) {
+                    document.getElementById('contactRegisterBtn').style.display = 'none';
+                    document.getElementById('contactProfileWrapper').style.display = '';
+                    const homeLink = document.getElementById('contactHomeNav');
+                    const homeLogo = document.getElementById('contactHomeLi');
+                    const footerHome = document.getElementById('contactFooterHome');
+                    const dest = role === 'admin' ? 'admindashboard.html' : 'loggedin.html';
+                    if (homeLink) homeLink.href = dest;
+                    if (homeLogo) homeLogo.href = dest;
+                    if (footerHome) footerHome.href = dest;
+                    if (role === 'admin') {
+                        document.getElementById('contactMyProfileLink').href = 'editcenter.html';
+                    }
+                }
+                const pb = document.getElementById('contactProfileBtn');
+                const pd = document.getElementById('contactProfileDropdown');
+                if (pb && pd) {
+                    pb.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        pd.style.display = pd.style.display === 'block' ? 'none' : 'block';
+                    });
+                    document.addEventListener('click', function() { pd.style.display = 'none'; });
+                }
+                const lb = document.getElementById('contactLogoutBtn');
+                if (lb) {
+                    lb.addEventListener('click', function() {
+                        clearSession();
+                        window.location.href = 'index.html';
+                    });
+                }
+
+                initGlobalNotificationBell({ profileWrapperSelector: '#contactProfileWrapper' });
+            })();
+
+            function submitContact(e) {
+                e.preventDefault();
+                const btn = document.getElementById('contactSubmitBtn');
+                btn.disabled = true;
+                document.getElementById('contactSuccess').style.display = 'block';
+                document.getElementById('contactForm').reset();
+                setTimeout(function() {
+                    document.getElementById('contactSuccess').style.display = 'none';
+                }, 5000);
+            }
+        </script>
+    </body>
+</html>

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sign Up - review.mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <style>
+            .signup-page {
+                min-height: 100vh;
+                background-image: url(images/bg.png);
+                background-position: center;
+                background-size: cover;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+
+            .signup-page::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 67, 207, 0.3);
+                z-index: 1;
+            }
+
+            .signup-nav {
+                padding: 2% 6%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: linear-gradient(rgba(0,0,0,0.2), transparent);
+                position: relative;
+                z-index: 2;
+            }
+
+            .signup-nav img {
+                width: 150px;
+            }
+
+            .signup-container {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 40px 20px;
+                position: relative;
+                z-index: 2;
+            }
+
+            .signup-form {
+                background: #fff;
+                border-radius: 20px;
+                padding: 60px 50px;
+                width: 100%;
+                max-width: 450px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .signup-form h2 {
+                color: #0043CF;
+                font-size: 21px;
+                margin-bottom: 10px;
+                font-weight: 600;
+            }
+
+            .signup-form p {
+                color: #666;
+                font-size: 11px;
+                margin-bottom: 30px;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .form-group label {
+                display: block;
+                color: #0043CF;
+                font-weight: 500;
+                margin-bottom: 8px;
+                font-size: 10px;
+            }
+
+            .form-group input {
+                width: 100%;
+                padding: 9px 10px;
+                border: 2px solid #e0e0e0;
+                border-radius: 12px;
+                font-size: 11px;
+                font-family: 'Poppins', sans-serif;
+                transition: border-color 0.3s ease;
+                box-sizing: border-box;
+            }
+
+            .form-group input:focus {
+                outline: none;
+                border-color: #0043CF;
+            }
+
+            .password-field {
+                position: relative;
+            }
+
+            .password-field input {
+                padding-right: 38px;
+                position: relative;
+                z-index: 1;
+            }
+
+            .password-field input[type="password"]::-ms-reveal,
+            .password-field input[type="password"]::-ms-clear {
+                display: none;
+            }
+
+            .password-toggle {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                border: none;
+                background: transparent;
+                color: #666;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 20px;
+                height: 20px;
+                padding: 0;
+                line-height: 1;
+                z-index: 2;
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .password-toggle .material-symbols-outlined {
+                font-size: 18px;
+            }
+
+            .password-toggle:hover,
+            .password-toggle:focus-visible {
+                color: #0043CF;
+                outline: none;
+            }
+
+            .signup-btn {
+                width: 100%;
+                padding: 9px;
+                background-color: #0043CF;
+                color: #fff;
+                border: none;
+                border-radius: 50px;
+                font-size: 11px;
+                font-weight: 600;
+                cursor: pointer;
+                font-family: 'Poppins', sans-serif;
+                transition: background-color 0.3s ease;
+                margin-bottom: 15px;
+            }
+
+            .signup-btn:hover {
+                background-color: #0035a3;
+            }
+
+            .divider {
+                display: flex;
+                align-items: center;
+                margin: 25px 0;
+                color: #999;
+            }
+
+            .divider::before,
+            .divider::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: #e0e0e0;
+            }
+
+            .divider span {
+                margin: 0 10px;
+                font-size: 13px;
+            }
+
+            .social-login {
+                display: flex;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .social-btn {
+                flex: 1;
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                background: #f9f9f9;
+                border-radius: 12px;
+                cursor: pointer;
+                font-size: 24px;
+                transition: all 0.3s ease;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .social-btn:hover {
+                border-color: #0043CF;
+                background: #f0f5ff;
+            }
+
+            .login-link {
+                text-align: center;
+                color: #666;
+                font-size: 14px;
+            }
+
+            .login-link a {
+                color: #0043CF;
+                text-decoration: none;
+                font-weight: 600;
+            }
+
+            .login-link a:hover {
+                text-decoration: underline;
+            }
+
+            .terms-check {
+                font-size: 13px;
+                color: #666;
+                margin-bottom: 20px;
+            }
+
+            .terms-check a {
+                color: #0043CF;
+                text-decoration: none;
+                font-weight: 500;
+            }
+
+            .role-tabs {
+                display: flex;
+                border-radius: 50px;
+                background: #f0f4ff;
+                padding: 4px;
+                margin-bottom: 28px;
+                gap: 4px;
+            }
+
+            .role-tab {
+                flex: 1;
+                padding: 9px 0;
+                border: none;
+                background: transparent;
+                border-radius: 50px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 11px;
+                font-weight: 600;
+                color: #888;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .role-tab.active {
+                background: #0043CF;
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(0,67,207,0.25);
+            }
+
+            /* Document upload section */
+            .doc-upload-section {
+                display: block;
+                margin-bottom: 20px;
+                border: 1.5px solid #e0e8ff;
+                border-radius: 14px;
+                overflow: hidden;
+            }
+            .doc-upload-header {
+                background: #f0f4ff;
+                padding: 10px 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .doc-upload-header span { font-size: 15px; }
+            .doc-upload-header p {
+                font-size: 10px;
+                color: #0043CF;
+                font-weight: 600;
+                margin: 0;
+            }
+            .doc-upload-header small {
+                font-size: 9px;
+                color: #888;
+                display: block;
+                font-weight: 400;
+            }
+            .doc-upload-body {
+                padding: 14px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .doc-field label {
+                display: block;
+                color: #0043CF;
+                font-weight: 500;
+                font-size: 10px;
+                margin-bottom: 6px;
+            }
+            .doc-drop-zone {
+                border: 2px dashed #c0cef0;
+                border-radius: 10px;
+                padding: 14px 12px;
+                text-align: center;
+                cursor: pointer;
+                transition: border-color 0.2s, background 0.2s;
+                position: relative;
+                background: #fafcff;
+            }
+            .doc-drop-zone:hover {
+                border-color: #0043CF;
+                background: #f0f4ff;
+            }
+            .doc-drop-zone input[type=file] {
+                position: absolute;
+                inset: 0;
+                opacity: 0;
+                cursor: pointer;
+                width: 100%;
+                height: 100%;
+            }
+            .doc-drop-icon { font-size: 22px; margin-bottom: 4px; }
+            .doc-drop-text { font-size: 10px; color: #888; }
+            .doc-drop-text strong { color: #0043CF; }
+            .doc-file-name {
+                font-size: 10px;
+                color: #0043CF;
+                margin-top: 6px;
+                display: none;
+                text-align: center;
+                font-weight: 500;
+            }
+            .doc-note {
+                font-size: 9.5px;
+                color: #aaa;
+                text-align: center;
+                margin-top: 4px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="signup-page">
+            <nav class="signup-nav">
+                <a href="index.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
+                <div></div>
+            </nav>
+
+            <div class="signup-container">
+                <form class="signup-form" id="signupForm">
+                    <h2>Sign Up</h2>
+                    <p>Create your review.mnl account</p>
+
+                    <div class="role-tabs">
+                        <button type="button" class="role-tab active" onclick="switchRole('student', this)">Student</button>
+                        <button type="button" class="role-tab" onclick="switchRole('admin', this)">Review Center</button>
+                    </div>
+                    <input type="hidden" id="signupRole" name="role" value="student">
+
+                    <div class="social-login">
+                        <button type="button" class="social-btn" id="googleSignupBtn" title="Sign up with Google"><i class="fab fa-google"></i></button>
+                    </div>
+
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+
+                    <div class="form-group" id="fieldFullname">
+                        <label for="fullname">Full Name</label>
+                        <input type="text" id="fullname" name="fullname" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group" id="fieldCenterName" style="display:none;">
+                        <label for="centername">Review Center Name</label>
+                        <input type="text" id="centername" name="centername" placeholder="Enter your review center name" required>
+                    </div>
+
+
+                    <!-- Move document uploads below Confirm Password -->
+
+
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="password-field">
+                            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="new-password" required>
+                            <button type="button" class="password-toggle" data-target="password" aria-label="Show password" aria-controls="password">
+                                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm-password">Confirm Password</label>
+                        <div class="password-field">
+                            <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm your password" autocomplete="new-password" required>
+                            <button type="button" class="password-toggle" data-target="confirm-password" aria-label="Show password" aria-controls="confirm-password">
+                                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Document uploads (Review Center only) -->
+                    <div class="doc-upload-section" id="docUploadSection">
+                        <div class="doc-upload-header">
+                            <span>📋</span>
+                            <div>
+                                <p>Verification Documents Required
+                                    <small>Upload official documents to verify your review center.</small>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="doc-upload-body">
+
+                            <div class="doc-field">
+                                <label>Business Permit <span style="color:#d32f2f;">*</span></label>
+                                <div class="doc-drop-zone" id="permitZone">
+                                    <input type="file" id="businessPermit" name="businessPermit" accept=".pdf,.jpg,.jpeg,.png" onchange="showFileName('businessPermit','permitName','permitZone')">
+                                    <div class="doc-drop-icon">🏛️</div>
+                                    <div class="doc-drop-text"><strong>Click to upload</strong> or drag & drop</div>
+                                    <div class="doc-drop-text">PDF, JPG, PNG accepted</div>
+                                </div>
+                                <div class="doc-file-name" id="permitName"></div>
+                            </div>
+
+                            <div class="doc-field">
+                                <label>DTI / SEC Registration <span style="color:#d32f2f;">*</span></label>
+                                <div class="doc-drop-zone" id="dtiZone">
+                                    <input type="file" id="dtiDoc" name="dtiDoc" accept=".pdf,.jpg,.jpeg,.png" onchange="showFileName('dtiDoc','dtiName','dtiZone')">
+                                    <div class="doc-drop-icon">📄</div>
+                                    <div class="doc-drop-text"><strong>Click to upload</strong> or drag & drop</div>
+                                    <div class="doc-drop-text">PDF, JPG, PNG accepted</div>
+                                </div>
+                                <div class="doc-file-name" id="dtiName"></div>
+                            </div>
+
+                            <p class="doc-note">⚠️ Documents will be reviewed by the team before your center is activated. You will be notified via email.</p>
+                        </div>
+                    </div>
+
+                    <div class="terms-check">
+                        <input type="checkbox" id="termsCheckbox" name="terms"> I agree to the <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>
+                    </div>
+                    <p id="termsError" style="display:none; color:#d32f2f; font-size:10px; margin-bottom:12px;">You must agree to the Terms of Service and Privacy Policy to create an account.</p>
+
+                    <p id="signupError" style="display:none;color:#d32f2f;font-size:11px;margin-bottom:10px;"></p>
+                    <p id="signupLoginHint" style="display:none;font-size:11px;margin-bottom:10px;">Already registered? <a href="login.html" style="color:#0043cf;font-weight:600;">Log in here</a></p>
+                    <button type="submit" class="signup-btn">CREATE ACCOUNT</button>
+
+                    <div class="login-link">
+                        Already have an account? <a href="login.html">Login here</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script src="api.js"></script>
+        <script>
+            // ── OAuth buttons ───────────────────────────────────────────────
+            document.getElementById('googleSignupBtn').addEventListener('click', function () {
+                window.location.href = API_BASE + '/api/auth/google';
+            });
+
+            function switchRole(role, btn) {
+                document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+                if (btn) btn.classList.add('active');
+                document.getElementById('signupRole').value = role;
+
+                const isAdmin = role === 'admin';
+                document.getElementById('fieldFullname').style.display = isAdmin ? 'none' : '';
+                document.getElementById('fieldCenterName').style.display = isAdmin ? '' : 'none';
+                document.getElementById('docUploadSection').style.display = isAdmin ? 'block' : 'none';
+                document.getElementById('fullname').required = !isAdmin;
+                document.getElementById('centername').required = isAdmin;
+            }
+
+            // Ensure correct section is shown on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                var activeTab = document.querySelector('.role-tab.active');
+                if (activeTab) {
+                    switchRole(activeTab.textContent.trim().toLowerCase() === 'review center' ? 'admin' : 'student', activeTab);
+                }
+            });
+
+            function showFileName(inputId, labelId, zoneId) {
+                const file = document.getElementById(inputId).files[0];
+                const label = document.getElementById(labelId);
+                const zone = document.getElementById(zoneId);
+                if (file) {
+                    label.textContent = '✅ ' + file.name;
+                    label.style.display = 'block';
+                    zone.style.borderColor = '#0043CF';
+                    zone.style.background = '#f0f4ff';
+                }
+            }
+
+            (function initPasswordToggles() {
+                document.querySelectorAll('.password-toggle').forEach(function (toggleBtn) {
+                    const targetId = toggleBtn.getAttribute('data-target');
+                    const passwordInput = document.getElementById(targetId);
+                    const icon = toggleBtn.querySelector('.material-symbols-outlined');
+                    if (!passwordInput) return;
+
+                    function syncToggleState() {
+                        const showing = passwordInput.type === 'text';
+                        if (icon) icon.textContent = showing ? 'visibility_off' : 'visibility';
+                        toggleBtn.setAttribute('aria-label', showing ? 'Hide password' : 'Show password');
+                        toggleBtn.style.visibility = 'visible';
+                        toggleBtn.style.opacity = '1';
+                    }
+
+                    toggleBtn.addEventListener('click', function () {
+                        const showing = passwordInput.type === 'text';
+                        passwordInput.type = showing ? 'password' : 'text';
+                        syncToggleState();
+                    });
+
+                    passwordInput.addEventListener('input', syncToggleState);
+                    passwordInput.addEventListener('focus', syncToggleState);
+                    passwordInput.addEventListener('blur', syncToggleState);
+                    syncToggleState();
+                });
+            })();
+
+            document.getElementById('signupForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const termsChecked = document.getElementById('termsCheckbox').checked;
+                const termsError = document.getElementById('termsError');
+                if (!termsChecked) { termsError.style.display = 'block'; return; }
+                termsError.style.display = 'none';
+
+                const role     = document.getElementById('signupRole').value;
+                const email    = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const confirm  = document.getElementById('confirm-password').value;
+                const errEl    = document.getElementById('signupError');
+                errEl.style.display = 'none';
+                document.getElementById('signupLoginHint').style.display = 'none';
+                document.getElementById('email').style.borderColor = '';
+
+                if (password !== confirm) {
+                    errEl.textContent = 'Passwords do not match.';
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                const btn = document.querySelector('.signup-btn');
+                btn.disabled = true;
+                btn.textContent = 'Creating account...';
+
+                try {
+                    if (role === 'admin') {
+                        // Review Center registration — multipart/form-data
+                        const fd = new FormData();
+                        fd.append('business_name', document.getElementById('centername').value.trim());
+                        // No owner_first/owner_last needed anymore
+                        fd.append('email',  email);
+                        fd.append('password', password);
+                        const bpFile = document.getElementById('businessPermit').files[0];
+                        const dtiFile = document.getElementById('dtiDoc').files[0];
+                        if (!bpFile || !dtiFile) {
+                            errEl.textContent = 'Please upload both verification documents.';
+                            errEl.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'CREATE ACCOUNT';
+                            return;
+                        }
+                        fd.append('business_permit', bpFile);
+                        fd.append('dti_sec_reg',     dtiFile);
+                        await AuthAPI.registerCenter(fd);
+                        alert('Application submitted! Please check your email to verify your account. Your center will be reviewed before activation.');
+                        window.location.href = 'login.html';
+                    } else {
+                        const name = document.getElementById('fullname').value.trim();
+                        await AuthAPI.registerStudent(name, email, password);
+                        alert('Account created! Please check your email to verify your account before logging in.');
+                        window.location.href = 'login.html';
+                    }
+                } catch (err) {
+                    const msg = err.message || 'Registration failed. Please try again.';
+                    errEl.textContent = msg;
+                    errEl.style.display = 'block';
+                    const emailInput = document.getElementById('email');
+                    const loginHint  = document.getElementById('signupLoginHint');
+                    if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already in use')) {
+                        emailInput.style.borderColor = '#d32f2f';
+                        loginHint.style.display = 'block';
+                    } else {
+                        emailInput.style.borderColor = '';
+                        loginHint.style.display = 'none';
+                    }
+                    btn.disabled = false;
+                    btn.textContent = 'CREATE ACCOUNT';
+                }
+            });
+
+            document.getElementById('termsCheckbox').addEventListener('change', function() {
+                if (this.checked) document.getElementById('termsError').style.display = 'none';
+            });
+        </script>
+    </body>
+</html>

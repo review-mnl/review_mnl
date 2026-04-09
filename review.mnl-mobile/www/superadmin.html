@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin — review.mnl</title>
+    <!-- Inline SVG favicon to avoid browser requesting /favicon.ico and returning 404 -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230a4cff'/%3E%3Ctext x='32' y='38' font-size='36' font-family='Poppins,Arial' fill='%23ffffff' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0a0e1a;
+            background-image: url('images/userdashboard.png');
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-attachment: fixed;
+            color: #e0e6f0;
+            min-height: 100vh;
+        }
+
+        /* ── LOGIN GATE ── */
+        #loginGate {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, #060b18 0%, #0a1640 60%, #0a4cff22 100%);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .gate-box {
+            background: #0d1533; border: 1px solid #1e2d5a;
+            border-radius: 20px; padding: 48px 44px; width: 100%; max-width: 420px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .gate-logo { font-size: 1.1rem; font-weight: 700; color: #4d7fff; letter-spacing: 1px; margin-bottom: 6px; }
+        .gate-title { font-size: 1.55rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+        .gate-sub { font-size: 0.8rem; color: #6b7fa8; margin-bottom: 32px; }
+        .gate-field { margin-bottom: 18px; text-align: left; }
+        .gate-field label { display: block; font-size: 0.75rem; font-weight: 600; color: #8898c4; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+        .gate-field input {
+            width: 100%; padding: 12px 16px; background: #141c38; border: 1.5px solid #1e2d5a;
+            border-radius: 10px; color: #e0e6f0; font-family: Poppins, sans-serif; font-size: 0.9rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .gate-field input:focus { border-color: #0a4cff; }
+        .gate-field input.invalid { border-color: #e53935; }
+        .gate-error { font-size: 0.8rem; color: #e53935; margin-bottom: 14px; display: none; }
+        .gate-btn {
+            width: 100%; padding: 13px; background: #0a4cff; color: #fff;
+            border: none; border-radius: 10px; font-family: Poppins, sans-serif;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .gate-btn:hover { background: #0043cf; }
+        .gate-warn { font-size: 0.73rem; color: #3a4a6b; margin-top: 22px; }
+
+        /* ── DASHBOARD SHELL ── */
+        #dashboard { display: none; min-height: 100vh; }
+
+        /* Topbar */
+        .sa-topbar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            background: #0d1533; border-bottom: 1px solid #1e2d5a;
+            padding: 0 32px; height: 60px;
+        }
+        .sa-topbar-logo { font-size: 1rem; font-weight: 700; color: #4d7fff; letter-spacing: 1px; }
+        .sa-topbar-logo span { color: #fff; }
+        .sa-topbar-right { display: flex; align-items: center; gap: 16px; }
+        .sa-badge { background: #e53935; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+        .sa-logout-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: none; border: 1.5px solid #1e3a6e; color: #8898c4;
+            padding: 6px 14px; border-radius: 8px; font-family: Poppins, sans-serif;
+            font-size: 0.8rem; cursor: pointer; transition: border-color 0.2s, color 0.2s;
+        }
+        .sa-logout-btn:hover { border-color: #e53935; color: #e53935; }
+
+        /* Layout */
+        .sa-layout { display: flex; min-height: calc(100vh - 60px); padding: 20px 0; gap: 12px; }
+
+        /* let the layout slightly reveal the background image */
+        .sa-layout { background: linear-gradient(180deg, rgba(6,10,20,0.55) 0%, rgba(6,10,20,0.65) 100%); }
+        .sa-main { background: transparent; flex: 1; padding: 36px 28px 28px 20px; min-width: 0; }
+
+        /* Sidebar nav */
+        .sa-nav {
+            width: 220px;
+            flex: 0 0 220px;
+            background: linear-gradient(180deg,#0b1430 0%, #0d1533 100%);
+            border: 1px solid rgba(30,45,90,0.9);
+            border-radius: 14px;
+            padding: 22px 18px;
+            margin: 0 20px 20px 28px;
+            height: calc(100vh - 120px);
+            overflow: auto;
+            position: relative;
+            top: 0;
+            box-shadow: 0 10px 30px rgba(2,8,20,0.45);
+        }
+        .sa-nav-section { font-size: 0.75rem; color: #6b7fa8; font-weight: 700; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.6px; }
+        .sa-nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; color:#c0cadf; border-radius:8px; cursor:pointer; margin-bottom:8px; font-weight:600; }
+        .sa-nav-item.active, .sa-nav-item:hover { background: rgba(77,127,255,0.05); color:#fff; }
+        .sa-stat-label { font-size: 0.75rem; color: #6b7fa8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+        /* Dashboard stats layout */
+
+        /* Stats: translucent rounded cards matching screenshots */
+        .sa-stats { display:flex; gap:22px; flex-wrap:wrap; margin-bottom: 26px; align-items:flex-start; max-width:1100px; }
+        .sa-stat-card { background: rgba(10,18,40,0.6); padding: 20px 22px; border-radius: 12px; min-width: 180px; flex: 0 0 220px; border:1px solid rgba(255,255,255,0.03); backdrop-filter: blur(6px); }
+        .sa-stat-card .sa-stat-value { font-size: 2rem; }
+        .sa-stat-card .sa-stat-label { color:#9fb0e6; }
+        
+        /* Center table card sizing to avoid overflow and overlap */
+        .sa-table-card { max-width: 1100px; margin: 8px 0 28px 0; }
+
+        /* Ensure topbar stays above everything */
+        .sa-topbar { z-index: 1100; }
+
+        /* Responsive adjustments */
+        @media (max-width: 1100px) {
+            .sa-nav { display:none; }
+            .sa-layout { padding: 12px; }
+            .sa-main { padding: 18px; }
+            .sa-table-card { max-width: 100%; }
+            .sa-stats { justify-content: space-between; }
+        }
+
+        /* Panels: show only the active panel */
+        .sa-panel { display: none; }
+        .sa-panel.active { display: block; }
+
+        /* Page headings and paragraph tuning */
+        .sa-page-title { font-size: 1.25rem; font-weight: 700; color: #e6eefc; margin-bottom: 6px; }
+        .sa-page-sub { font-size: 0.95rem; color: #9fb0d6; margin-bottom: 18px; }
+
+        /* Panel spacing */
+        .sa-panel { padding: 12px 0 30px; }
+
+        /* Table card header styling */
+        .sa-table-card { background: #0b1430; border: 1px solid rgba(30,45,90,0.8); border-radius: 12px; overflow: hidden; }
+        .sa-table-card .sa-table-header { padding: 18px 22px; }
+        .sa-table-card table { background: transparent; }
+        thead th { background: transparent; color: #9fb0d6; }
+
+        /* Improve nav item balance */
+        .sa-nav-item { font-size: 0.96rem; padding: 12px 14px; }
+        .sa-nav-item .material-symbols-outlined { font-size: 20px; color: #7ea1ff; }
+        .sa-nav-item.active { background: linear-gradient(90deg, rgba(77,127,255,0.06), rgba(77,127,255,0.03)); border-left: 4px solid #4d7fff; padding-left: 10px; }
+
+        /* Improve action buttons and table cells spacing */
+        .sa-action-btn { padding: 6px 12px; font-size: 0.82rem; }
+        tbody td { font-size: 0.9rem; }
+
+        /* Tighter activity log cards */
+        .sa-log-item { border-radius: 10px; margin-bottom: 12px; background: rgba(10,16,36,0.45); padding: 14px 20px; }
+        .sa-stat-value { font-size: 2rem; font-weight: 700; color: #fff; }
+        .sa-stat-note { font-size: 0.72rem; color: #3a5a9a; margin-top: 4px; }
+
+        /* Table */
+        .sa-table-card { background: #0d1533; border: 1px solid #1e2d5a; border-radius: 14px; overflow: hidden; margin-bottom: 28px; }
+        /* allow horizontal scrolling for wide tables on small viewports */
+        .sa-table-card { overflow-x: auto; }
+        table { min-width: 780px; }
+        .sa-table-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #1e2d5a; }
+        .sa-table-header h3 { font-size: 0.95rem; font-weight: 600; color: #ccd6f6; }
+        .sa-search-input {
+            padding: 8px 14px; background: #141c38; border: 1.5px solid #1e2d5a;
+            border-radius: 8px; color: #e0e6f0; font-family: Poppins, sans-serif; font-size: 0.8rem; outline: none;
+            width: 220px; transition: border-color 0.2s;
+        }
+        .sa-search-input:focus { border-color: #0a4cff; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { font-size: 0.72rem; font-weight: 700; color: #3a4a6b; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; text-align: left; border-bottom: 1px solid #1e2d5a; background: #0a0e1a; }
+        tbody tr { border-bottom: 1px solid #131e40; transition: background 0.12s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #131e40; }
+        tbody td { padding: 13px 16px; font-size: 0.83rem; color: #c0cadf; vertical-align: middle; }
+        .sa-status { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+        .sa-status.active   { background: #0a2a0a; color: #4caf50; }
+        .sa-status.pending  { background: #2a1a02; color: #ff9800; }
+        .sa-status.suspended{ background: #2a0a0a; color: #e53935; }
+        .sa-status.inactive { background: rgba(255,255,255,0.03); color: #9fb0d6; }
+        .sa-action-btn {
+            background: none; border: 1.5px solid #1e2d5a; color: #8898c4;
+            padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-family: Poppins, sans-serif;
+            cursor: pointer; transition: all 0.15s; margin-right: 4px;
+        }
+        .sa-action-btn:hover { border-color: #0a4cff; color: #4d7fff; }
+        .sa-action-btn.danger:hover { border-color: #e53935; color: #e53935; }
+        .sa-action-btn.approve:hover { border-color: #4caf50; color: #4caf50; }
+
+        /* Row removal animation */
+        .row-removing { transition: opacity 300ms ease, transform 300ms ease, height 300ms ease, margin 300ms ease, padding 300ms ease; opacity: 0; transform: translateX(-18px) scale(0.99); height: 0 !important; margin: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+
+        /* Document viewer modal */
+        .sa-doc-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 2000;
+            background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+        }
+        .sa-doc-modal-overlay.open { display: flex; }
+        .sa-doc-modal-box {
+            background: #0d1533; border: 1px solid #1e2d5a; border-radius: 16px;
+            padding: 0; max-width: 560px; width: 94%; overflow: hidden;
+        }
+        .sa-doc-modal-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 24px; border-bottom: 1px solid #1e2d5a;
+        }
+        .sa-doc-modal-head h3 { font-size: 0.95rem; font-weight: 600; color: #ccd6f6; }
+        .sa-doc-modal-close { background: none; border: none; color: #6b7fa8; font-size: 1.4rem; cursor: pointer; }
+        .sa-doc-modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .sa-doc-info-row { display: flex; gap: 12px; }
+        .sa-doc-info-item { flex: 1; background: #141c38; border-radius: 10px; padding: 14px 16px; }
+        .sa-doc-info-label { font-size: 0.68rem; color: #3a4a6b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .sa-doc-info-value { font-size: 0.85rem; color: #ccd6f6; font-weight: 600; }
+        .sa-doc-file-row { background: #141c38; border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+        .sa-doc-file-icon { font-size: 2rem; flex-shrink: 0; }
+        .sa-doc-file-info { flex: 1; }
+        .sa-doc-file-name { font-size: 0.85rem; color: #ccd6f6; font-weight: 600; }
+        .sa-doc-file-meta { font-size: 0.72rem; color: #6b7fa8; margin-top: 2px; }
+        .sa-doc-file-badge { padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: #0a4cff22; color: #4d7fff; }
+        .sa-doc-modal-actions { padding: 16px 24px; border-top: 1px solid #1e2d5a; display: flex; gap: 10px; justify-content: flex-end; }
+
+        /* Activity log */
+        .sa-log-list { padding: 8px 0; }
+        .sa-log-item { display: flex; gap: 14px; padding: 13px 24px; border-bottom: 1px solid #131e40; align-items: flex-start; }
+        .sa-log-item:last-child { border-bottom: none; }
+        .sa-log-icon { width: 34px; height: 34px; border-radius: 50%; background: #141c38; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sa-log-icon .material-symbols-outlined { font-size: 16px; color: #4d7fff; }
+        .sa-log-text { font-size: 0.82rem; color: #c0cadf; line-height: 1.5; }
+        .sa-log-time { font-size: 0.72rem; color: #3a4a6b; margin-top: 2px; }
+
+        /* Confirm modal */
+        .sa-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
+        }
+        .sa-modal-overlay.open { display: flex; }
+        .sa-modal-box {
+            background: #0d1533; border: 1px solid #1e2d5a; border-radius: 16px;
+            padding: 32px; max-width: 420px; width: 90%; text-align: center;
+        }
+        .sa-modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .sa-modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .sa-modal-msg { font-size: 0.85rem; color: #6b7fa8; margin-bottom: 24px; line-height: 1.6; }
+        .sa-modal-actions { display: flex; gap: 12px; justify-content: center; }
+        .sa-modal-cancel { padding: 10px 24px; background: none; border: 1.5px solid #1e2d5a; color: #8898c4; border-radius: 8px; font-family: Poppins, sans-serif; font-size: 0.85rem; cursor: pointer; transition: border-color 0.2s; }
+        .sa-modal-cancel:hover { border-color: #aaa; color: #ccc; }
+        .sa-modal-confirm { padding: 10px 24px; background: #e53935; color: #fff; border: none; border-radius: 8px; font-family: Poppins, sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .sa-modal-confirm:hover { background: #c62828; }
+        .sa-modal-confirm.green { background: #388e3c; }
+        .sa-modal-confirm.green:hover { background: #2e7d32; }
+
+        /* Toast */
+        #saToast {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+            background: #182040; border: 1px solid #1e2d5a; color: #ccd6f6;
+            padding: 12px 24px; border-radius: 10px; font-size: 0.85rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none; z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN GATE
+═══════════════════════════════════════════ -->
+<div id="loginGate">
+    <div class="gate-box">
+        <div class="gate-logo">review.mnl</div>
+        <div class="gate-title">Super Admin Access</div>
+        
+        <div class="gate-field">
+            <label>Email</label>
+            <input type="email" id="gateUser" placeholder="Enter email" autocomplete="off">
+        </div>
+        <div class="gate-field">
+            <label>Password</label>
+            <input type="password" id="gatePass" placeholder="Enter password" autocomplete="current-password">
+        </div>
+        <div id="gateError" class="gate-error">Invalid credentials.</div>
+        <button class="gate-btn" onclick="attemptLogin()">Access Dashboard</button>
+        </div>
+    </div>
+
+    <div id="dashboard">
+        <header class="sa-topbar">
+            <div class="sa-topbar-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></div>
+            <div class="sa-topbar-right">
+                <strong style="color:#ccd6f6">Superadmin</strong>
+                <button class="sa-logout-btn" onclick="saLogout()">Logout</button>
+            </div>
+        </header>
+        <div class="sa-layout">
+        <nav class="sa-nav">
+            <div class="sa-nav-section">Content</div>
+            <div class="sa-nav-item active" onclick="showPanel('overview', this)">
+                <span class="material-symbols-outlined">dashboard</span> Overview
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('activity', this)">
+                <span class="material-symbols-outlined">history</span> Activity
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('centers', this)">
+                <span class="material-symbols-outlined">school</span> Admissions
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('students', this)">
+                <span class="material-symbols-outlined">people</span> Students
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('admins', this)">
+                <span class="material-symbols-outlined">admin_panel_settings</span> Review Centers
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('docs', this)">
+                <span class="material-symbols-outlined">description</span> Document Submissions
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('reports', this)">
+                <span class="material-symbols-outlined">flag</span> Reports
+            </div>
+            <div class="sa-nav-item" onclick="showPanel('settings', this)">
+                <span class="material-symbols-outlined">settings</span> Site Settings
+            </div>
+        </nav>
+
+        <!-- Main -->
+        <main class="sa-main">
+
+            <!-- ── OVERVIEW ── -->
+            <div class="sa-panel active" id="panel-overview">
+                <div class="sa-page-title">Dashboard Overview</div>
+                <div class="sa-page-sub">Welcome back. Here's a summary of Review.MNL.</div>
+
+                <div class="sa-stats">
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Review Centers</div>
+                        <div class="sa-stat-value" id="statCenters">12</div>
+                        <div class="sa-stat-note"><span id="statPending">3</span> pending approval</div>
+                    </div>
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Students</div>
+                        <div class="sa-stat-value" id="statStudents">248</div>
+                        <div class="sa-stat-note">+14 this week</div>
+                    </div>
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Admins</div>
+                        <div class="sa-stat-value" id="statAdmins">12</div>
+                        <div class="sa-stat-note">All active</div>
+                    </div>
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Active Reports</div>
+                        <div class="sa-stat-value" id="statReports">5</div>
+                        <div class="sa-stat-note">2 need review</div>
+                    </div>
+                </div>
+
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>Pending Center Approvals</h3>
+                        <span style="font-size:0.78rem;color:#6b7fa8;">Review Centers awaiting activation</span>
+                    </div>
+                    <table>
+                        <thead><tr><th>Center Name</th><th>Email</th><th>Submitted</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td colspan="4" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── ACTIVITY LOG ── -->
+            <div class="sa-panel" id="panel-activity">
+                <div class="sa-page-title">Activity Log</div>
+                <div class="sa-page-sub">All system actions are recorded here.</div>
+                <div class="sa-table-card">
+                    <div class="sa-log-list" id="activityLog">
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">check_circle</span></div><div><div class="sa-log-text">Review center <strong>ERC Manila</strong> was approved.</div><div class="sa-log-time">Mar 5, 2026 — 10:22 AM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">person_add</span></div><div><div class="sa-log-text">New student <strong>Juan Dela Cruz</strong> registered.</div><div class="sa-log-time">Mar 5, 2026 — 9:48 AM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">flag</span></div><div><div class="sa-log-text">Report filed against <strong>Metro Review Center</strong> for misleading description.</div><div class="sa-log-time">Mar 4, 2026 — 4:15 PM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">block</span></div><div><div class="sa-log-text">Student <strong>Maria Santos</strong> account suspended.</div><div class="sa-log-time">Mar 4, 2026 — 2:30 PM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">settings</span></div><div><div class="sa-log-text">Site settings updated by <strong>superadmin</strong>.</div><div class="sa-log-time">Mar 3, 2026 — 11:00 AM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">school</span></div><div><div class="sa-log-text">Review center <strong>Legarda Review Hub</strong> submitted for approval.</div><div class="sa-log-time">Mar 3, 2026 — 8:55 AM</div></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── REVIEW CENTERS ── -->
+            <div class="sa-panel" id="panel-centers">
+                <div class="sa-page-title">Admissions</div>
+                <div class="sa-page-sub">Manage incoming review center applications.</div>
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>All Centers</h3>
+                        <input class="sa-search-input" placeholder="Search centers..." oninput="filterTable('centersTable', this.value)">
+                    </div>
+                    <table id="centersTable">
+                        <thead><tr><th>Center Name</th><th>Email</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td colspan="5" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── STUDENTS ── -->
+            <div class="sa-panel" id="panel-students">
+                <div class="sa-page-title">Students</div>
+                <div class="sa-page-sub">Manage all registered student accounts.</div>
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>All Students</h3>
+                        <input class="sa-search-input" placeholder="Search students..." oninput="filterTable('studentsTable', this.value)">
+                    </div>
+                    <table id="studentsTable">
+                        <thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td colspan="5" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── ADMINS ── -->
+            <div class="sa-panel" id="panel-admins">
+                <div class="sa-page-title">Review Centers</div>
+                <div class="sa-page-sub">Manage all registered review centers.</div>
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>All Review Centers</h3>
+                        <input class="sa-search-input" placeholder="Search centers..." oninput="filterTable('adminsTable', this.value)">
+                    </div>
+                    <table id="adminsTable">
+                        <thead><tr><th>Review Center</th><th>Email</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>ERC Review Center</td><td>info@ercreview.com</td><td>Jan 5, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing ERC Review Center...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('delete','ERC Review Center')">Delete</button></td></tr>
+                            <tr><td>Metro Review Center</td><td>info@metroreview.com</td><td>Jan 18, 2026</td><td><span class="sa-status active">Active</span></td><td><button class="sa-action-btn" onclick="saToast('Viewing Metro Review Center...')">View</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Metro Review Center')">Delete</button></td></tr>
+                            <tr><td>Old Manila Review</td><td>info@oldmanilareview.com</td><td>Nov 12, 2025</td><td><span class="sa-status suspended">Suspended</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('restore','Old Manila Review')">Restore</button><button class="sa-action-btn danger" onclick="confirmAction('delete','Old Manila Review')">Delete</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── DOCUMENT SUBMISSIONS ── -->
+            <div class="sa-panel" id="panel-docs">
+                <div class="sa-page-title">Document Submissions</div>
+                <div class="sa-page-sub">Review uploaded business permits and DTI/SEC documents from center applicants.</div>
+
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>Pending Document Reviews</h3>
+                        <input class="sa-search-input" placeholder="Search submissions..." oninput="filterTable('docsTable', this.value)">
+                    </div>
+                    <table id="docsTable">
+                        <thead><tr><th>Center Name</th><th>Date</th><th>Business Permit</th><th>DTI / SEC</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td colspan="6" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── REPORTS ── -->
+            <div class="sa-panel" id="panel-reports">
+                <div class="sa-page-title">Reports</div>
+                <div class="sa-page-sub">User-submitted reports and flagged content.</div>
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>Active Reports</h3>
+                        <input class="sa-search-input" placeholder="Search reports..." oninput="filterTable('reportsTable', this.value)">
+                    </div>
+                    <table id="reportsTable">
+                        <thead><tr><th>Reported By</th><th>Against</th><th>Reason</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>Juan Dela Cruz</td><td>Metro Review Center</td><td>Misleading description</td><td>Mar 4, 2026</td><td><span class="sa-status pending">Open</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('resolve','this report')">Resolve</button><button class="sa-action-btn danger" onclick="confirmAction('dismiss','this report')">Dismiss</button></td></tr>
+                            <tr><td>Ana Lim</td><td>ERC Review Center</td><td>Incorrect program info</td><td>Mar 3, 2026</td><td><span class="sa-status pending">Open</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('resolve','this report')">Resolve</button><button class="sa-action-btn danger" onclick="confirmAction('dismiss','this report')">Dismiss</button></td></tr>
+                            <tr><td>Carlo Reyes</td><td>Old Manila Review</td><td>Fake achievements listed</td><td>Feb 28, 2026</td><td><span class="sa-status active">Resolved</span></td><td><button class="sa-action-btn" onclick="saToast('Report already resolved.')">View</button></td></tr>
+                            <tr><td>Maria Santos</td><td>Legarda Review Hub</td><td>No response from admin</td><td>Feb 25, 2026</td><td><span class="sa-status active">Resolved</span></td><td><button class="sa-action-btn" onclick="saToast('Report already resolved.')">View</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── SETTINGS ── -->
+            <div class="sa-panel" id="panel-settings">
+                <div class="sa-page-title">Site Settings</div>
+                <div class="sa-page-sub">Global configuration for Review.MNL.</div>
+                <div class="sa-table-card" style="padding: 28px 32px; display: flex; flex-direction: column; gap: 22px;">
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Site Name</label>
+                        <input type="text" value="Review.MNL" style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:360px;outline:none;" onfocus="this.style.borderColor='#0a4cff'" onblur="this.style.borderColor='#1e2d5a'">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Maintenance Mode</label>
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                            <option>Off</option>
+                            <option>On</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">New Center Registrations</label>
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                            <option>Open</option>
+                            <option>Closed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Student Signups</label>
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                            <option>Open</option>
+                            <option>Closed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="saToast('Settings saved successfully.')" style="padding:11px 28px;background:#0a4cff;color:#fff;border:none;border-radius:10px;font-family:Poppins,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Doc Viewer Modal -->
+<div class="sa-doc-modal-overlay" id="saDocModal">
+    <div class="sa-doc-modal-box">
+        <div class="sa-doc-modal-head">
+            <h3 id="docModalTitle">Document Details</h3>
+            <button class="sa-doc-modal-close" onclick="closeDocModal()">&times;</button>
+        </div>
+        <div class="sa-doc-modal-body">
+            <div class="sa-doc-info-row">
+                <div class="sa-doc-info-item">
+                    <div class="sa-doc-info-label">Review Center</div>
+                    <div class="sa-doc-info-value" id="docCenterName">—</div>
+                </div>
+                <div class="sa-doc-info-item">
+                    <div class="sa-doc-info-label">Submitted By</div>
+                    <div class="sa-doc-info-value" id="docEmail">—</div>
+                </div>
+                <div class="sa-doc-info-item">
+                    <div class="sa-doc-info-label">Date</div>
+                    <div class="sa-doc-info-value" id="docDate">—</div>
+                </div>
+            </div>
+            <div class="sa-doc-file-row">
+                <div class="sa-doc-file-icon" id="docFileIcon">📄</div>
+                <div class="sa-doc-file-info">
+                    <div class="sa-doc-file-name" id="docFileName">—</div>
+                    <div class="sa-doc-file-meta" id="docFileType">—</div>
+                </div>
+                <div class="sa-doc-file-badge" id="docFileBadge">PDF</div>
+            </div>
+            <p style="font-size:0.78rem;color:#3a4a6b;line-height:1.6;">🔗 In production, clicking <strong style="color:#ccd6f6;">Download / Preview</strong> below will open the actual uploaded file from the server. Currently showing file metadata only (frontend demo).</p>
+        </div>
+        <div class="sa-doc-modal-actions">
+            <button class="sa-modal-cancel" onclick="closeDocModal()">Close</button>
+            <button class="sa-action-btn" onclick="previewDoc()">Preview</button>
+            <button class="sa-modal-confirm green" onclick="downloadDoc()">Download</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="sa-modal-overlay" id="saConfirmModal">
+    <div class="sa-modal-box">
+        <div class="sa-modal-icon" id="saModalIcon">⚠️</div>
+        <div class="sa-modal-title" id="saModalTitle">Are you sure?</div>
+        <div class="sa-modal-msg" id="saModalMsg">This action cannot be undone.</div>
+        <div class="sa-modal-actions">
+            <button class="sa-modal-cancel" onclick="closeConfirm()">Cancel</button>
+            <button class="sa-modal-confirm" id="saModalConfirmBtn" onclick="executeAction()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="saToast"></div>
+
+<script src="api.js"></script>
+<script>
+    // Allow access to the login gate; only show the dashboard to an authenticated superadmin.
+    // Autofill the email input from the last known superadmin email, if available.
+    (function(){
+        try {
+            var token = getActiveToken();
+            var user = getActiveUser();
+            inspectToken();
+            var loginGateEl = document.getElementById('loginGate');
+            var dashboardEl = document.getElementById('dashboard');
+            if (token && user && user.role === 'superadmin') {
+                if (loginGateEl) loginGateEl.style.display = 'none';
+                if (dashboardEl) dashboardEl.style.display = 'block';
+                var nameEl = document.querySelector('.sa-topbar span[style*="color:#ccd6f6"]');
+                if (nameEl) nameEl.textContent = user.name;
+            } else {
+                if (loginGateEl) loginGateEl.style.display = 'flex';
+                if (dashboardEl) dashboardEl.style.display = 'none';
+                try {
+                    var lastEmail = (typeof getLastSuperadminEmail === 'function') ? getLastSuperadminEmail() : (localStorage.getItem ? localStorage.getItem('rmnl_last_superadmin_email') : null);
+                    if (lastEmail) {
+                        var gu = document.getElementById('gateUser'); if (gu) gu.value = lastEmail;
+                        var gp = document.getElementById('gatePass'); if (gp) gp.focus();
+                    }
+                } catch(e) {}
+            }
+        } catch(e){}
+    })();
+    // ── Doc viewer ──
+    var _currentDocUrl = null;
+    function viewDoc(center, email, date, docType, filename, fileUrl) {
+        var tEl = document.getElementById('docModalTitle'); if (tEl) tEl.textContent = docType;
+        var cEl = document.getElementById('docCenterName'); if (cEl) cEl.textContent = center;
+        var eEl = document.getElementById('docEmail'); if (eEl) eEl.textContent = email;
+        var dEl = document.getElementById('docDate'); if (dEl) dEl.textContent = date;
+        var fnEl = document.getElementById('docFileName'); if (fnEl) fnEl.textContent = filename || (fileUrl ? fileUrl.split('/').pop() : '—');
+        var ftEl = document.getElementById('docFileType'); if (ftEl) ftEl.textContent = docType;
+        var ext = (fnEl && fnEl.textContent ? fnEl.textContent : '').split('.').pop().toUpperCase();
+        var badgeEl = document.getElementById('docFileBadge'); if (badgeEl) badgeEl.textContent = ext || '';
+        var iconEl = document.getElementById('docFileIcon'); if (iconEl) iconEl.textContent = ext === 'PDF' ? '📄' : '🖼️';
+        _currentDocUrl = fileUrl || null;
+        var saModalEl = document.getElementById('saDocModal'); if (saModalEl) saModalEl.classList.add('open');
+    }
+    function closeDocModal() {
+        var saModalEl = document.getElementById('saDocModal');
+        if (saModalEl) saModalEl.classList.remove('open');
+    }
+    var _saDocModalEl = document.getElementById('saDocModal');
+    if (_saDocModalEl) _saDocModalEl.addEventListener('click', function(e){ if (e.target === this) closeDocModal(); });
+
+    // ── Credentials (creator-only) ──
+    const SA_SESSION_KEY = 'rmnl_sa_session';
+
+    // ── Auto-start data load and live updates for authenticated superadmin ──
+    (function(){
+        try {
+            var token = getActiveToken();
+            var user = getActiveUser();
+            inspectToken();
+            if (token && user && user.role === 'superadmin') {
+                try { setTimeout(function(){ loadDashboardData(); startLiveUpdates(15000); }, 100); } catch(e) {}
+                var nameEl = document.querySelector('.sa-topbar span[style*="color:#ccd6f6"]');
+                if (nameEl) nameEl.textContent = user.name;
+            }
+        } catch(e) {}
+    })();
+
+    // Inspect saved token and auto-clear if expired (log payload for debugging)
+    function inspectToken() {
+        try {
+            var t = getActiveToken();
+            // token inspection (silent in production)
+            if (!t) return;
+            var parts = t.split('.');
+            if (parts.length < 2) return;
+            var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+            // token payload parsed (silent in production)
+            if (payload.exp && payload.exp < Date.now()/1000) {
+                console.warn('Token expired — clearing session');
+                clearSession();
+                // stop any background live updates when token expires
+                try { stopLiveUpdates(); } catch(e) {}
+                var dashEl = document.getElementById('dashboard');
+                var gateEl = document.getElementById('loginGate');
+                if (dashEl) dashEl.style.display = 'none';
+                if (gateEl) gateEl.style.display = 'flex';
+            }
+        } catch(e) { console.warn('inspectToken failed', e); }
+    }
+
+    function attemptLogin() {
+        const email = document.getElementById('gateUser').value.trim();
+        const p = document.getElementById('gatePass').value;
+        const err = document.getElementById('gateError');
+        document.getElementById('gateUser').classList.remove('invalid');
+        document.getElementById('gatePass').classList.remove('invalid');
+        err.style.display = 'none';
+
+        var btn = document.querySelector('.gate-btn');
+        btn.disabled = true;
+        btn.textContent = 'Authenticating...';
+
+        AuthAPI.login(email, p).then(function(data) {
+            if (data.user.role !== 'superadmin') {
+                err.textContent = 'Access denied. Superadmin account required.';
+                err.style.display = 'block';
+                document.getElementById('gateUser').classList.add('invalid');
+                document.getElementById('gatePass').classList.add('invalid');
+                document.getElementById('gatePass').value = '';
+                btn.disabled = false;
+                btn.textContent = 'Access Dashboard';
+                return;
+            }
+            saveSession(data);
+            var _lg = document.getElementById('loginGate'); if (_lg) _lg.style.display = 'none';
+            var _db = document.getElementById('dashboard'); if (_db) _db.style.display = 'block';
+            var nameEl = document.querySelector('strong[style*="color:#ccd6f6"]');
+            if (nameEl) nameEl.textContent = data.user.name;
+            btn.disabled = false;
+            btn.textContent = 'Access Dashboard';
+        }).catch(function(e) {
+            err.textContent = e.message || 'Invalid credentials.';
+            err.style.display = 'block';
+            document.getElementById('gateUser').classList.add('invalid');
+            document.getElementById('gatePass').classList.add('invalid');
+            document.getElementById('gatePass').value = '';
+            btn.disabled = false;
+            btn.textContent = 'Access Dashboard';
+        });
+    }
+    document.addEventListener('keydown', function(e) {
+        try {
+            var lg = document.getElementById('loginGate');
+            if (e.key === 'Enter' && lg && lg.style.display !== 'none') attemptLogin();
+        } catch (err) { }
+    });
+
+    function saLogout() {
+        clearSession();
+        // stop live updates when logging out
+        try { stopLiveUpdates(); } catch(e) {}
+        var _db = document.getElementById('dashboard'); if (_db) _db.style.display = 'none';
+        var _lg = document.getElementById('loginGate'); if (_lg) _lg.style.display = 'flex';
+        var gu = document.getElementById('gateUser'); if (gu) gu.value = '';
+        var gp = document.getElementById('gatePass'); if (gp) gp.value = '';
+        var ge = document.getElementById('gateError'); if (ge) ge.style.display = 'none';
+    }
+
+    // ── Panel navigation ──
+    function showPanel(id, el) {
+        document.querySelectorAll('.sa-panel').forEach(function(p){ p.classList.remove('active'); });
+        document.querySelectorAll('.sa-nav-item').forEach(function(n){ n.classList.remove('active'); });
+        document.getElementById('panel-' + id).classList.add('active');
+        el.classList.add('active');
+    }
+
+    // ── Table live filter ──
+    function filterTable(tableId, query) {
+        const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+        const q = query.toLowerCase().trim();
+        rows.forEach(function(row) {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    // ── Confirm modal ──
+    var _pendingAction = null;
+    var _pendingTarget = null;
+    var actionConfig = {
+        approve:  { icon: '✅', title: 'Approve?',  msg: 'This will activate {t} on the platform.', btnClass: 'green', btnText: 'Approve' },
+        reject:   { icon: '❌', title: 'Reject?',   msg: 'This will reject the application of {t}.', btnClass: '', btnText: 'Reject' },
+        suspend:  { icon: '🚫', title: 'Suspend?',  msg: 'This will suspend {t}. They will lose access.', btnClass: '', btnText: 'Suspend' },
+        restore:  { icon: '🔓', title: 'Restore?',  msg: 'This will restore access for {t}.', btnClass: 'green', btnText: 'Restore' },
+        delete:   { icon: '🗑️', title: 'Delete?',   msg: 'This will permanently delete {t}. This cannot be undone.', btnClass: '', btnText: 'Delete' },
+        resolve:  { icon: '✅', title: 'Resolve?',  msg: 'Mark {t} as resolved and close it.', btnClass: 'green', btnText: 'Resolve' },
+        dismiss:  { icon: '🗑️', title: 'Dismiss?',  msg: 'Dismiss {t} without action.', btnClass: '', btnText: 'Dismiss' },
+    };
+    function confirmAction(action, target) {
+        _pendingAction = action;
+        _pendingTarget = target;
+        const cfg = actionConfig[action] || { icon: '⚠️', title: 'Confirm?', msg: 'Proceed with {t}?', btnClass: '', btnText: 'Confirm' };
+        document.getElementById('saModalIcon').textContent = cfg.icon;
+        document.getElementById('saModalTitle').textContent = cfg.title;
+        document.getElementById('saModalMsg').textContent = cfg.msg.replace('{t}', target);
+        var btn = document.getElementById('saModalConfirmBtn');
+        btn.className = 'sa-modal-confirm' + (cfg.btnClass ? ' ' + cfg.btnClass : '');
+        btn.textContent = cfg.btnText;
+        document.getElementById('saConfirmModal').classList.add('open');
+    }
+    function closeConfirm() {
+        document.getElementById('saConfirmModal').classList.remove('open');
+    }
+    function executeAction() {
+        closeConfirm();
+        var messages = {
+            approve:  _pendingTarget + ' has been approved.',
+            reject:   _pendingTarget + ' has been rejected.',
+            suspend:  _pendingTarget + ' has been suspended.',
+            restore:  _pendingTarget + ' has been restored.',
+            delete:   _pendingTarget + ' has been deleted.',
+            resolve:  'Report resolved.',
+            dismiss:  'Report dismissed.',
+        };
+        saToast(messages[_pendingAction] || 'Action completed.');
+        logActivity(_pendingAction, _pendingTarget);
+    }
+    document.getElementById('saConfirmModal').addEventListener('click', function(e){
+        if (e.target === this) closeConfirm();
+    });
+
+    // ── Toast ──
+    var _toastTimer = null;
+    function saToast(msg) {
+        var t = document.getElementById('saToast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(function(){ t.style.display = 'none'; }, 3000);
+    }
+
+    // ── Activity log ──
+    var actionLabels = { approve:'approved', reject:'rejected', suspend:'suspended', restore:'restored', delete:'deleted', resolve:'resolved report for', dismiss:'dismissed report for' };
+    function logActivity(action, target) {
+        var log = document.getElementById('activityLog');
+        var now = new Date();
+        var timeStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + ' — '
+            + now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+        var item = document.createElement('div');
+        item.className = 'sa-log-item';
+        item.innerHTML = '<div class="sa-log-icon"><span class="material-symbols-outlined">admin_panel_settings</span></div>'
+            + '<div><div class="sa-log-text">Superadmin <strong>' + (actionLabels[action]||action) + '</strong> <strong>' + target + '</strong>.</div>'
+            + '<div class="sa-log-time">' + timeStr + '</div></div>';
+        log.insertBefore(item, log.firstChild);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // REAL DATA LOADING FROM API
+    // ══════════════════════════════════════════════════════════════════════════
+    
+    var allCenters = [];
+    var allStudents = [];
+
+    function loadDashboardData() {
+        loadCenters();
+        loadStudents();
+    }
+
+    function loadCenters() {
+        AdminAPI.getAllCenters().then(function(centers) {
+            allCenters = centers;
+            // Admissions should only show incoming (pending) applications
+            renderCentersTable(centers.filter(function(c){ return c.status === 'pending'; }));
+            renderPendingCenters(centers.filter(c => c.status === 'pending'));
+            // fetch pending centers separately because the `getAllCenters` response
+            // does not include file fields (business_permit, dti_sec_reg)
+            AdminAPI.getPendingCenters().then(function(pendingCenters) {
+                renderDocSubmissions(pendingCenters);
+            }).catch(function(err) {
+                console.warn('Failed to load pending centers for documents:', err);
+                renderDocSubmissions([]);
+            });
+            // Render approved centers into the Review Centers panel
+            try { renderReviewCentersTable(centers.filter(c => c.status === 'approved')); } catch (e) { console.warn('renderReviewCentersTable failed', e); }
+            updateStats();
+        }).catch(function(err) {
+            console.error('Failed to load centers:', err);
+            saToast('Failed to load centers: ' + err.message);
+        });
+    }
+
+    function loadStudents() {
+        AdminAPI.getStudents().then(function(students) {
+            allStudents = students;
+            renderStudentsTable(students);
+            updateStats();
+        }).catch(function(err) {
+            console.error('Failed to load students:', err);
+            saToast('Failed to load students: ' + err.message);
+        });
+    }
+
+    function updateStats() {
+        try {
+            var elCenters = document.getElementById('statCenters');
+            var elPending = document.getElementById('statPending');
+            var elStudents = document.getElementById('statStudents');
+            if (elCenters) elCenters.textContent = allCenters.length;
+            if (elPending) elPending.textContent = allCenters.filter(c => c.status === 'pending').length;
+            if (elStudents) elStudents.textContent = allStudents.length;
+        } catch (e) {
+            // suppressed debug: safe-guard prevents uncaught exceptions in older clients
+        }
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '—';
+        var d = new Date(dateStr);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function renderPendingCenters(centers) {
+        // Find the Pending Center Approvals table in the Overview panel
+        var overviewPanel = document.getElementById('panel-overview');
+        if (!overviewPanel) return;
+        var tableCard = overviewPanel.querySelector('.sa-table-card');
+        if (!tableCard) return;
+        var tbody = tableCard.querySelector('tbody');
+        if (!tbody) return;
+        if (centers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7fa8;">No pending approvals</td></tr>';
+            return;
+        }
+        tbody.innerHTML = centers.map(function(c) {
+            var name = (c.business_name || '').replace(/'/g, "\\'");
+            return `
+                <tr data-center-id="${c.id}">
+                    <td>${c.business_name}</td>
+                    <td>${c.email}</td>
+                    <td>${formatDate(c.created_at)}</td>
+                    <td>
+                        <button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${name}')">Approve</button>
+                        <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${name}')">Reject</button>
+                    </td>
+                </tr>`;
+        }).join('');
+    }
+
+    // Render all centers into the Admissions / Centers table
+    function renderCentersTable(centers) {
+        var tbody = document.querySelector('#centersTable tbody');
+        if (!tbody) return;
+        if (!centers || centers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7fa8;">No centers found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = centers.map(function(c) {
+            var safeName = (c.business_name || '').replace(/'/g, "\\'");
+            var email = c.email || '';
+            var date = formatDate(c.created_at);
+            // Map backend statuses to Active/Inactive and choose actions
+            var isActive = (c.status === 'approved');
+            var statusClass = isActive ? 'active' : 'inactive';
+            var statusText = isActive ? 'Active' : 'Inactive';
+            var actions = '';
+            if (isActive) {
+                actions = `<button class="sa-action-btn" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
+            } else if (c.status === 'suspended') {
+                // suspended centers: show only Activate
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button>`;
+            } else {
+                // pending or other: allow approve or delete
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
+            }
+            return `<tr data-center-id="${c.id}">` +
+                `<td>${c.business_name || ''}</td>` +
+                `<td>${email}</td>` +
+                `<td>${date}</td>` +
+                `<td><span class="sa-status ${statusClass}">${statusText}</span></td>` +
+                `<td>${actions}</td>` +
+                `</tr>`;
+        }).join('');
+    }
+
+    function renderReviewCentersTable(centers) {
+        var tbody = document.querySelector('#adminsTable tbody');
+        if (!tbody) return;
+        if (!centers || centers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7fa8;">No review centers found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = centers.map(function(c) {
+            var isActive = (c.status === 'approved');
+            var statusClass = isActive ? 'active' : 'inactive';
+            var date = formatDate(c.created_at);
+            var safeName = (c.business_name || '').replace(/'/g, "\\'");
+            var actions = '';
+            if (isActive) {
+                actions = `<button class="sa-action-btn" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
+            } else if (c.status === 'suspended') {
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button>`;
+            } else {
+                actions = `<button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${safeName}')">Activate</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
+            }
+            // Document view buttons (show if URLs available) — allow superadmin to view submitted docs even after approval
+            try {
+                var bpUrl = c.business_permit || '';
+                var dtiUrl = c.dti_sec_reg || '';
+                var bpName = bpUrl ? bpUrl.split('/').pop() : '';
+                var dtiName = dtiUrl ? dtiUrl.split('/').pop() : '';
+                var docsBtns = '';
+                if (bpUrl) docsBtns += `<button class="sa-action-btn" onclick="viewDoc('${safeName}', '${c.email||''}', '${date}', 'Business Permit', '${bpName}', '${bpUrl}')">📄 BP</button> `;
+                if (dtiUrl) docsBtns += `<button class="sa-action-btn" onclick="viewDoc('${safeName}', '${c.email||''}', '${date}', 'DTI / SEC', '${dtiName}', '${dtiUrl}')">📄 DTI</button> `;
+                if (bpUrl || dtiUrl) docsBtns = `<button class="sa-action-btn" onclick="openCenterDocs(${c.id})">View Docs</button> ` + docsBtns;
+                if (docsBtns) actions = docsBtns + actions;
+            } catch (e) {}
+            return `<tr data-center-id="${c.id}">` +
+                `<td>${c.business_name || ''}</td>` +
+                `<td>${c.email || ''}</td>` +
+                `<td>${date}</td>` +
+                `<td><span class="sa-status ${statusClass}">${isActive ? 'Active' : (c.status === 'suspended' ? 'Suspended' : 'Inactive')}</span></td>` +
+                `<td>${actions}</td>` +
+                `</tr>`;
+        }).join('');
+    }
+
+    
+
+    function renderStudentsTable(students) {
+        var tbody = document.querySelector('#studentsTable tbody');
+        if (!tbody) return;
+        if (students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No students found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = students.map(function(s) {
+            var statusClass = s.is_verified ? 'active' : 'pending';
+            var statusText = s.is_verified ? 'Verified' : 'Unverified';
+            return '<tr data-user-id="' + s.id + '">' +
+                '<td>' + s.first_name + ' ' + s.last_name + '</td>' +
+                '<td>' + s.email + '</td>' +
+                '<td>' + formatDate(s.created_at) + '</td>' +
+                '<td><span class="sa-status ' + statusClass + '">' + statusText + '</span></td>' +
+                '<td>' +
+                    '<button class="sa-action-btn danger" onclick="deleteStudentConfirm(' + s.id + ', \'' + (s.first_name + ' ' + s.last_name).replace(/'/g, "\\'") + '\')">Delete</button>' +
+                '</td></tr>';
+        }).join('');
+    }
+
+    // Render pending document submissions in the Documents table
+    function renderDocSubmissions(centers) {
+        var tbody = document.querySelector('#docsTable tbody');
+        if (!tbody) return;
+        var pending = (centers || []).filter(function(c){ return c.status === 'pending'; });
+        if (pending.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No pending submissions</td></tr>';
+            return;
+        }
+        tbody.innerHTML = pending.map(function(c) {
+            var bpUrl = c.business_permit || '';
+            var dtiUrl = c.dti_sec_reg || '';
+            var bpName = bpUrl ? bpUrl.split('/').pop() : '';
+            var dtiName = dtiUrl ? dtiUrl.split('/').pop() : '';
+            var statusClass = c.status === 'approved' ? 'active' : (c.status === 'pending' ? 'pending' : 'suspended');
+            var date = formatDate(c.created_at);
+            var safeName = (c.business_name || '').replace(/'/g, "\\'");
+            var bpBtn = bpUrl ? ('<button class="sa-action-btn" onclick="viewDoc(\'' + safeName + '\',\'' + (c.email||'') + '\',\'' + date + '\',\'Business Permit\',\'' + bpName + '\',\'' + bpUrl + '\')">📄 View</button>') : '&mdash;';
+            var dtiBtn = dtiUrl ? ('<button class="sa-action-btn" onclick="viewDoc(\'' + safeName + '\',\'' + (c.email||'') + '\',\'' + date + '\',\'DTI / SEC\',\'' + dtiName + '\',\'' + dtiUrl + '\')">📄 View</button>') : '&mdash;';
+            var actions = c.status === 'pending' ? ('<button class="sa-action-btn approve" onclick="approveCenter(' + c.id + ', \'' + safeName + '\')">Approve</button> <button class="sa-action-btn danger" onclick="rejectCenter(' + c.id + ', \'' + safeName + '\')">Reject</button>') : '<span style="font-size:0.78rem;color:#3a4a6b;">—</span>';
+            return '<tr data-center-id="' + c.id + '">' +
+                '<td>' + (c.business_name || '') + '</td>' +
+                '<td>' + date + '</td>' +
+                '<td>' + bpBtn + '</td>' +
+                '<td>' + dtiBtn + '</td>' +
+                '<td><span class="sa-status ' + statusClass + '">' + (c.status.charAt(0).toUpperCase() + c.status.slice(1)) + '</span></td>' +
+                '<td>' + actions + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    function previewDoc() {
+        if (!_currentDocUrl) {
+            saToast('No file URL available.');
+            closeDocModal();
+            return;
+        }
+        try { window.open(_currentDocUrl, '_blank'); } catch(e) { saToast('Unable to open file.'); }
+        closeDocModal();
+    }
+
+    async function downloadDoc() {
+        if (!_currentDocUrl) { saToast('No file URL available.'); return; }
+        try {
+            const res = await fetch(_currentDocUrl, { mode: 'cors' });
+            if (!res.ok) throw new Error('Failed to fetch file: ' + res.status);
+            const cd = res.headers.get('Content-Disposition') || '';
+            let filename = null;
+            if (cd) {
+                const m = cd.match(/filename\*?=(?:UTF-8''|\")?([^;\"]+)/);
+                if (m && m[1]) filename = decodeURIComponent(m[1].replace(/['\"]/g, ''));
+            }
+            if (!filename) filename = (_currentDocUrl.split('/').pop() || 'download').split('?')[0];
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+            saToast('Download started');
+            closeDocModal();
+        } catch (err) {
+            console.error('downloadDoc failed', err);
+            try { window.open(_currentDocUrl, '_blank'); saToast('Opened file in new tab'); closeDocModal(); } catch (e) { saToast('Unable to download file.'); }
+        }
+    }
+
+    // Open center documents via API and show each in the document viewer
+    function openCenterDocs(centerId) {
+        if (!centerId) return saToast('Invalid center id');
+        AdminAPI.getCenterDocuments(centerId).then(function(payload) {
+            var centerName = payload.business_name || payload.name || '—';
+            var email = payload.email || '';
+            var date = formatDate(payload.created_at || new Date());
+            var docs = payload.documents || [];
+            if (!docs || docs.length === 0) return saToast('No documents for this center');
+            docs.forEach(function(doc) {
+                var docType = (doc.type === 'business_permit') ? 'Business Permit' : (doc.type === 'dti_sec_reg' ? 'DTI / SEC' : (doc.type || 'Document'));
+                var filename = doc.filename || (doc.url ? String(doc.url).split('/').pop() : 'file');
+                var url = doc.url || doc.file || '';
+                viewDoc(centerName, email, date, docType, filename, url);
+            });
+        }).catch(function(err) {
+            saToast('Unable to load documents: ' + (err && err.message ? err.message : 'Request failed'));
+            console.error('openCenterDocs failed', err);
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ACTION FUNCTIONS CONNECTED TO API
+    // ══════════════════════════════════════════════════════════════════════════
+
+    function approveCenter(id, name) {
+        if (!confirm('Approve ' + name + '?')) return;
+        AdminAPI.updateCenterStatus(id, 'approved').then(function() {
+            saToast(name + ' has been approved!');
+            logActivity('approve', name);
+            // animate removal from Admissions table if present
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadCenters(); }, 340);
+            } else {
+                loadCenters();
+            }
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    function rejectCenter(id, name) {
+        if (!confirm('Reject ' + name + '? This will deny their application.')) return;
+        AdminAPI.updateCenterStatus(id, 'rejected').then(function() {
+            saToast(name + ' has been rejected.');
+            logActivity('reject', name);
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadCenters(); }, 340);
+            } else {
+                loadCenters();
+            }
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    function suspendCenter(id, name) {
+        if (!confirm('Suspend ' + name + '? This will disable their access.')) return;
+        AdminAPI.updateCenterStatus(id, 'suspended').then(function() {
+            saToast(name + ' has been suspended.');
+            logActivity('suspend', name);
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadCenters(); }, 340);
+            } else {
+                loadCenters();
+            }
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    function deleteCenterConfirm(id, name) {
+        if (!confirm('DELETE ' + name + '? This action cannot be undone!')) return;
+        AdminAPI.deleteCenter(id).then(function() {
+            saToast(name + ' has been deleted.');
+            logActivity('delete', name);
+            var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadCenters(); }, 340);
+            } else {
+                loadCenters();
+            }
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    function deleteStudentConfirm(id, name) {
+        if (!confirm('DELETE student ' + name + '? This action cannot be undone!')) return;
+        AdminAPI.deleteUser(id).then(function() {
+            saToast(name + ' has been deleted.');
+            logActivity('delete', name);
+            var row = document.querySelector('#studentsTable tbody tr[data-user-id="' + id + '"]');
+            if (row) {
+                row.classList.add('row-removing');
+                setTimeout(function(){ loadStudents(); }, 340);
+            } else {
+                loadStudents();
+            }
+        }).catch(function(err) {
+            saToast('Error: ' + err.message);
+        });
+    }
+
+    // Live update interval handles automatic refresh without full page reload.
+    var _saLiveInterval = null;
+    function startLiveUpdates(intervalMs) {
+        if (_saLiveInterval) return;
+        intervalMs = intervalMs || 15000; // default 15s
+        // initial refresh quickly after starting
+        try { loadDashboardData(); } catch(e) {}
+        _saLiveInterval = setInterval(function() {
+            try { loadDashboardData(); } catch(e) { console.warn('live update failed', e); }
+        }, intervalMs);
+    }
+    function stopLiveUpdates() {
+        if (!_saLiveInterval) return;
+        clearInterval(_saLiveInterval);
+        _saLiveInterval = null;
+    }
+
+    // Load data when dashboard becomes visible and start live updates
+    var originalSaveSession = saveSession;
+    saveSession = function(data) {
+        originalSaveSession(data);
+        setTimeout(loadDashboardData, 100);
+        try { startLiveUpdates(15000); } catch(e) {}
+    };
+
+    // Also load on page load if already logged in and start live updates
+    (function() {
+        var token = getActiveToken();
+        var user = getActiveUser();
+        if (token && user && user.role === 'superadmin') {
+            setTimeout(function(){ loadDashboardData(); startLiveUpdates(15000); }, 100);
+        }
+    })();
+</script>
+</body>
+</html>

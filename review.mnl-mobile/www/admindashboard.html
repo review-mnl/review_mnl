@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Dashboard - review.mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    </head>
+    <body>
+
+<!-- Overlay -->
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Dashboard Toggle Button -->
+<div class="dashboard-toggle" onclick="toggleSidebar()">
+    <span>Messages</span>
+</div>
+
+<!-- Sidebar Panel -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-avatar"></div>
+        <h3>Admin</h3>
+    </div>
+
+    <div class="messages-panel" id="msgList">
+        <h4 class="messages-panel-title">Messages <span id="sidebarUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;"></span></h4>
+        <div id="sidebarMessagesList"></div>
+    </div>
+
+    <!-- Conversation View -->
+    <div class="conversation-panel" id="convPanel" style="display:none;">
+        <div class="conv-header">
+            <button class="conv-back-btn" onclick="closeConv()">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div class="message-avatar" style="width:32px;height:32px;"></div>
+            <span class="conv-name" id="convName"></span>
+        </div>
+        <div class="conv-messages" id="convMessages"></div>
+        <div class="conv-input-row">
+            <input type="text" id="convInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+            <button class="conv-send-btn" onclick="sendMsg()">
+                <span class="material-symbols-outlined">send</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+        <section class="header header-admindashboard">
+            <nav>
+                <a href="admindashboard.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
+                <div class="nav-links">
+                    <ul>
+                        <li><a href="manageenrollments.html">MANAGE ENROLLMENTS</a></li>
+                        <li><a href="schedule.html">SCHEDULE</a></li>
+                        <li><a href="admindashboard.html">DASHBOARD</a></li>
+                        <li><a href="editcenter.html">MY PROFILE</a></li>
+                    </ul>
+                </div>
+                <div class="profile-wrapper" style="position:relative;">
+                    <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#fff;cursor:pointer;">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <div id="profileDropdown" class="profile-dropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">
+                        <a href="editcenter.html" style="display:block;padding:12px 16px;color:#0a4cff;text-decoration:none;border-bottom:1px solid #eee;">My Profile</a>
+                        <button id="logoutBtn" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;font-family:Poppins,sans-serif;font-size:14px;">Logout</button>
+                    </div>
+                </div>
+            </nav>
+            <div class="textbox">
+                <h1 class="welcome-heading">Welcome, <span id="welcomeName">Admin</span>!</h1>
+            </div>
+        </section>
+
+        <section class="admin-dashboard">
+            <div class="admin-container">
+
+                <!-- Stats Cards -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <h3 id="statStudentsLabel">Total Students Enrolled</h3>
+                            <button class="arrow-circle-btn" onclick="window.location.href='managestudents.html'">
+                                <span class="material-symbols-outlined">arrow_forward_ios</span>
+                            </button>
+                        </div>
+                        <div class="stat-number" id="statStudents">—</div>
+                        <p class="stat-date" id="statDate">Loading...</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <h3 id="statPendingLabel">Pending Center Applications</h3>
+                            <button class="arrow-circle-btn" id="pendingArrow">
+                                <span class="material-symbols-outlined">arrow_forward_ios</span>
+                            </button>
+                        </div>
+                        <div class="stat-number" id="statPending">—</div>
+                        <p class="stat-date" id="statPendingSub">Awaiting your review</p>
+                    </div>
+                </div>
+
+                <!-- Pending Centers Section -->
+                <div class="activities-section" id="pendingSection" style="display:none;">
+                    <h3>Pending Center Applications</h3>
+                    <div id="pendingList"></div>
+                </div>
+
+                <!-- Pending Testimonials Section -->
+                <div class="activities-section" id="testiSection" style="display:none;">
+                    <h3>Pending Reviews</h3>
+                    <div id="testiList"></div>
+                </div>
+
+            </div>
+        </section>
+
+        <script src="api.js"></script>
+        <script>
+        if (!isAuthenticated()) { window.location.href = 'login.html'; }
+        var dashboardRole = (getUser() && getUser().role) || 'review_center';
+
+        function formatStatusBadge(status) {
+            var s = String(status || 'pending').toLowerCase();
+            var color = s === 'approved' ? '#1b5e20' : (s === 'rejected' ? '#b71c1c' : '#0d47a1');
+            var bg = s === 'approved' ? '#e8f5e9' : (s === 'rejected' ? '#ffebee' : '#e3f2fd');
+            var label = s.charAt(0).toUpperCase() + s.slice(1);
+            return '<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;color:' + color + ';background:' + bg + ';">' + escHtml(label) + '</span>';
+        }
+
+        async function updateEnrollmentStatus(enrollmentId, status) {
+            try {
+                await CentersAPI.updateEnrollmentStatus(enrollmentId, status);
+                
+            } catch (err) {
+                alert(err.message || 'Failed to update enrollment status.');
+            }
+        }
+
+        // ── Load dashboard data ─────────────────────────────────────────────
+        (async function loadDashboard() {
+            try {
+                if (dashboardRole === 'review_center') {
+                    document.getElementById('centerEnrollmentsSection').style.display = '';
+                    document.getElementById('pendingSection').style.display = 'none';
+                    document.getElementById('testiSection').style.display = 'none';
+
+                    var filterEl = document.getElementById('enrollmentStatusFilter');
+                    var sortEl = document.getElementById('enrollmentSort');
+                    if (filterEl) filterEl.addEventListener('change', loadCenterEnrollments);
+                    if (sortEl) sortEl.addEventListener('change', loadCenterEnrollments);
+
+                    
+                    return;
+                }
+
+                const [students, pending, testimonials] = await Promise.all([
+                    AdminAPI.getStudents(),
+                    AdminAPI.getPendingCenters(),
+                    AdminAPI.getPendingTestimonials()
+                ]);
+
+                // Student count
+                const studentList = Array.isArray(students) ? students : (students.students || []);
+                document.getElementById('statStudents').textContent = studentList.length;
+                document.getElementById('statDate').textContent = 'As of ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+                // Pending centers
+                const pendingList = Array.isArray(pending) ? pending : (pending.centers || []);
+                document.getElementById('statPending').textContent = pendingList.length;
+                if (pendingList.length > 0) {
+                    const sec  = document.getElementById('pendingSection');
+                    const list = document.getElementById('pendingList');
+                    sec.style.display = '';
+                    pendingList.forEach(function(c) {
+                        const item = document.createElement('div');
+                        item.style.cssText = 'background:#f9fafb;border-radius:10px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+                        item.innerHTML =
+                            '<div>' +
+                                '<strong style="color:#0d1b4b;">' + escHtml(c.name) + '</strong>' +
+                                '<p style="color:#666;font-size:13px;margin:2px 0 0;">' + escHtml(c.email || '') + '</p>' +
+                            '</div>' +
+                            '<div style="display:flex;gap:8px;">' +
+                                '<button onclick="updateCenter(' + c.id + ',\'approved\',this)" style="padding:7px 14px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>' +
+                                '<button onclick="updateCenter(' + c.id + ',\'rejected\',this)" style="padding:7px 14px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>' +
+                            '</div>';
+                        list.appendChild(item);
+                    });
+                    document.getElementById('pendingArrow').addEventListener('click', function(){
+                        sec.style.display = sec.style.display === 'none' ? '' : 'none';
+                    });
+                }
+
+                // Pending testimonials
+                const testiArr = Array.isArray(testimonials) ? testimonials : (testimonials.testimonials || []);
+                if (testiArr.length > 0) {
+                    const tSec  = document.getElementById('testiSection');
+                    const tList = document.getElementById('testiList');
+                    tSec.style.display = '';
+                    testiArr.forEach(function(t) {
+                        const item = document.createElement('div');
+                        item.id = 'testi-' + t.id;
+                        item.style.cssText = 'background:#f9fafb;border-radius:10px;padding:14px 18px;margin-bottom:10px;';
+                        item.innerHTML =
+                            '<p style="color:#555;font-size:13px;margin:0 0 8px;">"' + escHtml(t.content) + '"</p>' +
+                            '<p style="color:#888;font-size:11px;margin:0 0 8px;">By ' + escHtml(t.student_name || 'Student') + ' — ' + escHtml(t.center_name || '') + '</p>' +
+                            '<div style="display:flex;gap:8px;">' +
+                                '<button onclick="approveTesti(' + t.id + ')" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>' +
+                                '<button onclick="deleteTesti(' + t.id + ')" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Delete</button>' +
+                            '</div>';
+                        tList.appendChild(item);
+                    });
+                }
+            } catch(err) {
+                console.error('Dashboard load error:', err);
+            }
+        })();
+
+        async function updateCenter(id, status, btn) {
+            btn.disabled = true;
+            try {
+                await AdminAPI.updateCenterStatus(id, status);
+                btn.closest('div[style]').innerHTML = '<em style="color:#555;font-size:13px;">' + (status === 'approved' ? '✅ Approved' : '❌ Rejected') + '</em>';
+                const cur = parseInt(document.getElementById('statPending').textContent) || 0;
+                document.getElementById('statPending').textContent = Math.max(0, cur - 1);
+            } catch(err) { alert(err.message); btn.disabled = false; }
+        }
+
+        async function approveTesti(id) {
+            try {
+                await AdminAPI.approveTestimonial(id);
+                const el = document.getElementById('testi-' + id);
+                if (el) el.innerHTML = '<em style="color:#2e7d32;font-size:13px;">✅ Approved</em>';
+            } catch(err) { alert(err.message); }
+        }
+
+        async function deleteTesti(id) {
+            if (!confirm('Delete this review?')) return;
+            try {
+                await AdminAPI.deleteTestimonial(id);
+                const el = document.getElementById('testi-' + id);
+                if (el) el.remove();
+            } catch(err) { alert(err.message); }
+        }
+
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        (function(){
+            const btn = document.getElementById('profileBtn');
+            const dd = document.getElementById('profileDropdown');
+            const logout = document.getElementById('logoutBtn');
+            if(!btn || !dd) return;
+            btn.addEventListener('click', function(e){
+                e.stopPropagation();
+                const isOpen = dd.style.display === 'block';
+                dd.style.display = isOpen ? 'none' : 'block';
+                btn.setAttribute('aria-expanded', String(!isOpen));
+            });
+            logout.addEventListener('click', function(){ clearSession(); window.location.href = 'index.html'; });
+            document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+        })();
+        // set welcome name from session; for center accounts prefer the center business name
+        (async function(){
+            try{
+                var user = getUser();
+                if (!user) { window.location.href = 'login.html'; return; }
+                var welcomeEl = document.getElementById('welcomeName');
+                if (!welcomeEl) return;
+                    if (user.role === 'admin' || user.role === 'review_center') {
+                    try {
+                        const center = await CentersAPI.getMyProfile();
+                        if (center && center.business_name) {
+                            welcomeEl.textContent = center.business_name;
+                            try {
+                                var uid = (user && (user.id || user._id || user.email)) || null;
+                                if (uid) {
+                                    try { setOriginalUser(uid, { business_name: center.business_name }); } catch(e) {}
+                                }
+                            } catch(e) {}
+                        } else {
+                            welcomeEl.textContent = user.name || 'Admin';
+                        }
+                    } catch(err) {
+                        welcomeEl.textContent = user.name || 'Admin';
+                    }
+                } else {
+                    welcomeEl.textContent = user.name || 'User';
+                }
+            }catch(e){}
+        })();
+        loadConversations();
+        setInterval(function(){
+            loadConversations();
+        }, 8000);
+
+        var activeConversation = null;
+        var activeConversationKey = null;
+        var chatPollTimer = null;
+
+        function formatDate(value) {
+            if (!value) return '';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function renderConversationList(conversations) {
+            var wrap = document.getElementById('sidebarMessagesList');
+            var unreadBadge = document.getElementById('sidebarUnreadCount');
+            if (!wrap) return;
+
+            var data = Array.isArray(conversations) ? conversations : [];
+            var unreadCount = data.reduce(function(acc, item){ return acc + Number(item.unread_count || 0); }, 0);
+            if (unreadBadge) {
+                unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                unreadBadge.textContent = String(unreadCount);
+            }
+
+            if (!data.length) {
+                wrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">No conversations yet.</p>';
+                return;
+            }
+
+            wrap.innerHTML = data.map(function(item) {
+                var hasUnread = Number(item.unread_count || 0) > 0;
+                return '<div class="message-thread" style="background:' + (hasUnread ? '#eef4ff' : '#fff') + ';cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
+                    + '<div class="message-avatar"></div>'
+                    + '<div class="message-info">'
+                    + '<span class="message-sender" style="font-weight:' + (hasUnread ? '700' : '500') + ';">' + escHtml(item.other_name || 'Student') + '</span>'
+                    + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
+                    + '</div>'
+                    + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+                    + '<span class="message-time">' + escHtml(formatDate(item.last_timestamp)) + '</span>'
+                    + (hasUnread ? ('<span style="font-size:10px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 6px;font-weight:700;">' + Number(item.unread_count) + '</span>') : '')
+                    + '</div>'
+                    + '</div>';
+            }).join('');
+        }
+
+        async function loadConversations() {
+            try {
+                var res = await MessageAPI.getConversations();
+                var conversations = (res && res.conversations) ? res.conversations : [];
+                console.log('[Chat][Center] Conversations loaded', {
+                    userId: (getUser() && getUser().id) || null,
+                    count: conversations.length,
+                });
+                window._conversationMap = {};
+                conversations.forEach(function(c) {
+                    window._conversationMap[String(c.other_user_id)] = c;
+                });
+                renderConversationList(conversations);
+            } catch (e) {
+                console.warn('Failed to load conversations', e);
+                renderConversationList([]);
+            }
+        }
+
+        function renderThreadMessages(messages) {
+            const wrap = document.getElementById('convMessages');
+            if (!wrap) return;
+            const me = getUser();
+            console.log('[Chat][Center] Messages before render', messages || []);
+            console.log('[Chat][Center] Rendering messages', {
+                count: (messages || []).length,
+                conversationKey: activeConversationKey,
+            });
+            wrap.innerHTML = (messages || []).map(function(msg) {
+                var outgoing = me && Number(msg.sender_id) === Number(me.id);
+                return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
+                    + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(msg.message || '') + '</div>'
+                    + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:' + (outgoing ? 'right' : 'left') + ';">' + escHtml(formatDateTime(msg.created_at)) + '</div>'
+                    + '</div>';
+            }).join('');
+            wrap.scrollTop = wrap.scrollHeight;
+        }
+
+        async function openConv(conversation) {
+            if (!conversation || !conversation.other_user_id) return;
+            var nextKey = String(conversation.other_user_id);
+            var isSwitchingConversation = activeConversationKey !== nextKey;
+            activeConversation = conversation;
+            activeConversationKey = nextKey;
+            document.getElementById('convName').textContent = conversation.other_name || 'Chat';
+            document.getElementById('msgList').style.display = 'none';
+            document.getElementById('convPanel').style.display = 'flex';
+
+            console.log('[Chat][Center] Opening conversation', {
+                conversationKey: nextKey,
+                switching: isSwitchingConversation,
+            });
+            await loadActiveThread();
+
+            if (chatPollTimer) clearInterval(chatPollTimer);
+            chatPollTimer = setInterval(function(){
+                if (activeConversation) loadActiveThread();
+            }, 5000);
+        }
+
+        function openConvByKey(otherUserId, centerId) {
+            console.log('[Chat][Center] Conversation click', {
+                otherUserId,
+                centerId,
+            });
+            var key = String(otherUserId);
+            var conv = window._conversationMap && window._conversationMap[key];
+            if (!conv) {
+                conv = {
+                    other_user_id: Number(otherUserId),
+                    center_id: Number(centerId || 0),
+                    enrollment_id: null,
+                    other_name: 'Student',
+                };
+            }
+            openConv(conv);
+        }
+
+        async function openChatFromEnrollment(studentId, centerId, enrollmentId) {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.querySelector('.sidebar-overlay');
+            if (sidebar && !sidebar.classList.contains('active')) sidebar.classList.add('active');
+            if (overlay && !overlay.classList.contains('active')) overlay.classList.add('active');
+
+            var key = String(studentId);
+            var known = window._conversationMap && window._conversationMap[key];
+
+            await openConv({
+                other_user_id: Number(studentId),
+                center_id: Number(centerId || 0),
+                enrollment_id: Number(enrollmentId || 0) || null,
+                other_name: (known && known.other_name) || ('Student #' + studentId),
+            });
+        }
+
+        async function loadActiveThread() {
+            if (!activeConversation) return;
+            try {
+                const res = await MessageAPI.getThread(activeConversation.other_user_id, null);
+                const messages = (res && res.messages) ? res.messages : [];
+                console.log('[Chat][Center] Thread loaded', {
+                    withUserId: activeConversation.other_user_id,
+                    centerId: activeConversation.center_id,
+                    count: messages.length,
+                });
+                renderThreadMessages(messages);
+                await MessageAPI.markThreadAsRead(activeConversation.other_user_id, null);
+                await loadConversations();
+            } catch (e) {
+                console.warn('Failed to load active thread', e);
+            }
+        }
+
+        function appendOutgoingMessage(text) {
+            const wrap = document.getElementById('convMessages');
+            if (!wrap) return;
+            var ts = formatDateTime(new Date().toISOString());
+            var html = '<div class="conv-bubble outgoing">'
+                + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(text) + '</div>'
+                + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:right;">' + escHtml(ts) + '</div>'
+                + '</div>';
+            wrap.insertAdjacentHTML('beforeend', html);
+            wrap.scrollTop = wrap.scrollHeight;
+        }
+
+        function closeConv() {
+            activeConversation = null;
+            activeConversationKey = null;
+            if (chatPollTimer) {
+                clearInterval(chatPollTimer);
+                chatPollTimer = null;
+            }
+            document.getElementById('convPanel').style.display = 'none';
+            document.getElementById('msgList').style.display = 'block';
+            document.getElementById('convInput').value = '';
+        }
+
+        async function sendMsg() {
+            const input = document.getElementById('convInput');
+            const text = input.value.trim();
+            if (!text || !activeConversation) return;
+
+            console.log('[Chat][Center] Sending message', {
+                senderId: (getUser() && getUser().id) || null,
+                receiverId: activeConversation.other_user_id,
+                centerId: activeConversation.center_id,
+                enrollmentId: activeConversation.enrollment_id,
+                length: text.length,
+            });
+
+            input.disabled = true;
+            try {
+                await MessageAPI.send({
+                    receiver_id: activeConversation.other_user_id,
+                    enrollment_id: activeConversation.enrollment_id,
+                    message: text,
+                });
+                input.value = '';
+                await loadActiveThread();
+            } catch (e) {
+                alert((e && e.message) ? e.message : 'Failed to send message.');
+            } finally {
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
+        window.openConvByKey = openConvByKey;
+        window.openChatFromEnrollment = openChatFromEnrollment;
+        </script>
+
+        <section class="footer">
+            <div class="footer-container">
+                <div class="footer-left">
+                    <h2>review.mnl</h2>
+                    <p>Manila, Philippines</p>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-column">
+                        <a href="manageenrollments.html">Manage Enrollments</a>
+                        <a href="schedule.html">Schedule</a>
+                        <a href="admindashboard.html">Dashboard</a>
+                        <a href="editcenter.html">My Profile</a>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <a href="#" class="social-icon">f</a>
+                    <a href="#" class="social-icon">in</a>
+                    <a href="#" class="social-icon">▶</a>
+                    <a href="#" class="social-icon">✉</a>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>
+﻿
+
+
+

@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Edit Center - review.mnl</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    </head>
+    <body>
+        <section class="header header-admindashboard">
+            <nav>
+                <a href="admindashboard.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
+                <div class="nav-links">
+                    <ul>
+                        <li><a href="manageenrollments.html">MANAGE ENROLLMENTS</a></li>
+                        <li><a href="schedule.html">SCHEDULE</a></li>
+                        <li><a href="admindashboard.html">DASHBOARD</a></li>
+                        <li><a href="editcenter.html">MY PROFILE</a></li>
+                    </ul>
+                </div>
+                <div class="profile-wrapper" style="position:relative;">
+                    <button id="profileBtn" class="profile-icon" aria-expanded="false" style="background:none;border:none;color:#fff;cursor:pointer;">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <div id="profileDropdown" class="profile-dropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">
+                        <a href="editcenter.html" style="display:block;padding:12px 16px;color:#0a4cff;text-decoration:none;border-bottom:1px solid #eee;">My Profile</a>
+                        <button id="logoutBtn" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;font-family:Poppins,sans-serif;font-size:14px;">Logout</button>
+                    </div>
+                </div>
+            </nav>
+            <div class="textbox">
+                <h1 class="welcome-heading">Welcome, <span id="welcomeName">Admin</span>!</h1>
+            </div>
+
+            <div class="center-header-content">
+                <div class="center-logo" id="centerLogoPreview"></div>
+                <div class="center-info">
+                    <div class="center-name-row">
+                        <h1 id="centerNameDisplay">Name of Review Center</h1>
+                        <button class="edit-center-profile-btn" onclick="openModal('profileModal')">
+                            <span class="material-symbols-outlined">edit</span>
+                            Edit Profile
+                        </button>
+                    </div>
+                    <p class="center-description" id="centerDescDisplay">Description.....</p>
+                    <div class="center-rating">
+                        <span class="stars">★★★★★</span>
+                        <span class="rating-count">5.0 (10)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <script src="api.js"></script>
+        <script>
+            if (!isAuthenticated()) { window.location.href = 'login.html'; }
+            (function(){
+                const btn = document.getElementById('profileBtn');
+                const dd = document.getElementById('profileDropdown');
+                const logout = document.getElementById('logoutBtn');
+                if(!btn || !dd) return;
+                btn.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    const isOpen = dd.style.display === 'block';
+                    dd.style.display = isOpen ? 'none' : 'block';
+                    btn.setAttribute('aria-expanded', String(!isOpen));
+                });
+                logout.addEventListener('click', function(){
+                    clearSession();
+                    window.location.href = 'index.html';
+                });
+                document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
+            })();
+
+            function escHtml(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function starText(rating) {
+                const r = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+                return '★'.repeat(r) + '☆'.repeat(5 - r);
+            }
+
+            function renderCenterTestimonials(items) {
+                const listEl = document.getElementById('centerTestimonialsList');
+                if (!listEl) return;
+                if (!items || items.length === 0) {
+                    listEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">No feedback yet for your review center.</p>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                items.forEach(function(t) {
+                    const fallbackName = [t.first_name || '', t.last_name || ''].join(' ').trim();
+                    const name = (t.username || fallbackName || 'Anonymous').trim();
+                    const date = t.created_at ? new Date(t.created_at) : new Date();
+                    const dateText = date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const card = document.createElement('div');
+                    card.className = 'testimonial-card';
+                    card.style.marginBottom = '10px';
+                    card.innerHTML =
+                        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;">' +
+                            '<strong style="color:#0d1b4b;">' + escHtml(name) + '</strong>' +
+                            '<span style="font-size:12px;color:#6b7280;">' + escHtml(dateText) + '</span>' +
+                        '</div>' +
+                        '<div style="color:#f59e0b;margin-bottom:8px;">' + starText(t.rating) + '</div>' +
+                        '<p style="color:#555;font-size:0.92rem;margin:0;">' + escHtml(t.content || '') + '</p>';
+                    listEl.appendChild(card);
+                });
+            }
+
+            async function loadCenterTestimonials() {
+                const listEl = document.getElementById('centerTestimonialsList');
+                const sortEl = document.getElementById('centerFeedbackSort');
+                if (!listEl) return;
+                listEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">Loading feedback...</p>';
+                try {
+                    const sort = sortEl ? sortEl.value : 'latest';
+                    const resp = await CentersAPI.getMyTestimonials(sort);
+                    const items = Array.isArray(resp) ? resp : (resp.testimonials || []);
+                    renderCenterTestimonials(items);
+                } catch (e) {
+                    listEl.innerHTML = '<p style="color:#d32f2f;font-size:0.95rem;">Failed to load feedback.</p>';
+                }
+            }
+
+            // Load center profile from API
+            (async function(){
+                function parseArrayField(raw) {
+                    if (!raw) return [];
+                    if (Array.isArray(raw)) return raw;
+                    if (typeof raw === 'string') {
+                        const trimmed = raw.trim();
+                        if (!trimmed) return [];
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            return Array.isArray(parsed) ? parsed : [];
+                        } catch (e) {
+                            return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                        }
+                    }
+                    return [];
+                }
+
+                try {
+                    const center = await CentersAPI.getMyProfile();
+                    if (center.business_name) {
+                        document.getElementById('centerNameDisplay').textContent = center.business_name;
+                        // Use center business name for welcome if present
+                        try { if (document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = center.business_name; } catch(e){}
+                    }
+                    if (center.address) {
+                        document.getElementById('centerDescDisplay').textContent = center.address;
+                    }
+                    if (center.logo_url) {
+                        const logo = document.getElementById('centerLogoPreview');
+                        if (logo) {
+                            logo.style.backgroundImage = 'url(' + center.logo_url + ')';
+                            logo.style.backgroundSize = 'cover';
+                            logo.style.backgroundPosition = 'center';
+                        }
+                    }
+                    if (center.description) {
+                        document.getElementById('aboutDisplay').textContent = center.description;
+                    }
+                    
+                    const programTagsEl = document.getElementById('programTagsDisplay');
+                    if (programTagsEl) {
+                        const programs = parseArrayField(center.programs);
+                        if (programs.length > 0) {
+                            programTagsEl.innerHTML = '';
+                            programs.forEach(function(program) {
+                                const btn = document.createElement('button');
+                                btn.className = 'program-tag';
+                                btn.textContent = String(program).trim();
+                                programTagsEl.appendChild(btn);
+                            });
+                        }
+                    }
+
+                    const achievementsEl = document.getElementById('achievementListDisplay');
+                    if (achievementsEl) {
+                        const achievements = parseArrayField(center.achievements);
+                        if (achievements.length > 0) {
+                            achievementsEl.innerHTML = '';
+                            achievements.forEach(function(itemText) {
+                                const item = document.createElement('div');
+                                item.className = 'achievement-item';
+                                item.innerHTML = '<span class="trophy-icon">🏆</span><p></p>';
+                                item.querySelector('p').textContent = String(itemText).trim();
+                                achievementsEl.appendChild(item);
+                            });
+                        }
+                    }
+
+                    var rating = Math.round(center.avg_rating || 0);
+                    var starsEl = document.querySelector('.center-rating .stars');
+                    if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+                    var ratingCount = document.querySelector('.center-rating .rating-count');
+                    if (ratingCount) ratingCount.textContent = (center.avg_rating || 0).toFixed(1) + ' (' + (center.review_count || 0) + ')';
+                } catch(e) {
+                    // Not yet approved or no internet — display defaults are fine
+                }
+            })();
+                // set welcome name from session (like student profile)
+                (function(){
+                    try{
+                        var user = getUser();
+                        if (user && document.getElementById('welcomeName')) {
+                            document.getElementById('welcomeName').textContent = user.name || 'Admin';
+                        }
+                    }catch(e){}
+                })();
+
+            window.addEventListener('load', function() {
+                const sortEl = document.getElementById('centerFeedbackSort');
+                if (sortEl) sortEl.addEventListener('change', loadCenterTestimonials);
+                loadCenterTestimonials();
+            });
+        </script>
+
+        <section class="center-details">
+            <div class="center-left">
+                <div class="about-section">
+                    <div class="section-header-edit">
+                        <h2>About</h2>
+                        <button class="edit-btn-small" onclick="openModal('aboutModal')">Edit</button>
+                    </div>
+                    <p id="aboutDisplay">Description</p>
+                </div>
+
+                <div class="programs-section">
+                    <div class="section-header-edit">
+                        <h2>Programs Offered</h2>
+                        <button class="edit-btn-small" onclick="openModal('programsModal')">Edit</button>
+                    </div>
+                    <div class="program-tags" id="programTagsDisplay">
+                        <button class="program-tag">Civil Engineering</button>
+                        <button class="program-tag">Architecture</button>
+                        <button class="program-tag">Nursing</button>
+                        <button class="program-tag">Accountancy</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="achievements-card">
+                <div class="section-header-edit">
+                    <h2>Achievements</h2>
+                    <button class="edit-btn-small" onclick="openModal('achievementsModal')">Edit</button>
+                </div>
+                <div class="achievement-list" id="achievementListDisplay">
+                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
+                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
+                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
+                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
+                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
+                    <div class="achievement-item"><span class="trophy-icon">🏆</span><p>Achievement Achievement Achievement</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="gap1"></section>
+        <section style="background:#f4f6fb;padding:28px 6% 40px;">
+            <div style="max-width:1200px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(10,76,255,0.07);padding:20px 22px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+                    <h2 style="font-size:20px;font-weight:700;color:#0d1b4b;margin:0;">Student Feedback / Testimonials</h2>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <label for="centerFeedbackSort" style="font-size:12px;color:#666;">Sort:</label>
+                        <select id="centerFeedbackSort" style="padding:7px 10px;border:1.5px solid #dde3f0;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;">
+                            <option value="latest">Latest</option>
+                            <option value="highest">Highest Rating</option>
+                            <option value="lowest">Lowest Rating</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="centerTestimonialsList"></div>
+            </div>
+        </section>
+        <!-- Modal: Edit Schedule -->
+        <div class="modal-overlay" id="scheduleModal">
+            <div class="modal-box" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3>Edit Operating Schedule</h3>
+                    <button class="modal-close" onclick="closeModal('scheduleModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:13px;color:#666;margin-bottom:16px;">Toggle days open and set operating hours for each.</p>
+                    <div id="scheduleInputRows" style="display:flex;flex-direction:column;gap:12px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('scheduleModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveSchedule()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Edit Center Profile -->
+        <div class="modal-overlay" id="profileModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Edit Center Profile</h3>
+                    <button class="modal-close" onclick="closeModal('profileModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label>Center Name</label>
+                    <input type="text" id="centerNameInput" placeholder="Name of Review Center">
+                    <label>Location</label>
+                    <div style="position: relative;">
+                        <input type="text" id="centerLocationInput" placeholder="Search for your location..." style="width: 100%; border: 1.5px solid #ddd; padding: 10px 14px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13.5px; margin-bottom: 12px; transition: border-color 0.2s;" onfocus="this.style.border='1.5px solid #0a4cff'" onblur="this.style.border='1.5px solid #ddd'">
+                        <div id="locationSuggestions" style="position: absolute; top: 43px; left: 0; right: 0; background: white; border: 1.5px solid #ddd; border-radius: 8px; z-index: 9999; max-height: 160px; overflow-y: auto; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>
+                    </div>
+                    <div id="mapPreview" style="height: 200px; width: 100%; border-radius: 8px; margin-bottom: 15px; background: #e8eaed; z-index: 1;"></div>
+                    <label>Profile Image</label>
+                    <input type="file" id="centerImageInput" accept="image/*">
+                    <div class="modal-img-preview" id="modalImgPreview"></div>
+                    <div id="centerProfileFeedback" class="profile-feedback" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('profileModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveProfile()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Edit About -->
+        <div class="modal-overlay" id="aboutModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Edit About</h3>
+                    <button class="modal-close" onclick="closeModal('aboutModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label>About the Center</label>
+                    <textarea id="aboutInput" rows="6" placeholder="Write about the review center..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('aboutModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveAbout()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Edit Programs Offered -->
+        <div class="modal-overlay" id="programsModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Edit Programs Offered</h3>
+                    <button class="modal-close" onclick="closeModal('programsModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:13px;color:#666;margin-bottom:14px;">Select the programs to display:</p>
+                    <div class="program-checklist">
+                        <label class="program-check-item"><input type="checkbox" value="Civil Engineering" checked> Civil Engineering</label>
+                        <label class="program-check-item"><input type="checkbox" value="Architecture" checked> Architecture</label>
+                        <label class="program-check-item"><input type="checkbox" value="Nursing" checked> Nursing</label>
+                        <label class="program-check-item"><input type="checkbox" value="Accountancy" checked> Accountancy</label>
+                        <label class="program-check-item"><input type="checkbox" value="Medical Technology"> Medical Technology</label>
+                        <label class="program-check-item"><input type="checkbox" value="Education"> Education</label>
+                        <label class="program-check-item"><input type="checkbox" value="Electrical Engineering"> Electrical Engineering</label>
+                        <label class="program-check-item"><input type="checkbox" value="Mechanical Engineering"> Mechanical Engineering</label>
+                        <label class="program-check-item"><input type="checkbox" value="Electronics Engineering"> Electronics Engineering</label>
+                        <label class="program-check-item"><input type="checkbox" value="Chemical Engineering"> Chemical Engineering</label>
+                        <label class="program-check-item"><input type="checkbox" value="Geodetic Engineering"> Geodetic Engineering</label>
+                        <label class="program-check-item"><input type="checkbox" value="Dentistry"> Dentistry</label>
+                        <label class="program-check-item"><input type="checkbox" value="Pharmacy"> Pharmacy</label>
+                        <label class="program-check-item"><input type="checkbox" value="Physical Therapy"> Physical Therapy</label>
+                        <label class="program-check-item"><input type="checkbox" value="Law"> Law</label>
+                    </div>
+                    <label class="program-check-item program-check-others">
+                        <input type="checkbox" id="othersCheckbox" onchange="toggleOthersInput(this)"> Others:
+                        <input type="text" id="othersInput" placeholder="Type program name..." disabled
+                            style="margin-left:8px;flex:1;padding:4px 10px;border:1.5px solid #ddd;border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px;">
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('programsModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="savePrograms()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Edit Achievements -->
+        <div class="modal-overlay" id="achievementsModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Edit Achievements</h3>
+                    <button class="modal-close" onclick="closeModal('achievementsModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:13px;color:#666;margin-bottom:14px;">Add or remove achievements. Each entry will show with a 🏆 icon.</p>
+                    <div id="achievementsInputList" style="display:flex;flex-direction:column;gap:10px;"></div>
+                    <button onclick="addAchievementInput()" style="margin-top:14px;display:inline-flex;align-items:center;gap:6px;background:none;border:1.5px dashed #0a4cff;color:#0a4cff;padding:8px 16px;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;cursor:pointer;">
+                        <span class="material-symbols-outlined" style="font-size:16px;">add</span> Add Achievement
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('achievementsModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveAchievements()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <section class="footer">
+            <div class="footer-container">
+                <div class="footer-left">
+                    <h2>review.mnl</h2>
+                    <p>Manila, Philippines</p>
+                </div>
+                
+                <div class="footer-center">
+                    <div class="footer-column">
+                        <a href="manageenrollments.html">Manage Enrollments</a>
+                        <a href="schedule.html">Schedule</a>
+                        <a href="admindashboard.html">Dashboard</a>
+                        <a href="editcenter.html">My Profile</a>
+                    </div>
+                </div>
+                
+                <div class="footer-right">
+                    <a href="#" class="social-icon">f</a>
+                    <a href="#" class="social-icon">in</a>
+                    <a href="#" class="social-icon">▶</a>
+                    <a href="#" class="social-icon">✉</a>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            function openModal(id) {
+                if (id === 'profileModal') {
+                    const nameInput = document.getElementById('centerNameInput');
+                    const descInput = document.getElementById('centerLocationInput');
+                    const dispName = document.getElementById('centerNameDisplay').innerText;
+                    const dispDesc = document.getElementById('centerDescDisplay').innerText;
+                    nameInput.value = dispName !== 'Name of Review Center' ? dispName : '';
+                    descInput.value = dispDesc !== 'Description.....' ? dispDesc : '';
+                }
+                if (id === 'aboutModal') {
+                    const aboutInput = document.getElementById('aboutInput');
+                    const dispAbout = document.getElementById('aboutDisplay').innerText;
+                    aboutInput.value = dispAbout !== 'Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description Description' ? dispAbout : '';
+                }
+                if (id === 'achievementsModal') {
+                    const inputList = document.getElementById('achievementsInputList');
+                    inputList.innerHTML = '';
+                    const items = document.querySelectorAll('#achievementListDisplay .achievement-item p');
+                    items.forEach(function(p) {
+                        addAchievementInput(p.textContent.trim());
+                    });
+                    if (items.length === 0) addAchievementInput('');
+                }
+                if (id === 'programsModal') {
+                    const tags = document.querySelectorAll('#programTagsDisplay .program-tag');
+                    const currentPrograms = Array.from(tags).map(t => t.textContent.trim());
+                    
+                    const checkboxes = document.querySelectorAll('#programsModal .program-checklist input[type=checkbox]:not(#othersCheckbox)');
+                    const predefined = Array.from(checkboxes).map(cb => cb.value);
+                    
+                    checkboxes.forEach(cb => {
+                        cb.checked = currentPrograms.includes(cb.value);
+                    });
+                    
+                    const others = currentPrograms.filter(p => !predefined.includes(p));
+                    const othersCb = document.getElementById('othersCheckbox');
+                    const othersInput = document.getElementById('othersInput');
+                    
+                    if (others.length > 0) {
+                        othersCb.checked = true;
+                        othersInput.value = others.join(', ');
+                        toggleOthersInput(othersCb);
+                    } else {
+                        othersCb.checked = false;
+                        othersInput.value = '';
+                        toggleOthersInput(othersCb);
+                    }
+                }
+                document.getElementById(id).classList.add('active');
+            }
+            function closeModal(id) {
+                if (id === 'profileModal') {
+                    clearCenterProfileFeedback();
+                    const saveBtn = document.querySelector('#profileModal .modal-save-btn');
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                    }
+                }
+                document.getElementById(id).classList.remove('active');
+            }
+
+            function showCenterProfileFeedback(type, message) {
+                var el = document.getElementById('centerProfileFeedback');
+                if (!el) return;
+                el.className = 'profile-feedback ' + (type === 'success' ? 'profile-feedback-success' : 'profile-feedback-error');
+                el.textContent = message || '';
+                el.style.display = message ? 'block' : 'none';
+            }
+
+            function clearCenterProfileFeedback() {
+                var el = document.getElementById('centerProfileFeedback');
+                if (!el) return;
+                el.className = 'profile-feedback';
+                el.textContent = '';
+                el.style.display = 'none';
+            }
+            // Close modal when clicking outside box
+            document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) overlay.classList.remove('active');
+                });
+            });
+            // Live image preview inside modal
+            document.getElementById('centerImageInput').addEventListener('change', function() {
+                const file = this.files[0];
+                const preview = document.getElementById('modalImgPreview');
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.style.backgroundImage = 'url(' + e.target.result + ')';
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            async function saveProfile() {
+                const saveBtn = document.querySelector('#profileModal .modal-save-btn');
+                const originalBtnText = saveBtn ? saveBtn.textContent : 'Save Changes';
+                const name = document.getElementById('centerNameInput').value.trim();
+                const location = document.getElementById('centerLocationInput').value.trim();
+                const file = document.getElementById('centerImageInput').files[0];
+                clearCenterProfileFeedback();
+
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+                }
+
+                if (name) document.getElementById('centerNameDisplay').innerText = name;
+                if (location) document.getElementById('centerDescDisplay').innerText = location;
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const logo = document.getElementById('centerLogoPreview');
+                        logo.style.backgroundImage = 'url(' + e.target.result + ')';
+                        logo.style.backgroundSize = 'cover';
+                        logo.style.backgroundPosition = 'center';
+                    };
+                    reader.readAsDataURL(file);
+                }
+                // persist profile changes to session (explicit profile edit)
+                try {
+                    var u = getUser() || {};
+                    if (name) { u.name = name; u.business_name = name; }
+                    if (location) u.address = location;
+                    setSessionUser(u, true);
+                } catch(e) {}
+
+                // Persist to backend; upload logo first (if present), then update other fields
+                try {
+                    if (file) {
+                        const fd = new FormData();
+                        fd.append('logo', file);
+                        const centerResp = await CentersAPI.uploadLogo(fd);
+                        if (centerResp && centerResp.logo_url) {
+                            const logo = document.getElementById('centerLogoPreview');
+                            logo.style.backgroundImage = 'url(' + centerResp.logo_url + ')';
+                            logo.style.backgroundSize = 'cover';
+                            logo.style.backgroundPosition = 'center';
+                        }
+                        // Update session user with returned center info
+                        try {
+                            const u2 = getUser() || {};
+                            if (centerResp.business_name) u2.business_name = centerResp.business_name;
+                            if (centerResp.logo_url) u2.logo_url = centerResp.logo_url;
+                            setSessionUser(u2, true);
+                        } catch(e) {}
+                    }
+                    const body = {};
+                    if (name) body.business_name = name;
+                    if (location) body.address = location;
+                    if (Object.keys(body).length > 0) {
+                        const updated = await CentersAPI.updateMyProfile(body);
+                        // Refresh session user from server if available
+                        try {
+                            const u3 = getUser() || {};
+                            if (updated && updated.business_name) u3.business_name = updated.business_name;
+                            if (updated && updated.address) u3.address = updated.address;
+                            setSessionUser(u3, true);
+                        } catch(e) {}
+                    }
+                    showCenterProfileFeedback('success', 'Profile saved successfully.');
+                    setTimeout(function(){ closeModal('profileModal'); }, 800);
+                } catch(e) {
+                    console.warn('Saving center profile failed', e);
+                    showCenterProfileFeedback('error', (e && e.message) ? e.message : 'Failed to save profile. Please try again.');
+                } finally {
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = originalBtnText;
+                    }
+                }
+            }
+            async function saveAbout() {
+                const text = document.getElementById('aboutInput').value.trim();
+                if (text) document.getElementById('aboutDisplay').innerText = text;
+                closeModal('aboutModal');
+                
+                // Persist to session
+                try {
+                    var u = getUser() || {};
+                    if (text) u.description = text;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    if (text) {
+                        const updated = await CentersAPI.updateMyProfile({ description: text });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.description) u2.description = updated.description;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save about section', e);
+                }
+            }
+            async function savePrograms() {
+                const checked = Array.from(document.querySelectorAll('#programsModal .program-checklist input[type=checkbox]:checked')).map(cb => cb.value);
+                const container = document.getElementById('programTagsDisplay');
+                container.innerHTML = '';
+                checked.forEach(function(prog) {
+                    const btn = document.createElement('button');
+                    btn.className = 'program-tag';
+                    btn.textContent = prog;
+                    container.appendChild(btn);
+                });
+                // Handle Others
+                const othersChecked = document.getElementById('othersCheckbox').checked;
+                const othersText = document.getElementById('othersInput').value.trim();
+                if (othersChecked && othersText) {
+                    const btn = document.createElement('button');
+                    btn.className = 'program-tag';
+                    btn.textContent = othersText;
+                    container.appendChild(btn);
+                }
+                closeModal('programsModal');
+                
+                // Persist to session
+                try {
+                    const allPrograms = [...checked];
+                    if (othersChecked && othersText) allPrograms.push(othersText);
+                    var u = getUser() || {};
+                    if (allPrograms.length > 0) u.programs = allPrograms;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    const allPrograms = [...checked];
+                    if (othersChecked && othersText) allPrograms.push(othersText);
+                    if (allPrograms.length > 0) {
+                        const updated = await CentersAPI.updateMyProfile({ programs: allPrograms });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.programs) u2.programs = updated.programs;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save programs', e);
+                }
+            }
+            function toggleOthersInput(cb) {
+                const input = document.getElementById('othersInput');
+                input.disabled = !cb.checked;
+                if (cb.checked) {
+                    input.focus();
+                    input.style.borderColor = '#0a4cff';
+                } else {
+                    input.value = '';
+                    input.style.borderColor = '#ddd';
+                }
+            }
+            function addAchievementInput(value) {
+                const list = document.getElementById('achievementsInputList');
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+                row.innerHTML = '<span style="font-size:18px;">\ud83c\udfc6</span>'
+                    + '<input type="text" value="' + (value || '') + '" placeholder="Enter achievement..." style="flex:1;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor=\'#0a4cff\'" onblur="this.style.borderColor=\'#ddd\'">'
+                    + '<button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#e53935;font-size:18px;line-height:1;" title="Remove">&times;</button>';
+                list.appendChild(row);
+            }
+            async function saveAchievements() {
+                const inputs = document.querySelectorAll('#achievementsInputList input[type=text]');
+                const container = document.getElementById('achievementListDisplay');
+                container.innerHTML = '';
+                const achievements = [];
+                inputs.forEach(function(input) {
+                    const val = input.value.trim();
+                    if (!val) return;
+                    achievements.push(val);
+                    const item = document.createElement('div');
+                    item.className = 'achievement-item';
+                    item.innerHTML = '<span class="trophy-icon">🏆</span><p>' + val + '</p>';
+                    container.appendChild(item);
+                });
+                closeModal('achievementsModal');
+                
+                // Persist to session
+                try {
+                    var u = getUser() || {};
+                    if (achievements.length > 0) u.achievements = achievements;
+                    setSessionUser(u, true);
+                } catch(e) {}
+                
+                // Persist to backend
+                try {
+                    if (achievements.length > 0 || inputs.length > 0) {
+                        const updated = await CentersAPI.updateMyProfile({ achievements: achievements });
+                        if (updated) {
+                            var u2 = getUser() || {};
+                            if (updated.achievements) u2.achievements = updated.achievements;
+                            setSessionUser(u2, true);
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Failed to save achievements', e);
+                }
+            }
+        </script>
+
+        <style>
+            /* ── Back button inside nav (inline, not absolute) ── */
+            .header-admindashboard .back-btn-viewcenter {
+                position: static;
+                padding: 7px 16px;
+                font-size: 13px;
+                font-weight: 600;
+                border-radius: 20px;
+                flex-shrink: 0;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: rgba(255,255,255,0.2);
+                color: #fff;
+                text-decoration: none;
+                border: 1.5px solid rgba(255,255,255,0.5);
+                transition: background 0.2s;
+            }
+            .header-admindashboard .back-btn-viewcenter:hover {
+                background: rgba(255,255,255,0.35);
+            }
+            .header-admindashboard .back-btn-viewcenter .material-symbols-outlined {
+                font-size: 16px;
+            }
+
+            
+            .sched-row {
+                display: grid;
+                grid-template-columns: 30px 80px 1fr 1fr;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 10px;
+                border-radius: 8px;
+                background: #f8f9fc;
+            }
+
+            .sched-row label {
+                font-size: 13px;
+                font-weight: 600;
+                color: #0d1b4b;
+                margin: 0;
+            }
+
+            .sched-row input[type="time"] {
+                padding: 7px 10px;
+                border: 1.5px solid #dde3f0;
+                border-radius: 7px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 12px;
+                outline: none;
+                width: 100%;
+                box-sizing: border-box;
+                transition: border 0.2s;
+            }
+
+            .sched-row input[type="time"]:focus { border-color: #0a4cff; }
+            .sched-row input[type="time"]:disabled { background: #f5f6fb; color: #bbb; }
+
+            .sched-toggle {
+                width: 36px;
+                height: 20px;
+                appearance: none;
+                -webkit-appearance: none;
+                background: #dde3f0;
+                border-radius: 20px;
+                cursor: pointer;
+                position: relative;
+                transition: background 0.2s;
+                flex-shrink: 0;
+            }
+
+            .sched-toggle:checked { background: #0a4cff; }
+
+            .sched-toggle::after {
+                content: '';
+                position: absolute;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: #fff;
+                top: 3px;
+                left: 3px;
+                transition: left 0.2s;
+            }
+
+            .sched-toggle:checked::after { left: 19px; }
+
+            @media (max-width: 900px) {
+                .ec-schedule-body { grid-template-columns: 1fr 1fr; }
+                .ec-day-pills { flex-direction: row; flex-wrap: wrap; min-width: unset; grid-column: 1 / -1; }
+            }
+
+            @media (max-width: 600px) {
+                .ec-schedule-body { grid-template-columns: 1fr; }
+            }
+        </style>
+
+        <script>
+        // ── OpenStreetMap Integration (Free, Leaflet API) ─────────────────
+        let map;
+        let marker;
+
+        function initMap(lat = 14.5995, lng = 120.9842) { // Default to Manila
+            const mapDiv = document.getElementById('mapPreview');
+            
+            if (!map) {
+                map = L.map('mapPreview').setView([lat, lng], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+
+                marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+
+                // Update input value when marker is dragged
+                marker.on('dragend', function() {
+                    const pos = marker.getLatLng();
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if(data && data.display_name) {
+                                document.getElementById('centerLocationInput').value = data.display_name;
+                            }
+                        })
+                        .catch(err => console.log(err));
+                });
+            } else {
+                map.setView([lat, lng], 16);
+                marker.setLatLng([lat, lng]);
+            }
+            
+            setTimeout(() => map.invalidateSize(), 150);
+        }
+        
+        const locInput = document.getElementById('centerLocationInput');
+        let searchTimeout;
+
+        locInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const val = e.target.value;
+            const suggBox = document.getElementById('locationSuggestions');
+            
+            if (!val || val.length < 3) {
+                suggBox.style.display = 'none';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`)
+                    .then(res => res.json())
+                    .then(data => {
+                        suggBox.innerHTML = '';
+                        if (data.length > 0) {
+                            suggBox.style.display = 'block';
+                            data.forEach(place => {
+                                const item = document.createElement('div');
+                                item.style.padding = '10px 14px';
+                                item.style.cursor = 'pointer';
+                                item.style.fontSize = '12px';
+                                item.style.borderBottom = '1px solid #f1f1f1';
+                                item.textContent = place.display_name;
+                                item.onmouseover = () => item.style.background = '#f9fafd';
+                                item.onmouseout = () => item.style.background = '#fff';
+                                item.onclick = function() {
+                                    locInput.value = place.display_name;
+                                    suggBox.style.display = 'none';
+                                    initMap(place.lat, place.lon);
+                                };
+                                suggBox.appendChild(item);
+                            });
+                        } else {
+                            suggBox.style.display = 'none';
+                        }
+                    })
+                    .catch(() => suggBox.style.display = 'none');
+            }, 500);
+        });
+
+        // Listen for profile modal opening to trigger map resize
+        const __origProfileOpen = openModal;
+        openModal = function(id) {
+            __origProfileOpen(id);
+            if (id === 'profileModal') {
+                if (map) {
+                    setTimeout(() => map.invalidateSize(), 150);
+                } else {
+                    const existingLoc = document.getElementById('centerLocationInput').value;
+                    if (existingLoc) {
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(existingLoc)}&limit=1`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if(data.length > 0) initMap(data[0].lat, data[0].lon);
+                                else initMap();
+                            })
+                            .catch(() => initMap());
+                    } else {
+                        initMap();
+                    }
+                }
+            }
+        }
+        </script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    </body>
+</html>
+
+
+
+

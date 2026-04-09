@@ -144,7 +144,7 @@
             </div>
         </section>
 
-        <section class="testimonials-section" style="padding:40px 6%;max-width:900px;margin:20px auto;">
+        <section class="testimonials-section" style="padding:32px 6% 20px;max-width:900px;margin:20px auto 0;">
             <h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews / Testimonials</h2>
             <button id="writeFeedbackBtn" style="display:none;padding:10px 18px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">Write Feedback / Testimonial</button>
             <div id="testimonialFormWrap" style="display:none;margin:0 auto 16px;background:#f0f4ff;border-radius:12px;padding:16px;width:100%;max-width:760px;box-sizing:border-box;">
@@ -162,6 +162,34 @@
                 <button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Feedback</button>
             </div>
             <div id="testimonialsList"></div>
+        </section>
+
+        <section class="gap1"></section>
+
+        <section class="footer">
+            <div class="footer-container">
+                <div class="footer-left">
+                    <h2>review.mnl</h2>
+                    <p>Manila, Philippines</p>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-column">
+                        <a href="loggedin.html">Home</a>
+                        <a href="search.html">Review Centers</a>
+                        <a href="search.html">Search</a>
+                    </div>
+                    <div class="footer-column">
+                        <a href="userdashboard.html">Dashboard</a>
+                        <a href="contact.html">Contact</a>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <a href="#" class="social-icon">f</a>
+                    <a href="#" class="social-icon">in</a>
+                    <a href="#" class="social-icon">▶</a>
+                    <a href="#" class="social-icon">✉</a>
+                </div>
+            </div>
         </section>
 
         <script>
@@ -250,8 +278,6 @@
                 updateBtn();
             })();
         </script>
-
-        <section class="gap1"></section>
 
         <!-- ── Schedule Modal ─────────────────────────────────────────── -->
         <div id="scheduleOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
@@ -384,35 +410,80 @@
                             </label>
                         </div>
 
+                        <div id="schGcashDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+                            <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0d1b4b;">Pay via GCash</h4>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Account Name:</strong> <span id="schGcashDisplayName">Review Center test1</span></p>
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                                <p style="margin:0;font-size:12px;color:#334155;"><strong>GCash Number:</strong> <span id="schGcashDisplayNumber">091234567899</span></p>
+                                <button type="button" onclick="copyGcashNumber()" style="padding:4px 10px;border:1px solid #c7d6ff;background:#fff;color:#1d4ed8;border-radius:999px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">Copy Number</button>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;">
+                                <img src="https://via.placeholder.com/200x200?text=GCash+QR" alt="GCash QR placeholder" style="width:160px;height:160px;border-radius:10px;border:1px solid #dbe7ff;background:#fff;" />
+                                <p style="margin:0;max-width:280px;font-size:11px;line-height:1.5;color:#64748b;">Send the exact amount and upload proof of payment after sending.</p>
+                            </div>
+                        </div>
+
                         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                             <div>
                                 <label class="sch-label">GCash Number</label>
-                                <input id="schGcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
+                                <input id="schGcashNumber" name="gcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
+                                <p id="schGcashNumberError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
                             <div>
                                 <label class="sch-label">GCash Account Name</label>
-                                <input id="schGcashName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
+                                <input id="schGcashName" name="accountName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
+                                <p id="schGcashNameError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
                             <div>
                                 <label class="sch-label" style="color: #0a4cff; font-weight: bold;">GCash Reference Number</label>
-                                <input id="schReferenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
+                                <input id="schReferenceNumber" name="referenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
                                 <p style="font-size:11px;color:#888;margin-top:4px;">Transfer the amount to the Center's GCash and input the reference number here.</p>
+                                <p id="schReferenceNumberError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
-                    <!-- STEP 4: Confirmation -->
-                    <div id="schStep4" style="display:none;text-align:center;padding:10px 0 4px;">
-                        <span class="material-symbols-outlined" style="font-size:56px;color:#0a4cff;display:block;margin-bottom:10px;">check_circle</span>
-                        <h3 style="font-size:20px;font-weight:800;color:#0d1b4b;margin-bottom:8px;">Booking Submitted!</h3>
-                        <p style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">Your scheduling request has been sent to the review center. You will receive a confirmation once the admin approves your enrollment.</p>
-                        <div style="background:#f8f9fc;border-radius:12px;padding:16px 20px;text-align:left;margin-bottom:22px;">
-                            <div style="font-size:13px;display:flex;flex-direction:column;gap:7px;">
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Booked Date</span><span id="confDate" style="font-weight:600;color:#0d1b4b;"></span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="confName" style="font-weight:600;color:#0d1b4b;"></span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Payment</span><span id="confPaymentMethod" style="font-weight:600;color:#0a4cff;">GCash</span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Status</span><span id="confPaymentStatus" style="font-weight:600;background:#e8f5e9;color:#2e7d32;padding:2px 10px;border-radius:10px;font-size:11px;">Paid</span></div>
+                            <div>
+                                <label class="sch-label">Payment Proof</label>
+                                <input id="schPaymentProof" name="paymentProof" type="file" class="sch-input" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                                <p style="font-size:11px;color:#888;margin-top:4px;">Upload receipt screenshot (JPG or PNG only).</p>
+                                <p id="schPaymentProofError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">Please upload proof of payment</p>
+                                <div id="schPaymentProofPreview" style="display:none;margin-top:8px;padding:8px;border:1px dashed #d8e0f2;border-radius:8px;background:#f8fbff;">
+                                    <p id="schPaymentProofFileName" style="margin:0 0 6px;font-size:11px;color:#334155;font-weight:600;"></p>
+                                    <img id="schPaymentProofImg" alt="Uploaded payment proof preview" style="display:none;max-width:100%;max-height:180px;border-radius:8px;border:1px solid #e2e8f5;" />
+                                </div>
                             </div>
                         </div>
-                        <button onclick="closeScheduleModal()" class="sch-btn-primary" style="width:100%;">Done</button>
+
+                        <div id="schPaymentMsg" style="display:none;font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;"></div>
+
+                        <div style="display:flex;justify-content:space-between;gap:10px;margin-top:20px;">
+                            <button onclick="schGoStep(2)" class="sch-btn-ghost">&larr; Back</button>
+                            <button id="proceed-btn" class="sch-btn-primary" style="min-width:160px;">Proceed Payment</button>
+                        </div>
+
+                    <!-- STEP 4: Confirmation -->
+                    <div id="schStep4" style="display:none;text-align:center;padding:32px 20px;min-height:320px;">
+                        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;max-width:520px;margin:0 auto;">
+                            <div style="font-size:68px;color:#16a34a;line-height:1;">&#10003;</div>
+                            <h2 style="font-size:28px;font-weight:800;color:#0d1b4b;margin:0;">Enrollment Successful!</h2>
+                            <p style="font-size:14px;color:#5b6473;line-height:1.6;margin:0;max-width:460px;">Your enrollment has been submitted and is awaiting approval.</p>
+
+                            <div style="width:100%;background:#f8f9fc;border:1px solid #e2e8f5;border-radius:12px;padding:14px 16px;text-align:left;margin-top:4px;">
+                                <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.04em;color:#7a859f;text-transform:uppercase;">Enrollment Summary</p>
+                                <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Payment Method</span><span id="confPaymentMethod" style="font-weight:600;color:#0d1b4b;text-align:right;">GCash</span></div>
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Amount</span><span id="confAmount" style="font-weight:600;color:#0d1b4b;text-align:right;">₱ 0.00</span></div>
+                                    <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Reference No</span><span id="confReferenceNumber" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                </div>
+                            </div>
+
+                            <div id="confStatusBadge" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;background:#fff4d6;color:#9a5b00;">Pending Approval</div>
+
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;margin-top:4px;">
+                                <button onclick="goToDashboard()" class="sch-btn-primary" style="width:100%;max-width:280px;">Go to Dashboard</button>
+                                <button onclick="goToMessages()" class="sch-btn-primary" style="width:100%;max-width:280px;">Message Review Center</button>
+                                <button onclick="goToEnrollments()" class="sch-btn-primary" style="width:100%;max-width:280px;">View Enrollment</button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -484,6 +555,7 @@
                 background: #fff;
             }
             .sch-input:focus { border-color: #0a4cff; }
+            .sch-input-error { border-color: #d32f2f !important; box-shadow: 0 0 0 2px rgba(211,47,47,0.12); }
             textarea.sch-input {
                 resize: none;
                 overflow-y: auto;
@@ -530,6 +602,8 @@
         ];
         var _schYear, _schMonth, _schSelectedDate = null, _schStep = 1;
         var _schPaymentMethod = 'GCash', _schPaymentStatus = 'Pending';
+        var _schEnrollmentResp = null;
+        var _schReferenceNumber = '';
         var SCH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
         function openScheduleModal() {
@@ -538,6 +612,8 @@
             _schSelectedDate = null; _schStep = 1;
             _schPaymentMethod = 'GCash';
             _schPaymentStatus = 'Pending';
+            _schEnrollmentResp = null;
+            _schReferenceNumber = '';
             var gcashRadio = document.getElementById('schPayGcash');
             var bankRadio = document.getElementById('schPayBank');
             if (gcashRadio) gcashRadio.checked = true;
@@ -584,24 +660,45 @@
                 updatePaymentMethodUI();
             }
             if (n === 4) {
-                document.getElementById('confDate').textContent    = schFmtDate(_schSelectedDate);
-                document.getElementById('confName').textContent    = document.getElementById('schName').value.trim() || '—';
-                document.getElementById('confProgram').textContent = document.getElementById('schProgram').value || '—';
-                var paymentMethodEl = document.getElementById('confPaymentMethod');
-                var paymentStatusEl = document.getElementById('confPaymentStatus');
-                if (paymentMethodEl) paymentMethodEl.textContent = _schPaymentMethod;
-                if (paymentStatusEl) {
-                    paymentStatusEl.textContent = _schPaymentStatus;
-                    if (_schPaymentStatus === 'Paid') {
-                        paymentStatusEl.style.background = '#e8f5e9';
-                        paymentStatusEl.style.color = '#2e7d32';
-                    } else {
-                        paymentStatusEl.style.background = '#fff8e1';
-                        paymentStatusEl.style.color = '#e65100';
-                    }
+                var confProgram = document.getElementById('confProgram');
+                var confPaymentMethod = document.getElementById('confPaymentMethod');
+                var confAmount = document.getElementById('confAmount');
+                var confReferenceNumber = document.getElementById('confReferenceNumber');
+                var confStatusBadge = document.getElementById('confStatusBadge');
+                var programValue = (_schEnrollmentResp && _schEnrollmentResp.program_enrolled)
+                    || document.getElementById('schProgram').value
+                    || '—';
+                var paymentMethodValue = (_schEnrollmentResp && _schEnrollmentResp.payment_method)
+                    || _schPaymentMethod
+                    || 'GCash Manual';
+                var amountValue = Number((_schEnrollmentResp && _schEnrollmentResp.amount) || 0);
+                var enrollmentStatus = String((_schEnrollmentResp && _schEnrollmentResp.enrollment_status) || 'pending').toLowerCase();
+
+                if (confProgram) confProgram.textContent = programValue;
+                if (confPaymentMethod) confPaymentMethod.textContent = paymentMethodValue;
+                if (confAmount) confAmount.textContent = '₱ ' + amountValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (confReferenceNumber) confReferenceNumber.textContent = _schReferenceNumber || '—';
+
+                if (confStatusBadge) {
+                    var isApproved = enrollmentStatus === 'approved';
+                    confStatusBadge.textContent = isApproved ? 'Approved' : 'Pending Approval';
+                    confStatusBadge.style.background = isApproved ? '#e8f5e9' : '#fff4d6';
+                    confStatusBadge.style.color = isApproved ? '#1f7a3a' : '#9a5b00';
                 }
             }
             schSetStep(n);
+        }
+
+        function goToDashboard() {
+            window.location.href = '/dashboard';
+        }
+
+        function goToMessages() {
+            window.location.href = '/messages';
+        }
+
+        function goToEnrollments() {
+            window.location.href = '/enrollments';
         }
 
         function showBankComingSoonMessage() {
@@ -624,12 +721,114 @@
             msgEl.style.border = '';
         }
 
+        function getSelectedPaymentMethod() {
+            var bankRadio = document.getElementById('schPayBank');
+            return bankRadio && bankRadio.checked ? 'bank' : 'gcash';
+        }
+
+        function updateProceedButton() {
+            var selectedMethod = getSelectedPaymentMethod();
+            var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
+            if (!proceedBtn) return;
+            if (selectedMethod === 'bank') {
+                proceedBtn.disabled = true;
+                return;
+            }
+            proceedBtn.disabled = !validateGcashPaymentFields(false).valid;
+        }
+
+        function setFieldError(inputId, errorId, message, showErrors) {
+            var input = document.getElementById(inputId);
+            var err = document.getElementById(errorId);
+            if (!input || !err) return;
+            if (showErrors && message) {
+                input.classList.add('sch-input-error');
+                err.textContent = message;
+                err.style.display = 'block';
+            } else {
+                input.classList.remove('sch-input-error');
+                err.style.display = 'none';
+            }
+        }
+
+        function renderPaymentProofPreview(file) {
+            var wrap = document.getElementById('schPaymentProofPreview');
+            var fileName = document.getElementById('schPaymentProofFileName');
+            var img = document.getElementById('schPaymentProofImg');
+            if (!wrap || !fileName || !img) return;
+
+            if (!file) {
+                wrap.style.display = 'none';
+                fileName.textContent = '';
+                img.style.display = 'none';
+                img.removeAttribute('src');
+                return;
+            }
+
+            wrap.style.display = 'block';
+            fileName.textContent = 'Selected file: ' + file.name;
+
+            if (/^image\/(jpeg|png)$/i.test(file.type)) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                img.style.display = 'none';
+                img.removeAttribute('src');
+            }
+        }
+
+        function validateGcashPaymentFields(showErrors) {
+            var gcashNumber = String((document.getElementById('schGcashNumber').value || '')).trim();
+            var gcashName = String((document.getElementById('schGcashName').value || '')).trim();
+            var referenceNumber = String((document.getElementById('schReferenceNumber').value || '')).trim();
+            var paymentProofInput = document.getElementById('schPaymentProof');
+            var paymentProofFile = paymentProofInput && paymentProofInput.files && paymentProofInput.files[0] ? paymentProofInput.files[0] : null;
+
+            var numberError = '';
+            var nameError = '';
+            var refError = '';
+            var proofError = '';
+
+            if (!gcashNumber) numberError = 'This field is required';
+            else if (!/^09\d{9}$/.test(gcashNumber)) numberError = 'Please enter a valid GCash number (09XXXXXXXXX)';
+
+            if (!gcashName) nameError = 'This field is required';
+            if (!referenceNumber) refError = 'This field is required';
+
+            if (!paymentProofFile) {
+                proofError = 'Please upload proof of payment';
+            } else {
+                var fileType = String(paymentProofFile.type || '').toLowerCase();
+                var validMime = fileType === 'image/jpeg' || fileType === 'image/png';
+                var validExt = /\.(jpg|jpeg|png)$/i.test(String(paymentProofFile.name || ''));
+                if (!validMime && !validExt) {
+                    proofError = 'Only JPG and PNG files are accepted';
+                }
+            }
+
+            setFieldError('schGcashNumber', 'schGcashNumberError', numberError, showErrors);
+            setFieldError('schGcashName', 'schGcashNameError', nameError, showErrors);
+            setFieldError('schReferenceNumber', 'schReferenceNumberError', refError, showErrors);
+            setFieldError('schPaymentProof', 'schPaymentProofError', proofError, showErrors);
+
+            return {
+                valid: !numberError && !nameError && !refError && !proofError,
+                paymentProofFile: paymentProofFile,
+                primaryError: proofError || numberError || nameError || refError || 'Please complete all required fields before proceeding.'
+            };
+        }
+
         function updatePaymentMethodUI() {
             var gcashRadio = document.getElementById('schPayGcash');
             var bankRadio = document.getElementById('schPayBank');
             var gcashOption = document.getElementById('schPayGcashOption');
             var bankOption = document.getElementById('schPayBankOption');
-            var payBtn = document.getElementById('gcashPayBtn');
+            var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
+            var gcashDetailsCard = document.getElementById('schGcashDetailsCard');
 
             if (gcashOption) gcashOption.classList.toggle('sch-pay-selected', !!(gcashRadio && gcashRadio.checked));
             if (bankOption) bankOption.classList.toggle('sch-pay-selected', !!(bankRadio && bankRadio.checked));
@@ -637,12 +836,33 @@
             if (bankRadio && bankRadio.checked) {
                 _schPaymentMethod = 'Bank Payment';
                 showBankComingSoonMessage();
-                if (payBtn) payBtn.textContent = 'Bank Payment Coming Soon';
+                if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
+                if (gcashDetailsCard) gcashDetailsCard.style.display = 'none';
             } else {
                 _schPaymentMethod = 'GCash';
                 hidePaymentMessage();
-                if (payBtn) payBtn.textContent = 'Process GCash Payment';
+                if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
+                if (gcashDetailsCard) gcashDetailsCard.style.display = 'block';
             }
+
+            updateProceedButton();
+        }
+
+        function copyGcashNumber() {
+            var numberEl = document.getElementById('schGcashDisplayNumber');
+            var value = numberEl ? String(numberEl.textContent || '').trim() : '';
+            if (!value) return;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(value).then(function() {
+                        alert('GCash number copied');
+                    }).catch(function() {
+                        alert('Unable to copy. Please copy manually: ' + value);
+                    });
+                    return;
+                }
+            } catch (e) {}
+            alert('Copy this GCash number: ' + value);
         }
 
         function setupPaymentMethodListeners() {
@@ -650,7 +870,45 @@
             var bankRadio = document.getElementById('schPayBank');
             if (gcashRadio) gcashRadio.addEventListener('change', updatePaymentMethodUI);
             if (bankRadio) bankRadio.addEventListener('change', updatePaymentMethodUI);
+
+            var gcashNumberInput = document.getElementById('schGcashNumber');
+            var gcashNameInput = document.getElementById('schGcashName');
+            var referenceInput = document.getElementById('schReferenceNumber');
+            var proofInput = document.getElementById('schPaymentProof');
+
+            function handlePaymentFieldChange() {
+                validateGcashPaymentFields(false);
+                updateProceedButton();
+            }
+
+            if (gcashNumberInput) gcashNumberInput.addEventListener('input', handlePaymentFieldChange);
+            if (gcashNameInput) gcashNameInput.addEventListener('input', handlePaymentFieldChange);
+            if (referenceInput) referenceInput.addEventListener('input', handlePaymentFieldChange);
+            if (proofInput) {
+                proofInput.addEventListener('change', function() {
+                    var file = proofInput.files && proofInput.files[0] ? proofInput.files[0] : null;
+                    renderPaymentProofPreview(file);
+                    handlePaymentFieldChange();
+                });
+            }
+
             updatePaymentMethodUI();
+        }
+
+        function goToStep(stepNumber) {
+            schGoStep(stepNumber);
+        }
+
+        function setupProceedPaymentButton() {
+            var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
+            if (!proceedBtn || proceedBtn.dataset.bound === '1') return;
+
+            proceedBtn.addEventListener('click', function () {
+                startGcashPayment();
+            });
+
+            proceedBtn.dataset.bound = '1';
+            updateProceedButton();
         }
 
         function schFmtDate(d) {
@@ -729,32 +987,6 @@
             renderSchCal();
         }
         </script>
-
-        <section class="footer">
-			<div class="footer-container">
-				<div class="footer-left">
-					<h2>review.mnl</h2>
-					<p>Manila, Philippines</p>
-				</div>
-				<div class="footer-center">
-					<div class="footer-column">
-						<a href="loggedin.html">Home</a>
-						<a href="search.html">Review Centers</a>
-						<a href="contact.html">Contact</a>
-					</div>
-					<div class="footer-column">
-						<a href="search.html">Search</a>
-						<a href="userdashboard.html">Dashboard</a>
-					</div>
-				</div>
-				<div class="footer-right">
-					<a href="#" class="social-icon">f</a>
-					<a href="#" class="social-icon">in</a>
-					<a href="#" class="social-icon">▶</a>
-					<a href="#" class="social-icon">✉</a>
-				</div>
-			</div>
-		</section>
 
         <script src="api.js"></script>
         <script>
@@ -1034,7 +1266,7 @@
 
         async function startGcashPayment() {
             const msgEl = document.getElementById('schPaymentMsg');
-            const payBtn = document.getElementById('gcashPayBtn');
+            const payBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
             try {
                 const token = getActiveToken();
                 if (!token) { alert('Please login to continue to payment.'); return; }
@@ -1044,24 +1276,21 @@
                     return;
                 }
                 const params = new URLSearchParams(window.location.search);
-                const centerId = params.get('id');
+                let centerId = params.get('id') || params.get('centerId');
+                if (!centerId) {
+                    var pathMatch = (window.location.pathname || '').match(/(?:\/|^)viewcenter(?:\.html)?\/(\d+)(?:\/)?$/i);
+                    if (pathMatch && pathMatch[1]) centerId = pathMatch[1];
+                }
                 if (!centerId) return alert('Missing center id.');
                 const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
                 const gcashName = (document.getElementById('schGcashName').value || '').trim();
                 const referenceNumber = (document.getElementById('schReferenceNumber').value || '').trim();
-                if (!gcashNumber || !gcashName || !referenceNumber) {
+                const validation = validateGcashPaymentFields(true);
+                const paymentProofFile = validation.paymentProofFile;
+                _schReferenceNumber = referenceNumber;
+                if (!validation.valid) {
                     if (msgEl) {
-                        msgEl.textContent = 'Please enter your GCash number, account name, and Reference Number.';
-                        msgEl.style.display = 'block';
-                        msgEl.style.background = '#ffe8e8';
-                        msgEl.style.color = '#b71c1c';
-                        msgEl.style.border = '1px solid #ef9a9a';
-                    }
-                    return;
-                }
-                if (!/^09\d{9}$/.test(gcashNumber)) {
-                    if (msgEl) {
-                        msgEl.textContent = 'Please enter a valid GCash number (09XXXXXXXXX).';
+                        msgEl.textContent = validation.primaryError || 'Please complete all required fields before proceeding.';
                         msgEl.style.display = 'block';
                         msgEl.style.background = '#ffe8e8';
                         msgEl.style.color = '#b71c1c';
@@ -1091,18 +1320,23 @@
                     reference_number: referenceNumber,
                     program_enrolled: programEnrolled,
                     enrollment_date: enrollmentDate,
+                    payment_proof: paymentProofFile,
                 };
                 console.log('[Enrollment] Sending enrollment payload', {
                     centerId: centerId,
+                    endpoint: '/api/payments/gcash/' + String(centerId),
+                    hasAuthToken: !!token,
                     userId: (getUser() && getUser().id) || null,
                     program_enrolled: payload.program_enrolled,
                     enrollment_date: payload.enrollment_date,
                     amount: payload.amount,
+                    hasPaymentProof: Boolean(paymentProofFile),
                 });
-                const resp = await CentersAPI.enrollWithGcash(centerId, payload);
+                const resp = await PaymentsAPI.createGcashEnrollment(centerId, payload);
                 console.log('[Enrollment] Enrollment response', resp);
 
                 if (resp && (resp.transaction_status === 'paid' || resp.transaction_status === 'pending')) {
+                    _schEnrollmentResp = resp;
                     _schPaymentMethod = resp.payment_method || 'GCash';
                     _schPaymentStatus = resp.transaction_status === 'pending' ? 'Pending Admin Approval' : 'Paid';
                     if (msgEl) {
@@ -1137,8 +1371,8 @@
                 }
             } finally {
                 if (payBtn) {
-                    payBtn.disabled = false;
-                    payBtn.textContent = 'Process GCash Payment';
+                    updateProceedButton();
+                    payBtn.textContent = 'Proceed Payment';
                 }
             }
         }
@@ -1147,7 +1381,10 @@
             return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
-        document.addEventListener('DOMContentLoaded', setupPaymentMethodListeners);
+        document.addEventListener('DOMContentLoaded', function() {
+            setupPaymentMethodListeners();
+            setupProceedPaymentButton();
+        });
         initGlobalNotificationBell();
         </script>
         

@@ -785,12 +785,6 @@
         <section class="ms-page">
             <div class="ms-container">
 
-                <!-- Payment notice -->
-                <div class="ms-payment-notice">
-                    <span class="material-symbols-outlined">info</span>
-                    <span>Payment processing is currently unavailable — backend integration is pending. Payment status shown below is for display purposes only.</span>
-                </div>
-
                 <!-- Summary cards -->
                 <div class="ms-summary-row">
                     <div class="ms-summary-card sc-accent-blue">
@@ -865,8 +859,8 @@
                         <select class="ms-filter-select" id="msPayFilter" onchange="filterTable()">
                             <option value="">All Payment</option>
                             <option value="Paid">Paid</option>
-                            <option value="Unpaid">Unpaid</option>
-                            <option value="Processing">Processing</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Rejected">Rejected</option>
                         </select>
                     </div>
                 </div>
@@ -887,10 +881,10 @@
                             <thead>
                                 <tr>
                                     <th>Student</th>
-                                    <th>Schedule</th>
+                                    <th>Program</th>
                                     <th>Enrollment Status</th>
                                     <th>Payment Status</th>
-                                    <th>Date Registered</th>
+                                    <th>Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -900,7 +894,7 @@
                         </table>
                         <div class="ms-empty" id="msEmpty" style="display:none;">
                             <span class="material-symbols-outlined">group_off</span>
-                            No students found.
+                            No enrolled students yet.
                         </div>
                     </div>
                     <div class="ms-pagination" id="msPagination"></div>
@@ -964,6 +958,48 @@
             </div>
         </div>
 
+        <!-- Payment verify modal -->
+        <div class="ms-modal-overlay" id="paymentModal">
+            <div class="ms-modal" style="max-width:680px;">
+                <button class="ms-modal-close" onclick="closePaymentModal()">&#10005;</button>
+                <h2>Verify Payment</h2>
+                <div class="ms-detail-grid" style="margin-bottom:14px;">
+                    <div class="ms-detail-item">
+                        <label>Student Name</label>
+                        <p id="pName">—</p>
+                    </div>
+                    <div class="ms-detail-item">
+                        <label>Program</label>
+                        <p id="pProgram">—</p>
+                    </div>
+                    <div class="ms-detail-item">
+                        <label>Payment Status</label>
+                        <p id="pStatus">—</p>
+                    </div>
+                    <div class="ms-detail-item">
+                        <label>Date Uploaded</label>
+                        <p id="pUploaded">—</p>
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="display:block;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Payment Screenshot</label>
+                    <div style="border:1.5px dashed #d8e0f2;border-radius:10px;background:#f8faff;min-height:180px;display:flex;align-items:center;justify-content:center;padding:10px;">
+                        <img id="pImage" alt="Payment screenshot" style="display:none;max-width:100%;max-height:340px;border-radius:8px;" />
+                        <p id="pNoImage" style="margin:0;color:#7a8699;font-size:13px;">No payment uploaded</p>
+                    </div>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label class="sch-label" style="display:block;margin-bottom:6px;font-size:12px;color:#0d1b4b;font-weight:600;">Rejection Reason (optional)</label>
+                    <textarea id="pRejectReason" rows="3" placeholder="Reason for rejecting payment..." style="width:100%;border:1.5px solid #dde3f0;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:12px;box-sizing:border-box;"></textarea>
+                </div>
+                <div class="ms-modal-actions">
+                    <button class="btn-modal-close" onclick="closePaymentModal()">Close</button>
+                    <button id="pRejectBtn" class="btn-modal-remove" onclick="rejectPaymentFromModal()">Reject Payment</button>
+                    <button id="pApproveBtn" class="btn-modal-approve" onclick="approvePaymentFromModal()">Approve Payment</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <section class="footer">
             <div class="footer-container">
@@ -973,9 +1009,13 @@
                 </div>
                 <div class="footer-center">
                     <div class="footer-column">
-                        <a href="managestudents.html">Manage Students</a>
+                        <a href="admindashboard.html">Home</a>
+                        <a href="search.html">Review Centers</a>
+                        <a href="search.html">Search</a>
+                    </div>
+                    <div class="footer-column">
                         <a href="admindashboard.html">Dashboard</a>
-                        <a href="editcenter.html">My Profile</a>
+                        <a href="contact.html">Contact</a>
                     </div>
                 </div>
                 <div class="footer-right">
@@ -1001,7 +1041,9 @@
         let _page       = 1;
         const PAGE_SIZE = 8;
         let currentStudentId = null;
+        let currentPaymentStudent = null;
         let _pendingAction = null;
+        let _liveRefreshTimer = null;
 
         // ── Calendar state ────────────────────────────────────────────────
         var _calYear, _calMonth, _calSelectedKey = null;
@@ -1135,6 +1177,81 @@
         }
 
         // ── Init ──────────────────────────────────────────────────────────
+        function toUiEnrollmentStatus(value) {
+            var v = String(value || '').toLowerCase();
+            if (v === 'approved' || v === 'active' || v === 'enrolled') return 'Enrolled';
+            if (v === 'rejected' || v === 'cancelled') return 'Cancelled';
+            if (v === 'scheduled') return 'Scheduled';
+            return 'Pending';
+        }
+
+        function toUiPaymentStatus(value) {
+            var v = String(value || '').toLowerCase();
+            if (v === 'paid') return 'Paid';
+            if (v === 'failed' || v === 'cancelled' || v === 'rejected') return 'Rejected';
+            return 'Pending';
+        }
+
+        function formatDisplayDate(value) {
+            if (!value) return '—';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        }
+
+        function mapEnrollmentToStudent(enrollment) {
+            var enrollmentId = Number(enrollment.enrollmentId || enrollment.enrollment_id || enrollment.id || 0);
+            var studentName = String(enrollment.studentName || enrollment.student_name || enrollment.student_email || 'Student').trim();
+            var statusValue = enrollment.enrollmentStatus || enrollment.status || enrollment.review_status;
+            var paymentValue = enrollment.paymentStatus || (enrollment.payment && enrollment.payment.status) || enrollment.payment_status;
+            var program = String(enrollment.program || enrollment.program_enrolled || 'Program not specified').trim();
+            var createdAt = enrollment.createdAt || enrollment.created_at || enrollment.date_submitted || null;
+
+            return {
+                id: enrollmentId,
+                enrollmentId: enrollmentId,
+                reviewCenterId: Number(enrollment.reviewCenterId || enrollment.review_center_id || 0),
+                name: studentName || 'Student',
+                email: String(enrollment.student_email || '').trim(),
+                program: program,
+                schedule: program,
+                scheduleDays: [],
+                status: toUiEnrollmentStatus(statusValue),
+                payment: toUiPaymentStatus(paymentValue),
+                rawEnrollmentStatus: String(statusValue || 'pending').toLowerCase(),
+                rawPaymentStatus: String(paymentValue || 'pending').toLowerCase(),
+                paymentScreenshotUrl: (enrollment.payment && enrollment.payment.payment_screenshot_url) || enrollment.paymentScreenshotUrl || null,
+                uploadedAt: (enrollment.payment && enrollment.payment.uploaded_at) || enrollment.uploadedAt || null,
+                date: formatDisplayDate(createdAt),
+                contact: '',
+            };
+        }
+
+        async function loadCenterStudents() {
+            var response = await CentersAPI.getMyEnrollments('all', 'latest');
+            var rows = (response && response.enrollments) ? response.enrollments : [];
+
+            console.log('[Enrollments][ReviewCenter] fetched enrollments for manage students', {
+                count: rows.length,
+                sampleReviewCenterId: rows[0] ? (rows[0].reviewCenterId || rows[0].review_center_id || null) : null,
+            });
+
+            STUDENTS = rows.map(mapEnrollmentToStudent);
+            _students = STUDENTS.slice();
+        }
+
+        async function refreshStudentsAndRender() {
+            try {
+                await loadCenterStudents();
+                updateSummary();
+                renderTable();
+                renderCalendar();
+            } catch (e) {
+                console.error('Failed to load center enrollments:', e);
+                document.getElementById('msEmpty').style.display = 'block';
+            }
+        }
+
         (async function init() {
             // Profile dropdown
             const btn = document.getElementById('profileBtn');
@@ -1151,39 +1268,19 @@
             }
             if (lo) lo.addEventListener('click', function(){ clearSession(); window.location.href='index.html'; });
 
-            // Load students from API
-            try {
-                const rows = await AdminAPI.getStudents();
-                STUDENTS = rows.map(function(s) {
-                    var d = new Date(s.created_at);
-                    var dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-                    return {
-                        id: s.id,
-                        name: s.first_name + ' ' + s.last_name,
-                        email: s.email,
-                        program: 'N/A',
-                        schedule: 'N/A',
-                        scheduleDays: [],
-                        status: s.is_verified ? 'Enrolled' : 'Pending',
-                        payment: 'N/A',
-                        date: dateStr,
-                        contact: ''
-                    };
-                });
-                _students = STUDENTS.slice();
-            } catch(e) {
-                console.error('Failed to load students:', e);
-            }
-            updateSummary();
-            renderTable();
-            renderCalendar();
+            await refreshStudentsAndRender();
+
+            if (_liveRefreshTimer) clearInterval(_liveRefreshTimer);
+            _liveRefreshTimer = setInterval(function() {
+                refreshStudentsAndRender();
+            }, 15000);
         })();
 
         function updateSummary() {
             document.getElementById('totalCount').textContent     = STUDENTS.length;
             document.getElementById('enrolledCount').textContent  = STUDENTS.filter(s => s.status === 'Enrolled').length;
             document.getElementById('scheduledCount').textContent = STUDENTS.filter(s => s.status === 'Scheduled').length;
-            document.getElementById('pendingPayCount').textContent= STUDENTS.filter(s => s.payment === 'Unpaid' || s.payment === 'Processing').length;
+            document.getElementById('pendingPayCount').textContent= STUDENTS.filter(s => s.payment === 'Pending').length;
         }
 
         function getFiltered() {
@@ -1214,6 +1311,12 @@
                 document.getElementById('msEmpty').style.display = 'none';
                 slice.forEach(function(s) {
                     const initials = s.name.split(' ').map(function(w){ return w[0]; }).slice(0,2).join('');
+                    var paymentActionBtn = '';
+                    if (s.rawPaymentStatus === 'pending') {
+                        paymentActionBtn = '<button class="ms-action-btn btn-view" onclick="viewPayment(' + s.id + ')">View Payment</button>';
+                    } else if (s.rawPaymentStatus === 'paid') {
+                        paymentActionBtn = '<button class="ms-action-btn" disabled style="background:#e8f5e9;color:#2e7d32;cursor:not-allowed;">Verified</button>';
+                    }
                     const tr = document.createElement('tr');
                     tr.innerHTML =
                         '<td><div class="student-name-cell">' +
@@ -1225,6 +1328,7 @@
                         '<td>' + paymentBadge(s.payment) + '</td>' +
                         '<td>' + s.date + '</td>' +
                         '<td style="display:flex;gap:6px;flex-wrap:wrap;">' +
+                            paymentActionBtn +
                             '<button class="ms-action-btn btn-view" onclick="viewStudent(' + s.id + ')">View</button>' +
                             (s.status === 'Pending' ? '<button class="ms-action-btn btn-approve" onclick="confirmApprove(' + s.id + ')">Approve</button>' : '') +
                             '<button class="ms-action-btn btn-remove" onclick="confirmRemove(' + s.id + ')">Remove</button>' +
@@ -1242,8 +1346,67 @@
         }
 
         function paymentBadge(pay) {
-            const map = { Paid: 'badge-paid', Unpaid: 'badge-unpaid', Processing: 'badge-processing' };
-            return '<span class="badge ' + (map[pay] || '') + '">' + pay + '</span>';
+            if (pay === 'Paid') return '<span class="badge badge-paid">🟢 Paid</span>';
+            if (pay === 'Rejected') return '<span class="badge badge-unpaid">🔴 Rejected</span>';
+            return '<span class="badge badge-processing">🟡 Pending</span>';
+        }
+
+        function viewPayment(id) {
+            var s = _students.find(function(x){ return x.id === id; });
+            if (!s) return;
+            currentPaymentStudent = s;
+            document.getElementById('pName').textContent = s.name || 'Student';
+            document.getElementById('pProgram').textContent = s.program || 'Program not specified';
+            document.getElementById('pStatus').innerHTML = paymentBadge(s.payment);
+            document.getElementById('pUploaded').textContent = s.uploadedAt ? new Date(s.uploadedAt).toLocaleString() : '—';
+            document.getElementById('pRejectReason').value = '';
+
+            var img = document.getElementById('pImage');
+            var noImg = document.getElementById('pNoImage');
+            if (s.paymentScreenshotUrl) {
+                img.src = s.paymentScreenshotUrl;
+                img.style.display = 'block';
+                noImg.style.display = 'none';
+            } else {
+                img.removeAttribute('src');
+                img.style.display = 'none';
+                noImg.style.display = 'block';
+            }
+
+            var isPending = s.rawPaymentStatus === 'pending';
+            document.getElementById('pApproveBtn').disabled = !isPending;
+            document.getElementById('pRejectBtn').disabled = !isPending;
+
+            document.getElementById('paymentModal').classList.add('open');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('open');
+            currentPaymentStudent = null;
+        }
+
+        async function approvePaymentFromModal() {
+            if (!currentPaymentStudent) return;
+            try {
+                await CentersAPI.verifyEnrollmentPayment(currentPaymentStudent.enrollmentId, 'paid');
+                closePaymentModal();
+                await refreshStudentsAndRender();
+                alert('Payment verified successfully');
+            } catch (e) {
+                alert(e && e.message ? e.message : 'Failed to verify payment.');
+            }
+        }
+
+        async function rejectPaymentFromModal() {
+            if (!currentPaymentStudent) return;
+            var reason = String(document.getElementById('pRejectReason').value || '').trim();
+            try {
+                await CentersAPI.verifyEnrollmentPayment(currentPaymentStudent.enrollmentId, 'failed', reason);
+                closePaymentModal();
+                await refreshStudentsAndRender();
+            } catch (e) {
+                alert(e && e.message ? e.message : 'Failed to reject payment.');
+            }
         }
 
         function renderPagination(pages) {
@@ -1312,10 +1475,13 @@
         function confirmApprove(id) {
             const s = _students.find(function(x){ return x.id === id; });
             if (!s) return;
-            _pendingAction = function() {
-                s.status = 'Enrolled';
-                renderTable();
-                updateSummary();
+            if (s.rawPaymentStatus !== 'paid') {
+                viewPayment(id);
+                return;
+            }
+            _pendingAction = async function() {
+                await CentersAPI.updateEnrollmentStatus(s.enrollmentId, 'approved');
+                await refreshStudentsAndRender();
             };
             document.getElementById('confirmTitle').textContent = 'Approve Enrollment';
             document.getElementById('confirmMsg').textContent   = 'Approve enrollment for ' + s.name + '? Their status will be set to Enrolled.';
@@ -1326,19 +1492,25 @@
         function confirmRemove(id) {
             const s = _students.find(function(x){ return x.id === id; });
             if (!s) return;
-            _pendingAction = function() {
-                _students = _students.filter(function(x){ return x.id !== id; });
-                renderTable();
-                updateSummary();
+            _pendingAction = async function() {
+                await CentersAPI.updateEnrollmentStatus(s.enrollmentId, 'rejected');
+                await refreshStudentsAndRender();
             };
             document.getElementById('confirmTitle').textContent = 'Remove Student';
-            document.getElementById('confirmMsg').textContent   = 'Remove ' + s.name + ' from the list? This cannot be undone.';
+            document.getElementById('confirmMsg').textContent   = 'Reject enrollment for ' + s.name + '?';
             document.getElementById('confirmOkBtn').style.background = '#b71c1c';
             document.getElementById('confirmModal').classList.add('open');
         }
 
-        document.getElementById('confirmOkBtn').addEventListener('click', function() {
-            if (_pendingAction) { _pendingAction(); _pendingAction = null; }
+        document.getElementById('confirmOkBtn').addEventListener('click', async function() {
+            if (_pendingAction) {
+                try {
+                    await _pendingAction();
+                } catch (e) {
+                    alert(e && e.message ? e.message : 'Failed to update enrollment.');
+                }
+                _pendingAction = null;
+            }
             closeConfirm();
         });
 
@@ -1349,6 +1521,7 @@
         // Close modals on overlay click
         document.getElementById('studentModal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
         document.getElementById('confirmModal').addEventListener('click', function(e){ if(e.target===this) closeConfirm(); });
+        document.getElementById('paymentModal').addEventListener('click', function(e){ if(e.target===this) closePaymentModal(); });
 
         // ── Sidebar / messaging ────────────────────────────────────────────
         function toggleSidebar() {

@@ -308,8 +308,12 @@ const CentersAPI = {
         if (sort) qs.push('sort=' + encodeURIComponent(sort));
         return apiRequest('GET', '/api/centers/me/enrollments' + (qs.length ? ('?' + qs.join('&')) : ''));
     },
-    verifyEnrollmentPayment: (enrollmentId, paymentStatus) =>
-        apiRequest('PUT', '/api/centers/me/enrollments/' + enrollmentId + '/payment/verify', paymentStatus ? { payment_status: paymentStatus } : {}),
+    verifyEnrollmentPayment: (enrollmentId, paymentStatus, paymentReason) => {
+        var body = {};
+        if (paymentStatus) body.payment_status = paymentStatus;
+        if (paymentReason) body.payment_reason = String(paymentReason).trim();
+        return apiRequest('PUT', '/api/centers/me/enrollments/' + enrollmentId + '/payment/verify', body);
+    },
     updateEnrollmentStatus: (enrollmentId, status) =>
         apiRequest('PUT', '/api/centers/me/enrollments/' + enrollmentId + '/status', { status }),
     
@@ -327,10 +331,65 @@ const UserAPI = {
     getMyEnrollments: () =>
         apiRequest('GET', '/api/users/me/enrollments'),
 
+    getMyRatings: () =>
+        apiRequest('GET', '/api/users/me/ratings'),
+
+    upsertMyRating: (centerId, rating) =>
+        apiRequest('PUT', '/api/users/me/ratings/' + centerId, { rating }),
+
     updateMyProfile: (data) =>
         apiRequest('PUT', '/api/users/me', data),
     uploadProfilePhoto: (formData) =>
         apiRequest('PUT', '/api/users/me/photo', formData, true),
+};
+
+// ---------------------------------------------------------------------------
+// Payments API
+// ---------------------------------------------------------------------------
+const PaymentsAPI = {
+    createGcashEnrollment: async (centerId, payload) => {
+        var resolvedCenterId = encodeURIComponent(String(centerId || '').trim());
+        var normalized = {
+            amount: Number((payload && payload.amount) || 1550),
+            gcash_number: String((payload && payload.gcash_number) || '').trim(),
+            gcash_name: String((payload && payload.gcash_name) || '').trim(),
+            reference_number: String((payload && payload.reference_number) || '').trim(),
+            program_enrolled: String((payload && payload.program_enrolled) || '').trim(),
+            enrollment_date: String((payload && payload.enrollment_date) || '').trim(),
+        };
+
+        var proofFile = (payload && payload.payment_proof) ? payload.payment_proof : null;
+        var body = normalized;
+        var isFormData = false;
+
+        if (proofFile) {
+            body = new FormData();
+            Object.keys(normalized).forEach(function(key) {
+                body.append(key, normalized[key]);
+            });
+            body.append('payment_proof', proofFile);
+            isFormData = true;
+        }
+        try {
+            return await apiRequest('POST', '/api/payments/gcash/' + resolvedCenterId, body, isFormData);
+        } catch (err) {
+            var msg = String((err && err.message) || '');
+            var is404 = /404/.test(msg) || /not found/i.test(msg);
+            if (!is404) throw err;
+
+            // Fallback for deployments still exposing the older centers enrollment route.
+            console.warn('[PaymentsAPI] Primary GCash endpoint returned 404. Falling back to /api/centers/:id/enroll/gcash');
+            return apiRequest('POST', '/api/centers/' + resolvedCenterId + '/enroll/gcash', body, isFormData);
+        }
+    },
+};
+
+// ---------------------------------------------------------------------------
+// Enrollments API
+// ---------------------------------------------------------------------------
+const EnrollmentsAPI = {
+    getCenterEnrollments: (centerId) =>
+        apiRequest('GET', '/api/enrollments/center/' + encodeURIComponent(centerId)),
 };
 
 // ---------------------------------------------------------------------------

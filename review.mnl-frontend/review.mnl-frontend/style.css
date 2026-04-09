@@ -497,15 +497,22 @@ nav img{
 /* FOOTER */
 .footer {
     background-color: #f5f5f5;
-    padding: 60px;
+    padding: 52px 60px;
+    border-top: none;
 }
 
 .footer-container {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    max-width: 1200px;
+    align-items: center;
+    max-width: 1240px;
     margin: 0 auto;
+    gap: 28px;
+}
+
+.footer-left,
+.footer-right {
+    flex: 1;
 }
 
 .footer-left h2 {
@@ -521,21 +528,37 @@ nav img{
 }
 
 .footer-center {
-    display: flex;
-    gap: 48px;
+    flex: 0 1 420px;
+    display: grid;
+    grid-template-columns: 150px 150px;
+    justify-content: center;
+    column-gap: 34px;
+    row-gap: 10px;
+    align-content: center;
 }
 
 .footer-column {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: contents;
 }
 
 .footer-column a {
+    display: block;
+    width: 150px;
     color: #666;
     text-decoration: none;
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.35;
 }
+
+/* Force footer links into this visual order:
+   left column: Home, Review Centers, Contact
+   right column: Search, Dashboard */
+.footer-center .footer-column:first-child a:nth-child(1) { grid-column: 1; grid-row: 1; }
+.footer-center .footer-column:first-child a:nth-child(2) { grid-column: 1; grid-row: 2; }
+.footer-center .footer-column:nth-child(2) a:nth-child(2) { grid-column: 1; grid-row: 3; }
+.footer-center .footer-column:first-child a:nth-child(3) { grid-column: 2; grid-row: 1; }
+.footer-center .footer-column:nth-child(2) a:nth-child(1) { grid-column: 2; grid-row: 2; }
 
 .footer-column a:hover {
     color: #0a4cff;
@@ -543,12 +566,13 @@ nav img{
 
 .footer-right {
     display: flex;
-    gap: 15px;
+    justify-content: flex-end;
+    gap: 14px;
 }
 
 .social-icon {
-    width: 45px;
-    height: 45px;
+    width: 46px;
+    height: 46px;
     background: #0a4cff;
     color: #fff;
     border-radius: 50%;
@@ -562,6 +586,73 @@ nav img{
 
 .social-icon:hover {
     background: #0836cc;
+}
+
+@media (max-width: 900px) {
+    .footer {
+        padding: 36px 24px;
+    }
+
+    .footer-container {
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .footer-left,
+    .footer-right {
+        flex: 0 1 auto;
+    }
+
+    .footer-center {
+        flex: 1 1 100%;
+        grid-template-columns: 140px 140px;
+        column-gap: 28px;
+        row-gap: 10px;
+    }
+
+    .footer-column a {
+        width: 140px;
+    }
+}
+
+@media (max-width: 640px) {
+    .footer {
+        padding: 28px 18px;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .footer-center {
+        width: auto;
+        grid-template-columns: 130px 130px;
+        justify-content: center;
+        column-gap: 22px;
+        row-gap: 8px;
+    }
+
+    .footer-column a {
+        width: 130px;
+        text-align: left;
+    }
+
+    .footer-center .footer-column:first-child a:nth-child(1),
+    .footer-center .footer-column:first-child a:nth-child(2),
+    .footer-center .footer-column:first-child a:nth-child(3),
+    .footer-center .footer-column:nth-child(2) a:nth-child(1),
+    .footer-center .footer-column:nth-child(2) a:nth-child(2) {
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .footer-right {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
 }
 
 
@@ -811,7 +902,6 @@ nav img{
 
 .clear-all-filters-btn:active {
     transform: scale(0.95);
-}
 }
 
 .filter-tag.rating-tag {
@@ -1205,6 +1295,7 @@ nav img{
     max-width: 800px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1237,7 +1328,7 @@ nav img{
     padding: 40px 60px;
     display: flex;
     gap: 40px;
-    min-height: 55vh;
+    min-height: auto;
 }
 
 @media (max-width: 900px) {
@@ -1815,6 +1906,7 @@ nav img{
 .testimonials-section {
     background: #fff;
     border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(6, 22, 82, 0.16);
 }
 
 .testimonials-section h2 {
@@ -1828,6 +1920,7 @@ nav img{
     border-radius: 12px;
     padding: 16px 20px;
     margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(6, 22, 82, 0.10);
 }
 
 /* DASHBOARD SECTION */

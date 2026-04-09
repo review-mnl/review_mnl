@@ -8,7 +8,10 @@ const createGcashEnrollment = async (req, res) => {
   try {
     if (!req.user || !req.user.id) return res.status(401).json({ message: 'Authentication required.' });
     const userId = req.user.id;
-    const centerId = req.params.id;
+    const centerId = Number(req.params.id);
+    if (!Number.isInteger(centerId) || centerId <= 0) {
+      return res.status(400).json({ message: 'Invalid review center id.' });
+    }
     const amount = parseInt(req.body.amount, 10) || 1550; // default in PHP pesos
     const gcashNumber = String(req.body.gcash_number || '').trim();
     const gcashName = String(req.body.gcash_name || '').trim();
@@ -19,7 +22,7 @@ const createGcashEnrollment = async (req, res) => {
 
     console.log('[Enrollment] Request received', {
       userId,
-      centerId,
+      reviewCenterId: centerId,
       amount,
       programEnrolled,
       enrollmentDate,
@@ -45,6 +48,11 @@ const createGcashEnrollment = async (req, res) => {
     // Ensure center exists
     const [centerRows] = await db.query('SELECT id, business_name FROM review_centers WHERE id = ?', [centerId]);
     if (!centerRows || centerRows.length === 0) return res.status(404).json({ message: 'Center not found.' });
+    const center = centerRows[0];
+
+    const [studentRows] = await db.query('SELECT first_name, last_name, email FROM users WHERE id = ?', [userId]);
+    const student = studentRows && studentRows.length ? studentRows[0] : null;
+    const studentName = [student && student.first_name, student && student.last_name].filter(Boolean).join(' ').trim() || (student && student.email) || 'Student';
 
     const maskedNumber = gcashNumber.replace(/\d(?=\d{4})/g, '*');
     
@@ -67,12 +75,19 @@ const createGcashEnrollment = async (req, res) => {
         'PHP',
         status,
         JSON.stringify({
+          enrollment_id: null,
+          student_id: userId,
+          student_name: studentName,
+          review_center_id: centerId,
+          review_center_name: center.business_name,
           payment_method: 'GCash',
           gcash_number_masked: maskedNumber,
           gcash_name: gcashName,
           reference_number: referenceNumber,
           program_enrolled: programEnrolled,
           enrollment_date: enrollmentDate,
+          payment_status: 'pending',
+          enrollment_status: 'pending',
           manual_verification_required: true,
         }),
       ]
@@ -80,14 +95,23 @@ const createGcashEnrollment = async (req, res) => {
     const paymentId = result.insertId;
 
     // Create the enrollment with payment_verified = 0 and status = pending
-    await conn.query(
+    const [enrollmentInsert] = await conn.query(
       'INSERT INTO enrollments (user_id, center_id, payment_id, status, review_status, payment_verified) VALUES (?, ?, ?, ?, ?, ?)',
       [userId, centerId, paymentId, 'pending', 'pending', 0]
     );
+    const enrollmentId = enrollmentInsert.insertId;
+
+    await conn.query(
+      'UPDATE payments SET metadata = JSON_SET(COALESCE(metadata, JSON_OBJECT()), "$.enrollment_id", ?, "$.created_at", ?) WHERE id = ?',
+      [enrollmentId, new Date().toISOString(), paymentId]
+    );
 
     console.log('[Enrollment] Saved Pending Manual GCash Payment', {
+      enrollmentId,
       userId,
-      centerId,
+      studentName,
+      reviewCenterId: centerId,
+      reviewCenterName: center.business_name,
       paymentId,
       transactionStatus: status,
       programEnrolled,
@@ -96,11 +120,23 @@ const createGcashEnrollment = async (req, res) => {
 
     await conn.commit();
     return res.json({
+      enrollmentId,
+      studentId: userId,
+      studentName,
+      reviewCenterId: centerId,
+      reviewCenterName: center.business_name,
+      program: programEnrolled,
+      paymentStatus: 'pending',
+      enrollmentStatus: 'pending',
+      createdAt: new Date().toISOString(),
       payment_id: paymentId,
       user_id: userId,
       review_center_id: Number(centerId),
+      review_center_name: center.business_name,
+      student_name: studentName,
       program_enrolled: programEnrolled,
       enrollment_status: 'pending',
+      payment_status: 'pending',
       amount,
       payment_method: 'GCash Manual',
       transaction_status: status,

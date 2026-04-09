@@ -227,12 +227,13 @@ const getThreadMessages = async (req, res) => {
       return res.status(400).json({ message: 'Valid withUserId is required.' });
     }
 
-    const params = [currentUserId, withUserId, currentUserId, withUserId];
+    const params = [currentUserId, withUserId, withUserId, currentUserId];
 
     console.log('[Chat] Thread query', {
       currentUserId,
       withUserId,
-      mode: 'pair-only',
+      mode: 'pair-bidirectional',
+      params,
     });
 
     let [rows] = await db.query(
@@ -255,21 +256,32 @@ const getThreadMessages = async (req, res) => {
 
     const messages = rows.map((row) => ({
       message_id: row.message_id,
+      messageId: row.message_id,
       student_id: row.student_id,
       center_id: row.center_id,
       enrollment_id: row.enrollment_id,
       sender_id: row.sender_id,
+      senderId: row.sender_id,
       receiver_id: row.receiver_id,
+      receiverId: row.receiver_id,
       message: row.message,
       is_read: Boolean(row.is_read),
       read_at: row.read_at,
+      timestamp: row.created_at,
       created_at: row.created_at,
     }));
+
+    const senderBreakdown = messages.reduce((acc, item) => {
+      const key = String(item.sender_id);
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
 
     console.log('[Chat] Thread fetched', {
       currentUserId,
       withUserId,
       count: messages.length,
+      senderBreakdown,
     });
 
     return res.json({ messages });

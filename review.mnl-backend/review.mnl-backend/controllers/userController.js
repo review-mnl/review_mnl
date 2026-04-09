@@ -103,6 +103,98 @@ const getMyEnrollments = async (req, res) => {
   }
 };
 
+const getMyRatings = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [rows] = await db.query(
+      `SELECT
+         ec.center_id,
+         rc.business_name AS center_name,
+         rc.logo_url AS center_logo,
+         cr.rating,
+         cr.updated_at AS rated_at
+       FROM (
+         SELECT DISTINCT e.center_id
+         FROM enrollments e
+         WHERE e.user_id = ?
+           AND (e.review_status = 'approved' OR e.status = 'active')
+       ) ec
+       JOIN review_centers rc ON rc.id = ec.center_id
+       LEFT JOIN center_ratings cr ON cr.center_id = ec.center_id AND cr.student_id = ?
+       ORDER BY rc.business_name ASC`,
+      [userId, userId]
+    );
+
+    const reviews = rows.map((row) => ({
+      center_id: row.center_id,
+      center_name: row.center_name,
+      center_logo: row.center_logo,
+      rating: row.rating ? Number(row.rating) : null,
+      rated_at: row.rated_at || null,
+    }));
+
+    console.log('[Ratings] Fetched rating-eligible centers for user', { userId, count: reviews.length });
+    return res.json({ reviews });
+  } catch (err) {
+    console.error('Get my ratings error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const upsertMyRating = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const centerId = Number(req.params.centerId);
+    const rating = Number(req.body && req.body.rating);
+
+    if (!Number.isInteger(centerId) || centerId <= 0) {
+      return res.status(400).json({ message: 'Invalid review center.' });
+    }
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be an integer between 1 and 5.' });
+    }
+
+    const [eligibleRows] = await db.query(
+      `SELECT id
+       FROM enrollments
+       WHERE user_id = ?
+         AND center_id = ?
+         AND (review_status = 'approved' OR status = 'active')
+       LIMIT 1`,
+      [userId, centerId]
+    );
+
+    if (!eligibleRows.length) {
+      return res.status(403).json({ message: 'You can only rate review centers where your enrollment is approved.' });
+    }
+
+    await db.query(
+      `INSERT INTO center_ratings (student_id, center_id, rating)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE rating = VALUES(rating), updated_at = CURRENT_TIMESTAMP`,
+      [userId, centerId, rating]
+    );
+
+    const [savedRows] = await db.query(
+      `SELECT center_id, rating, updated_at AS rated_at
+       FROM center_ratings
+       WHERE student_id = ? AND center_id = ?
+       LIMIT 1`,
+      [userId, centerId]
+    );
+
+    console.log('[Ratings] Upserted center rating', { userId, centerId, rating });
+    return res.json({
+      message: 'Rating saved successfully.',
+      review: savedRows[0] || { center_id: centerId, rating, rated_at: null },
+    });
+  } catch (err) {
+    console.error('Upsert my rating error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 const updateMyProfile = async (req, res) => {
   try {
     const { first_name, last_name, phone, address, bio, profile_picture_url, current_password, new_password, email } = req.body;
@@ -205,4 +297,11 @@ const updateMyProfilePhoto = async (req, res) => {
   }
 };
 
-module.exports = { getMyProfile, getMyEnrollments, updateMyProfile, updateMyProfilePhoto };
+module.exports = {
+  getMyProfile,
+  getMyEnrollments,
+  getMyRatings,
+  upsertMyRating,
+  updateMyProfile,
+  updateMyProfilePhoto,
+};

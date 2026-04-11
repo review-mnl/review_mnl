@@ -87,7 +87,7 @@
                 return '★'.repeat(r) + '☆'.repeat(5 - r);
             }
 
-            const ABOUT_WORD_LIMIT = 500;
+            const ABOUT_WORD_LIMIT = 150;
 
             function clampAboutWords(text) {
                 const raw = String(text || '').trim();
@@ -629,7 +629,7 @@
                 const aboutInput = document.getElementById('aboutInput');
                 const limited = clampAboutWords(aboutInput ? aboutInput.value : '');
                 if (limited.count > ABOUT_WORD_LIMIT) {
-                    alert('About description is limited to 500 words. Please shorten your text.');
+                    alert('About description is limited to 150 words. Please shorten your text.');
                     return;
                 }
                 const text = limited.text;

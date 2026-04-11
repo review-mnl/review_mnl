@@ -1037,7 +1037,7 @@
             try {
                 const center = await CentersAPI.getById(centerId);
                 const centerName = center.business_name || center.name || 'Review Center';
-                const centerAbout = clampAboutWords(center.description || 'No description provided yet.', 500);
+                const centerAbout = clampAboutWords(center.description || 'No description provided yet.', 150);
                 const centerShort = center.address || 'Location unavailable';
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
 

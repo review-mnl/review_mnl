@@ -3504,6 +3504,93 @@ nav img{
     }
 }
 
+/* Final slim side cards for view-center and center profile */
+.center-right.flex-column {
+    align-items: start;
+    gap: 16px;
+}
+
+.center-right.flex-column > .achievements-card,
+.center-right.flex-column > .testimonials-section {
+    align-self: start;
+    border-radius: 16px;
+}
+
+.center-right.flex-column > .achievements-card {
+    padding: 16px !important;
+}
+
+.center-right.flex-column > .testimonials-section {
+    padding: 16px 16px 12px !important;
+    box-shadow: 0 6px 16px rgba(6, 22, 82, 0.10);
+}
+
+.center-right.flex-column > .achievements-card h2,
+.center-right.flex-column > .testimonials-section h2 {
+    font-size: 20px !important;
+    margin-bottom: 12px;
+}
+
+.center-right.flex-column .achievement-list {
+    gap: 12px;
+}
+
+.center-right.flex-column .achievement-item {
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+}
+
+.center-right.flex-column .trophy-icon {
+    font-size: 24px;
+}
+
+.center-right.flex-column .achievement-item p {
+    font-size: 13px;
+}
+
+.center-right.flex-column .testimonial-card {
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+}
+
+@media (max-width: 900px) {
+    .center-right.flex-column {
+        gap: 14px;
+    }
+
+    .center-right.flex-column > .achievements-card,
+    .center-right.flex-column > .testimonials-section {
+        padding: 14px !important;
+    }
+
+    .center-right.flex-column > .testimonials-section {
+        padding-bottom: 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .center-right.flex-column > .achievements-card,
+    .center-right.flex-column > .testimonials-section {
+        border-radius: 12px;
+    }
+
+    .center-right.flex-column > .achievements-card h2,
+    .center-right.flex-column > .testimonials-section h2 {
+        font-size: 18px !important;
+    }
+
+    .center-right.flex-column .achievement-item {
+        gap: 8px;
+        padding: 9px 10px;
+    }
+
+    .center-right.flex-column .trophy-icon {
+        font-size: 22px;
+    }
+}
+
     /* Final bigger view-center sizing */
     .header-viewcenter .center-header-content {
         padding: 28px 4% 30px;

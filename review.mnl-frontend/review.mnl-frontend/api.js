@@ -785,7 +785,7 @@ function initStudentMessageSlider(options) {
         toggle.setAttribute('role', 'button');
         toggle.setAttribute('tabindex', '0');
         toggle.setAttribute('aria-label', 'Open messages');
-        toggle.innerHTML = '<span>Messages</span>';
+        toggle.innerHTML = '<span>Messages</span><span id="rmnlStudentMsgToggleUnread" class="dashboard-toggle-unread" style="display:none;">0</span>';
 
         var sidebar = document.createElement('div');
         sidebar.className = 'sidebar';
@@ -823,6 +823,7 @@ function initStudentMessageSlider(options) {
         var listPanel = document.getElementById('rmnlStudentMsgList');
         var threadsWrap = document.getElementById('rmnlStudentMsgThreads');
         var unreadBadge = document.getElementById('rmnlStudentMsgUnread');
+        var toggleUnreadBadge = document.getElementById('rmnlStudentMsgToggleUnread');
         var convPanel = document.getElementById('rmnlStudentConvPanel');
         var convName = document.getElementById('rmnlStudentConvName');
         var convMessages = document.getElementById('rmnlStudentConvMessages');
@@ -1090,6 +1091,10 @@ function initStudentMessageSlider(options) {
 
             unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
             unreadBadge.textContent = String(unreadCount);
+            if (toggleUnreadBadge) {
+                toggleUnreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                toggleUnreadBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+            }
 
             if (!data.length) {
                 threadsWrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">' + escHtml(noMessagesText) + '</p>';
@@ -1196,6 +1201,468 @@ function initReviewCenterMessageSlider(options) {
         noMessagesText: 'No student messages yet.'
     }, options || {});
     initStudentMessageSlider(merged);
+}
+
+// ---------------------------------------------------------------------------
+// Full page messages view (used by messages.html and center-messages.html)
+// ---------------------------------------------------------------------------
+function initFullMessagesPage(options) {
+    try {
+        options = options || {};
+        if (!isAuthenticated()) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        var conversationFallbackName = String(options.conversationFallbackName || 'Conversation');
+        var noMessagesText = String(options.noMessagesText || 'No messages yet.');
+        var emptyHintText = String(options.emptyHintText || 'Select a conversation to start messaging.');
+        var withUserParam = String(options.withUserParam || 'withUserId');
+
+        var listPanel = document.getElementById('msgPageListPanel');
+        var threadsWrap = document.getElementById('msgPageThreads');
+        var unreadBadge = document.getElementById('msgPageUnreadBadge');
+        var emptyPanel = document.getElementById('msgPageEmpty');
+        var convPanel = document.getElementById('msgPageConvPanel');
+        var convName = document.getElementById('msgPageConvName');
+        var convMessages = document.getElementById('msgPageMessages');
+        var convInput = document.getElementById('msgPageInput');
+        var sendBtn = document.getElementById('msgPageSendBtn');
+        var backBtn = document.getElementById('msgPageBackBtn');
+        var attachBtn = document.getElementById('msgPageAttachBtn');
+        var attachInput = document.getElementById('msgPageAttachInput');
+        var attachPreview = document.getElementById('msgPageAttachPreview');
+        var statusEl = document.getElementById('msgPageStatus');
+
+        if (!threadsWrap || !convPanel || !convMessages || !convInput || !sendBtn) return;
+        if (emptyPanel && emptyHintText) emptyPanel.textContent = emptyHintText;
+
+        var conversationMap = {};
+        var activeConversation = null;
+        var activeConversationKey = null;
+        var pendingAttachment = null;
+        var threadPollTimer = null;
+        var conversationPollTimer = null;
+        var initialQueryHandled = false;
+
+        function isCompactView() {
+            return window.matchMedia('(max-width: 900px)').matches;
+        }
+
+        function escHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, function(ch) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+            });
+        }
+
+        function escAttr(str) {
+            return String(str || '').replace(/[&<>"']/g, function(ch) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+            });
+        }
+
+        function setStatus(text, isError) {
+            if (!statusEl) return;
+            statusEl.textContent = String(text || '');
+            statusEl.style.color = isError ? '#b91c1c' : '#6b7280';
+        }
+
+        function normalizeAttachmentUrl(rawUrl) {
+            if (!rawUrl) return '';
+            var url = String(rawUrl).trim();
+            if (!url) return '';
+            if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+            if (url.charAt(0) === '/') return API_BASE + url;
+            return API_BASE + '/' + url.replace(/^\/+/, '');
+        }
+
+        function isImageAttachment(mimeType, fileName, url) {
+            var mime = String(mimeType || '').toLowerCase();
+            if (mime.indexOf('image/') === 0) return true;
+            var extSource = String(fileName || url || '').toLowerCase();
+            return /\.(jpg|jpeg|png|gif|webp)(\?|#|$)/.test(extSource);
+        }
+
+        function getAttachmentMeta(message) {
+            if (!message || typeof message !== 'object') return null;
+            var rawUrl = message.attachment_url || message.attachmentUrl || null;
+            var url = normalizeAttachmentUrl(rawUrl);
+            if (!url) return null;
+            return {
+                url: url,
+                name: String(message.attachment_name || message.attachmentName || 'Attachment'),
+                mimeType: String(message.attachment_mime_type || message.attachmentMimeType || ''),
+                size: Number(message.attachment_size || message.attachmentSize || 0) || 0,
+            };
+        }
+
+        function renderMessageBody(message) {
+            var text = String((message && message.message) || '').trim();
+            var html = '';
+            if (text) {
+                html += '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(text) + '</div>';
+            }
+
+            var attachment = getAttachmentMeta(message);
+            if (attachment) {
+                var safeUrl = escAttr(attachment.url);
+                var safeName = escHtml(attachment.name || 'Attachment');
+                if (isImageAttachment(attachment.mimeType, attachment.name, attachment.url)) {
+                    html += '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:' + (text ? '8px' : '0') + ';">'
+                        + '<img src="' + safeUrl + '" alt="' + safeName + '" style="max-width:min(280px,80vw);max-height:220px;border-radius:10px;border:1px solid #dbe5ff;display:block;" />'
+                        + '</a>';
+                } else {
+                    html += '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;margin-top:' + (text ? '8px' : '0') + ';padding:7px 9px;border:1px solid #d7e2ff;border-radius:10px;background:#f8fbff;color:#1d4ed8;font-size:12px;font-weight:600;text-decoration:none;max-width:260px;word-break:break-word;">'
+                        + '<span class="material-symbols-outlined" style="font-size:16px;line-height:1;">description</span>'
+                        + '<span>' + safeName + '</span>'
+                        + '</a>';
+                }
+            }
+
+            if (!html) {
+                html = '<div style="color:#64748b;font-style:italic;">(No content)</div>';
+            }
+            return html;
+        }
+
+        function formatDate(value) {
+            if (!value) return '';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+
+        function formatFileSize(sizeBytes) {
+            var bytes = Number(sizeBytes || 0);
+            if (!bytes || bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1).replace(/\.0$/, '') + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '') + ' MB';
+        }
+
+        function refreshPendingAttachmentUi() {
+            if (!attachPreview) return;
+            if (!pendingAttachment) {
+                attachPreview.style.display = 'none';
+                attachPreview.innerHTML = '';
+                return;
+            }
+            attachPreview.style.display = 'flex';
+            attachPreview.innerHTML = '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:74%;">'
+                + escHtml(pendingAttachment.name + ' (' + formatFileSize(pendingAttachment.size) + ')')
+                + '</span>'
+                + '<button type="button" id="msgPageAttachClear" style="border:1px solid #d7def5;background:#fff;color:#334155;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;">Remove</button>';
+            var clearBtn = document.getElementById('msgPageAttachClear');
+            if (clearBtn) clearBtn.addEventListener('click', clearPendingAttachment);
+        }
+
+        function clearPendingAttachment() {
+            pendingAttachment = null;
+            if (attachInput) attachInput.value = '';
+            refreshPendingAttachmentUi();
+        }
+
+        function pickAttachment() {
+            if (!attachInput || attachInput.disabled) return;
+            attachInput.click();
+        }
+
+        function onAttachmentSelected(event) {
+            var file = event && event.target && event.target.files && event.target.files[0];
+            pendingAttachment = file || null;
+            refreshPendingAttachmentUi();
+        }
+
+        function openConversationUi() {
+            convPanel.style.display = 'flex';
+            if (emptyPanel) emptyPanel.style.display = 'none';
+            if (isCompactView() && listPanel) listPanel.style.display = 'none';
+        }
+
+        function closeConversationUi() {
+            activeConversation = null;
+            activeConversationKey = null;
+            stopThreadPolling();
+            convInput.value = '';
+            convMessages.innerHTML = '';
+            clearPendingAttachment();
+            if (isCompactView()) {
+                convPanel.style.display = 'none';
+                if (listPanel) listPanel.style.display = 'block';
+                if (emptyPanel) emptyPanel.style.display = 'none';
+            } else {
+                convPanel.style.display = 'none';
+                if (emptyPanel) emptyPanel.style.display = 'flex';
+            }
+        }
+
+        function renderThreadMessages(messages) {
+            var me = getUser();
+            var myId = me ? Number(me.id) : null;
+            var data = Array.isArray(messages) ? messages : [];
+
+            convMessages.innerHTML = data.map(function(msg) {
+                var senderId = Number((msg && (msg.sender_id != null ? msg.sender_id : msg.senderId)) || 0);
+                var outgoing = myId != null && senderId === myId;
+                var ts = formatDateTime(msg.created_at);
+                return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
+                    + renderMessageBody(msg)
+                    + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:' + (outgoing ? 'right' : 'left') + ';">' + escHtml(ts) + '</div>'
+                    + '</div>';
+            }).join('');
+            convMessages.scrollTop = convMessages.scrollHeight;
+        }
+
+        async function loadActiveThread() {
+            if (!activeConversation) return;
+            try {
+                var res = await MessageAPI.getThread(activeConversation.other_user_id, activeConversation.center_id || null);
+                var messages = (res && res.messages) ? res.messages : [];
+                renderThreadMessages(messages);
+                await MessageAPI.markThreadAsRead(activeConversation.other_user_id, activeConversation.center_id || null);
+                await loadConversations(false);
+                setStatus('Synced ' + formatDateTime(new Date().toISOString()), false);
+            } catch (e) {
+                setStatus('Failed to load conversation.', true);
+                console.warn('Full messages thread load failed', e);
+            }
+        }
+
+        function stopThreadPolling() {
+            if (!threadPollTimer) return;
+            clearInterval(threadPollTimer);
+            threadPollTimer = null;
+        }
+
+        function ensureThreadPolling() {
+            stopThreadPolling();
+            threadPollTimer = setInterval(function() {
+                if (activeConversation) loadActiveThread();
+            }, 5000);
+        }
+
+        async function openConversation(conversation) {
+            if (!conversation || !conversation.other_user_id) return;
+            activeConversation = conversation;
+            activeConversationKey = String(conversation.other_user_id);
+            convName.textContent = conversation.other_name || conversationFallbackName;
+            openConversationUi();
+            await loadActiveThread();
+            ensureThreadPolling();
+        }
+
+        async function sendMessage() {
+            var text = (convInput.value || '').trim();
+            if ((!text && !pendingAttachment) || !activeConversation || convInput.disabled) return;
+
+            convInput.disabled = true;
+            sendBtn.disabled = true;
+            if (attachBtn) attachBtn.disabled = true;
+            if (attachInput) attachInput.disabled = true;
+            try {
+                await MessageAPI.send({
+                    receiver_id: activeConversation.other_user_id,
+                    enrollment_id: activeConversation.enrollment_id || null,
+                    message: text,
+                    attachment: pendingAttachment || null,
+                });
+                convInput.value = '';
+                clearPendingAttachment();
+                await loadActiveThread();
+            } catch (e) {
+                alert((e && e.message) ? e.message : 'Failed to send message.');
+            } finally {
+                convInput.disabled = false;
+                sendBtn.disabled = false;
+                if (attachBtn) attachBtn.disabled = false;
+                if (attachInput) attachInput.disabled = false;
+                convInput.focus();
+            }
+        }
+
+        function renderConversationList(conversations) {
+            var data = Array.isArray(conversations) ? conversations : [];
+            var unreadCount = data.reduce(function(acc, item) {
+                return acc + Number(item.unread_count || 0);
+            }, 0);
+
+            if (unreadBadge) {
+                unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                unreadBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+            }
+
+            if (!data.length) {
+                threadsWrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">' + escHtml(noMessagesText) + '</p>';
+                if (!activeConversation && emptyPanel) emptyPanel.style.display = 'flex';
+                return;
+            }
+
+            threadsWrap.innerHTML = data.map(function(item) {
+                var hasUnread = Number(item.unread_count || 0) > 0;
+                var active = activeConversationKey === String(item.other_user_id);
+                var rowBg = active ? '#e7efff' : (hasUnread ? '#eef4ff' : '#fff');
+                return '<div class="message-thread" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
+                    + '<div class="message-avatar"></div>'
+                    + '<div class="message-info">'
+                    + '<span class="message-sender" style="font-weight:' + (hasUnread ? '700' : '500') + ';">' + escHtml(item.other_name || conversationFallbackName) + '</span>'
+                    + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
+                    + '</div>'
+                    + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+                    + '<span class="message-time">' + escHtml(formatDate(item.last_timestamp)) + '</span>'
+                    + (hasUnread ? ('<span style="font-size:10px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 6px;font-weight:700;">' + Number(item.unread_count) + '</span>') : '')
+                    + '</div>'
+                    + '</div>';
+            }).join('');
+
+            threadsWrap.querySelectorAll('.message-thread').forEach(function(row) {
+                row.addEventListener('click', function() {
+                    var otherUserId = Number(row.getAttribute('data-other-user-id') || 0);
+                    var centerId = Number(row.getAttribute('data-center-id') || 0);
+                    var conv = conversationMap[String(otherUserId)] || {
+                        other_user_id: otherUserId,
+                        center_id: centerId,
+                        enrollment_id: null,
+                        other_name: conversationFallbackName,
+                    };
+                    openConversation(conv);
+                });
+            });
+        }
+
+        async function maybeOpenFromQuery() {
+            if (initialQueryHandled) return;
+            initialQueryHandled = true;
+
+            var params = new URLSearchParams(window.location.search || '');
+            var notificationId = Number(params.get('openChatNotification') || 0);
+            if (notificationId > 0) {
+                try {
+                    var notificationRes = await NotificationAPI.getMy();
+                    var notifications = (notificationRes && notificationRes.notifications) ? notificationRes.notifications : [];
+                    var target = notifications.find(function(item) {
+                        return Number(item.notification_id) === notificationId;
+                    });
+
+                    if (target && Number(target.center_user_id || target.student_user_id || 0) > 0) {
+                        var otherUserId = Number(target.center_user_id || target.student_user_id || 0);
+                        var convFromNotif = conversationMap[String(otherUserId)] || {
+                            other_user_id: otherUserId,
+                            center_id: Number(target.center_id || 0),
+                            enrollment_id: Number(target.enrollment_id || 0) || null,
+                            other_name: target.center_name || target.student_name || conversationFallbackName,
+                        };
+
+                        try {
+                            if (!target.is_read) await NotificationAPI.markAsRead(notificationId);
+                        } catch (e) {}
+
+                        params.delete('openChatNotification');
+                        var cleanQuery = params.toString();
+                        var cleanUrl = window.location.pathname + (cleanQuery ? ('?' + cleanQuery) : '');
+                        window.history.replaceState({}, '', cleanUrl);
+
+                        await openConversation(convFromNotif);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Failed to resolve openChatNotification on full messages page', e);
+                }
+            }
+
+            var withUserId = Number(params.get(withUserParam) || params.get('withUser') || 0);
+            if (!withUserId || withUserId <= 0) return;
+
+            var conv = conversationMap[String(withUserId)] || {
+                other_user_id: withUserId,
+                center_id: Number(params.get('centerId') || 0),
+                enrollment_id: Number(params.get('enrollmentId') || 0) || null,
+                other_name: conversationFallbackName,
+            };
+            await openConversation(conv);
+        }
+
+        async function loadConversations(tryOpenFromQuery) {
+            try {
+                var res = await MessageAPI.getConversations();
+                var conversations = (res && res.conversations) ? res.conversations : [];
+                conversationMap = {};
+                conversations.forEach(function(item) {
+                    conversationMap[String(item.other_user_id)] = item;
+                });
+                renderConversationList(conversations);
+                if (tryOpenFromQuery !== false) {
+                    await maybeOpenFromQuery();
+                }
+            } catch (e) {
+                renderConversationList([]);
+                setStatus('Failed to load conversations.', true);
+                console.warn('Full messages conversation load failed', e);
+            }
+        }
+
+        function cleanup() {
+            stopThreadPolling();
+            if (conversationPollTimer) {
+                clearInterval(conversationPollTimer);
+                conversationPollTimer = null;
+            }
+        }
+
+        if (backBtn) backBtn.addEventListener('click', closeConversationUi);
+        sendBtn.addEventListener('click', sendMessage);
+        if (attachBtn) attachBtn.addEventListener('click', pickAttachment);
+        if (attachInput) attachInput.addEventListener('change', onAttachmentSelected);
+        convInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+        window.addEventListener('beforeunload', cleanup);
+        window.addEventListener('resize', function() {
+            if (!activeConversation) {
+                if (isCompactView()) {
+                    convPanel.style.display = 'none';
+                    if (listPanel) listPanel.style.display = 'block';
+                    if (emptyPanel) emptyPanel.style.display = 'none';
+                } else {
+                    convPanel.style.display = 'none';
+                    if (listPanel) listPanel.style.display = 'block';
+                    if (emptyPanel) emptyPanel.style.display = 'flex';
+                }
+            } else {
+                openConversationUi();
+            }
+        });
+
+        if (isCompactView()) {
+            convPanel.style.display = 'none';
+            if (emptyPanel) emptyPanel.style.display = 'none';
+        } else {
+            convPanel.style.display = 'none';
+            if (emptyPanel) emptyPanel.style.display = 'flex';
+        }
+
+        setStatus('Loading conversations...', false);
+        loadConversations(true);
+        conversationPollTimer = setInterval(function() {
+            loadConversations(false);
+        }, 8000);
+    } catch (e) {
+        console.warn('initFullMessagesPage failed', e);
+    }
 }
 
 // ---------------------------------------------------------------------------

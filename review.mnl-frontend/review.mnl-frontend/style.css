@@ -3504,6 +3504,47 @@ nav img{
     }
 }
 
+/* Final view-center layout override */
+.center-details {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    align-items: start;
+}
+
+.center-right.flex-column {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.center-right.flex-column > .achievements-card,
+.center-right.flex-column > .testimonials-section {
+    width: auto !important;
+    min-width: 0;
+}
+
+@media (max-width: 900px) {
+    .center-details {
+        grid-template-columns: 1fr;
+    }
+
+    .center-right.flex-column {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .center-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .center-right.flex-column {
+        display: flex !important;
+        flex-direction: column;
+    }
+}
+
 @media (max-width: 480px) {
     .header-viewcenter .center-header-content {
         padding: 10px 4% 8px;

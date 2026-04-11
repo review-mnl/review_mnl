@@ -3504,6 +3504,16 @@ nav img{
     }
 }
 
+/* About text wrapping guard */
+#centerAbout,
+#aboutDisplay,
+.about-section p {
+    max-width: 100%;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 /* Final thinner side cards override */
 .center-right.flex-column {
     align-items: start;

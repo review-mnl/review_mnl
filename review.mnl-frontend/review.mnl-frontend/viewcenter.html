@@ -1026,10 +1026,18 @@
                 return API_BASE + '/' + value;
             }
 
+            function clampAboutWords(text, maxWords) {
+                const raw = String(text || '').trim();
+                if (!raw) return '';
+                const words = raw.match(/\S+/g) || [];
+                if (words.length <= maxWords) return raw;
+                return words.slice(0, maxWords).join(' ');
+            }
+
             try {
                 const center = await CentersAPI.getById(centerId);
                 const centerName = center.business_name || center.name || 'Review Center';
-                const centerAbout = center.description || 'No description provided yet.';
+                const centerAbout = clampAboutWords(center.description || 'No description provided yet.', 500);
                 const centerShort = center.address || 'Location unavailable';
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
 

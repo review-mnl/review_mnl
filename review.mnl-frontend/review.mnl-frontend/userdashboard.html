@@ -53,7 +53,7 @@
                 <div class="nav-links">
                     <ul>
                         <li><a href="loggedin.html">HOME</a></li>
-                        <li><a href="search.html">VIEW REVIEW CENTERS</a></li>
+                        <li><a href="messages.html">MESSAGES</a></li>
                         <li><a href="contact.html">CONTACT</a></li>
                         <li><a href="search.html">SEARCH</a></li>
                     </ul>
@@ -1193,6 +1193,13 @@
                     loadMyEnrollments();
                     loadMyReviews();
                     loadConversations();
+                    var params = new URLSearchParams(window.location.search || '');
+                    if (params.get('messages') === '1') {
+                        var sidebar = document.getElementById('sidebar');
+                        var overlay = document.querySelector('.sidebar-overlay');
+                        if (sidebar) sidebar.classList.add('active');
+                        if (overlay) overlay.classList.add('active');
+                    }
                     loadMyNotifications();
                     startDashboardNotificationRealtime();
                     window._dashboardConversationPollTimer = setInterval(function(){

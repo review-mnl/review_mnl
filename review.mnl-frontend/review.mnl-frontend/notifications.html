@@ -146,7 +146,7 @@
             <div class="nav-links">
                 <ul>
                     <li><a href="loggedin.html">HOME</a></li>
-                    <li><a href="search.html">VIEW REVIEW CENTERS</a></li>
+                    <li><a href="messages.html">MESSAGES</a></li>
                     <li><a href="contact.html">CONTACT</a></li>
                     <li><a href="search.html">SEARCH</a></li>
                 </ul>
@@ -233,6 +233,7 @@
         })();
 
         initGlobalNotificationBell();
+    initStudentMessageSlider();
 
         (function() {
             const listEl = document.getElementById('notifList');
@@ -276,7 +277,7 @@
                         var id = Number(btn.getAttribute('data-id') || 0);
                         if (id > 0) {
                             await markRead(id);
-                            window.location.href = 'userdashboard.html?openChatNotification=' + id;
+                            window.location.href = 'messages.html?openChatNotification=' + id;
                         }
                     });
                 });

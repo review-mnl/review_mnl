@@ -608,7 +608,7 @@ function initGlobalNotificationBell(options) {
                     var id = Number(el.getAttribute('data-id'));
                     if (id > 0) {
                         await markRead(id);
-                        window.location.href = 'userdashboard.html?openChatNotification=' + id;
+                        window.location.href = 'messages.html?openChatNotification=' + id;
                     }
                 });
             });
@@ -735,6 +735,316 @@ function initGlobalNotificationBell(options) {
         }
     } catch (e) {
         console.warn('initGlobalNotificationBell failed', e);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Global student message slider (shared on non-messages pages)
+// ---------------------------------------------------------------------------
+function initStudentMessageSlider(options) {
+    try {
+        options = options || {};
+        if (!isAuthenticated()) return;
+
+        var me = getUser();
+        if (!me || String(me.role || '').toLowerCase() !== 'student') return;
+
+        // Skip pages with a native chat sidebar (dashboard/messages page).
+        if (document.getElementById('sidebar') && document.getElementById('msgList') && document.getElementById('convPanel')) return;
+        if (window.__rmnlStudentMsgSliderMounted) return;
+        if (document.getElementById('rmnlStudentMsgSidebar')) return;
+
+        window.__rmnlStudentMsgSliderMounted = true;
+
+        var overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        overlay.id = 'rmnlStudentMsgOverlay';
+
+        var toggle = document.createElement('div');
+        toggle.className = 'dashboard-toggle';
+        toggle.id = 'rmnlStudentMsgToggle';
+        toggle.setAttribute('role', 'button');
+        toggle.setAttribute('tabindex', '0');
+        toggle.setAttribute('aria-label', 'Open messages');
+        toggle.innerHTML = '<span>Messages</span>';
+
+        var sidebar = document.createElement('div');
+        sidebar.className = 'sidebar';
+        sidebar.id = 'rmnlStudentMsgSidebar';
+        sidebar.innerHTML = ''
+            + '<div class="messages-panel" id="rmnlStudentMsgList" style="padding-top:6px;">'
+            + '  <h4 class="messages-panel-title">Messages <span id="rmnlStudentMsgUnread" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">0</span></h4>'
+            + '  <div id="rmnlStudentMsgThreads"></div>'
+            + '</div>'
+            + '<div class="conversation-panel" id="rmnlStudentConvPanel" style="display:none;">'
+            + '  <div class="conv-header">'
+            + '    <button type="button" class="conv-back-btn" id="rmnlStudentBackBtn">'
+            + '      <span class="material-symbols-outlined">arrow_back</span>'
+            + '    </button>'
+            + '    <span class="conv-name" id="rmnlStudentConvName">Review Center</span>'
+            + '  </div>'
+            + '  <div class="conv-messages" id="rmnlStudentConvMessages"></div>'
+            + '  <div class="conv-input-row">'
+            + '    <input type="text" id="rmnlStudentConvInput" placeholder="Type a message...">'
+            + '    <button type="button" class="conv-send-btn" id="rmnlStudentSendBtn">'
+            + '      <span class="material-symbols-outlined">send</span>'
+            + '    </button>'
+            + '  </div>'
+            + '</div>';
+
+        document.body.appendChild(overlay);
+        document.body.appendChild(toggle);
+        document.body.appendChild(sidebar);
+
+        var listPanel = document.getElementById('rmnlStudentMsgList');
+        var threadsWrap = document.getElementById('rmnlStudentMsgThreads');
+        var unreadBadge = document.getElementById('rmnlStudentMsgUnread');
+        var convPanel = document.getElementById('rmnlStudentConvPanel');
+        var convName = document.getElementById('rmnlStudentConvName');
+        var convMessages = document.getElementById('rmnlStudentConvMessages');
+        var convInput = document.getElementById('rmnlStudentConvInput');
+        var sendBtn = document.getElementById('rmnlStudentSendBtn');
+        var backBtn = document.getElementById('rmnlStudentBackBtn');
+
+        var conversationMap = {};
+        var activeConversation = null;
+        var activeConversationKey = null;
+        var threadPollTimer = null;
+        var conversationPollTimer = null;
+
+        function escHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, function(ch) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return '';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '';
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+
+        function openSidebar() {
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        function toggleSidebar() {
+            if (sidebar.classList.contains('active')) closeSidebar();
+            else openSidebar();
+        }
+
+        function stopThreadPolling() {
+            if (!threadPollTimer) return;
+            clearInterval(threadPollTimer);
+            threadPollTimer = null;
+        }
+
+        function ensureThreadPolling() {
+            stopThreadPolling();
+            threadPollTimer = setInterval(function() {
+                if (activeConversation) {
+                    loadActiveThread();
+                }
+            }, 5000);
+        }
+
+        function renderThreadMessages(messages) {
+            var meNow = getUser();
+            var myId = meNow ? Number(meNow.id) : null;
+            var data = Array.isArray(messages) ? messages : [];
+
+            convMessages.innerHTML = data.map(function(msg) {
+                var senderId = Number((msg && (msg.sender_id != null ? msg.sender_id : msg.senderId)) || 0);
+                var outgoing = myId != null && senderId === myId;
+                var ts = formatDateTime(msg.created_at);
+                return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
+                    + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(msg.message || '') + '</div>'
+                    + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:' + (outgoing ? 'right' : 'left') + ';">' + escHtml(ts) + '</div>'
+                    + '</div>';
+            }).join('');
+            convMessages.scrollTop = convMessages.scrollHeight;
+        }
+
+        async function loadActiveThread() {
+            if (!activeConversation) return;
+            try {
+                var res = await MessageAPI.getThread(activeConversation.other_user_id, activeConversation.center_id || null);
+                var messages = (res && res.messages) ? res.messages : [];
+                renderThreadMessages(messages);
+                await MessageAPI.markThreadAsRead(activeConversation.other_user_id, activeConversation.center_id || null);
+                await loadConversations();
+            } catch (e) {
+                console.warn('Failed to load student slider thread', e);
+            }
+        }
+
+        async function openConversation(conversation) {
+            if (!conversation || !conversation.other_user_id) return;
+            activeConversation = conversation;
+            activeConversationKey = String(conversation.other_user_id);
+            convName.textContent = conversation.other_name || 'Review Center';
+            listPanel.style.display = 'none';
+            convPanel.style.display = 'flex';
+            openSidebar();
+            await loadActiveThread();
+            ensureThreadPolling();
+        }
+
+        function closeConversation() {
+            activeConversation = null;
+            activeConversationKey = null;
+            stopThreadPolling();
+            convPanel.style.display = 'none';
+            listPanel.style.display = 'block';
+            convInput.value = '';
+            convMessages.innerHTML = '';
+        }
+
+        async function sendMessage() {
+            var text = (convInput.value || '').trim();
+            if (!text || !activeConversation || convInput.disabled) return;
+
+            convInput.disabled = true;
+            sendBtn.disabled = true;
+            try {
+                await MessageAPI.send({
+                    receiver_id: activeConversation.other_user_id,
+                    enrollment_id: activeConversation.enrollment_id || null,
+                    message: text,
+                });
+                convInput.value = '';
+                await loadActiveThread();
+            } catch (e) {
+                alert((e && e.message) ? e.message : 'Failed to send message.');
+            } finally {
+                convInput.disabled = false;
+                sendBtn.disabled = false;
+                convInput.focus();
+            }
+        }
+
+        function renderConversationList(conversations) {
+            var data = Array.isArray(conversations) ? conversations : [];
+            var unreadCount = data.reduce(function(acc, item) {
+                return acc + Number(item.unread_count || 0);
+            }, 0);
+
+            unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+            unreadBadge.textContent = String(unreadCount);
+
+            if (!data.length) {
+                threadsWrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">No messages yet.</p>';
+                return;
+            }
+
+            threadsWrap.innerHTML = data.slice(0, 12).map(function(item) {
+                var hasUnread = Number(item.unread_count || 0) > 0;
+                var lineBg = hasUnread ? '#eef4ff' : '#fff';
+                var weight = hasUnread ? '700' : '500';
+                var active = activeConversationKey === String(item.other_user_id);
+                var rowBg = active ? '#e7efff' : lineBg;
+                return '<div class="message-thread" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
+                    + '<div class="message-avatar"></div>'
+                    + '<div class="message-info">'
+                    + '<span class="message-sender" style="font-weight:' + weight + ';">' + escHtml(item.other_name || 'Conversation') + '</span>'
+                    + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
+                    + '</div>'
+                    + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+                    + '<span class="message-time">' + escHtml(formatDate(item.last_timestamp)) + '</span>'
+                    + (hasUnread ? ('<span style="font-size:10px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 6px;font-weight:700;">' + Number(item.unread_count) + '</span>') : '')
+                    + '</div>'
+                    + '</div>';
+            }).join('');
+
+            threadsWrap.querySelectorAll('.message-thread').forEach(function(row) {
+                row.addEventListener('click', function() {
+                    var otherUserId = Number(row.getAttribute('data-other-user-id') || 0);
+                    var centerId = Number(row.getAttribute('data-center-id') || 0);
+                    var key = String(otherUserId);
+                    var conv = conversationMap[key];
+                    if (!conv) {
+                        conv = {
+                            other_user_id: otherUserId,
+                            center_id: centerId,
+                            enrollment_id: null,
+                            other_name: 'Conversation',
+                        };
+                    }
+                    openConversation(conv);
+                });
+            });
+        }
+
+        async function loadConversations() {
+            try {
+                var res = await MessageAPI.getConversations();
+                var conversations = (res && res.conversations) ? res.conversations : [];
+                conversationMap = {};
+                conversations.forEach(function(item) {
+                    conversationMap[String(item.other_user_id)] = item;
+                });
+                renderConversationList(conversations);
+            } catch (e) {
+                console.warn('Failed to load student slider conversations', e);
+                renderConversationList([]);
+            }
+        }
+
+        function cleanup() {
+            stopThreadPolling();
+            if (conversationPollTimer) {
+                clearInterval(conversationPollTimer);
+                conversationPollTimer = null;
+            }
+        }
+
+        toggle.addEventListener('click', toggleSidebar);
+        toggle.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleSidebar();
+            }
+        });
+        overlay.addEventListener('click', closeSidebar);
+        backBtn.addEventListener('click', closeConversation);
+        sendBtn.addEventListener('click', sendMessage);
+        convInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        loadConversations();
+        conversationPollTimer = setInterval(loadConversations, 8000);
+        window.addEventListener('beforeunload', cleanup);
+
+        if (options.openOnLoad) {
+            openSidebar();
+        }
+    } catch (e) {
+        window.__rmnlStudentMsgSliderMounted = false;
+        console.warn('initStudentMessageSlider failed', e);
     }
 }
 

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - review.mnl</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Poppins',sans-serif;background:#f4f7ff;color:#123;">
+    <p>Opening messages...</p>
+    <script src="api.js"></script>
+    <script>
+        (function() {
+            if (!isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+            var params = new URLSearchParams(window.location.search || '');
+            params.set('messages', '1');
+            window.location.replace('userdashboard.html?' + params.toString());
+        })();
+    </script>
+</body>
+</html>

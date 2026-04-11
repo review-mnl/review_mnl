@@ -3398,7 +3398,7 @@ nav img{
 }
 
 #headerMapContainer {
-    max-width: 360px;
+    max-width: 460px;
 }
 
 @media (max-width: 900px) {
@@ -3440,7 +3440,7 @@ nav img{
     #headerMapContainer {
         width: 100% !important;
         max-width: 100% !important;
-        height: 180px !important;
+        height: 220px !important;
         align-self: flex-start;
     }
 
@@ -3586,6 +3586,48 @@ nav img{
     .center-right.flex-column .trophy-icon {
         font-size: 20px;
     }
+}
+
+/* Sync My Profile sizing with View Center enlargement */
+.header-admindashboard .center-header-content {
+    padding: 28px 4% 30px;
+    gap: 40px;
+}
+
+.header-admindashboard .center-logo#centerLogoPreview,
+#centerLogoPreview {
+    width: 112px;
+    height: 112px;
+}
+
+.header-admindashboard #centerNameDisplay {
+    font-size: 22px;
+}
+
+.header-admindashboard #centerDescDisplay {
+    font-size: 14px;
+}
+
+.header-admindashboard .center-rating .stars {
+    font-size: 20px;
+}
+
+.header-admindashboard .center-rating .rating-count {
+    font-size: 14px;
+}
+
+.header-admindashboard .edit-center-profile-btn {
+    padding: 7px 16px;
+    font-size: 12px;
+}
+
+.header-admindashboard .edit-center-profile-btn .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.header-admindashboard ~ .center-details .about-section .section-header-edit h2,
+.header-admindashboard ~ .center-details .programs-section .section-header-edit h2 {
+    font-size: 28px;
 }
 
 /* Final slim side cards for view-center and center profile */
@@ -3807,7 +3849,7 @@ nav img{
     }
 
     #headerMapContainer {
-        height: 160px !important;
+        height: 190px !important;
     }
 
     .achievements-card {

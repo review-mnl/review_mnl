@@ -3504,6 +3504,90 @@ nav img{
     }
 }
 
+/* Final thinner side cards override */
+.center-right.flex-column {
+    align-items: start;
+    gap: 14px !important;
+}
+
+.center-right.flex-column > .achievements-card,
+.center-right.flex-column > .testimonials-section {
+    align-self: start;
+    border-radius: 14px;
+}
+
+.center-right.flex-column > .achievements-card {
+    padding: 14px !important;
+}
+
+.center-right.flex-column > .testimonials-section {
+    padding: 14px 14px 10px !important;
+}
+
+.center-right.flex-column > .achievements-card h2,
+.center-right.flex-column > .testimonials-section h2 {
+    font-size: 18px !important;
+    margin-bottom: 10px;
+}
+
+.center-right.flex-column .achievement-list {
+    gap: 10px;
+}
+
+.center-right.flex-column .achievement-item {
+    gap: 8px;
+    padding: 9px 11px;
+}
+
+.center-right.flex-column .trophy-icon {
+    font-size: 22px;
+}
+
+.center-right.flex-column .achievement-item p {
+    font-size: 12px;
+}
+
+.center-right.flex-column .testimonial-card {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 9px;
+}
+
+@media (max-width: 900px) {
+    .center-right.flex-column {
+        gap: 12px !important;
+    }
+
+    .center-right.flex-column > .achievements-card,
+    .center-right.flex-column > .testimonials-section {
+        padding: 13px !important;
+    }
+
+    .center-right.flex-column > .testimonials-section {
+        padding-bottom: 10px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .center-right.flex-column > .achievements-card,
+    .center-right.flex-column > .testimonials-section {
+        border-radius: 11px;
+    }
+
+    .center-right.flex-column > .achievements-card h2,
+    .center-right.flex-column > .testimonials-section h2 {
+        font-size: 17px !important;
+    }
+
+    .center-right.flex-column .achievement-item {
+        padding: 8px 10px;
+    }
+
+    .center-right.flex-column .trophy-icon {
+        font-size: 20px;
+    }
+}
+
 /* Final slim side cards for view-center and center profile */
 .center-right.flex-column {
     align-items: start;

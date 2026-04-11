@@ -58,6 +58,7 @@
                         <li><a href="manageenrollments.html">MANAGE ENROLLMENTS</a></li>
                         <li><a href="schedule.html">SCHEDULE</a></li>
                         <li><a href="admindashboard.html">DASHBOARD</a></li>
+                        <li><a href="center-messages.html">MESSAGES</a></li>
                         <li><a href="editcenter.html">MY PROFILE</a></li>
                     </ul>
                 </div>
@@ -294,6 +295,15 @@
             }catch(e){}
         })();
         loadConversations();
+        (function() {
+            var params = new URLSearchParams(window.location.search || '');
+            if (params.get('messages') === '1' || params.get('openChatNotification')) {
+                var sidebar = document.getElementById('sidebar');
+                var overlay = document.querySelector('.sidebar-overlay');
+                if (sidebar) sidebar.classList.add('active');
+                if (overlay) overlay.classList.add('active');
+            }
+        })();
         setInterval(function(){
             loadConversations();
         }, 8000);

@@ -422,6 +422,18 @@ const NotificationAPI = {
         apiRequest('PUT', '/api/notifications/' + id + '/read'),
 };
 
+function getMessagesLandingPathForRole(role) {
+    var r = String(role || '').toLowerCase();
+    if (r === 'review_center' || r === 'admin' || r === 'center') return 'center-messages.html';
+    return 'messages.html';
+}
+
+function getMessagesLandingPath() {
+    var me = null;
+    try { me = getUser(); } catch (e) {}
+    return getMessagesLandingPathForRole(me && me.role);
+}
+
 // ---------------------------------------------------------------------------
 // Global notification bell (shared navbar behavior)
 // ---------------------------------------------------------------------------
@@ -608,7 +620,7 @@ function initGlobalNotificationBell(options) {
                     var id = Number(el.getAttribute('data-id'));
                     if (id > 0) {
                         await markRead(id);
-                        window.location.href = 'messages.html?openChatNotification=' + id;
+                        window.location.href = getMessagesLandingPath() + '?openChatNotification=' + id;
                     }
                 });
             });
@@ -747,7 +759,14 @@ function initStudentMessageSlider(options) {
         if (!isAuthenticated()) return;
 
         var me = getUser();
-        if (!me || String(me.role || '').toLowerCase() !== 'student') return;
+        var role = String((me && me.role) || '').toLowerCase();
+        var allowedRoles = Array.isArray(options.allowedRoles) && options.allowedRoles.length
+            ? options.allowedRoles.map(function(item) { return String(item || '').toLowerCase(); })
+            : ['student'];
+        if (allowedRoles.indexOf(role) === -1) return;
+
+        var conversationFallbackName = String(options.conversationFallbackName || 'Conversation');
+        var noMessagesText = String(options.noMessagesText || 'No messages yet.');
 
         // Skip pages with a native chat sidebar (dashboard/messages page).
         if (document.getElementById('sidebar') && document.getElementById('msgList') && document.getElementById('convPanel')) return;
@@ -781,7 +800,7 @@ function initStudentMessageSlider(options) {
             + '    <button type="button" class="conv-back-btn" id="rmnlStudentBackBtn">'
             + '      <span class="material-symbols-outlined">arrow_back</span>'
             + '    </button>'
-            + '    <span class="conv-name" id="rmnlStudentConvName">Review Center</span>'
+            + '    <span class="conv-name" id="rmnlStudentConvName">' + conversationFallbackName + '</span>'
             + '  </div>'
             + '  <div class="conv-messages" id="rmnlStudentConvMessages"></div>'
             + '  <div class="conv-input-row">'
@@ -894,7 +913,7 @@ function initStudentMessageSlider(options) {
                 await MessageAPI.markThreadAsRead(activeConversation.other_user_id, activeConversation.center_id || null);
                 await loadConversations();
             } catch (e) {
-                console.warn('Failed to load student slider thread', e);
+                console.warn('Failed to load message slider thread', e);
             }
         }
 
@@ -902,7 +921,7 @@ function initStudentMessageSlider(options) {
             if (!conversation || !conversation.other_user_id) return;
             activeConversation = conversation;
             activeConversationKey = String(conversation.other_user_id);
-            convName.textContent = conversation.other_name || 'Review Center';
+            convName.textContent = conversation.other_name || conversationFallbackName;
             listPanel.style.display = 'none';
             convPanel.style.display = 'flex';
             openSidebar();
@@ -953,7 +972,7 @@ function initStudentMessageSlider(options) {
             unreadBadge.textContent = String(unreadCount);
 
             if (!data.length) {
-                threadsWrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">No messages yet.</p>';
+                threadsWrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">' + escHtml(noMessagesText) + '</p>';
                 return;
             }
 
@@ -966,7 +985,7 @@ function initStudentMessageSlider(options) {
                 return '<div class="message-thread" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
                     + '<div class="message-avatar"></div>'
                     + '<div class="message-info">'
-                    + '<span class="message-sender" style="font-weight:' + weight + ';">' + escHtml(item.other_name || 'Conversation') + '</span>'
+                    + '<span class="message-sender" style="font-weight:' + weight + ';">' + escHtml(item.other_name || conversationFallbackName) + '</span>'
                     + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
                     + '</div>'
                     + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
@@ -987,7 +1006,7 @@ function initStudentMessageSlider(options) {
                             other_user_id: otherUserId,
                             center_id: centerId,
                             enrollment_id: null,
-                            other_name: 'Conversation',
+                            other_name: conversationFallbackName,
                         };
                     }
                     openConversation(conv);
@@ -1005,7 +1024,7 @@ function initStudentMessageSlider(options) {
                 });
                 renderConversationList(conversations);
             } catch (e) {
-                console.warn('Failed to load student slider conversations', e);
+                console.warn('Failed to load message slider conversations', e);
                 renderConversationList([]);
             }
         }
@@ -1046,6 +1065,15 @@ function initStudentMessageSlider(options) {
         window.__rmnlStudentMsgSliderMounted = false;
         console.warn('initStudentMessageSlider failed', e);
     }
+}
+
+function initReviewCenterMessageSlider(options) {
+    var merged = Object.assign({
+        allowedRoles: ['review_center', 'admin', 'center'],
+        conversationFallbackName: 'Student',
+        noMessagesText: 'No student messages yet.'
+    }, options || {});
+    initStudentMessageSlider(merged);
 }
 
 // ---------------------------------------------------------------------------

@@ -18,6 +18,7 @@
                         <li><a href="manageenrollments.html">MANAGE ENROLLMENTS</a></li>
                         <li><a href="schedule.html">SCHEDULE</a></li>
                         <li><a href="admindashboard.html">DASHBOARD</a></li>
+                        <li><a href="center-messages.html">MESSAGES</a></li>
                         <li><a href="editcenter.html">MY PROFILE</a></li>
                     </ul>
                 </div>
@@ -73,6 +74,8 @@
                 });
                 document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
             })();
+
+            initReviewCenterMessageSlider();
 
             function escHtml(str) {
                 return String(str || '')

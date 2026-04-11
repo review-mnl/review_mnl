@@ -217,7 +217,7 @@
                 <div class="nav-links">
                     <ul>
                         <li><a href="index.html" id="contactHomeNav">HOME</a></li>
-                        <li><a href="messages.html">MESSAGES</a></li>
+                        <li><a href="messages.html" id="contactMessagesNav">MESSAGES</a></li>
                         <li><a href="contact.html">CONTACT</a></li>
                         <li><a href="search.html">SEARCH</a></li>
                     </ul>
@@ -428,10 +428,16 @@
                     const homeLink = document.getElementById('contactHomeNav');
                     const homeLogo = document.getElementById('contactHomeLi');
                     const footerHome = document.getElementById('contactFooterHome');
+                    const messagesLink = document.getElementById('contactMessagesNav');
                     const dest = role === 'admin' ? 'admindashboard.html' : 'loggedin.html';
                     if (homeLink) homeLink.href = dest;
                     if (homeLogo) homeLogo.href = dest;
                     if (footerHome) footerHome.href = dest;
+                    if (messagesLink) {
+                        messagesLink.href = (role === 'admin' || role === 'review_center' || role === 'center')
+                            ? 'center-messages.html'
+                            : 'messages.html';
+                    }
                     if (role === 'admin') {
                         document.getElementById('contactMyProfileLink').href = 'editcenter.html';
                     }
@@ -454,7 +460,11 @@
                 }
 
                 initGlobalNotificationBell({ profileWrapperSelector: '#contactProfileWrapper' });
-                initStudentMessageSlider();
+                if (role === 'admin' || role === 'review_center' || role === 'center') {
+                    initReviewCenterMessageSlider();
+                } else if (role === 'student') {
+                    initStudentMessageSlider();
+                }
             })();
 
             function submitContact(e) {

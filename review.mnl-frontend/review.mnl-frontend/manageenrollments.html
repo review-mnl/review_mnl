@@ -22,23 +22,17 @@
 
 <!-- Sidebar Panel -->
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-avatar"></div>
-        <h3>Admin</h3>
-    </div>
-
-    <div class="messages-panel" id="msgList">
+    <div class="messages-panel" id="msgList" style="padding-top:6px;">
         <h4 class="messages-panel-title">Messages <span id="sidebarUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;"></span></h4>
         <div id="sidebarMessagesList"></div>
     </div>
 
     <!-- Conversation View -->
-    <div class="conversation-panel" id="convPanel" >
+    <div class="conversation-panel" id="convPanel" style="display:none;">
         <div class="conv-header">
             <button class="conv-back-btn" onclick="closeConv()">
                 <span class="material-symbols-outlined">arrow_back</span>
             </button>
-            <div class="message-avatar" style="width:32px;height:32px;"></div>
             <span class="conv-name" id="convName"></span>
         </div>
         <div class="conv-messages" id="convMessages"></div>
@@ -689,6 +683,11 @@
             if (toggleBadge) {
                 toggleBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
                 toggleBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                var toggle = document.querySelector('.dashboard-toggle');
+                if (toggle) {
+                    if (unreadCount > 0) toggle.classList.add('has-unread');
+                    else toggle.classList.remove('has-unread');
+                }
             }
 
             if (!data.length) {
@@ -698,10 +697,10 @@
 
             wrap.innerHTML = data.map(function(item) {
                 var hasUnread = Number(item.unread_count || 0) > 0;
-                return '<div class="message-thread" style="background:' + (hasUnread ? '#eef4ff' : '#fff') + ';cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
+                return '<div class="message-thread' + (hasUnread ? ' unread-thread' : '') + '" style="cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
                     + '<div class="message-avatar"></div>'
                     + '<div class="message-info">'
-                    + '<span class="message-sender" style="font-weight:' + (hasUnread ? '700' : '500') + ';">' + escHtml(item.other_name || 'Student') + '</span>'
+                    + '<span class="message-sender">' + escHtml(item.other_name || 'Student') + '</span>'
                     + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
                     + '</div>'
                     + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
@@ -904,13 +903,13 @@
                 </div>
                 <div class="footer-center">
                     <div class="footer-column">
-                        <a href="admindashboard.html">Home</a>
-                        <a href="search.html">Review Centers</a>
-                        <a href="search.html">Search</a>
+                        <a href="manageenrollments.html">Manage Enrollments</a>
+                        <a href="schedule.html">Schedule</a>
+                        <a href="admindashboard.html">Dashboard</a>
                     </div>
                     <div class="footer-column">
-                        <a href="admindashboard.html">Dashboard</a>
-                        <a href="contact.html">Contact</a>
+                        <a href="center-messages.html">Messages</a>
+                        <a href="editcenter.html">My Profile</a>
                     </div>
                 </div>
                 <div class="footer-right">

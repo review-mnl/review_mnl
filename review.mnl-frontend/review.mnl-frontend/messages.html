@@ -105,7 +105,7 @@
     </style>
 </head>
 <body>
-    <section class="header header-userdashboard">
+    <section class="header header-loggedin">
         <nav>
             <a href="loggedin.html" class="top-logo"><span class="logo-review">review</span><span class="logo-mnl">.mnl</span></a>
             <div class="nav-links">
@@ -126,9 +126,12 @@
                 </div>
             </div>
         </nav>
-        <div class="textbox">
-            <h1>Messages</h1>
-        </div>
+        <form class="search-form">
+            <div class="search">
+                <input type="text" name="search" placeholder="Search review centers..." autocomplete="off">
+                <span class="material-symbols-outlined search-icon">search</span>
+            </div>
+        </form>
     </section>
 
     <section class="messages-page-wrap">
@@ -165,6 +168,31 @@
                     <p id="msgPageStatus"></p>
                 </div>
             </main>
+        </div>
+    </section>
+
+    <section class="footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                <h2>review.mnl</h2>
+                <p>Manila, Philippines</p>
+            </div>
+            <div class="footer-center">
+                <div class="footer-column">
+                    <a href="loggedin.html">Home</a>
+                    <a href="messages.html">Messages</a>
+                </div>
+                <div class="footer-column">
+                    <a href="contact.html">Contact</a>
+                    <a href="search.html">Search</a>
+                </div>
+            </div>
+            <div class="footer-right">
+                <a href="#" class="social-icon">f</a>
+                <a href="#" class="social-icon">in</a>
+                <a href="#" class="social-icon">▶</a>
+                <a href="#" class="social-icon">✉</a>
+            </div>
         </div>
     </section>
 
@@ -218,5 +246,6 @@
             });
         })();
     </script>
+    <script src="search.js"></script>
 </body>
 </html>

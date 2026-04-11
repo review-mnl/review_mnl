@@ -1095,6 +1095,10 @@ function initStudentMessageSlider(options) {
                 toggleUnreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
                 toggleUnreadBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
             }
+            if (toggle) {
+                if (unreadCount > 0) toggle.classList.add('has-unread');
+                else toggle.classList.remove('has-unread');
+            }
 
             if (!data.length) {
                 threadsWrap.innerHTML = '<p style="color:#6b7280;font-size:12px;padding:10px 0;">' + escHtml(noMessagesText) + '</p>';
@@ -1107,7 +1111,7 @@ function initStudentMessageSlider(options) {
                 var weight = hasUnread ? '700' : '500';
                 var active = activeConversationKey === String(item.other_user_id);
                 var rowBg = active ? '#e7efff' : lineBg;
-                return '<div class="message-thread" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
+                return '<div class="message-thread ' + (hasUnread ? 'unread-thread' : '') + '" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
                     + '<div class="message-avatar"></div>'
                     + '<div class="message-info">'
                     + '<span class="message-sender" style="font-weight:' + weight + ';">' + escHtml(item.other_name || conversationFallbackName) + '</span>'
@@ -1513,7 +1517,7 @@ function initFullMessagesPage(options) {
                 var hasUnread = Number(item.unread_count || 0) > 0;
                 var active = activeConversationKey === String(item.other_user_id);
                 var rowBg = active ? '#e7efff' : (hasUnread ? '#eef4ff' : '#fff');
-                return '<div class="message-thread" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
+                return '<div class="message-thread ' + (hasUnread ? 'unread-thread' : '') + '" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
                     + '<div class="message-avatar"></div>'
                     + '<div class="message-info">'
                     + '<span class="message-sender" style="font-weight:' + (hasUnread ? '700' : '500') + ';">' + escHtml(item.other_name || conversationFallbackName) + '</span>'

@@ -262,12 +262,11 @@
                 <div class="footer-center">
                     <div class="footer-column">
                         <a href="loggedin.html">Home</a>
-                        <a href="search.html">Review Centers</a>
-                        <a href="search.html">Search</a>
+                        <a href="messages.html">Messages</a>
                     </div>
                     <div class="footer-column">
-                        <a href="userdashboard.html">Dashboard</a>
                         <a href="contact.html">Contact</a>
+                        <a href="search.html">Search</a>
                     </div>
                 </div>
                 
@@ -942,6 +941,11 @@
                     if (toggleBadge) {
                         toggleBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
                         toggleBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                        var toggle = document.querySelector('.dashboard-toggle');
+                        if (toggle) {
+                            if (unreadCount > 0) toggle.classList.add('has-unread');
+                            else toggle.classList.remove('has-unread');
+                        }
                     }
 
                     if (!data.length) {
@@ -951,12 +955,10 @@
 
                     wrap.innerHTML = data.slice(0, 12).map(function(item){
                         var hasUnread = Number(item.unread_count || 0) > 0;
-                        var lineBg = hasUnread ? '#eef4ff' : '#fff';
-                        var weight = hasUnread ? '700' : '500';
-                        return '<div class="message-thread" style="background:' + lineBg + ';cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
+                        return '<div class="message-thread' + (hasUnread ? ' unread-thread' : '') + '" style="cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
                             + '<div class="message-avatar"></div>'
                             + '<div class="message-info">'
-                            + '<span class="message-sender" style="font-weight:' + weight + ';">' + escHtml(item.other_name || 'Conversation') + '</span>'
+                            + '<span class="message-sender">' + escHtml(item.other_name || 'Conversation') + '</span>'
                             + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
                             + '</div>'
                             + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'

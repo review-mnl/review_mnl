@@ -3504,6 +3504,73 @@ nav img{
     }
 }
 
+    /* Final bigger view-center sizing */
+    .header-viewcenter .center-header-content {
+        padding: 28px 4% 30px;
+        gap: 40px;
+    }
+
+    .header-viewcenter .center-header-content > div:first-child {
+        gap: 22px;
+    }
+
+    .header-viewcenter .center-logo {
+        width: 112px;
+        height: 112px;
+    }
+
+    .header-viewcenter .center-info h1 {
+        font-size: 22px;
+    }
+
+    .header-viewcenter .center-description {
+        font-size: 14px;
+    }
+
+    .header-viewcenter .center-rating .stars {
+        font-size: 20px;
+    }
+
+    .header-viewcenter .center-rating .rating-count {
+        font-size: 14px;
+    }
+
+    .center-details {
+        padding: 36px 48px 42px;
+        gap: 28px;
+    }
+
+    .about-section h2,
+    .programs-section h2,
+    .ratings-section h2 {
+        font-size: 28px;
+    }
+
+    .about-section p {
+        font-size: 16px;
+        line-height: 1.7;
+        margin-bottom: 30px;
+    }
+
+    .program-tag {
+        padding: 10px 18px;
+        font-size: 14px;
+    }
+
+    .schedule-review-btn {
+        padding: 12px 26px;
+        font-size: 15px;
+    }
+
+    .achievements-card {
+        padding: 22px;
+        width: 300px;
+    }
+
+    .achievements-card h2 {
+        font-size: 28px;
+    }
+
 /* Final view-center layout override */
 .center-details {
     display: grid;

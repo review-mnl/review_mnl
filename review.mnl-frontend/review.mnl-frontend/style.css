@@ -3348,3 +3348,211 @@ nav img{
         font-size: 13px;
     }
 }
+
+/* View center sizing overrides */
+.header-viewcenter {
+    min-height: auto;
+}
+
+.header-viewcenter .center-header-content {
+    max-width: 1240px;
+    margin: 0 auto;
+}
+
+.center-details {
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.center-left {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+}
+
+.center-right.flex-column {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.center-right.flex-column > .achievements-card,
+.center-right.flex-column > .testimonials-section {
+    flex: 1 1 280px;
+    min-width: 0;
+    width: auto;
+    margin: 0;
+}
+
+.achievements-card {
+    width: 100%;
+}
+
+.testimonials-section {
+    width: 100%;
+    max-width: none;
+}
+
+#headerMapContainer {
+    max-width: 360px;
+}
+
+@media (max-width: 900px) {
+    .header-viewcenter .center-header-content {
+        padding: 14px 4% 12px;
+    }
+
+    .center-details {
+        padding: 18px 20px 22px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-viewcenter {
+        min-height: auto;
+    }
+
+    .header-viewcenter .center-header-content {
+        padding: 12px 4% 10px;
+        gap: 12px;
+    }
+
+    .center-details {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px 12px 18px;
+        gap: 14px;
+    }
+
+    .center-right.flex-column {
+        flex-direction: column;
+    }
+
+    .center-right.flex-column > .achievements-card,
+    .center-right.flex-column > .testimonials-section {
+        width: 100%;
+    }
+
+    #headerMapContainer {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 180px !important;
+        align-self: flex-start;
+    }
+
+    .achievements-card {
+        width: 100%;
+        padding: 16px;
+    }
+
+    .testimonials-section {
+        width: 100%;
+        padding: 22px 12px 16px !important;
+    }
+
+    .testimonials-section h2 {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-viewcenter .center-header-content {
+        padding: 10px 4% 8px;
+    }
+
+    .center-logo {
+        width: 68px;
+        height: 68px;
+    }
+
+    .center-details {
+        padding: 12px 10px 16px;
+        gap: 12px;
+    }
+
+    .achievements-card {
+        padding: 14px;
+    }
+
+    .achievement-item {
+        gap: 12px;
+        padding: 12px 14px;
+    }
+
+    .trophy-icon {
+        font-size: 28px;
+    }
+
+    .about-section p {
+        margin-bottom: 20px;
+    }
+
+    .program-tag {
+        padding: 5px 10px;
+    }
+
+    .testimonials-section {
+        padding: 20px 10px 14px !important;
+    }
+
+    .testimonials-section h2 {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-viewcenter .center-header-content {
+        padding: 10px 4% 8px;
+    }
+
+    .center-logo {
+        width: 68px;
+        height: 68px;
+    }
+
+    .center-details {
+        padding: 12px 10px 16px;
+        gap: 12px;
+    }
+
+    .center-right.flex-column {
+        gap: 12px;
+    }
+
+    #headerMapContainer {
+        height: 160px !important;
+    }
+
+    .achievements-card {
+        padding: 14px;
+    }
+
+    .achievement-item {
+        gap: 12px;
+        padding: 12px 14px;
+    }
+
+    .trophy-icon {
+        font-size: 28px;
+    }
+
+    .about-section p {
+        margin-bottom: 20px;
+    }
+
+    .program-tag {
+        padding: 5px 10px;
+    }
+
+    .testimonials-section {
+        padding: 20px 10px 14px !important;
+    }
+
+    .testimonials-section h2 {
+        font-size: 20px;
+    }
+}

@@ -37,8 +37,8 @@
                     Back
                 </a>
             </div>
-            <div class="center-header-content" style="display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;">
-                <div style="display:flex;align-items:center;gap:20px;flex:1;min-width:0;">
+            <div class="center-header-content" style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:1240px;margin:0 auto;box-sizing:border-box;padding:18px 6% 22px;gap:24px;">
+                <div style="display:flex;align-items:center;gap:18px;flex:1 1 560px;min-width:0;">
                     <div class="center-logo" id="centerLogo"></div>
                     <div class="center-info">
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
@@ -55,7 +55,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="headerMapContainer" style="width: 400px; height: 200px; border-radius: 12px; background: #e8eaed; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; flex-shrink: 0; align-self: center; display: none; position: relative;">
+                <div id="headerMapContainer" style="width: clamp(260px, 30vw, 360px); height: clamp(160px, 18vw, 210px); border-radius: 12px; background: #e8eaed; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; flex-shrink: 0; align-self: center; display: none; position: relative;">
                     <div id="viewMap" style="width: 100%; height: 100%; z-index: 1;"></div>
                     <div id="mapClickOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer;" title="Click to view large map" onclick="openLargeMap()"></div>
                 </div>
@@ -111,7 +111,7 @@
                 <button class="schedule-review-btn" onclick="openScheduleModal()" style="margin-top: 20px;">Schedule a review</button>
             </div>
 
-            <div class="center-right flex-column" style="display:flex;flex-direction:column;gap:24px;width:400px;flex-shrink:0;">
+            <div class="center-right flex-column" style="display:flex;flex-direction:column;gap:20px;width:clamp(280px, 32vw, 360px);flex-shrink:0;">
                 <div class="achievements-card" style="width:100%;box-sizing:border-box;">
                     <h2>Achievements</h2>
                 <div class="achievement-list" id="achievementList">
@@ -141,27 +141,27 @@
                     </div>
                 </div>
                 </div> <!-- Closing achievements card -->
-            </div>
-        </section>
 
-        <section class="testimonials-section" style="padding:32px 6% 20px;max-width:900px;margin:20px auto 0;">
-            <h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews / Testimonials</h2>
-            <button id="writeFeedbackBtn" style="display:none;padding:10px 18px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">Write Feedback / Testimonial</button>
-            <div id="testimonialFormWrap" style="display:none;margin:0 auto 16px;background:#f0f4ff;border-radius:12px;padding:16px;width:100%;max-width:760px;box-sizing:border-box;">
-                <p id="testiError" style="display:none;color:#d32f2f;font-size:12px;margin-bottom:8px;"></p>
-                <p id="testiSuccess" style="display:none;color:#2e7d32;font-size:12px;margin-bottom:8px;"></p>
-                <select id="testiRating" style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;margin-bottom:10px;">
-                    <option value="">Select rating (1-5)...</option>
-                    <option value="5">5 - Excellent</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3">3 - Average</option>
-                    <option value="2">2 - Poor</option>
-                    <option value="1">1 - Very Poor</option>
-                </select>
-                <textarea id="testiContent" rows="4" placeholder="Write your feedback..." style="width:100%;height:170px;min-height:170px;max-height:170px;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;box-sizing:border-box;resize:none;overflow-y:auto;margin-bottom:10px;"></textarea>
-                <button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Feedback</button>
+                <section class="testimonials-section" style="padding:20px 22px;box-sizing:border-box;flex:1 1 320px;min-width:280px;">
+                    <h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews / Testimonials</h2>
+                    <button id="writeFeedbackBtn" style="display:none;padding:10px 18px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">Write Feedback / Testimonial</button>
+                    <div id="testimonialFormWrap" style="display:none;margin:0 auto 16px;background:#f0f4ff;border-radius:12px;padding:16px;width:100%;box-sizing:border-box;">
+                        <p id="testiError" style="display:none;color:#d32f2f;font-size:12px;margin-bottom:8px;"></p>
+                        <p id="testiSuccess" style="display:none;color:#2e7d32;font-size:12px;margin-bottom:8px;"></p>
+                        <select id="testiRating" style="width:100%;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;margin-bottom:10px;">
+                            <option value="">Select rating (1-5)...</option>
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Good</option>
+                            <option value="3">3 - Average</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="1">1 - Very Poor</option>
+                        </select>
+                        <textarea id="testiContent" rows="4" placeholder="Write your feedback..." style="width:100%;height:170px;min-height:170px;max-height:170px;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;box-sizing:border-box;resize:none;overflow-y:auto;margin-bottom:10px;"></textarea>
+                        <button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Feedback</button>
+                    </div>
+                    <div id="testimonialsList"></div>
+                </section>
             </div>
-            <div id="testimonialsList"></div>
         </section>
 
         <section class="gap1"></section>

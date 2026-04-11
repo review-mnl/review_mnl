@@ -262,6 +262,252 @@
             padding: 12px 24px; border-radius: 10px; font-size: 0.85rem;
             box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none; z-index: 9999;
         }
+
+        @media (max-width: 1100px) {
+            body {
+                background-attachment: scroll;
+                background-position: top center;
+            }
+
+            .sa-topbar {
+                padding: 0 18px;
+            }
+
+            .sa-topbar-right {
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .sa-layout {
+                flex-direction: column;
+                padding: 12px;
+                gap: 14px;
+            }
+
+            .sa-nav {
+                width: 100%;
+                flex: none;
+                margin: 0;
+                height: auto;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                overflow: visible;
+                padding: 16px;
+            }
+
+            .sa-nav-section {
+                width: 100%;
+                margin-bottom: 4px;
+            }
+
+            .sa-nav-item {
+                flex: 1 1 calc(50% - 8px);
+                margin-bottom: 0;
+            }
+
+            .sa-main {
+                padding: 0;
+            }
+
+            .sa-stats {
+                gap: 12px;
+            }
+
+            .sa-stat-card {
+                flex: 1 1 calc(50% - 12px);
+                min-width: 0;
+            }
+
+            .sa-table-card {
+                max-width: 100%;
+            }
+
+            .sa-table-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .sa-search-input {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            table {
+                min-width: 720px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .gate-box {
+                width: calc(100% - 24px);
+                padding: 32px 22px;
+                border-radius: 18px;
+            }
+
+            .sa-topbar {
+                height: auto;
+                min-height: 60px;
+                padding: 12px 16px;
+                align-items: flex-start;
+                gap: 10px;
+                flex-direction: column;
+            }
+
+            .sa-topbar-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .sa-nav-item {
+                flex: 1 1 100%;
+            }
+
+            .sa-panel {
+                padding: 8px 0 24px;
+            }
+
+            .sa-page-title {
+                font-size: 1.1rem;
+            }
+
+            .sa-page-sub {
+                font-size: 0.85rem;
+                margin-bottom: 14px;
+            }
+
+            .sa-stats {
+                flex-direction: column;
+                margin-bottom: 18px;
+            }
+
+            .sa-stat-card {
+                width: 100%;
+                flex: 1 1 100%;
+                padding: 18px;
+            }
+
+            .sa-stat-card .sa-stat-value,
+            .sa-stat-value {
+                font-size: 1.7rem;
+            }
+
+            .sa-table-card,
+            .sa-doc-modal-box,
+            .sa-modal-box {
+                border-radius: 12px;
+            }
+
+            .sa-table-header {
+                padding: 16px;
+            }
+
+            .sa-table-card table {
+                min-width: 680px;
+            }
+
+            tbody td,
+            thead th {
+                padding: 11px 12px;
+            }
+
+            .sa-doc-modal-body {
+                padding: 18px;
+            }
+
+            .sa-doc-info-row {
+                flex-direction: column;
+            }
+
+            .sa-doc-modal-actions,
+            .sa-modal-actions {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .sa-doc-modal-actions > *,
+            .sa-modal-actions > * {
+                flex: 1 1 100%;
+            }
+
+            #saToast {
+                width: calc(100% - 24px);
+                left: 12px;
+                transform: none;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gate-box {
+                width: calc(100% - 16px);
+                padding: 28px 18px;
+            }
+
+            .sa-topbar {
+                padding: 10px 12px;
+            }
+
+            .sa-layout {
+                padding: 10px;
+            }
+
+            .sa-nav {
+                padding: 12px;
+            }
+
+            .sa-nav-item {
+                font-size: 0.9rem;
+                padding: 11px 12px;
+            }
+
+            .sa-main {
+                padding: 0;
+            }
+
+            .sa-page-title {
+                font-size: 1rem;
+            }
+
+            .sa-page-sub {
+                font-size: 0.8rem;
+            }
+
+            .sa-stat-card {
+                padding: 16px;
+            }
+
+            .sa-stat-card .sa-stat-value,
+            .sa-stat-value {
+                font-size: 1.5rem;
+            }
+
+            .sa-table-card {
+                margin-bottom: 20px;
+            }
+
+            .sa-table-header h3 {
+                font-size: 0.9rem;
+            }
+
+            .sa-search-input {
+                font-size: 0.78rem;
+            }
+
+            .sa-modal-box {
+                padding: 24px 18px;
+            }
+
+            .sa-modal-title {
+                font-size: 1rem;
+            }
+
+            .sa-modal-msg {
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 <body>

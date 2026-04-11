@@ -103,6 +103,22 @@ function clearSession(removeStoredSession) {
     } catch(e) {}
 }
 
+(function bindGlobalLogoutHandlers() {
+    try {
+        if (window.__rmnlLogoutHandlersBound) return;
+        window.__rmnlLogoutHandlersBound = true;
+        document.addEventListener('click', function(event) {
+            var target = event.target && event.target.closest ? event.target.closest('#logoutBtn, #contactLogoutBtn, .sa-logout-btn, [data-logout]') : null;
+            if (!target) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            try { clearSession(true); } catch (e) { try { clearSession(); } catch (err) {} }
+            var redirectTo = target.getAttribute('data-logout-target') || 'index.html';
+            try { window.location.replace(redirectTo); } catch (e) { window.location.href = redirectTo; }
+        }, true);
+    } catch (e) {}
+})();
+
 function getActiveSessionId() {
     return sessionStorage.getItem('rmnl_active_session') || localStorage.getItem('rmnl_active_session');
 }

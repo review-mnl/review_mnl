@@ -1652,7 +1652,7 @@ nav img{
 }
 
 .center-info h1 {
-    font-size: 18px;
+    font-size: 20px;
     color: #fff;
     font-weight: 700;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
@@ -1676,7 +1676,7 @@ nav img{
 }
 
 .center-description {
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.4;
     color: rgba(255, 255, 255, 0.95);
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
@@ -1699,12 +1699,12 @@ nav img{
 
 .center-rating .stars {
     color: #FFD700;
-    font-size: 18px;
+    font-size: 19px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .center-rating .rating-count {
-    font-size: 13px;
+    font-size: 14px;
     color: #fff;
     font-weight: 600;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.12);
@@ -1759,7 +1759,7 @@ nav img{
 .about-section h2,
 .programs-section h2,
 .ratings-section h2 {
-    font-size: 24px;
+    font-size: 26px;
     color: #fff;
     font-weight: 600;
     margin-bottom: 16px;
@@ -1777,28 +1777,28 @@ nav img{
 }
 
 .ratings-value {
-    font-size: 24px;
+    font-size: 26px;
     color: #fff;
     font-weight: 700;
 }
 
 .ratings-stars {
     color: #ffd700;
-    font-size: 18px;
+    font-size: 19px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .ratings-meta {
     color: #dbe6ff;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
 }
 
 .about-section p {
     color: #fff;
-    font-size: 14px;
-    line-height: 1.7;
-    margin-bottom: 32px;
+    font-size: 15px;
+    line-height: 1.72;
+    margin-bottom: 34px;
 }
 
 .program-tags {
@@ -1812,9 +1812,9 @@ nav img{
     background: transparent;
     border: 2px solid #fff;
     color: #fff;
-    padding: 8px 20px;
+    padding: 9px 22px;
     border-radius: 50px;
-    font-size: 13px;
+    font-size: 14px;
     font-family: 'Poppins', sans-serif;
     cursor: pointer;
 }
@@ -1828,9 +1828,9 @@ nav img{
     background: #fff;
     color: #0a4cff;
     border: none;
-    padding: 11px 24px;
+    padding: 12px 26px;
     border-radius: 50px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     font-family: 'Poppins', sans-serif;
@@ -1843,13 +1843,13 @@ nav img{
 .achievements-card {
     background: #fff;
     border-radius: 20px;
-    padding: 22px;
-    width: 300px;
+    padding: 24px;
+    width: 320px;
     flex-shrink: 0;
 }
 
 .achievements-card h2 {
-    font-size: 24px;
+    font-size: 26px;
     color: #0a4cff;
     font-weight: 600;
     margin-bottom: 18px;

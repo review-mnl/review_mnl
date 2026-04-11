@@ -566,6 +566,67 @@
             return API_BASE + '/' + url.replace(/^\/+/, '');
         }
 
+        function normalizeConversationAvatarUrl(rawUrl) {
+            if (!rawUrl) return '';
+            var url = String(rawUrl).trim();
+            if (!url) return '';
+            if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+            if (url.charAt(0) === '/') return API_BASE + url;
+            return API_BASE + '/' + url.replace(/^\/+/, '');
+        }
+
+        function conversationAvatarUrl(conversation) {
+            return normalizeConversationAvatarUrl(
+                conversation && (
+                    conversation.other_avatar_url
+                    || conversation.other_profile_picture_url
+                    || conversation.other_center_logo_url
+                    || conversation.profile_picture_url
+                    || conversation.logo_url
+                )
+            );
+        }
+
+        function avatarInitial(name, fallback) {
+            var text = String(name || fallback || '?').trim();
+            return text ? text.charAt(0).toUpperCase() : '?';
+        }
+
+        function cssUrlToken(url) {
+            return encodeURI(String(url || ''))
+                .replace(/'/g, '%27')
+                .replace(/"/g, '%22')
+                .replace(/\(/g, '%28')
+                .replace(/\)/g, '%29');
+        }
+
+        function renderConversationAvatar(conversation, fallbackName) {
+            var url = conversationAvatarUrl(conversation);
+            if (url) {
+                return '<div class="message-avatar" style="background-image:url(' + cssUrlToken(url) + ');" aria-hidden="true"></div>';
+            }
+            return '<div class="message-avatar" aria-hidden="true">' + escHtml(avatarInitial(conversation && conversation.other_name, fallbackName)) + '</div>';
+        }
+
+        function renderConversationHeaderAvatar(conversation, displayName, fallbackName) {
+            var nameEl = document.getElementById('convName');
+            if (!nameEl || !nameEl.parentNode) return;
+            var avatarEl = nameEl.parentNode.querySelector('.rmnl-conv-header-avatar');
+            if (!avatarEl) {
+                avatarEl = document.createElement('div');
+                avatarEl.className = 'message-avatar header-avatar rmnl-conv-header-avatar';
+                nameEl.parentNode.insertBefore(avatarEl, nameEl);
+            }
+            var url = conversationAvatarUrl(conversation);
+            if (url) {
+                avatarEl.style.backgroundImage = 'url(' + cssUrlToken(url) + ')';
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.style.backgroundImage = '';
+                avatarEl.textContent = avatarInitial(displayName || (conversation && conversation.other_name), fallbackName);
+            }
+        }
+
         function isImageAttachment(mimeType, fileName, url) {
             var mime = String(mimeType || '').toLowerCase();
             if (mime.indexOf('image/') === 0) return true;
@@ -698,7 +759,7 @@
             wrap.innerHTML = data.map(function(item) {
                 var hasUnread = Number(item.unread_count || 0) > 0;
                 return '<div class="message-thread' + (hasUnread ? ' unread-thread' : '') + '" style="cursor:pointer;" onclick="openConvByKey(' + Number(item.other_user_id) + ',' + Number(item.center_id || 0) + ')">'
-                    + '<div class="message-avatar"></div>'
+                    + renderConversationAvatar(item, 'Student')
                     + '<div class="message-info">'
                     + '<span class="message-sender">' + escHtml(item.other_name || 'Student') + '</span>'
                     + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
@@ -723,6 +784,10 @@
                 conversations.forEach(function(c) {
                     window._conversationMap[String(c.other_user_id)] = c;
                 });
+                if (activeConversationKey && window._conversationMap[String(activeConversationKey)]) {
+                    activeConversation = Object.assign({}, activeConversation || {}, window._conversationMap[String(activeConversationKey)]);
+                    renderConversationHeaderAvatar(activeConversation, document.getElementById('convName').textContent || activeConversation.other_name, 'Student');
+                }
                 renderConversationList(conversations);
             } catch (e) {
                 console.warn('Failed to load conversations', e);
@@ -757,6 +822,7 @@
             activeConversationKey = nextKey;
             clearPendingAttachment();
             document.getElementById('convName').textContent = conversation.other_name || 'Chat';
+            renderConversationHeaderAvatar(conversation, conversation.other_name || 'Chat', 'Student');
             document.getElementById('msgList').style.display = 'none';
             document.getElementById('convPanel').style.display = 'flex';
 

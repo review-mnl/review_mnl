@@ -971,6 +971,128 @@ function initStudentMessageSlider(options) {
             });
         }
 
+        function normalizeConversationAvatarUrl(rawUrl) {
+            if (!rawUrl) return '';
+            var url = String(rawUrl).trim();
+            if (!url) return '';
+            if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+            if (url.charAt(0) === '/') return API_BASE + url;
+            return API_BASE + '/' + url.replace(/^\/+/, '');
+        }
+
+        function cssUrlToken(url) {
+            return encodeURI(String(url || ''))
+                .replace(/'/g, '%27')
+                .replace(/"/g, '%22')
+                .replace(/\(/g, '%28')
+                .replace(/\)/g, '%29');
+        }
+
+        function avatarInitial(name) {
+            var text = String(name || conversationFallbackName || '?').trim();
+            return text ? text.charAt(0).toUpperCase() : '?';
+        }
+
+        function conversationAvatarUrl(conversation) {
+            return normalizeConversationAvatarUrl(
+                conversation && (
+                    conversation.other_avatar_url
+                    || conversation.other_profile_picture_url
+                    || conversation.other_center_logo_url
+                    || conversation.profile_picture_url
+                    || conversation.logo_url
+                )
+            );
+        }
+
+        function renderConversationAvatar(conversation, className) {
+            var cls = 'message-avatar' + (className ? (' ' + className) : '');
+            var url = conversationAvatarUrl(conversation);
+            if (url) {
+                return '<div class="' + cls + '" style="background-image:url(' + cssUrlToken(url) + ');" aria-hidden="true"></div>';
+            }
+            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(avatarInitial(conversation && conversation.other_name)) + '</div>';
+        }
+
+        function renderConversationHeaderAvatar(conversation) {
+            if (!convName || !convName.parentNode) return;
+            var avatarEl = convName.parentNode.querySelector('.rmnl-conv-header-avatar');
+            if (!avatarEl) {
+                avatarEl = document.createElement('div');
+                avatarEl.className = 'message-avatar header-avatar rmnl-conv-header-avatar';
+                convName.parentNode.insertBefore(avatarEl, convName);
+            }
+            var url = conversationAvatarUrl(conversation);
+            if (url) {
+                avatarEl.style.backgroundImage = 'url(' + cssUrlToken(url) + ')';
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.style.backgroundImage = '';
+                avatarEl.textContent = avatarInitial(conversation && conversation.other_name);
+            }
+        }
+
+        function normalizeConversationAvatarUrl(rawUrl) {
+            if (!rawUrl) return '';
+            var url = String(rawUrl).trim();
+            if (!url) return '';
+            if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+            if (url.charAt(0) === '/') return API_BASE + url;
+            return API_BASE + '/' + url.replace(/^\/+/, '');
+        }
+
+        function cssUrlToken(url) {
+            return encodeURI(String(url || ''))
+                .replace(/'/g, '%27')
+                .replace(/"/g, '%22')
+                .replace(/\(/g, '%28')
+                .replace(/\)/g, '%29');
+        }
+
+        function avatarInitial(name) {
+            var text = String(name || conversationFallbackName || '?').trim();
+            return text ? text.charAt(0).toUpperCase() : '?';
+        }
+
+        function conversationAvatarUrl(conversation) {
+            return normalizeConversationAvatarUrl(
+                conversation && (
+                    conversation.other_avatar_url
+                    || conversation.other_profile_picture_url
+                    || conversation.other_center_logo_url
+                    || conversation.profile_picture_url
+                    || conversation.logo_url
+                )
+            );
+        }
+
+        function renderConversationAvatar(conversation, className) {
+            var cls = 'message-avatar' + (className ? (' ' + className) : '');
+            var url = conversationAvatarUrl(conversation);
+            if (url) {
+                return '<div class="' + cls + '" style="background-image:url(' + cssUrlToken(url) + ');" aria-hidden="true"></div>';
+            }
+            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(avatarInitial(conversation && conversation.other_name)) + '</div>';
+        }
+
+        function renderConversationHeaderAvatar(conversation) {
+            if (!convName || !convName.parentNode) return;
+            var avatarEl = convName.parentNode.querySelector('.rmnl-conv-header-avatar');
+            if (!avatarEl) {
+                avatarEl = document.createElement('div');
+                avatarEl.className = 'message-avatar header-avatar rmnl-conv-header-avatar';
+                convName.parentNode.insertBefore(avatarEl, convName);
+            }
+            var url = conversationAvatarUrl(conversation);
+            if (url) {
+                avatarEl.style.backgroundImage = 'url(' + cssUrlToken(url) + ')';
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.style.backgroundImage = '';
+                avatarEl.textContent = avatarInitial(conversation && conversation.other_name);
+            }
+        }
+
         function openSidebar() {
             sidebar.classList.add('active');
             overlay.classList.add('active');
@@ -1036,6 +1158,7 @@ function initStudentMessageSlider(options) {
             activeConversation = conversation;
             activeConversationKey = String(conversation.other_user_id);
             convName.textContent = conversation.other_name || conversationFallbackName;
+            renderConversationHeaderAvatar(conversation);
             listPanel.style.display = 'none';
             convPanel.style.display = 'flex';
             openSidebar();
@@ -1112,7 +1235,7 @@ function initStudentMessageSlider(options) {
                 var active = activeConversationKey === String(item.other_user_id);
                 var rowBg = active ? '#e7efff' : lineBg;
                 return '<div class="message-thread ' + (hasUnread ? 'unread-thread' : '') + '" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
-                    + '<div class="message-avatar"></div>'
+                    + renderConversationAvatar(item)
                     + '<div class="message-info">'
                     + '<span class="message-sender" style="font-weight:' + weight + ';">' + escHtml(item.other_name || conversationFallbackName) + '</span>'
                     + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
@@ -1151,6 +1274,10 @@ function initStudentMessageSlider(options) {
                 conversations.forEach(function(item) {
                     conversationMap[String(item.other_user_id)] = item;
                 });
+                if (activeConversationKey && conversationMap[String(activeConversationKey)]) {
+                    activeConversation = Object.assign({}, activeConversation || {}, conversationMap[String(activeConversationKey)]);
+                    renderConversationHeaderAvatar(activeConversation);
+                }
                 renderConversationList(conversations);
             } catch (e) {
                 console.warn('Failed to load message slider conversations', e);
@@ -1462,6 +1589,7 @@ function initFullMessagesPage(options) {
             activeConversation = conversation;
             activeConversationKey = String(conversation.other_user_id);
             convName.textContent = conversation.other_name || conversationFallbackName;
+            renderConversationHeaderAvatar(conversation);
             openConversationUi();
             await loadActiveThread();
             ensureThreadPolling();
@@ -1518,7 +1646,7 @@ function initFullMessagesPage(options) {
                 var active = activeConversationKey === String(item.other_user_id);
                 var rowBg = active ? '#e7efff' : (hasUnread ? '#eef4ff' : '#fff');
                 return '<div class="message-thread ' + (hasUnread ? 'unread-thread' : '') + '" data-other-user-id="' + Number(item.other_user_id) + '" data-center-id="' + Number(item.center_id || 0) + '" style="background:' + rowBg + ';cursor:pointer;">'
-                    + '<div class="message-avatar"></div>'
+                    + renderConversationAvatar(item)
                     + '<div class="message-info">'
                     + '<span class="message-sender" style="font-weight:' + (hasUnread ? '700' : '500') + ';">' + escHtml(item.other_name || conversationFallbackName) + '</span>'
                     + '<p class="message-preview">' + escHtml(item.last_message || '') + '</p>'
@@ -1605,6 +1733,10 @@ function initFullMessagesPage(options) {
                 conversations.forEach(function(item) {
                     conversationMap[String(item.other_user_id)] = item;
                 });
+                if (activeConversationKey && conversationMap[String(activeConversationKey)]) {
+                    activeConversation = Object.assign({}, activeConversation || {}, conversationMap[String(activeConversationKey)]);
+                    renderConversationHeaderAvatar(activeConversation);
+                }
                 renderConversationList(conversations);
                 if (tryOpenFromQuery !== false) {
                     await maybeOpenFromQuery();

@@ -233,7 +233,10 @@ const getConversations = async (req, res) => {
          u.last_name,
          u.email,
          u.role AS other_role,
-         rc.business_name AS other_center_name
+         u.profile_picture_url AS other_profile_picture_url,
+         rc.business_name AS other_center_name,
+         rc.logo_url AS other_center_logo_url,
+         COALESCE(rc.logo_url, u.profile_picture_url) AS other_avatar_url
        FROM (
          SELECT
            CASE WHEN cm.sender_id = ? THEN cm.receiver_id ELSE cm.sender_id END AS other_user_id,
@@ -266,6 +269,7 @@ const getConversations = async (req, res) => {
         unread_count: Number(row.unread_count || 0),
         other_role: row.other_role,
         other_name: row.other_center_name || formatUserName(row),
+        other_avatar_url: row.other_avatar_url || row.other_center_logo_url || row.other_profile_picture_url || null,
       };
     });
 

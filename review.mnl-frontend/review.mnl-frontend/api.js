@@ -803,7 +803,12 @@ function initStudentMessageSlider(options) {
             + '    <span class="conv-name" id="rmnlStudentConvName">' + conversationFallbackName + '</span>'
             + '  </div>'
             + '  <div class="conv-messages" id="rmnlStudentConvMessages"></div>'
+            + '  <div id="rmnlStudentAttachPreview" style="display:none;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;padding:7px 9px;border:1px solid #dde6ff;border-radius:10px;background:#f7faff;font-size:12px;color:#1f2937;"></div>'
             + '  <div class="conv-input-row">'
+            + '    <button type="button" id="rmnlStudentAttachBtn" aria-label="Attach image or file" title="Attach image or file" style="border:1px solid #d7def5;background:#fff;color:#30428a;border-radius:10px;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;">'
+            + '      <span class="material-symbols-outlined" style="font-size:20px;">attach_file</span>'
+            + '    </button>'
+            + '    <input type="file" id="rmnlStudentAttachInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none;">'
             + '    <input type="text" id="rmnlStudentConvInput" placeholder="Type a message...">'
             + '    <button type="button" class="conv-send-btn" id="rmnlStudentSendBtn">'
             + '      <span class="material-symbols-outlined">send</span>'
@@ -821,6 +826,9 @@ function initStudentMessageSlider(options) {
         var convPanel = document.getElementById('rmnlStudentConvPanel');
         var convName = document.getElementById('rmnlStudentConvName');
         var convMessages = document.getElementById('rmnlStudentConvMessages');
+        var attachPreview = document.getElementById('rmnlStudentAttachPreview');
+        var attachBtn = document.getElementById('rmnlStudentAttachBtn');
+        var attachInput = document.getElementById('rmnlStudentAttachInput');
         var convInput = document.getElementById('rmnlStudentConvInput');
         var sendBtn = document.getElementById('rmnlStudentSendBtn');
         var backBtn = document.getElementById('rmnlStudentBackBtn');
@@ -828,6 +836,7 @@ function initStudentMessageSlider(options) {
         var conversationMap = {};
         var activeConversation = null;
         var activeConversationKey = null;
+        var pendingAttachment = null;
         var threadPollTimer = null;
         var conversationPollTimer = null;
 
@@ -835,6 +844,110 @@ function initStudentMessageSlider(options) {
             return String(str || '').replace(/[&<>"']/g, function(ch) {
                 return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
             });
+        }
+
+        function escAttr(str) {
+            return String(str || '').replace(/[&<>"']/g, function(ch) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+            });
+        }
+
+        function normalizeAttachmentUrl(rawUrl) {
+            if (!rawUrl) return '';
+            var url = String(rawUrl).trim();
+            if (!url) return '';
+            if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+            if (url.charAt(0) === '/') return API_BASE + url;
+            return API_BASE + '/' + url.replace(/^\/+/, '');
+        }
+
+        function isImageAttachment(mimeType, fileName, url) {
+            var mime = String(mimeType || '').toLowerCase();
+            if (mime.indexOf('image/') === 0) return true;
+            var extSource = String(fileName || url || '').toLowerCase();
+            return /\.(jpg|jpeg|png|gif|webp)(\?|#|$)/.test(extSource);
+        }
+
+        function getAttachmentMeta(msg) {
+            if (!msg || typeof msg !== 'object') return null;
+            var rawUrl = msg.attachment_url || msg.attachmentUrl || null;
+            var url = normalizeAttachmentUrl(rawUrl);
+            if (!url) return null;
+            return {
+                url: url,
+                name: String(msg.attachment_name || msg.attachmentName || 'Attachment'),
+                mimeType: String(msg.attachment_mime_type || msg.attachmentMimeType || ''),
+                size: Number(msg.attachment_size || msg.attachmentSize || 0) || 0,
+            };
+        }
+
+        function renderMessageBody(msg) {
+            var text = String((msg && msg.message) || '').trim();
+            var html = '';
+            if (text) {
+                html += '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(text) + '</div>';
+            }
+
+            var attachment = getAttachmentMeta(msg);
+            if (attachment) {
+                var safeUrl = escAttr(attachment.url);
+                var safeName = escHtml(attachment.name || 'Attachment');
+                if (isImageAttachment(attachment.mimeType, attachment.name, attachment.url)) {
+                    html += '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:' + (text ? '8px' : '0') + ';">'
+                        + '<img src="' + safeUrl + '" alt="' + safeName + '" style="max-width:min(220px,80vw);max-height:180px;border-radius:10px;border:1px solid #dbe5ff;display:block;" />'
+                        + '</a>';
+                } else {
+                    html += '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;margin-top:' + (text ? '8px' : '0') + ';padding:7px 9px;border:1px solid #d7e2ff;border-radius:10px;background:#f8fbff;color:#1d4ed8;font-size:12px;font-weight:600;text-decoration:none;max-width:260px;word-break:break-word;">'
+                        + '<span class="material-symbols-outlined" style="font-size:16px;line-height:1;">description</span>'
+                        + '<span>' + safeName + '</span>'
+                        + '</a>';
+                }
+            }
+
+            if (!html) {
+                html = '<div style="color:#64748b;font-style:italic;">(No content)</div>';
+            }
+            return html;
+        }
+
+        function formatFileSize(sizeBytes) {
+            var bytes = Number(sizeBytes || 0);
+            if (!bytes || bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1).replace(/\.0$/, '') + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '') + ' MB';
+        }
+
+        function refreshPendingAttachmentUi() {
+            if (!attachPreview) return;
+            if (!pendingAttachment) {
+                attachPreview.style.display = 'none';
+                attachPreview.innerHTML = '';
+                return;
+            }
+            attachPreview.style.display = 'flex';
+            attachPreview.innerHTML = '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:74%;">'
+                + escHtml(pendingAttachment.name + ' (' + formatFileSize(pendingAttachment.size) + ')')
+                + '</span>'
+                + '<button type="button" id="rmnlStudentAttachClear" style="border:1px solid #d7def5;background:#fff;color:#334155;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;">Remove</button>';
+            var clearBtn = document.getElementById('rmnlStudentAttachClear');
+            if (clearBtn) clearBtn.addEventListener('click', clearPendingAttachment);
+        }
+
+        function clearPendingAttachment() {
+            pendingAttachment = null;
+            if (attachInput) attachInput.value = '';
+            refreshPendingAttachmentUi();
+        }
+
+        function pickAttachment() {
+            if (!attachInput || attachInput.disabled) return;
+            attachInput.click();
+        }
+
+        function onAttachmentSelected(event) {
+            var file = event && event.target && event.target.files && event.target.files[0];
+            pendingAttachment = file || null;
+            refreshPendingAttachmentUi();
         }
 
         function formatDate(value) {
@@ -897,7 +1010,7 @@ function initStudentMessageSlider(options) {
                 var outgoing = myId != null && senderId === myId;
                 var ts = formatDateTime(msg.created_at);
                 return '<div class="conv-bubble ' + (outgoing ? 'outgoing' : 'incoming') + '">'
-                    + '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(msg.message || '') + '</div>'
+                    + renderMessageBody(msg)
                     + '<div style="font-size:10px;opacity:0.75;margin-top:6px;text-align:' + (outgoing ? 'right' : 'left') + ';">' + escHtml(ts) + '</div>'
                     + '</div>';
             }).join('');
@@ -936,28 +1049,35 @@ function initStudentMessageSlider(options) {
             convPanel.style.display = 'none';
             listPanel.style.display = 'block';
             convInput.value = '';
+            clearPendingAttachment();
             convMessages.innerHTML = '';
         }
 
         async function sendMessage() {
             var text = (convInput.value || '').trim();
-            if (!text || !activeConversation || convInput.disabled) return;
+            if ((!text && !pendingAttachment) || !activeConversation || convInput.disabled) return;
 
             convInput.disabled = true;
             sendBtn.disabled = true;
+            if (attachBtn) attachBtn.disabled = true;
+            if (attachInput) attachInput.disabled = true;
             try {
                 await MessageAPI.send({
                     receiver_id: activeConversation.other_user_id,
                     enrollment_id: activeConversation.enrollment_id || null,
                     message: text,
+                    attachment: pendingAttachment || null,
                 });
                 convInput.value = '';
+                clearPendingAttachment();
                 await loadActiveThread();
             } catch (e) {
                 alert((e && e.message) ? e.message : 'Failed to send message.');
             } finally {
                 convInput.disabled = false;
                 sendBtn.disabled = false;
+                if (attachBtn) attachBtn.disabled = false;
+                if (attachInput) attachInput.disabled = false;
                 convInput.focus();
             }
         }
@@ -1047,6 +1167,8 @@ function initStudentMessageSlider(options) {
         overlay.addEventListener('click', closeSidebar);
         backBtn.addEventListener('click', closeConversation);
         sendBtn.addEventListener('click', sendMessage);
+        if (attachBtn) attachBtn.addEventListener('click', pickAttachment);
+        if (attachInput) attachInput.addEventListener('change', onAttachmentSelected);
         convInput.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -1089,8 +1211,26 @@ const MessageAPI = {
         return apiRequest('GET', '/api/messages/thread?' + qs.join('&'));
     },
 
-    send: (payload) =>
-        apiRequest('POST', '/api/messages', payload),
+    send: (payload) => {
+        var data = payload || {};
+        var attachment = data.attachment || null;
+        if (attachment) {
+            var form = new FormData();
+            form.append('receiver_id', data.receiver_id);
+            if (data.enrollment_id != null && data.enrollment_id !== '') {
+                form.append('enrollment_id', data.enrollment_id);
+            }
+            form.append('message', data.message || '');
+            form.append('attachment', attachment);
+            return apiRequest('POST', '/api/messages', form, true);
+        }
+
+        return apiRequest('POST', '/api/messages', {
+            receiver_id: data.receiver_id,
+            enrollment_id: data.enrollment_id != null ? data.enrollment_id : null,
+            message: data.message || '',
+        });
+    },
 
     markThreadAsRead: (withUserId, centerId) =>
         apiRequest('PUT', '/api/messages/thread/read', {

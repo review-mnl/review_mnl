@@ -133,6 +133,10 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 	sender_id INT NOT NULL,
 	receiver_id INT NOT NULL,
 	message TEXT NOT NULL,
+	attachment_url TEXT NULL,
+	attachment_name VARCHAR(255) NULL,
+	attachment_mime_type VARCHAR(120) NULL,
+	attachment_size INT NULL,
 	is_read TINYINT(1) DEFAULT 0,
 	read_at TIMESTAMP NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -146,6 +150,11 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 );
 
 ALTER TABLE review_centers ADD COLUMN schedule JSON;
+
+ALTER TABLE chat_messages ADD COLUMN attachment_url TEXT NULL;
+ALTER TABLE chat_messages ADD COLUMN attachment_name VARCHAR(255) NULL;
+ALTER TABLE chat_messages ADD COLUMN attachment_mime_type VARCHAR(120) NULL;
+ALTER TABLE chat_messages ADD COLUMN attachment_size INT NULL;
 
 -- Student ratings per enrolled review center
 CREATE TABLE IF NOT EXISTS center_ratings (

@@ -1,6 +1,8 @@
 # review.mnl
 
-**review.mnl** is a web platform for discovering, comparing, and reviewing professional board exam review centers in Manila, Philippines. Students can search for review centers by course category, read and submit testimonials, and manage their profiles — while review center owners can register their business and admins can moderate the platform.
+**System Description**
+
+review.mnl is a web-based platform developed to assist students in Manila in finding and evaluating board exam review centers. The system enables users to search for review centers by course, compare options, and read testimonials from other students. It also provides features for review center owners to register and promote their services. User accounts allow for submitting reviews and managing profiles, while administrators oversee content moderation to maintain the platform’s reliability. review.mnl aims to streamline the process of selecting a review center, ensuring students make informed decisions for their exam preparations.
 
 ---
 

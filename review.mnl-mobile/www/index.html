@@ -112,6 +112,17 @@
                 // Load featured centers from API
                 (async function(){
                     try {
+                        function resolveImageUrl(raw) {
+                            if (!raw) return '';
+                            var value = String(raw).trim();
+                            if (!value) return '';
+                            if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+                            if (/^\/\//.test(value)) return window.location.protocol + value;
+                            var normalized = value.replace(/\\/g, '/');
+                            if (normalized.charAt(0) === '/') return API_BASE + normalized;
+                            return API_BASE + '/' + normalized.replace(/^\/+/, '');
+                        }
+
                         const centers = await CentersAPI.getAll();
                         const container = document.getElementById('featuredCards');
                         const loading = document.getElementById('featuredLoading');
@@ -124,16 +135,50 @@
                         top.forEach(function(c) {
                             var stars = Math.round(c.avg_rating || 0);
                             var starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+                            var imgUrl = resolveImageUrl(c.logo_url || c.image_url || c.profile_picture_url);
                             var card = document.createElement('div');
                             card.className = 'review-card';
-                            card.innerHTML =
-                                '<div class="card-image"></div>'
-                                + '<h3>' + c.business_name + '</h3>'
-                                + '<span class="location">' + (c.address || 'Manila') + '</span>'
-                                + '<div class="card-footer">'
-                                + '<div class="stars">' + starStr + '</div>'
-                                + '<a href="login.html" class="view-btn">View &rarr;</a>'
-                                + '</div>';
+                            var imageWrap = document.createElement('div');
+                            imageWrap.className = 'card-image';
+                            if (imgUrl) {
+                                var img = document.createElement('img');
+                                img.src = imgUrl;
+                                img.alt = (c.business_name || 'Review Center') + ' logo';
+                                img.loading = 'lazy';
+                                img.addEventListener('error', function() {
+                                    imageWrap.innerHTML = '<span>No Image</span>';
+                                });
+                                imageWrap.appendChild(img);
+                            } else {
+                                imageWrap.innerHTML = '<span>No Image</span>';
+                            }
+
+                            var title = document.createElement('h3');
+                            title.textContent = c.business_name || 'Review Center';
+
+                            var location = document.createElement('span');
+                            location.className = 'location';
+                            location.textContent = c.address || 'Manila';
+
+                            var footer = document.createElement('div');
+                            footer.className = 'card-footer';
+
+                            var starsEl = document.createElement('div');
+                            starsEl.className = 'stars';
+                            starsEl.textContent = starStr;
+
+                            var viewLink = document.createElement('a');
+                            viewLink.className = 'view-btn';
+                            viewLink.href = 'viewcenter.html?id=' + c.id;
+                            viewLink.textContent = 'View →';
+
+                            footer.appendChild(starsEl);
+                            footer.appendChild(viewLink);
+
+                            card.appendChild(imageWrap);
+                            card.appendChild(title);
+                            card.appendChild(location);
+                            card.appendChild(footer);
                             container.appendChild(card);
                         });
                     } catch(e) {

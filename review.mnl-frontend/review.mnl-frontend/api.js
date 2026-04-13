@@ -893,6 +893,33 @@ function initStudentMessageSlider(options) {
         var threadPollTimer = null;
         var conversationPollTimer = null;
 
+        function ensureDeleteButton() {
+            if (!convName || !convName.parentNode) return null;
+            var btn = convName.parentNode.querySelector('.rmnl-conv-delete-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rmnl-conv-delete-btn';
+                btn.textContent = 'Delete';
+                btn.style.cssText = 'border:1px solid #ffd2d2;background:#fff5f5;color:#b91c1c;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;';
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    deleteActiveConversation();
+                });
+                convName.parentNode.appendChild(btn);
+            }
+            return btn;
+        }
+
+        function updateDeleteButtonState() {
+            var btn = ensureDeleteButton();
+            if (!btn) return;
+            var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
+            btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
+            btn.disabled = !hasActiveConversation;
+        }
+
         function escHtml(str) {
             return String(str || '').replace(/[&<>"']/g, function(ch) {
                 return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
@@ -1217,6 +1244,7 @@ function initStudentMessageSlider(options) {
             });
             convName.textContent = conversation.other_name || conversationFallbackName;
             renderConversationHeaderAvatar(conversation);
+            updateDeleteButtonState();
             listPanel.style.display = 'none';
             convPanel.style.display = 'flex';
             openSidebar();
@@ -1233,6 +1261,27 @@ function initStudentMessageSlider(options) {
             convInput.value = '';
             clearPendingAttachment();
             convMessages.innerHTML = '';
+            updateDeleteButtonState();
+        }
+
+        async function deleteActiveConversation() {
+            if (!activeConversation || !activeConversation.other_user_id) return;
+            var target = activeConversation;
+            if (!window.confirm('Delete this conversation permanently?')) return;
+
+            var btn = ensureDeleteButton();
+            if (btn) btn.disabled = true;
+            try {
+                await MessageAPI.deleteThread(target.other_user_id, target.center_id || null);
+                closeConversation();
+                clearMessageSyncState();
+                await loadConversations();
+            } catch (e) {
+                alert((e && e.message) ? e.message : 'Failed to delete conversation.');
+            } finally {
+                if (btn) btn.disabled = false;
+                updateDeleteButtonState();
+            }
         }
 
         async function sendMessage() {
@@ -1351,6 +1400,8 @@ function initStudentMessageSlider(options) {
             }
         }
 
+        updateDeleteButtonState();
+
         toggle.addEventListener('click', toggleSidebar);
         toggle.addEventListener('keydown', function(event) {
             if (event.key === 'Enter' || event.key === ' ') {
@@ -1433,6 +1484,33 @@ function initFullMessagesPage(options) {
         var threadPollTimer = null;
         var conversationPollTimer = null;
         var initialQueryHandled = false;
+
+        function ensureDeleteButton() {
+            if (!convName || !convName.parentNode) return null;
+            var btn = convName.parentNode.querySelector('.rmnl-msgpage-delete-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rmnl-msgpage-delete-btn';
+                btn.textContent = 'Delete';
+                btn.style.cssText = 'border:1px solid #ffd2d2;background:#fff5f5;color:#b91c1c;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;';
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    deleteActiveConversation();
+                });
+                convName.parentNode.appendChild(btn);
+            }
+            return btn;
+        }
+
+        function updateDeleteButtonState() {
+            var btn = ensureDeleteButton();
+            if (!btn) return;
+            var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
+            btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
+            btn.disabled = !hasActiveConversation;
+        }
 
         function isCompactView() {
             return window.matchMedia('(max-width: 900px)').matches;
@@ -1587,6 +1665,7 @@ function initFullMessagesPage(options) {
             convInput.value = '';
             convMessages.innerHTML = '';
             clearPendingAttachment();
+            updateDeleteButtonState();
             if (isCompactView()) {
                 convPanel.style.display = 'none';
                 if (listPanel) listPanel.style.display = 'block';
@@ -1654,9 +1733,32 @@ function initFullMessagesPage(options) {
             });
             convName.textContent = conversation.other_name || conversationFallbackName;
             renderConversationHeaderAvatar(conversation);
+            updateDeleteButtonState();
             openConversationUi();
             await loadActiveThread();
             ensureThreadPolling();
+        }
+
+        async function deleteActiveConversation() {
+            if (!activeConversation || !activeConversation.other_user_id) return;
+            var target = activeConversation;
+            if (!window.confirm('Delete this conversation permanently?')) return;
+
+            var btn = ensureDeleteButton();
+            if (btn) btn.disabled = true;
+            try {
+                await MessageAPI.deleteThread(target.other_user_id, target.center_id || null);
+                closeConversationUi();
+                clearMessageSyncState();
+                await loadConversations(false);
+                setStatus('Conversation deleted.', false);
+            } catch (e) {
+                setStatus('Failed to delete conversation.', true);
+                alert((e && e.message) ? e.message : 'Failed to delete conversation.');
+            } finally {
+                if (btn) btn.disabled = false;
+                updateDeleteButtonState();
+            }
         }
 
         async function sendMessage() {
@@ -1858,6 +1960,8 @@ function initFullMessagesPage(options) {
             }
         }
 
+        updateDeleteButtonState();
+
         if (backBtn) backBtn.addEventListener('click', closeConversationUi);
         sendBtn.addEventListener('click', sendMessage);
         if (attachBtn) attachBtn.addEventListener('click', pickAttachment);
@@ -1942,6 +2046,9 @@ const MessageAPI = {
             with_user_id: withUserId,
             center_id: centerId || null,
         }),
+
+    deleteThread: (withUserId) =>
+        apiRequest('DELETE', '/api/messages/thread?withUserId=' + encodeURIComponent(withUserId)),
 };
 
 // ---------------------------------------------------------------------------

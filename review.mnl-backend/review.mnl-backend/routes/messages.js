@@ -8,6 +8,7 @@ const {
   getConversations,
   getThreadMessages,
   markThreadAsRead,
+  deleteConversation,
 } = require('../controllers/messagesController');
 
 router.get('/conversations', protect, getConversations);
@@ -32,5 +33,6 @@ router.post(
   sendMessage
 );
 router.put('/thread/read', protect, markThreadAsRead);
+router.delete('/thread', protect, deleteConversation);
 
 module.exports = router;

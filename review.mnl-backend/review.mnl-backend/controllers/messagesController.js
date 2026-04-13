@@ -391,9 +391,43 @@ const markThreadAsRead = async (req, res) => {
   }
 };
 
+const deleteConversation = async (req, res) => {
+  try {
+    const currentUserId = Number(req.user && req.user.id);
+    const withUserId = Number(
+      (req.body && req.body.with_user_id)
+      || (req.query && req.query.withUserId)
+      || 0
+    );
+
+    if (!Number.isInteger(withUserId) || withUserId <= 0) {
+      return res.status(400).json({ message: 'Valid with_user_id is required.' });
+    }
+    if (withUserId === currentUserId) {
+      return res.status(400).json({ message: 'Cannot delete a conversation with yourself.' });
+    }
+
+    const [result] = await db.query(
+      `DELETE FROM chat_messages
+       WHERE (sender_id = ? AND receiver_id = ?)
+          OR (sender_id = ? AND receiver_id = ?)`,
+      [currentUserId, withUserId, withUserId, currentUserId]
+    );
+
+    return res.json({
+      message: 'Conversation deleted successfully.',
+      deleted: Number(result.affectedRows || 0),
+    });
+  } catch (err) {
+    console.error('Delete conversation error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 module.exports = {
   sendMessage,
   getConversations,
   getThreadMessages,
   markThreadAsRead,
+  deleteConversation,
 };

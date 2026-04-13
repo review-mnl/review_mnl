@@ -36,6 +36,7 @@
                 <span class="material-symbols-outlined">arrow_back</span>
             </button>
             <span class="conv-name" id="convName"></span>
+            <button type="button" id="convDeleteBtn" style="display:none;border:1px solid #ffd2d2;background:#fff5f5;color:#b91c1c;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">Delete</button>
         </div>
         <div class="conv-messages" id="convMessages"></div>
         <div id="convAttachmentPreview" style="display:none;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;padding:7px 9px;border:1px solid #dde6ff;border-radius:10px;background:#f7faff;font-size:12px;color:#1f2937;"></div>
@@ -91,7 +92,7 @@
                 </div>
             </nav>
             <div class="textbox">
-                <h1>Welcome, <span id="welcomeName">Juan Dela Cruz</span>!</h1>
+                <h1 class="welcome-heading">Welcome, <span id="welcomeName">Juan Dela Cruz</span>!</h1>
             </div>
         </section>
 
@@ -351,6 +352,22 @@
                 var activeConversationKey = null;
                 var chatPollTimer = null;
                 var pendingAttachment = null;
+                var convDeleteBtn = document.getElementById('convDeleteBtn');
+
+                if (convDeleteBtn) {
+                    convDeleteBtn.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        deleteActiveConversation();
+                    });
+                }
+
+                function updateConvDeleteButton() {
+                    if (!convDeleteBtn) return;
+                    var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
+                    convDeleteBtn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
+                    convDeleteBtn.disabled = !hasActiveConversation;
+                }
 
                 async function resolveReviewCenterHeaderName(conversation) {
                     var fallback = 'Review Center';
@@ -626,6 +643,15 @@
                     var headerName = await resolveReviewCenterHeaderName(conversation);
                     document.getElementById('convName').textContent = headerName || 'Review Center';
                     renderConversationHeaderAvatar(conversation, headerName || 'Review Center', 'Review Center');
+                    if (typeof saveMessageSyncState === 'function') {
+                        saveMessageSyncState({
+                            other_user_id: conversation.other_user_id,
+                            center_id: conversation.center_id || 0,
+                            enrollment_id: conversation.enrollment_id || null,
+                            other_name: headerName || 'Review Center',
+                        });
+                    }
+                    updateConvDeleteButton();
 
                     console.log('[Chat][Student] Opening conversation', {
                         conversationKey: nextKey,
@@ -652,6 +678,26 @@
                     document.getElementById('msgList').style.display = 'block';
                     document.getElementById('convInput').value = '';
                     clearPendingAttachment();
+                    updateConvDeleteButton();
+                }
+
+                async function deleteActiveConversation() {
+                    if (!activeConversation || !activeConversation.other_user_id) return;
+                    var target = activeConversation;
+                    if (!window.confirm('Delete this conversation permanently?')) return;
+
+                    if (convDeleteBtn) convDeleteBtn.disabled = true;
+                    try {
+                        await MessageAPI.deleteThread(target.other_user_id, target.center_id || null);
+                        closeConv();
+                        if (typeof clearMessageSyncState === 'function') clearMessageSyncState();
+                        await loadConversations();
+                    } catch (e) {
+                        alert((e && e.message) ? e.message : 'Failed to delete conversation.');
+                    } finally {
+                        if (convDeleteBtn) convDeleteBtn.disabled = false;
+                        updateConvDeleteButton();
+                    }
                 }
 
                 async function loadActiveThread() {

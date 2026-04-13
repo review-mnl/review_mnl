@@ -2921,6 +2921,7 @@ nav img{
     left: 0;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: 0.3s;
     z-index: 1000;
 }
@@ -2953,6 +2954,7 @@ nav img{
 .sidebar-overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* SIDEBAR HEADER */

@@ -367,10 +367,28 @@ const UserAPI = {
 const PaymentsAPI = {
     createGcashEnrollment: async (centerId, payload) => {
         var resolvedCenterId = encodeURIComponent(String(centerId || '').trim());
+        var requestedMethod = String((payload && payload.payment_method) || 'gcash').trim().toLowerCase();
+        var normalizedMethod = requestedMethod === 'maya'
+            ? 'maya'
+            : (requestedMethod === 'bank' || requestedMethod === 'bank transfer' || requestedMethod === 'bank_transfer')
+                ? 'bank'
+                : 'gcash';
+
+        var payerNumber = String(
+            (payload && (payload.payer_number || payload.gcash_number || payload.maya_number || payload.bank_account_number)) || ''
+        ).trim();
+        var payerName = String(
+            (payload && (payload.payer_name || payload.gcash_name || payload.maya_name || payload.bank_account_name)) || ''
+        ).trim();
+
         var normalized = {
             amount: Number((payload && payload.amount) || 1550),
-            gcash_number: String((payload && payload.gcash_number) || '').trim(),
-            gcash_name: String((payload && payload.gcash_name) || '').trim(),
+            payment_method: normalizedMethod,
+            payer_number: payerNumber,
+            payer_name: payerName,
+            // Backward-compatible fields for deployments expecting GCash keys.
+            gcash_number: payerNumber,
+            gcash_name: payerName,
             reference_number: String((payload && payload.reference_number) || '').trim(),
             program_enrolled: String((payload && payload.program_enrolled) || '').trim(),
             enrollment_date: String((payload && payload.enrollment_date) || '').trim(),
@@ -396,7 +414,7 @@ const PaymentsAPI = {
             if (!is404) throw err;
 
             // Fallback for deployments still exposing the older centers enrollment route.
-            console.warn('[PaymentsAPI] Primary GCash endpoint returned 404. Falling back to /api/centers/:id/enroll/gcash');
+            console.warn('[PaymentsAPI] Primary enrollment endpoint returned 404. Falling back to /api/centers/:id/enroll/gcash');
             return apiRequest('POST', '/api/centers/' + resolvedCenterId + '/enroll/gcash', body, isFormData);
         }
     },

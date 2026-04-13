@@ -386,7 +386,7 @@
                         <!-- Payment methods -->
                         <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Choose Payment Method</h4>
                         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
-                            <label class="sch-pay-option sch-pay-selected" id="schPayGcashOption" for="schPayGcash">
+                            <label class="sch-pay-option sch-pay-selected" id="schPayGcashOption" for="schPayGcash" style="display:none;">
                                 <input type="radio" id="schPayGcash" name="schPayMethod" value="gcash" checked>
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance_wallet</span>
                                 <span>GCash</span>
@@ -397,14 +397,14 @@
                                 <input type="radio" id="schPayMaya" name="schPayMethod" value="maya">
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">qr_code_2</span>
                                 <span>Maya</span>
-                                <span id="schPayMayaBadge" class="sch-pay-coming">Coming Soon</span>
+                                <span id="schPayMayaBadge" style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
                             </label>
 
-                            <label class="sch-pay-option" id="schPayBankOption" for="schPayBank">
+                            <label class="sch-pay-option" id="schPayBankOption" for="schPayBank" style="display:none;">
                                 <input type="radio" id="schPayBank" name="schPayMethod" value="bank">
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance</span>
                                 <span>Bank Transfer</span>
-                                <span id="schPayBankBadge" class="sch-pay-coming">Coming Soon</span>
+                                <span id="schPayBankBadge" style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
                             </label>
                         </div>
 
@@ -456,19 +456,19 @@
 
                         <div id="schGcashSubmissionFields" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                             <div>
-                                <label class="sch-label">GCash Number</label>
+                                <label id="schPaymentNumberLabel" class="sch-label">GCash Number</label>
                                 <input id="schGcashNumber" name="gcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
                                 <p id="schGcashNumberError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
                             <div>
-                                <label class="sch-label">GCash Account Name</label>
+                                <label id="schPaymentNameLabel" class="sch-label">GCash Account Name</label>
                                 <input id="schGcashName" name="accountName" type="text" class="sch-input" placeholder="Juan Dela Cruz">
                                 <p id="schGcashNameError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
                             <div>
-                                <label class="sch-label" style="color: #0a4cff; font-weight: bold;">GCash Reference Number</label>
+                                <label id="schPaymentReferenceLabel" class="sch-label" style="color: #0a4cff; font-weight: bold;">GCash Reference Number</label>
                                 <input id="schReferenceNumber" name="referenceNumber" type="text" class="sch-input" placeholder="Enter Ref. No. from your receipt" style="border: 2px solid #0a4cff;">
-                                <p style="font-size:11px;color:#888;margin-top:4px;">Transfer the amount to the Center's GCash and input the reference number here.</p>
+                                <p id="schPaymentReferenceHint" style="font-size:11px;color:#888;margin-top:4px;">Transfer the amount to the Center's GCash and input the reference number here.</p>
                                 <p id="schReferenceNumberError" style="display:none;margin:4px 0 0;color:#d32f2f;font-size:11px;">This field is required</p>
                             </div>
                             <div>
@@ -777,6 +777,9 @@
             var gcashOption = document.getElementById('schPayGcashOption');
             var mayaOption = document.getElementById('schPayMayaOption');
             var bankOption = document.getElementById('schPayBankOption');
+            var gcashBadge = document.getElementById('schPayGcashBadge');
+            var mayaBadge = document.getElementById('schPayMayaBadge');
+            var bankBadge = document.getElementById('schPayBankBadge');
             var gcashRadio = document.getElementById('schPayGcash');
             var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
@@ -830,6 +833,21 @@
             if (gcashOption) gcashOption.style.display = gcashEnabled ? 'flex' : 'none';
             if (mayaOption) mayaOption.style.display = mayaEnabled ? 'flex' : 'none';
             if (bankOption) bankOption.style.display = bankEnabled ? 'flex' : 'none';
+            if (gcashBadge) {
+                gcashBadge.textContent = gcashEnabled ? 'Available' : 'Unavailable';
+                gcashBadge.style.background = gcashEnabled ? '#e8f5e9' : '#f1f5f9';
+                gcashBadge.style.color = gcashEnabled ? '#2e7d32' : '#475569';
+            }
+            if (mayaBadge) {
+                mayaBadge.textContent = mayaEnabled ? 'Available' : 'Unavailable';
+                mayaBadge.style.background = mayaEnabled ? '#e8f5e9' : '#f1f5f9';
+                mayaBadge.style.color = mayaEnabled ? '#2e7d32' : '#475569';
+            }
+            if (bankBadge) {
+                bankBadge.textContent = bankEnabled ? 'Available' : 'Unavailable';
+                bankBadge.style.background = bankEnabled ? '#e8f5e9' : '#f1f5f9';
+                bankBadge.style.color = bankEnabled ? '#2e7d32' : '#475569';
+            }
 
             if (gcashRadio && mayaRadio && bankRadio) {
                 gcashRadio.checked = false;
@@ -956,15 +974,18 @@
             window.location.href = '/enrollments';
         }
 
-        function showUnsupportedMethodMessage(methodLabel) {
+        function showMethodInfoMessage(message) {
             var msgEl = document.getElementById('schPaymentMsg');
             if (!msgEl) return;
-            var label = String(methodLabel || 'this payment method').trim();
-            msgEl.textContent = 'You selected ' + label + '. Please contact the review center for this payment method. Online enrollment submission currently supports GCash.';
+            msgEl.textContent = String(message || '').trim();
+            if (!msgEl.textContent) {
+                hidePaymentMessage();
+                return;
+            }
             msgEl.style.display = 'block';
-            msgEl.style.background = '#fff8e1';
-            msgEl.style.color = '#7a5a00';
-            msgEl.style.border = '1px solid #f6c344';
+            msgEl.style.background = '#e8f4ff';
+            msgEl.style.color = '#1e3a8a';
+            msgEl.style.border = '1px solid #bfdbfe';
         }
 
         function hidePaymentMessage() {
@@ -983,15 +1004,51 @@
             return value || 'gcash';
         }
 
+        function getSelectedPaymentMethodInfo() {
+            var method = getSelectedPaymentMethod();
+            if (method === 'maya') {
+                return {
+                    key: 'maya',
+                    displayName: 'Maya',
+                    numberLabel: 'Maya Number',
+                    nameLabel: 'Maya Account Name',
+                    referenceLabel: 'Maya Reference Number',
+                    numberPlaceholder: '09XXXXXXXXX',
+                    namePlaceholder: 'Juan Dela Cruz',
+                    referenceHint: 'Transfer the amount to the center\'s Maya account and input the reference number here.',
+                    helperMessage: 'Maya payment selected. Upload your proof and submit for review center verification.',
+                };
+            }
+            if (method === 'bank') {
+                return {
+                    key: 'bank',
+                    displayName: 'Bank Transfer',
+                    numberLabel: 'Sender Account Number',
+                    nameLabel: 'Sender Account Name',
+                    referenceLabel: 'Bank Transfer Reference Number',
+                    numberPlaceholder: 'Enter sender account number',
+                    namePlaceholder: 'Juan Dela Cruz',
+                    referenceHint: 'Use the transfer reference from your bank app and upload proof of payment.',
+                    helperMessage: 'Bank transfer selected. Upload your proof and submit for review center verification.',
+                };
+            }
+            return {
+                key: 'gcash',
+                displayName: 'GCash',
+                numberLabel: 'GCash Number',
+                nameLabel: 'GCash Account Name',
+                referenceLabel: 'GCash Reference Number',
+                numberPlaceholder: '09XXXXXXXXX',
+                namePlaceholder: 'Juan Dela Cruz',
+                referenceHint: 'Transfer the amount to the center\'s GCash and input the reference number here.',
+                helperMessage: 'GCash selected. Upload your proof and submit for review center verification.',
+            };
+        }
+
         function updateProceedButton() {
-            var selectedMethod = getSelectedPaymentMethod();
             var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
             if (!proceedBtn) return;
-            if (selectedMethod !== 'gcash') {
-                proceedBtn.disabled = true;
-                return;
-            }
-            proceedBtn.disabled = !validateGcashPaymentFields(false).valid;
+            proceedBtn.disabled = !validatePaymentFields(false).valid;
         }
 
         function setFieldError(inputId, errorId, message, showErrors) {
@@ -1038,9 +1095,10 @@
             }
         }
 
-        function validateGcashPaymentFields(showErrors) {
-            var gcashNumber = String((document.getElementById('schGcashNumber').value || '')).trim();
-            var gcashName = String((document.getElementById('schGcashName').value || '')).trim();
+        function validatePaymentFields(showErrors) {
+            var methodInfo = getSelectedPaymentMethodInfo();
+            var payerNumber = String((document.getElementById('schGcashNumber').value || '')).trim();
+            var payerName = String((document.getElementById('schGcashName').value || '')).trim();
             var referenceNumber = String((document.getElementById('schReferenceNumber').value || '')).trim();
             var paymentProofInput = document.getElementById('schPaymentProof');
             var paymentProofFile = paymentProofInput && paymentProofInput.files && paymentProofInput.files[0] ? paymentProofInput.files[0] : null;
@@ -1050,10 +1108,17 @@
             var refError = '';
             var proofError = '';
 
-            if (!gcashNumber) numberError = 'This field is required';
-            else if (!/^09\d{9}$/.test(gcashNumber)) numberError = 'Please enter a valid GCash number (09XXXXXXXXX)';
+            if (!payerNumber) {
+                numberError = 'This field is required';
+            } else if (methodInfo.key === 'bank') {
+                if (!/^[0-9\- ]{6,30}$/.test(payerNumber)) {
+                    numberError = 'Please enter a valid account number';
+                }
+            } else if (!/^09\d{9}$/.test(payerNumber)) {
+                numberError = 'Please enter a valid ' + methodInfo.displayName + ' number (09XXXXXXXXX)';
+            }
 
-            if (!gcashName) nameError = 'This field is required';
+            if (!payerName) nameError = 'This field is required';
             if (!referenceNumber) refError = 'This field is required';
 
             if (!paymentProofFile) {
@@ -1074,6 +1139,10 @@
 
             return {
                 valid: !numberError && !nameError && !refError && !proofError,
+                paymentMethod: methodInfo.key,
+                payerNumber: payerNumber,
+                payerName: payerName,
+                referenceNumber: referenceNumber,
                 paymentProofFile: paymentProofFile,
                 primaryError: proofError || numberError || nameError || refError || 'Please complete all required fields before proceeding.'
             };
@@ -1091,7 +1160,14 @@
             var mayaDetailsCard = document.getElementById('schMayaDetailsCard');
             var bankDetailsCard = document.getElementById('schBankDetailsCard');
             var gcashFields = document.getElementById('schGcashSubmissionFields');
+            var numberLabel = document.getElementById('schPaymentNumberLabel');
+            var nameLabel = document.getElementById('schPaymentNameLabel');
+            var referenceLabel = document.getElementById('schPaymentReferenceLabel');
+            var referenceHint = document.getElementById('schPaymentReferenceHint');
+            var numberInput = document.getElementById('schGcashNumber');
+            var nameInput = document.getElementById('schGcashName');
             var selectedMethod = getSelectedPaymentMethod();
+            var methodInfo = getSelectedPaymentMethodInfo();
 
             if (gcashOption) gcashOption.classList.toggle('sch-pay-selected', !!(gcashRadio && gcashRadio.checked));
             if (mayaOption) mayaOption.classList.toggle('sch-pay-selected', !!(mayaRadio && mayaRadio.checked));
@@ -1099,21 +1175,16 @@
             if (gcashDetailsCard) gcashDetailsCard.style.display = selectedMethod === 'gcash' ? 'block' : 'none';
             if (mayaDetailsCard) mayaDetailsCard.style.display = selectedMethod === 'maya' ? 'block' : 'none';
             if (bankDetailsCard) bankDetailsCard.style.display = selectedMethod === 'bank' ? 'block' : 'none';
-            if (gcashFields) gcashFields.style.display = selectedMethod === 'gcash' ? 'flex' : 'none';
-
-            if (selectedMethod === 'maya') {
-                _schPaymentMethod = 'Maya';
-                showUnsupportedMethodMessage('Maya');
-                if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
-            } else if (selectedMethod === 'bank') {
-                _schPaymentMethod = 'Bank Transfer';
-                showUnsupportedMethodMessage('Bank Transfer');
-                if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
-            } else {
-                _schPaymentMethod = 'GCash';
-                hidePaymentMessage();
-                if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
-            }
+            if (gcashFields) gcashFields.style.display = 'flex';
+            if (numberLabel) numberLabel.innerHTML = methodInfo.numberLabel + ' <span class="req">*</span>';
+            if (nameLabel) nameLabel.innerHTML = methodInfo.nameLabel + ' <span class="req">*</span>';
+            if (referenceLabel) referenceLabel.innerHTML = methodInfo.referenceLabel + ' <span class="req">*</span>';
+            if (referenceHint) referenceHint.textContent = methodInfo.referenceHint;
+            if (numberInput) numberInput.placeholder = methodInfo.numberPlaceholder;
+            if (nameInput) nameInput.placeholder = methodInfo.namePlaceholder;
+            _schPaymentMethod = methodInfo.displayName;
+            showMethodInfoMessage(methodInfo.helperMessage);
+            if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
 
             updateProceedButton();
         }
@@ -1160,7 +1231,7 @@
             var proofInput = document.getElementById('schPaymentProof');
 
             function handlePaymentFieldChange() {
-                validateGcashPaymentFields(false);
+                validatePaymentFields(false);
                 updateProceedButton();
             }
 
@@ -1571,11 +1642,7 @@
             try {
                 const token = getActiveToken();
                 if (!token) { alert('Please login to continue to payment.'); return; }
-                var selectedMethod = getSelectedPaymentMethod();
-                if (selectedMethod !== 'gcash') {
-                    showUnsupportedMethodMessage(selectedMethod === 'maya' ? 'Maya' : 'Bank Transfer');
-                    return;
-                }
+                var methodInfo = getSelectedPaymentMethodInfo();
                 const params = new URLSearchParams(window.location.search);
                 let centerId = params.get('id') || params.get('centerId');
                 if (!centerId) {
@@ -1583,12 +1650,9 @@
                     if (pathMatch && pathMatch[1]) centerId = pathMatch[1];
                 }
                 if (!centerId) return alert('Missing center id.');
-                const gcashNumber = (document.getElementById('schGcashNumber').value || '').trim();
-                const gcashName = (document.getElementById('schGcashName').value || '').trim();
-                const referenceNumber = (document.getElementById('schReferenceNumber').value || '').trim();
-                const validation = validateGcashPaymentFields(true);
+                const validation = validatePaymentFields(true);
                 const paymentProofFile = validation.paymentProofFile;
-                _schReferenceNumber = referenceNumber;
+                _schReferenceNumber = validation.referenceNumber;
                 if (!validation.valid) {
                     if (msgEl) {
                         msgEl.textContent = validation.primaryError || 'Please complete all required fields before proceeding.';
@@ -1616,9 +1680,10 @@
 
                 const payload = {
                     amount: amount,
-                    gcash_number: gcashNumber,
-                    gcash_name: gcashName,
-                    reference_number: referenceNumber,
+                    payment_method: validation.paymentMethod,
+                    payer_number: validation.payerNumber,
+                    payer_name: validation.payerName,
+                    reference_number: validation.referenceNumber,
                     program_enrolled: programEnrolled,
                     enrollment_date: enrollmentDate,
                     payment_proof: paymentProofFile,
@@ -1628,6 +1693,7 @@
                     endpoint: '/api/payments/gcash/' + String(centerId),
                     hasAuthToken: !!token,
                     userId: (getUser() && getUser().id) || null,
+                    payment_method: payload.payment_method,
                     program_enrolled: payload.program_enrolled,
                     enrollment_date: payload.enrollment_date,
                     amount: payload.amount,
@@ -1638,10 +1704,10 @@
 
                 if (resp && (resp.transaction_status === 'paid' || resp.transaction_status === 'pending')) {
                     _schEnrollmentResp = resp;
-                    _schPaymentMethod = resp.payment_method || 'GCash';
+                    _schPaymentMethod = resp.payment_method || methodInfo.displayName;
                     _schPaymentStatus = resp.transaction_status === 'pending' ? 'Pending Admin Approval' : 'Paid';
                     if (msgEl) {
-                        msgEl.textContent = resp.message || 'GCash payment processing.';
+                        msgEl.textContent = resp.message || (methodInfo.displayName + ' payment submitted successfully.');
                         msgEl.style.display = 'block';
                         msgEl.style.background = '#e8f5e9';
                         msgEl.style.color = '#2e7d32';
@@ -1649,10 +1715,10 @@
                     }
                     schGoStep(4);
                 } else {
-                    _schPaymentMethod = 'GCash';
+                    _schPaymentMethod = methodInfo.displayName;
                     _schPaymentStatus = 'Failed';
                     if (msgEl) {
-                        msgEl.textContent = (resp && resp.message) ? resp.message : 'GCash payment failed. Please try again.';
+                        msgEl.textContent = (resp && resp.message) ? resp.message : (methodInfo.displayName + ' payment failed. Please try again.');
                         msgEl.style.display = 'block';
                         msgEl.style.background = '#ffe8e8';
                         msgEl.style.color = '#b71c1c';
@@ -1661,7 +1727,7 @@
                 }
             } catch (err) {
                 console.error('startGcashPayment error', err);
-                _schPaymentMethod = 'GCash';
+                _schPaymentMethod = getSelectedPaymentMethodInfo().displayName;
                 _schPaymentStatus = 'Failed';
                 if (msgEl) {
                     msgEl.textContent = 'Payment request failed: ' + (err && err.message ? err.message : String(err));

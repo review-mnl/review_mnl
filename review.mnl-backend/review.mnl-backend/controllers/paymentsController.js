@@ -1,8 +1,8 @@
 const db = require('../config/db');
 require('dotenv').config();
 
-// Simple API-based GCash processing flow (mock/sandbox behavior).
-// It stores payment details and returns success/failed immediately.
+// Manual payment enrollment flow for GCash, Maya, and Bank Transfer.
+// It stores payment details and marks the transaction as pending for admin verification.
 const createGcashEnrollment = async (req, res) => {
   let conn;
   try {
@@ -13,8 +13,59 @@ const createGcashEnrollment = async (req, res) => {
       return res.status(400).json({ message: 'Invalid review center id.' });
     }
     const amount = parseInt(req.body.amount, 10) || 1550; // default in PHP pesos
-    const gcashNumber = String(req.body.gcash_number || '').trim();
-    const gcashName = String(req.body.gcash_name || '').trim();
+
+    const requestedMethod = String(req.body.payment_method || 'gcash').trim().toLowerCase();
+    const normalizedMethod = (requestedMethod === 'maya')
+      ? 'maya'
+      : (requestedMethod === 'bank' || requestedMethod === 'bank transfer' || requestedMethod === 'bank_transfer')
+        ? 'bank'
+        : 'gcash';
+
+    const methodConfig = normalizedMethod === 'maya'
+      ? {
+          provider: 'maya_manual',
+          label: 'Maya',
+          numberLabel: 'Maya number',
+          nameLabel: 'Maya account name',
+          referenceLabel: 'Maya reference number',
+          metadataNameKey: 'maya_name',
+          metadataNumberKey: 'maya_number_masked',
+        }
+      : normalizedMethod === 'bank'
+        ? {
+            provider: 'bank_transfer_manual',
+            label: 'Bank Transfer',
+            numberLabel: 'bank account number',
+            nameLabel: 'bank account name',
+            referenceLabel: 'bank transfer reference number',
+            metadataNameKey: 'bank_account_name',
+            metadataNumberKey: 'bank_account_number_masked',
+          }
+        : {
+            provider: 'gcash_manual',
+            label: 'GCash',
+            numberLabel: 'GCash number',
+            nameLabel: 'GCash account name',
+            referenceLabel: 'GCash reference number',
+            metadataNameKey: 'gcash_name',
+            metadataNumberKey: 'gcash_number_masked',
+          };
+
+    const payerNumber = String(
+      req.body.payer_number
+      || req.body.gcash_number
+      || req.body.maya_number
+      || req.body.bank_account_number
+      || ''
+    ).trim();
+    const payerName = String(
+      req.body.payer_name
+      || req.body.gcash_name
+      || req.body.maya_name
+      || req.body.bank_account_name
+      || ''
+    ).trim();
+
     const referenceNumber = String(req.body.reference_number || '').trim();
     const paymentProofUrl = req.file ? String(req.file.path || req.file.url || req.file.secure_url || '').trim() : '';
     const programEnrolled = String(req.body.program_enrolled || '').trim();     
@@ -25,6 +76,7 @@ const createGcashEnrollment = async (req, res) => {
       userId,
       reviewCenterId: centerId,
       amount,
+      paymentMethod: methodConfig.label,
       programEnrolled,
       enrollmentDate,
       referenceNumber,
@@ -32,16 +84,26 @@ const createGcashEnrollment = async (req, res) => {
     });
 
     if (!referenceNumber) {
-      return res.status(400).json({ message: 'GCash Reference Number is required.' });
+      return res.status(400).json({ message: methodConfig.referenceLabel + ' is required.' });
     }
 
-    if (!gcashNumber || !gcashName) {
-      return res.status(400).json({ message: 'GCash number and account name are required.' });
+    if (!payerNumber || !payerName) {
+      return res.status(400).json({ message: methodConfig.numberLabel + ' and ' + methodConfig.nameLabel + ' are required.' });
     }
 
-    // Basic local validation for PH mobile format (11 digits starting with 09) 
-    if (!/^09\d{9}$/.test(gcashNumber)) {
-      return res.status(400).json({ message: 'Please enter a valid GCash number (e.g., 09XXXXXXXXX).' });
+    // Basic local validation
+    if (normalizedMethod === 'gcash' || normalizedMethod === 'maya') {
+      if (!/^09\d{9}$/.test(payerNumber)) {
+        return res.status(400).json({ message: 'Please enter a valid ' + methodConfig.numberLabel + ' (e.g., 09XXXXXXXXX).' });
+      }
+    } else {
+      const compactAccountNumber = payerNumber.replace(/\s+/g, '');
+      if (compactAccountNumber.length < 6) {
+        return res.status(400).json({ message: 'Please enter a valid bank account number.' });
+      }
+    }
+    if (payerName.length < 2) {
+      return res.status(400).json({ message: 'Please enter a valid account name.' });
     }
     if (amount <= 0) {
       return res.status(400).json({ message: 'Invalid payment amount.' });      
@@ -56,16 +118,19 @@ const createGcashEnrollment = async (req, res) => {
     const student = studentRows && studentRows.length ? studentRows[0] : null;
     const studentName = [student && student.first_name, student && student.last_name].filter(Boolean).join(' ').trim() || (student && student.email) || 'Student';
 
-    // Manual GCash references should be globally unique per provider.
+    // Manual references should be unique per provider.
     const [existingReferenceRows] = await db.query(
       'SELECT id, status, user_id, center_id FROM payments WHERE provider = ? AND provider_payment_id = ? LIMIT 1',
-      ['gcash_manual', referenceNumber]
+      [methodConfig.provider, referenceNumber]
     );
     if (existingReferenceRows.length > 0) {
-      return res.status(409).json({ message: 'This GCash reference number has already been submitted. Please check your reference and try again.' });
+      return res.status(409).json({ message: 'This ' + methodConfig.referenceLabel + ' has already been submitted. Please check your reference and try again.' });
     }
 
-    const maskedNumber = gcashNumber.replace(/\d(?=\d{4})/g, '*');
+    const compactPayerNumber = payerNumber.replace(/\s+/g, '');
+    const maskedNumber = compactPayerNumber.length > 4
+      ? compactPayerNumber.replace(/.(?=.{4})/g, '*')
+      : compactPayerNumber;
     
     // Status is 'pending' because the admin needs to verify the reference number manually
     const status = 'pending';
@@ -80,7 +145,7 @@ const createGcashEnrollment = async (req, res) => {
       [
         userId,
         centerId,
-        'gcash_manual',
+        methodConfig.provider,
         providerPaymentId,
         amount,
         'PHP',
@@ -91,9 +156,11 @@ const createGcashEnrollment = async (req, res) => {
           student_name: studentName,
           review_center_id: centerId,
           review_center_name: center.business_name,
-          payment_method: 'GCash',
-          gcash_number_masked: maskedNumber,
-          gcash_name: gcashName,
+          payment_method: methodConfig.label,
+          payer_number_masked: maskedNumber,
+          payer_name: payerName,
+          [methodConfig.metadataNumberKey]: maskedNumber,
+          [methodConfig.metadataNameKey]: payerName,
           reference_number: referenceNumber,
           payment_proof_url: paymentProofUrl || null,
           program_enrolled: programEnrolled,
@@ -125,7 +192,7 @@ const createGcashEnrollment = async (req, res) => {
       [userId, centerId, enrollmentId, center.user_id, userId, enrollmentConfirmationMessage]
     );
 
-    console.log('[Enrollment] Saved Pending Manual GCash Payment', {
+    console.log('[Enrollment] Saved Pending Manual Payment', {
       enrollmentId,
       userId,
       studentName,
@@ -133,6 +200,7 @@ const createGcashEnrollment = async (req, res) => {
       reviewCenterName: center.business_name,
       paymentId,
       transactionStatus: status,
+      paymentMethod: methodConfig.label,
       programEnrolled,
       referenceNumber,
     });
@@ -158,13 +226,13 @@ const createGcashEnrollment = async (req, res) => {
       payment_status: 'pending',
       payment_proof_url: paymentProofUrl || null,
       amount,
-      payment_method: 'GCash Manual',
+      payment_method: methodConfig.label + ' Manual',
       transaction_status: status,
-      message: 'Payment tracking saved. Please wait for the Center Admin to verify your GCash Reference Number.',
+      message: 'Payment tracking saved. Please wait for the Center Admin to verify your ' + methodConfig.referenceLabel + '.',
     });
   } catch (err) {
     if (err && err.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ message: 'This GCash reference number has already been submitted. Please use a unique reference number.' });
+      return res.status(409).json({ message: 'This reference number has already been submitted for this payment method. Please use a unique reference number.' });
     }
     if (conn) try { await conn.rollback(); } catch (e) {}
     console.error('createGcashEnrollment error:', err);

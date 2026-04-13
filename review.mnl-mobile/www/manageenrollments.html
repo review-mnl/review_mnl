@@ -285,10 +285,38 @@
             if (paymentVerifyModal) paymentVerifyModal.style.display = 'none';
             if (paymentMethodsModal) paymentMethodsModal.style.display = 'none';
             document.body.style.overflow = '';
+            syncManageEnrollmentsInteractionLayers();
+        }
+
+        function syncManageEnrollmentsInteractionLayers() {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.querySelector('.sidebar-overlay');
+            var paymentVerifyModal = document.getElementById('paymentVerifyModal');
+            var paymentMethodsModal = document.getElementById('paymentMethodsModal');
+
+            var sidebarOpen = Boolean(sidebar && sidebar.classList.contains('active'));
+            if (overlay) {
+                overlay.style.pointerEvents = sidebarOpen ? 'auto' : 'none';
+                if (!sidebarOpen) {
+                    overlay.classList.remove('active');
+                    overlay.style.opacity = '0';
+                    overlay.style.visibility = 'hidden';
+                }
+            }
+
+            if (paymentVerifyModal) {
+                var paymentModalOpen = paymentVerifyModal.style.display === 'flex';
+                paymentVerifyModal.style.pointerEvents = paymentModalOpen ? 'auto' : 'none';
+            }
+            if (paymentMethodsModal) {
+                var paymentMethodsOpen = paymentMethodsModal.style.display === 'flex';
+                paymentMethodsModal.style.pointerEvents = paymentMethodsOpen ? 'auto' : 'none';
+            }
         }
 
         resetManageEnrollmentsTransientUi();
         window.addEventListener('pageshow', resetManageEnrollmentsTransientUi);
+        window.addEventListener('focus', syncManageEnrollmentsInteractionLayers);
 
         function defaultPaymentDetails() {
             return {
@@ -677,12 +705,14 @@
             syncPaymentDetailsVisibility();
             showPaymentMethodsFeedback('', '');
             modal.style.display = 'flex';
+            syncManageEnrollmentsInteractionLayers();
         }
 
         function closePaymentMethodsModal() {
             var modal = document.getElementById('paymentMethodsModal');
             if (!modal) return;
             modal.style.display = 'none';
+            syncManageEnrollmentsInteractionLayers();
         }
 
         (function bindPaymentMethodsModalDismiss() {
@@ -965,11 +995,13 @@
             }
 
             document.getElementById('paymentVerifyModal').style.display = 'flex';
+            syncManageEnrollmentsInteractionLayers();
         }
 
         function closePaymentModal() {
             document.getElementById('paymentVerifyModal').style.display = 'none';
             _activePaymentEnrollment = null;
+            syncManageEnrollmentsInteractionLayers();
         }
 
         function renderCenterEnrollments(enrollments) {
@@ -1333,6 +1365,7 @@
             if (!sidebar || !overlay) return;
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
+            syncManageEnrollmentsInteractionLayers();
         }
 
         function escAttr(str) {

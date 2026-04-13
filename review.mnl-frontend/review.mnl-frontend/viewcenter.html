@@ -348,15 +348,6 @@
                                 <label class="sch-label">Program / Course of Interest</label>
                                 <select id="schProgram" class="sch-input">
                                     <option value="">Select a program...</option>
-                                    <option>Civil Engineering</option>
-                                    <option>Architecture</option>
-                                    <option>Nursing</option>
-                                    <option>Accountancy</option>
-                                    <option>Medical Technology</option>
-                                    <option>Electrical Engineering</option>
-                                    <option>Mechanical Engineering</option>
-                                    <option>Pharmacy</option>
-                                    <option>Physical Therapy</option>
                                 </select>
                             </div>
                             <div>
@@ -375,7 +366,7 @@
                         <!-- Notice -->
                         <div style="background:#fffbea;border:1.5px dashed #f6c344;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#7a5a00;">
                             <span class="material-symbols-outlined" style="font-size:18px;color:#e6a800;flex-shrink:0;margin-top:1px;">info</span>
-                            <span>GCash is currently the only available payment method. Bank payment will be available soon.</span>
+                            <span>Use the payment details set by the review center. Online enrollment submission currently supports GCash.</span>
                         </div>
 
                         <!-- Booking summary -->
@@ -405,7 +396,7 @@
                             <label class="sch-pay-option" id="schPayBankOption" for="schPayBank">
                                 <input type="radio" id="schPayBank" name="schPayMethod" value="bank">
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance</span>
-                                <span>Bank Payment</span>
+                                <span>Bank Transfer</span>
                                 <span class="sch-pay-coming">Coming Soon</span>
                             </label>
                         </div>
@@ -605,6 +596,102 @@
         var _schEnrollmentResp = null;
         var _schReferenceNumber = '';
         var SCH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        var _centerPaymentMethods = ['GCash'];
+        var _centerPaymentDetails = {
+            gcash: { account_name: '', number: '', qr_url: '' },
+        };
+
+        function normalizeCenterPaymentMethods(value) {
+            var arr = [];
+            if (Array.isArray(value)) arr = value;
+            else if (typeof value === 'string') {
+                try {
+                    var parsed = JSON.parse(value);
+                    if (Array.isArray(parsed)) arr = parsed;
+                } catch (e) {
+                    arr = [];
+                }
+            }
+            arr = arr.map(function(item) { return String(item || '').trim(); }).filter(Boolean);
+            return arr.length ? Array.from(new Set(arr)) : ['GCash'];
+        }
+
+        function normalizeCenterPaymentDetails(value) {
+            var details = value;
+            if (typeof details === 'string') {
+                try { details = JSON.parse(details); } catch (e) { details = {}; }
+            }
+            if (!details || typeof details !== 'object') details = {};
+            var gcash = details.gcash && typeof details.gcash === 'object' ? details.gcash : {};
+            return {
+                gcash: {
+                    account_name: String(gcash.account_name || '').trim(),
+                    number: String(gcash.number || '').trim(),
+                    qr_url: String(gcash.qr_url || '').trim(),
+                }
+            };
+        }
+
+        function setScheduleProgramOptions(programs) {
+            var select = document.getElementById('schProgram');
+            if (!select) return;
+            var items = Array.isArray(programs) ? programs : [];
+            select.innerHTML = '';
+
+            if (!items.length) {
+                var emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = 'No available programs yet';
+                select.appendChild(emptyOption);
+                select.disabled = true;
+                return;
+            }
+
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select a program...';
+            select.appendChild(placeholder);
+
+            items.forEach(function(program) {
+                var label = String(program || '').trim();
+                if (!label) return;
+                var option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                select.appendChild(option);
+            });
+            select.disabled = false;
+        }
+
+        function applyCenterPaymentInfo(centerName) {
+            var accountName = (_centerPaymentDetails.gcash && _centerPaymentDetails.gcash.account_name) || String(centerName || 'Not provided');
+            var number = (_centerPaymentDetails.gcash && _centerPaymentDetails.gcash.number) || 'Not provided';
+            var gcashEnabled = _centerPaymentMethods.indexOf('GCash') >= 0;
+            var bankEnabled = _centerPaymentMethods.indexOf('Bank Transfer') >= 0;
+
+            var accountNameEl = document.getElementById('schGcashDisplayName');
+            var numberEl = document.getElementById('schGcashDisplayNumber');
+            var gcashOption = document.getElementById('schPayGcashOption');
+            var bankOption = document.getElementById('schPayBankOption');
+            var gcashRadio = document.getElementById('schPayGcash');
+            var bankRadio = document.getElementById('schPayBank');
+            if (accountNameEl) accountNameEl.textContent = accountName;
+            if (numberEl) numberEl.textContent = number;
+
+            if (gcashOption) gcashOption.style.display = gcashEnabled ? 'flex' : 'none';
+            if (bankOption) bankOption.style.display = bankEnabled ? 'flex' : 'none';
+
+            if (gcashRadio && bankRadio) {
+                if (gcashEnabled) {
+                    gcashRadio.checked = true;
+                    bankRadio.checked = false;
+                } else if (bankEnabled) {
+                    gcashRadio.checked = false;
+                    bankRadio.checked = true;
+                }
+            }
+            updatePaymentMethodUI();
+        }
 
         function openScheduleModal() {
             var now = new Date();
@@ -616,8 +703,17 @@
             _schReferenceNumber = '';
             var gcashRadio = document.getElementById('schPayGcash');
             var bankRadio = document.getElementById('schPayBank');
-            if (gcashRadio) gcashRadio.checked = true;
-            if (bankRadio) bankRadio.checked = false;
+            var gcashEnabled = _centerPaymentMethods.indexOf('GCash') >= 0;
+            var bankEnabled = _centerPaymentMethods.indexOf('Bank Transfer') >= 0;
+            if (gcashRadio && bankRadio) {
+                if (gcashEnabled) {
+                    gcashRadio.checked = true;
+                    bankRadio.checked = false;
+                } else if (bankEnabled) {
+                    gcashRadio.checked = false;
+                    bankRadio.checked = true;
+                }
+            }
             renderSchCal();
             schSetStep(1);
             var ov = document.getElementById('scheduleOverlay');
@@ -704,7 +800,7 @@
         function showBankComingSoonMessage() {
             var msgEl = document.getElementById('schPaymentMsg');
             if (!msgEl) return;
-            msgEl.textContent = 'This payment method will be available soon';
+            msgEl.textContent = 'Please contact the review center for this payment method. Online enrollment submission currently supports GCash.';
             msgEl.style.display = 'block';
             msgEl.style.background = '#fff8e1';
             msgEl.style.color = '#7a5a00';
@@ -851,7 +947,10 @@
         function copyGcashNumber() {
             var numberEl = document.getElementById('schGcashDisplayNumber');
             var value = numberEl ? String(numberEl.textContent || '').trim() : '';
-            if (!value) return;
+            if (!value || value === 'Not provided') {
+                alert('GCash number is not set yet by this review center.');
+                return;
+            }
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(value).then(function() {
@@ -921,7 +1020,12 @@
             var name    = document.getElementById('schName').value.trim();
             var email   = document.getElementById('schEmail').value.trim();
             var contact = document.getElementById('schContact').value.trim();
-            var program = document.getElementById('schProgram').value;
+            var programEl = document.getElementById('schProgram');
+            var program = programEl ? programEl.value : '';
+            if (programEl && programEl.disabled) {
+                alert('This review center has no available programs yet. Please contact the center first.');
+                return;
+            }
             if (!name || !email || !contact || !program) {
                 alert('Please fill in all required fields.');
                 return;
@@ -1040,6 +1144,12 @@
                 const centerAbout = clampAboutWords(center.description || 'No description provided yet.', 150);
                 const centerShort = center.address || 'Location unavailable';
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
+                const programs = parseArrayField(center.programs);
+
+                _centerPaymentMethods = normalizeCenterPaymentMethods(center.payment_methods);
+                _centerPaymentDetails = normalizeCenterPaymentDetails(center.payment_details);
+                applyCenterPaymentInfo(centerName);
+                setScheduleProgramOptions(programs);
 
                 // --- Map Integration ---
                 let cachedLat, cachedLon, cachedAddress;
@@ -1132,7 +1242,6 @@
                 }
 
                 if (programTagsEl) {
-                    const programs = parseArrayField(center.programs);
                     programTagsEl.innerHTML = '';
                     if (programs.length === 0) {
                         programTagsEl.innerHTML = '<button class="program-tag">No programs listed yet</button>';

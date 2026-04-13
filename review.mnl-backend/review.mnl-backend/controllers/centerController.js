@@ -31,12 +31,56 @@ const parseJsonArray = (raw) => {
   return [];
 };
 
+const parseJsonObject = (raw) => {
+  if (!raw) return {};
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+  return {};
+};
+
+const clipText = (value, maxLen) => String(value || '').trim().slice(0, maxLen);
+
 const normalizePaymentMethods = (value) => {
   const arr = parseJsonArray(value)
     .map((item) => String(item || '').trim())
     .filter(Boolean);
   if (!arr.length) return ['GCash'];
   return Array.from(new Set(arr)).slice(0, 8);
+};
+
+const normalizePaymentDetails = (value) => {
+  const raw = parseJsonObject(value);
+  const gcash = parseJsonObject(raw.gcash);
+  const maya = parseJsonObject(raw.maya);
+  const bankTransfer = parseJsonObject(raw.bank_transfer);
+  const overTheCounter = parseJsonObject(raw.over_the_counter);
+
+  return {
+    gcash: {
+      account_name: clipText(gcash.account_name, 120),
+      number: clipText(gcash.number, 32),
+      qr_url: clipText(gcash.qr_url, 500),
+    },
+    maya: {
+      account_name: clipText(maya.account_name, 120),
+      number: clipText(maya.number, 32),
+    },
+    bank_transfer: {
+      bank_name: clipText(bankTransfer.bank_name, 120),
+      account_name: clipText(bankTransfer.account_name, 120),
+      account_number: clipText(bankTransfer.account_number, 64),
+    },
+    over_the_counter: {
+      instructions: clipText(overTheCounter.instructions, 500),
+    },
+  };
 };
 
 const toPaymentMethodLabel = (provider, metadata) => {
@@ -76,7 +120,7 @@ const getCenterById = async (req, res) => {
   try {
     const [center] = await db.query(
             `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.latitude, rc.longitude, rc.logo_url,
-              rc.description, rc.programs, rc.achievements, rc.schedule, rc.payment_methods,
+              rc.description, rc.programs, rc.achievements, rc.schedule, rc.payment_methods, rc.payment_details,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -101,6 +145,7 @@ const getCenterById = async (req, res) => {
 
     const payload = { ...center[0], testimonials, isEnrolled };
     payload.payment_methods = normalizePaymentMethods(payload.payment_methods);
+    payload.payment_details = normalizePaymentDetails(payload.payment_details);
 
     res.json(payload);
   } catch (err) {
@@ -167,7 +212,7 @@ const updateCenterLocation = async (req, res) => {
 };
 
 const updateCenterProfile = async (req, res) => {
-  const { business_name, email, address, description, programs, achievements, schedule, payment_methods } = req.body;
+  const { business_name, email, address, description, programs, achievements, schedule, payment_methods, payment_details } = req.body;
   const userId = req.user.id;
   try {
     // If email is provided, ensure it's not used by another user
@@ -191,6 +236,10 @@ const updateCenterProfile = async (req, res) => {
       updates.push('payment_methods = ?');
       vals.push(JSON.stringify(normalizePaymentMethods(payment_methods)));
     }
+    if (payment_details !== undefined) {
+      updates.push('payment_details = ?');
+      vals.push(JSON.stringify(normalizePaymentDetails(payment_details)));
+    }
 
     if (updates.length > 0) {
       vals.push(userId);
@@ -210,7 +259,7 @@ const updateCenterProfile = async (req, res) => {
     // Return updated center profile
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url, rc.description,
-              rc.programs, rc.achievements, rc.schedule, rc.payment_methods,
+              rc.programs, rc.achievements, rc.schedule, rc.payment_methods, rc.payment_details,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -227,6 +276,7 @@ const updateCenterProfile = async (req, res) => {
       try { center.achievements = JSON.parse(center.achievements); } catch(e) { center.achievements = []; }
     }
     center.payment_methods = normalizePaymentMethods(center.payment_methods);
+    center.payment_details = normalizePaymentDetails(center.payment_details);
     res.json(center);
   } catch (err) {
     console.error('Update center profile error:', err);
@@ -264,7 +314,7 @@ const getMyCenterProfile = async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url, rc.description,
-              rc.programs, rc.achievements, rc.schedule, rc.payment_methods,
+              rc.programs, rc.achievements, rc.schedule, rc.payment_methods, rc.payment_details,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -282,6 +332,7 @@ const getMyCenterProfile = async (req, res) => {
       try { center.achievements = JSON.parse(center.achievements); } catch(e) { center.achievements = []; }
     }
     center.payment_methods = normalizePaymentMethods(center.payment_methods);
+    center.payment_details = normalizePaymentDetails(center.payment_details);
     res.json(center);
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });

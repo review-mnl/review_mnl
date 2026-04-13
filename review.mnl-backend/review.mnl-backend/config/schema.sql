@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS review_centers (
   achievements    JSON,
   schedule        JSON,
   payment_methods JSON,
+  payment_details JSON,
   last_login      TIMESTAMP NULL,
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

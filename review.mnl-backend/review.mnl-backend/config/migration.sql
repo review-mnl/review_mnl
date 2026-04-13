@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 ALTER TABLE review_centers ADD COLUMN schedule JSON;
 ALTER TABLE review_centers ADD COLUMN payment_methods JSON;
+ALTER TABLE review_centers ADD COLUMN payment_details JSON;
 
 ALTER TABLE chat_messages ADD COLUMN attachment_url TEXT NULL;
 ALTER TABLE chat_messages ADD COLUMN attachment_name VARCHAR(255) NULL;

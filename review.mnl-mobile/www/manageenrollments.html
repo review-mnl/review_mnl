@@ -91,18 +91,18 @@
                                 <span class="material-symbols-outlined">arrow_forward_ios</span>
                             </button>
                         </div>
-                        <div class="stat-number" id="statStudents">—</div>
-                        <p class="stat-date" id="statDate">Students scheduled today</p>
+                        <div class="stat-number" id="statStudents" style="display:none;">—</div>
+                        <p class="stat-date" id="statDate" style="display:none;"></p>
                     </div>
                     <div class="stat-card" id="setPaymentCard" style="cursor:pointer;" onclick="openPaymentMethodsModal()">
                         <div class="stat-header">
-                            <h3 id="statPendingLabel">Set Payment</h3>
+                            <h3 id="statPendingLabel">Payment</h3>
                             <button class="arrow-circle-btn" id="pendingArrow" type="button" onclick="event.stopPropagation();openPaymentMethodsModal();">
                                 <span class="material-symbols-outlined">arrow_forward_ios</span>
                             </button>
                         </div>
-                        <div class="stat-number" id="statPending">—</div>
-                        <p class="stat-date" id="statPendingSub">No payment method yet</p>
+                        <div class="stat-number" id="statPending" style="display:none;">—</div>
+                        <p class="stat-date" id="statPendingSub" style="display:none;"></p>
                     </div>
                 </div>
 
@@ -166,6 +166,34 @@
                             <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #dce7ff;border-radius:10px;cursor:pointer;"><input type="checkbox" value="Bank Transfer"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Bank Transfer</span></label>
                             <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #dce7ff;border-radius:10px;cursor:pointer;"><input type="checkbox" value="Over-the-Counter"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Over-the-Counter</span></label>
                         </div>
+                        <div id="paymentMethodDetailsWrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+                            <div data-payment-detail="GCash" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;">
+                                <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">GCash Details</p>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                    <input id="pmGcashAccountName" type="text" placeholder="Account Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                    <input id="pmGcashNumber" type="text" placeholder="GCash Number" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                </div>
+                            </div>
+                            <div data-payment-detail="Maya" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
+                                <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">Maya Details</p>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                    <input id="pmMayaAccountName" type="text" placeholder="Account Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                    <input id="pmMayaNumber" type="text" placeholder="Maya Number" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                </div>
+                            </div>
+                            <div data-payment-detail="Bank Transfer" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
+                                <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">Bank Transfer Details</p>
+                                <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+                                    <input id="pmBankName" type="text" placeholder="Bank Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                    <input id="pmBankAccountName" type="text" placeholder="Account Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                    <input id="pmBankAccountNumber" type="text" placeholder="Account Number" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                </div>
+                            </div>
+                            <div data-payment-detail="Over-the-Counter" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
+                                <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">Over-the-Counter Details</p>
+                                <textarea id="pmOverTheCounterInstructions" rows="3" placeholder="Instructions for students" style="width:100%;padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;resize:vertical;"></textarea>
+                            </div>
+                        </div>
                         <p id="paymentMethodsFeedback" style="display:none;margin:0 0 12px;padding:8px 10px;border-radius:8px;font-size:12px;"></p>
                         <div style="display:flex;justify-content:flex-end;gap:8px;">
                             <button type="button" onclick="closePaymentMethodsModal()" style="padding:8px 12px;border:1px solid #d8e0f2;background:#fff;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:#334155;">Cancel</button>
@@ -182,6 +210,16 @@
         var dashboardRole = (getUser() && getUser().role) || 'review_center';
         var _activePaymentEnrollment = null;
         var _centerPaymentMethods = ['GCash'];
+        var _centerPaymentDetails = defaultPaymentDetails();
+
+        function defaultPaymentDetails() {
+            return {
+                gcash: { account_name: '', number: '', qr_url: '' },
+                maya: { account_name: '', number: '' },
+                bank_transfer: { bank_name: '', account_name: '', account_number: '' },
+                over_the_counter: { instructions: '' },
+            };
+        }
 
         function toDateKey(value) {
             if (!value) return '';
@@ -214,22 +252,130 @@
             return Array.from(new Set(arr));
         }
 
+        function normalizePaymentDetails(value) {
+            var base = defaultPaymentDetails();
+            var raw = value;
+            if (typeof raw === 'string') {
+                try { raw = JSON.parse(raw); } catch (e) { raw = {}; }
+            }
+            if (!raw || typeof raw !== 'object') raw = {};
+
+            function txt(v) { return String(v || '').trim(); }
+
+            if (raw.gcash && typeof raw.gcash === 'object') {
+                base.gcash.account_name = txt(raw.gcash.account_name);
+                base.gcash.number = txt(raw.gcash.number);
+                base.gcash.qr_url = txt(raw.gcash.qr_url);
+            }
+            if (raw.maya && typeof raw.maya === 'object') {
+                base.maya.account_name = txt(raw.maya.account_name);
+                base.maya.number = txt(raw.maya.number);
+            }
+            if (raw.bank_transfer && typeof raw.bank_transfer === 'object') {
+                base.bank_transfer.bank_name = txt(raw.bank_transfer.bank_name);
+                base.bank_transfer.account_name = txt(raw.bank_transfer.account_name);
+                base.bank_transfer.account_number = txt(raw.bank_transfer.account_number);
+            }
+            if (raw.over_the_counter && typeof raw.over_the_counter === 'object') {
+                base.over_the_counter.instructions = txt(raw.over_the_counter.instructions);
+            }
+
+            return base;
+        }
+
+        function methodToDetailKey(method) {
+            var m = String(method || '').toLowerCase();
+            if (m === 'gcash') return 'gcash';
+            if (m === 'maya') return 'maya';
+            if (m === 'bank transfer') return 'bank_transfer';
+            if (m === 'over-the-counter') return 'over_the_counter';
+            return '';
+        }
+
+        function getCheckedPaymentMethods() {
+            var checks = Array.prototype.slice.call(document.querySelectorAll('#paymentMethodsChecklist input[type="checkbox"]:checked'));
+            return checks.map(function(input) { return input.value; });
+        }
+
+        function syncPaymentDetailsVisibility() {
+            var selected = getCheckedPaymentMethods();
+            var detailBlocks = document.querySelectorAll('[data-payment-detail]');
+            detailBlocks.forEach(function(block) {
+                var method = block.getAttribute('data-payment-detail');
+                block.style.display = selected.indexOf(method) >= 0 ? 'block' : 'none';
+            });
+        }
+
+        function fillPaymentDetailsForm(details) {
+            var normalized = normalizePaymentDetails(details);
+            _centerPaymentDetails = normalized;
+
+            var gcashName = document.getElementById('pmGcashAccountName');
+            var gcashNumber = document.getElementById('pmGcashNumber');
+            var mayaName = document.getElementById('pmMayaAccountName');
+            var mayaNumber = document.getElementById('pmMayaNumber');
+            var bankName = document.getElementById('pmBankName');
+            var bankAccountName = document.getElementById('pmBankAccountName');
+            var bankAccountNumber = document.getElementById('pmBankAccountNumber');
+            var otcInstructions = document.getElementById('pmOverTheCounterInstructions');
+
+            if (gcashName) gcashName.value = normalized.gcash.account_name || '';
+            if (gcashNumber) gcashNumber.value = normalized.gcash.number || '';
+            if (mayaName) mayaName.value = normalized.maya.account_name || '';
+            if (mayaNumber) mayaNumber.value = normalized.maya.number || '';
+            if (bankName) bankName.value = normalized.bank_transfer.bank_name || '';
+            if (bankAccountName) bankAccountName.value = normalized.bank_transfer.account_name || '';
+            if (bankAccountNumber) bankAccountNumber.value = normalized.bank_transfer.account_number || '';
+            if (otcInstructions) otcInstructions.value = normalized.over_the_counter.instructions || '';
+        }
+
+        function readPaymentDetailsForm() {
+            function val(id) {
+                var el = document.getElementById(id);
+                return String((el && el.value) || '').trim();
+            }
+
+            return {
+                gcash: {
+                    account_name: val('pmGcashAccountName'),
+                    number: val('pmGcashNumber'),
+                    qr_url: '',
+                },
+                maya: {
+                    account_name: val('pmMayaAccountName'),
+                    number: val('pmMayaNumber'),
+                },
+                bank_transfer: {
+                    bank_name: val('pmBankName'),
+                    account_name: val('pmBankAccountName'),
+                    account_number: val('pmBankAccountNumber'),
+                },
+                over_the_counter: {
+                    instructions: val('pmOverTheCounterInstructions'),
+                },
+            };
+        }
+
         function setPaymentMethodsCard(methods) {
             var list = normalizePaymentMethods(methods);
             _centerPaymentMethods = list;
 
             var countEl = document.getElementById('statPending');
             var subEl = document.getElementById('statPendingSub');
-            if (countEl) countEl.textContent = String(list.length);
-            if (subEl) subEl.textContent = list.join(', ');
+            var labelEl = document.getElementById('statPendingLabel');
+            if (labelEl) labelEl.textContent = 'Payment';
+            if (countEl) countEl.textContent = '';
+            if (subEl) subEl.textContent = '';
         }
 
         async function loadCenterPaymentMethods() {
             try {
                 var profile = await CentersAPI.getMyProfile();
                 setPaymentMethodsCard(profile && profile.payment_methods);
+                _centerPaymentDetails = normalizePaymentDetails(profile && profile.payment_details);
             } catch (err) {
                 setPaymentMethodsCard(_centerPaymentMethods);
+                _centerPaymentDetails = normalizePaymentDetails(_centerPaymentDetails);
             }
         }
 
@@ -266,6 +412,8 @@
             checks.forEach(function(input) {
                 input.checked = selected.indexOf(input.value) >= 0;
             });
+            fillPaymentDetailsForm(_centerPaymentDetails);
+            syncPaymentDetailsVisibility();
             showPaymentMethodsFeedback('', '');
             modal.style.display = 'flex';
         }
@@ -285,10 +433,28 @@
         })();
 
         async function savePaymentMethods() {
-            var checks = Array.prototype.slice.call(document.querySelectorAll('#paymentMethodsChecklist input[type="checkbox"]:checked'));
-            var selected = checks.map(function(input) { return input.value; });
+            var selected = getCheckedPaymentMethods();
             if (!selected.length) {
                 showPaymentMethodsFeedback('error', 'Please select at least one payment method.');
+                return;
+            }
+
+            var details = readPaymentDetailsForm();
+
+            if (selected.indexOf('GCash') >= 0 && (!details.gcash.account_name || !details.gcash.number)) {
+                showPaymentMethodsFeedback('error', 'Please provide GCash account name and number.');
+                return;
+            }
+            if (selected.indexOf('Maya') >= 0 && (!details.maya.account_name || !details.maya.number)) {
+                showPaymentMethodsFeedback('error', 'Please provide Maya account name and number.');
+                return;
+            }
+            if (selected.indexOf('Bank Transfer') >= 0 && (!details.bank_transfer.bank_name || !details.bank_transfer.account_name || !details.bank_transfer.account_number)) {
+                showPaymentMethodsFeedback('error', 'Please complete all Bank Transfer details.');
+                return;
+            }
+            if (selected.indexOf('Over-the-Counter') >= 0 && !details.over_the_counter.instructions) {
+                showPaymentMethodsFeedback('error', 'Please add over-the-counter payment instructions.');
                 return;
             }
 
@@ -299,8 +465,12 @@
             }
 
             try {
-                await CentersAPI.updateMyProfile({ payment_methods: selected });
+                await CentersAPI.updateMyProfile({
+                    payment_methods: selected,
+                    payment_details: details,
+                });
                 setPaymentMethodsCard(selected);
+                _centerPaymentDetails = normalizePaymentDetails(details);
                 showPaymentMethodsFeedback('success', 'Payment methods updated.');
                 setTimeout(closePaymentMethodsModal, 600);
             } catch (err) {
@@ -312,6 +482,13 @@
                 }
             }
         }
+
+        (function bindPaymentMethodCheckboxListeners() {
+            var checks = document.querySelectorAll('#paymentMethodsChecklist input[type="checkbox"]');
+            checks.forEach(function(input) {
+                input.addEventListener('change', syncPaymentDetailsVisibility);
+            });
+        })();
 
         function paymentStatusBadge(status) {
             var s = String(status || 'pending').toLowerCase();
@@ -491,7 +668,7 @@
                 document.getElementById('statDate').textContent = scheduledTodayCount > 0
                     ? (scheduledTodayCount + ' student(s) scheduled today')
                     : 'No students scheduled today';
-                document.getElementById('statPendingLabel').textContent = 'Set Payment';
+                document.getElementById('statPendingLabel').textContent = 'Payment';
 
                 renderCenterEnrollments(filtered);
                 window._latestCenterEnrollments = filtered;

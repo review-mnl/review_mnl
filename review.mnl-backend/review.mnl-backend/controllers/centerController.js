@@ -88,7 +88,12 @@ const normalizePaymentDetails = (value) => {
   const maya = parseJsonObject(raw.maya);
   const bankTransfer = parseJsonObject(raw.bank_transfer);
   const overTheCounter = parseJsonObject(raw.over_the_counter);
+  const pricing = parseJsonObject(raw.pricing);
   const preferredMethod = canonicalPaymentMethod(clipText(raw.preferred_method, 40)) || 'GCash';
+  const parsedPricingAmount = Number(pricing.amount !== undefined ? pricing.amount : raw.pricing_amount);
+  const pricingAmount = Number.isFinite(parsedPricingAmount) && parsedPricingAmount > 0
+    ? Math.round(parsedPricingAmount * 100) / 100
+    : 1550;
 
   return {
     preferred_method: preferredMethod,
@@ -110,6 +115,9 @@ const normalizePaymentDetails = (value) => {
     },
     over_the_counter: {
       instructions: clipText(overTheCounter.instructions, 500),
+    },
+    pricing: {
+      amount: pricingAmount,
     },
   };
 };
@@ -640,7 +648,7 @@ const updateEnrollmentReviewStatus = async (req, res) => {
 
     const [rows] = await conn.query(
       `SELECT e.id, e.user_id, e.center_id, e.payment_verified, e.review_status, e.status AS enrollment_legacy_status,
-              p.status AS payment_status, rc.business_name
+              p.status AS payment_status, rc.business_name, rc.address
        FROM enrollments e
        JOIN review_centers rc ON rc.id = e.center_id
        LEFT JOIN payments p ON p.id = e.payment_id
@@ -669,8 +677,11 @@ const updateEnrollmentReviewStatus = async (req, res) => {
 
     const nextLegacyStatus = requestedStatus === 'approved' ? 'active' : 'cancelled';
     const centerName = enrollment.business_name || 'the review center';
+    const centerAddress = String(enrollment.address || '').trim();
     const notificationMessage = requestedStatus === 'approved'
-      ? `Congratulations! You are now successfully enrolled in ${centerName}.`
+      ? (centerAddress
+          ? `Congratulations! You are now successfully enrolled in ${centerName}. Location: ${centerAddress}.`
+          : `Congratulations! You are now successfully enrolled in ${centerName}.`)
       : 'Your enrollment has been rejected.';
 
     await conn.query(

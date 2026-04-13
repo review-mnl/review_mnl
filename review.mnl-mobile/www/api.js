@@ -1656,6 +1656,67 @@ function initFullMessagesPage(options) {
             });
         }
 
+        function normalizeConversationAvatarUrl(rawUrl) {
+            if (!rawUrl) return '';
+            var url = String(rawUrl).trim();
+            if (!url) return '';
+            if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+            if (url.charAt(0) === '/') return API_BASE + url;
+            return API_BASE + '/' + url.replace(/^\/+/, '');
+        }
+
+        function cssUrlToken(url) {
+            return encodeURI(String(url || ''))
+                .replace(/'/g, '%27')
+                .replace(/"/g, '%22')
+                .replace(/\(/g, '%28')
+                .replace(/\)/g, '%29');
+        }
+
+        function avatarInitial(name) {
+            var text = String(name || conversationFallbackName || '?').trim();
+            return text ? text.charAt(0).toUpperCase() : '?';
+        }
+
+        function conversationAvatarUrl(conversation) {
+            return normalizeConversationAvatarUrl(
+                conversation && (
+                    conversation.other_avatar_url
+                    || conversation.other_profile_picture_url
+                    || conversation.other_center_logo_url
+                    || conversation.profile_picture_url
+                    || conversation.logo_url
+                )
+            );
+        }
+
+        function renderConversationAvatar(conversation, className) {
+            var cls = 'message-avatar' + (className ? (' ' + className) : '');
+            var url = conversationAvatarUrl(conversation);
+            if (url) {
+                return '<div class="' + cls + '" style="background-image:url(' + cssUrlToken(url) + ');" aria-hidden="true"></div>';
+            }
+            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(avatarInitial(conversation && conversation.other_name)) + '</div>';
+        }
+
+        function renderConversationHeaderAvatar(conversation) {
+            if (!convName || !convName.parentNode) return;
+            var avatarEl = convName.parentNode.querySelector('.rmnl-msgpage-header-avatar');
+            if (!avatarEl) {
+                avatarEl = document.createElement('div');
+                avatarEl.className = 'message-avatar header-avatar rmnl-msgpage-header-avatar';
+                convName.parentNode.insertBefore(avatarEl, convName);
+            }
+            var url = conversationAvatarUrl(conversation);
+            if (url) {
+                avatarEl.style.backgroundImage = 'url(' + cssUrlToken(url) + ')';
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.style.backgroundImage = '';
+                avatarEl.textContent = avatarInitial(conversation && conversation.other_name);
+            }
+        }
+
         function formatFileSize(sizeBytes) {
             var bytes = Number(sizeBytes || 0);
             if (!bytes || bytes < 1024) return bytes + ' B';

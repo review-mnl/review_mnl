@@ -377,9 +377,8 @@
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="summName" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="summProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="border-top:1px solid #e2e8f5;margin:4px 0;"></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Enrollment Fee</span><span style="font-weight:600;color:#0d1b4b;">₱ 1,500.00</span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Processing Fee</span><span style="font-weight:600;color:#0d1b4b;">₱ 50.00</span></div>
-                                <div style="display:flex;justify-content:space-between;border-top:1.5px solid #0a4cff;padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#0d1b4b;">Total</span><span style="font-weight:800;color:#0a4cff;font-size:15px;">₱ 1,550.00</span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Enrollment Price</span><span id="summEnrollmentPrice" style="font-weight:600;color:#0d1b4b;">₱ 1,550.00</span></div>
+                                <div style="display:flex;justify-content:space-between;border-top:1.5px solid #0a4cff;padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#0d1b4b;">Total</span><span id="summTotalPrice" style="font-weight:800;color:#0a4cff;font-size:15px;">₱ 1,550.00</span></div>
                             </div>
                         </div>
 
@@ -656,7 +655,9 @@
             maya: { account_name: '', number: '', qr_url: '' },
             bank_transfer: { bank_name: '', account_name: '', account_number: '', qr_url: '' },
             over_the_counter: { instructions: '' },
+            pricing: { amount: 1550 },
         };
+        var _centerEnrollmentPrice = 1550;
 
         function canonicalizeCenterPaymentMethod(value) {
             var normalized = String(value || '').trim().toLowerCase();
@@ -693,7 +694,12 @@
             var maya = details.maya && typeof details.maya === 'object' ? details.maya : {};
             var bank = details.bank_transfer && typeof details.bank_transfer === 'object' ? details.bank_transfer : {};
             var otc = details.over_the_counter && typeof details.over_the_counter === 'object' ? details.over_the_counter : {};
+            var pricing = details.pricing && typeof details.pricing === 'object' ? details.pricing : {};
             var preferredMethod = canonicalizeCenterPaymentMethod(String(details.preferred_method || '').trim()) || 'GCash';
+            var parsedPricingAmount = Number(pricing.amount !== undefined ? pricing.amount : details.pricing_amount);
+            var pricingAmount = Number.isFinite(parsedPricingAmount) && parsedPricingAmount > 0
+                ? Math.round(parsedPricingAmount * 100) / 100
+                : 1550;
             return {
                 preferred_method: preferredMethod,
                 gcash: {
@@ -715,7 +721,31 @@
                 over_the_counter: {
                     instructions: String(otc.instructions || '').trim(),
                 },
+                pricing: {
+                    amount: pricingAmount,
+                },
             };
+        }
+
+        function formatPhpAmount(amount) {
+            var value = Number(amount);
+            if (!Number.isFinite(value) || value < 0) value = 0;
+            return '₱ ' + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function resolveCenterEnrollmentPrice(details) {
+            var pricing = details && details.pricing && typeof details.pricing === 'object' ? details.pricing : {};
+            var parsed = Number(pricing.amount);
+            if (!Number.isFinite(parsed) || parsed <= 0) return 1550;
+            return Math.round(parsed * 100) / 100;
+        }
+
+        function updateEnrollmentPriceSummary() {
+            var enrollmentPriceEl = document.getElementById('summEnrollmentPrice');
+            var totalPriceEl = document.getElementById('summTotalPrice');
+            var formatted = formatPhpAmount(_centerEnrollmentPrice);
+            if (enrollmentPriceEl) enrollmentPriceEl.textContent = formatted;
+            if (totalPriceEl) totalPriceEl.textContent = formatted;
         }
 
         function getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled, otcEnabled) {
@@ -994,6 +1024,7 @@
                 document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
                 document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
                 document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
+                updateEnrollmentPriceSummary();
                 updatePaymentMethodUI();
             }
             if (n === 4) {
@@ -1008,12 +1039,12 @@
                 var paymentMethodValue = (_schEnrollmentResp && _schEnrollmentResp.payment_method)
                     || _schPaymentMethod
                     || 'GCash Manual';
-                var amountValue = Number((_schEnrollmentResp && _schEnrollmentResp.amount) || 0);
+                var amountValue = Number((_schEnrollmentResp && _schEnrollmentResp.amount) || _centerEnrollmentPrice || 0);
                 var enrollmentStatus = String((_schEnrollmentResp && _schEnrollmentResp.enrollment_status) || 'pending').toLowerCase();
 
                 if (confProgram) confProgram.textContent = programValue;
                 if (confPaymentMethod) confPaymentMethod.textContent = paymentMethodValue;
-                if (confAmount) confAmount.textContent = '₱ ' + amountValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (confAmount) confAmount.textContent = formatPhpAmount(amountValue);
                 if (confReferenceNumber) confReferenceNumber.textContent = _schReferenceNumber || '—';
 
                 if (confStatusBadge) {
@@ -1512,6 +1543,8 @@
 
                 _centerPaymentMethods = normalizeCenterPaymentMethods(center.payment_methods);
                 _centerPaymentDetails = normalizeCenterPaymentDetails(center.payment_details);
+                _centerEnrollmentPrice = resolveCenterEnrollmentPrice(_centerPaymentDetails);
+                updateEnrollmentPriceSummary();
                 applyCenterPaymentInfo(centerName);
                 setScheduleProgramOptions(programs);
 
@@ -1772,8 +1805,7 @@
                     }
                     return;
                 }
-                // Use booking total displayed in the UI or default amount
-                const amount = 1550; // ₱1,550 default — replace with dynamic value if available
+                const amount = _centerEnrollmentPrice;
                 const programEnrolled = (document.getElementById('schProgram').value || '').trim();
                 const enrollmentDate = _schSelectedDate
                     ? _schSelectedDate.toISOString().slice(0, 10)

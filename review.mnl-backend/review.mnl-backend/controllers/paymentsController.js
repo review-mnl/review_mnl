@@ -1,6 +1,29 @@
 const db = require('../config/db');
 require('dotenv').config();
 
+const parseJsonObject = (raw) => {
+  if (!raw) return {};
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+  return {};
+};
+
+const extractConfiguredEnrollmentAmount = (rawPaymentDetails) => {
+  const details = parseJsonObject(rawPaymentDetails);
+  const pricing = parseJsonObject(details.pricing);
+  const source = pricing.amount !== undefined ? pricing.amount : details.pricing_amount;
+  const parsed = Number(source);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.round(parsed * 100) / 100;
+};
+
 // Manual payment enrollment flow for GCash, Maya, Bank Transfer, and Over-the-Counter.
 // It stores payment details and marks the transaction as pending for admin verification.
 const createGcashEnrollment = async (req, res) => {
@@ -12,7 +35,10 @@ const createGcashEnrollment = async (req, res) => {
     if (!Number.isInteger(centerId) || centerId <= 0) {
       return res.status(400).json({ message: 'Invalid review center id.' });
     }
-    const amount = parseInt(req.body.amount, 10) || 1550; // default in PHP pesos
+    const requestedAmount = Number(req.body.amount);
+    let amount = Number.isFinite(requestedAmount) && requestedAmount > 0
+      ? Math.round(requestedAmount * 100) / 100
+      : 1550;
 
     const requestedMethod = String(req.body.payment_method || 'gcash').trim().toLowerCase();
     const normalizedMethod = (requestedMethod === 'maya')
@@ -100,17 +126,6 @@ const createGcashEnrollment = async (req, res) => {
     const enrollmentDateRaw = String(req.body.enrollment_date || '').trim();    
     const enrollmentDate = enrollmentDateRaw || new Date().toISOString().slice(0, 10);
 
-    console.log('[Enrollment] Request received', {
-      userId,
-      reviewCenterId: centerId,
-      amount,
-      paymentMethod: methodConfig.label,
-      programEnrolled,
-      enrollmentDate,
-      referenceNumber,
-      hasPaymentProof: Boolean(paymentProofUrl)
-    });
-
     if (methodConfig.requiresReference && !referenceNumber) {
       return res.status(400).json({ message: methodConfig.referenceLabel + ' is required.' });
     }
@@ -133,14 +148,25 @@ const createGcashEnrollment = async (req, res) => {
     if (methodConfig.requiresPayer && payerName.length < 2) {
       return res.status(400).json({ message: 'Please enter a valid account name.' });
     }
-    if (amount <= 0) {
-      return res.status(400).json({ message: 'Invalid payment amount.' });      
-    }
-
     // Ensure center exists
-    const [centerRows] = await db.query('SELECT id, user_id, business_name FROM review_centers WHERE id = ?', [centerId]);
+    const [centerRows] = await db.query('SELECT id, user_id, business_name, payment_details FROM review_centers WHERE id = ?', [centerId]);
     if (!centerRows || centerRows.length === 0) return res.status(404).json({ message: 'Center not found.' });
     const center = centerRows[0];
+    const configuredAmount = extractConfiguredEnrollmentAmount(center.payment_details);
+    if (Number.isFinite(configuredAmount) && configuredAmount > 0) {
+      amount = configuredAmount;
+    }
+
+    console.log('[Enrollment] Request received', {
+      userId,
+      reviewCenterId: centerId,
+      amount,
+      paymentMethod: methodConfig.label,
+      programEnrolled,
+      enrollmentDate,
+      referenceNumber,
+      hasPaymentProof: Boolean(paymentProofUrl)
+    });
 
     const [studentRows] = await db.query('SELECT first_name, last_name, email FROM users WHERE id = ?', [userId]);
     const student = studentRows && studentRows.length ? studentRows[0] : null;

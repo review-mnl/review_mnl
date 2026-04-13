@@ -96,7 +96,7 @@
                     </div>
                     <div class="stat-card" id="setPaymentCard" style="cursor:pointer;" onclick="openPaymentMethodsModal()">
                         <div class="stat-header">
-                            <h3 id="statPendingLabel">Payment Settings</h3>
+                            <h3 id="statPendingLabel">Pricing/Payment Settings</h3>
                             <button class="arrow-circle-btn" id="pendingArrow" type="button" onclick="event.stopPropagation();openPaymentMethodsModal();">
                                 <span class="material-symbols-outlined">arrow_forward_ios</span>
                             </button>
@@ -155,8 +155,13 @@
                 <div class="ms-modal-overlay" id="paymentMethodsModal" style="display:none;position:fixed;inset:0;background:rgba(8,18,46,0.62);backdrop-filter:blur(3px);z-index:9001;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;">
                     <div class="ms-modal" style="position:relative;background:#ffffff;max-width:560px;width:100%;padding:24px 22px;max-height:88vh;overflow-y:auto;border:1px solid #d7e3ff;border-radius:18px;box-shadow:0 24px 56px rgba(9,30,66,0.34);">
                         <button class="ms-modal-close" onclick="closePaymentMethodsModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:#888;font-size:22px;line-height:1;">&#10005;</button>
-                        <h2 style="margin:0 0 10px;font-size:20px;color:#0d1b4b;">Payment Settings</h2>
+                        <h2 style="margin:0 0 10px;font-size:20px;color:#0d1b4b;">Pricing/Payment Settings</h2>
                         <p style="margin:0 0 14px;font-size:12px;color:#64748b;">Choose accepted payment methods, add account details, and attach your QR image for student scan payments.</p>
+                        <div style="margin-bottom:14px;">
+                            <label for="pmEnrollmentPrice" style="display:block;margin:0 0 6px;font-size:12px;font-weight:700;color:#1e3a8a;">Enrollment Price (PHP)</label>
+                            <input id="pmEnrollmentPrice" type="number" min="1" step="0.01" placeholder="1550.00" style="width:100%;padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                            <p style="margin:6px 0 0;font-size:11px;color:#64748b;">This amount is reflected when students submit enrollment.</p>
+                        </div>
                         <div id="paymentMethodsChecklist" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
                             <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="GCash"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">GCash</span></label>
                             <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="Maya"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Maya</span></label>
@@ -271,6 +276,7 @@
                 maya: { account_name: '', number: '', qr_url: '' },
                 bank_transfer: { bank_name: '', account_name: '', account_number: '', qr_url: '' },
                 over_the_counter: { instructions: '' },
+                pricing: { amount: 1550 },
             };
         }
 
@@ -348,6 +354,11 @@
             if (raw.over_the_counter && typeof raw.over_the_counter === 'object') {
                 base.over_the_counter.instructions = txt(raw.over_the_counter.instructions);
             }
+            var rawPricing = raw.pricing && typeof raw.pricing === 'object' ? raw.pricing : {};
+            var parsedAmount = Number(rawPricing.amount !== undefined ? rawPricing.amount : raw.pricing_amount);
+            base.pricing.amount = Number.isFinite(parsedAmount) && parsedAmount > 0
+                ? Math.round(parsedAmount * 100) / 100
+                : 1550;
 
             return base;
         }
@@ -522,6 +533,7 @@
             var bankAccountNumber = document.getElementById('pmBankAccountNumber');
             var bankQrFile = document.getElementById('pmBankQrFile');
             var otcInstructions = document.getElementById('pmOverTheCounterInstructions');
+            var enrollmentPrice = document.getElementById('pmEnrollmentPrice');
             var gcashQrFile = document.getElementById('pmGcashQrFile');
 
             if (gcashName) gcashName.value = normalized.gcash.account_name || '';
@@ -534,6 +546,7 @@
             if (bankAccountNumber) bankAccountNumber.value = normalized.bank_transfer.account_number || '';
             if (bankQrFile) bankQrFile.value = '';
             if (otcInstructions) otcInstructions.value = normalized.over_the_counter.instructions || '';
+            if (enrollmentPrice) enrollmentPrice.value = String(Number(normalized.pricing.amount || 1550));
             if (gcashQrFile) gcashQrFile.value = '';
 
             syncPreferredMethodOptions(normalized.preferred_method);
@@ -551,6 +564,10 @@
 
             var preferredSelect = document.getElementById('pmPreferredMethod');
             var preferredMethod = String((preferredSelect && preferredSelect.value) || '').trim();
+            var rawPricingAmount = Number(val('pmEnrollmentPrice'));
+            var pricingAmount = Number.isFinite(rawPricingAmount) && rawPricingAmount > 0
+                ? Math.round(rawPricingAmount * 100) / 100
+                : 1550;
 
             return {
                 preferred_method: preferredMethod,
@@ -573,6 +590,9 @@
                 over_the_counter: {
                     instructions: val('pmOverTheCounterInstructions'),
                 },
+                pricing: {
+                    amount: pricingAmount,
+                },
             };
         }
 
@@ -583,7 +603,7 @@
             var countEl = document.getElementById('statPending');
             var subEl = document.getElementById('statPendingSub');
             var labelEl = document.getElementById('statPendingLabel');
-            if (labelEl) labelEl.textContent = 'Payment Settings';
+            if (labelEl) labelEl.textContent = 'Pricing/Payment Settings';
             if (countEl) countEl.textContent = '';
             if (subEl) subEl.textContent = '';
         }
@@ -854,7 +874,15 @@
             return '<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;color:' + color + ';background:' + bg + ';">' + escHtml(label) + '</span>';
         }
 
-        function formatPaymentBadge(status, verified) {
+        function formatPaymentBadge(status, verified, enrollmentStatus) {
+            var paymentState = String(status || 'pending').toLowerCase();
+            var reviewState = String(enrollmentStatus || 'pending').toLowerCase();
+            if (paymentState === 'pending' && reviewState === 'approved') {
+                return '<span style="font-size:11px;font-weight:700;color:#166534;">🟢 Proof Reviewed</span>';
+            }
+            if (paymentState === 'pending' && reviewState === 'rejected') {
+                return '<span style="font-size:11px;font-weight:700;color:#b91c1c;">🔴 Proof Rejected</span>';
+            }
             return paymentStatusBadge(status);
         }
 
@@ -940,8 +968,8 @@
 
                 var viewPaymentBtn = '<button onclick="openPaymentModalById(' + item.enrollment_id + ')" style="padding:6px 10px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">View Payment</button>';
 
-                var approveDisabled = item.status !== 'pending' ? 'disabled' : '';
-                var rejectDisabled = item.status !== 'pending' ? 'disabled' : '';
+                var reviewState = String(item.status || 'pending').toLowerCase();
+                var isPendingDecision = reviewState === 'pending';
 
                 var pr = item.payment || {};
                 var ref = pr.reference_number || null;
@@ -967,7 +995,7 @@
                     + '</div>'
                     + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">'
                     + formatStatusBadge(item.status)
-                    + formatPaymentBadge(item.payment && item.payment.status, item.payment && item.payment.verified)
+                    + formatPaymentBadge(item.payment && item.payment.status, item.payment && item.payment.verified, item.status)
                     + '</div>'
                     + '</div>'
                     + '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #d9e2f2;display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
@@ -987,8 +1015,14 @@
                     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">'
                     + viewPaymentBtn
                     + '<button onclick="openChatFromEnrollment(' + item.user_id + ',' + (window._myCenterId || 0) + ',' + item.enrollment_id + ')" style="padding:6px 12px;background:#eef4ff;color:#1d4ed8;border:1px solid #c7d6ff;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Message Student</button>'
-                    + '<button ' + approveDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'approved\')" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>'
-                    + '<button ' + rejectDisabled + ' onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'rejected\')" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>'
+                    + (isPendingDecision
+                        ? ('<button onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'approved\',this)" style="padding:6px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>'
+                            + '<button onclick="updateEnrollmentStatus(' + item.enrollment_id + ',\'rejected\',this)" style="padding:6px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>')
+                        : ('<span style="padding:6px 10px;border-radius:999px;font-size:11px;font-weight:700;"
+                            + 'background:' + (reviewState === 'approved' ? '#e8f5e9' : '#ffebee') + ';'
+                            + 'color:' + (reviewState === 'approved' ? '#166534' : '#b91c1c') + ';">'
+                            + (reviewState === 'approved' ? 'Enrollment Approved' : 'Enrollment Rejected')
+                            + '</span>'))
                     + '</div>'
                     + (item.latest_notification ? ('<p style="margin:10px 0 0;color:#555;font-size:12px;">Last notification: ' + escHtml(item.latest_notification) + '</p>') : '')
                     + '</div>';
@@ -1029,7 +1063,7 @@
                 document.getElementById('statDate').textContent = scheduledTodayCount > 0
                     ? (scheduledTodayCount + ' student(s) scheduled today')
                     : 'No students scheduled today';
-                document.getElementById('statPendingLabel').textContent = 'Payment Settings';
+                document.getElementById('statPendingLabel').textContent = 'Pricing/Payment Settings';
 
                 renderCenterEnrollments(filtered);
                 window._latestCenterEnrollments = filtered;
@@ -1050,13 +1084,28 @@
             openPaymentModal(enrollment);
         }
 
-        async function updateEnrollmentStatus(enrollmentId, status) {
+        async function updateEnrollmentStatus(enrollmentId, status, triggerBtn) {
             clearToast();
+            var list = Array.isArray(window._latestCenterEnrollments) ? window._latestCenterEnrollments : [];
+            var target = list.find(function(item) { return Number(item.enrollment_id) === Number(enrollmentId); });
+            var studentName = target && target.student_name ? target.student_name : 'the student';
+            if (triggerBtn) {
+                triggerBtn.disabled = true;
+                triggerBtn.dataset.prevText = triggerBtn.textContent;
+                triggerBtn.textContent = 'Saving...';
+            }
             try {
                 await CentersAPI.updateEnrollmentStatus(enrollmentId, status);
                 await loadCenterEnrollments();
+                showToast(status === 'approved'
+                    ? ('Enrollment approved for ' + studentName + '.')
+                    : ('Enrollment rejected for ' + studentName + '.'));
             } catch (err) {
                 showToast((err && err.message) ? err.message : 'Failed to update enrollment status.');
+                if (triggerBtn) {
+                    triggerBtn.disabled = false;
+                    triggerBtn.textContent = triggerBtn.dataset.prevText || 'Retry';
+                }
             }
         }
 

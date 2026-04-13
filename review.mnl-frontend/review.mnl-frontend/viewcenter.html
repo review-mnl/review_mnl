@@ -638,10 +638,21 @@
         var SCH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         var _centerPaymentMethods = ['GCash'];
         var _centerPaymentDetails = {
+            preferred_method: 'GCash',
             gcash: { account_name: '', number: '', qr_url: '' },
             maya: { account_name: '', number: '', qr_url: '' },
             bank_transfer: { bank_name: '', account_name: '', account_number: '', qr_url: '' },
         };
+
+        function canonicalizeCenterPaymentMethod(value) {
+            var normalized = String(value || '').trim().toLowerCase();
+            if (!normalized) return '';
+            if (normalized === 'gcash') return 'GCash';
+            if (normalized === 'maya') return 'Maya';
+            if (normalized === 'bank' || normalized === 'bank transfer' || normalized === 'bank_transfer' || normalized === 'bank-transfer') return 'Bank Transfer';
+            if (normalized === 'over-the-counter' || normalized === 'over the counter' || normalized === 'over_the_counter' || normalized === 'otc') return 'Over-the-Counter';
+            return '';
+        }
 
         function normalizeCenterPaymentMethods(value) {
             var arr = [];
@@ -651,10 +662,10 @@
                     var parsed = JSON.parse(value);
                     if (Array.isArray(parsed)) arr = parsed;
                 } catch (e) {
-                    arr = [];
+                    arr = String(value || '').split(',');
                 }
             }
-            arr = arr.map(function(item) { return String(item || '').trim(); }).filter(Boolean);
+            arr = arr.map(function(item) { return canonicalizeCenterPaymentMethod(item); }).filter(Boolean);
             return arr.length ? Array.from(new Set(arr)) : ['GCash'];
         }
 
@@ -667,7 +678,9 @@
             var gcash = details.gcash && typeof details.gcash === 'object' ? details.gcash : {};
             var maya = details.maya && typeof details.maya === 'object' ? details.maya : {};
             var bank = details.bank_transfer && typeof details.bank_transfer === 'object' ? details.bank_transfer : {};
+            var preferredMethod = canonicalizeCenterPaymentMethod(String(details.preferred_method || '').trim()) || 'GCash';
             return {
+                preferred_method: preferredMethod,
                 gcash: {
                     account_name: String(gcash.account_name || '').trim(),
                     number: String(gcash.number || '').trim(),
@@ -685,6 +698,27 @@
                     qr_url: String(bank.qr_url || '').trim(),
                 },
             };
+        }
+
+        function getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled) {
+            var preferred = canonicalizeCenterPaymentMethod(((_centerPaymentDetails || {}).preferred_method) || '');
+
+            if (preferred === 'GCash' && gcashEnabled) return 'gcash';
+            if (preferred === 'Maya' && mayaEnabled) return 'maya';
+            if (preferred === 'Bank Transfer' && bankEnabled) return 'bank';
+
+            if (gcashEnabled) return 'gcash';
+            if (mayaEnabled) return 'maya';
+            if (bankEnabled) return 'bank';
+            return 'gcash';
+        }
+
+        function centerHasPaymentMethod(methodLabel) {
+            var target = canonicalizeCenterPaymentMethod(methodLabel);
+            if (!target) return false;
+            return _centerPaymentMethods.some(function(item) {
+                return canonicalizeCenterPaymentMethod(item) === target;
+            });
         }
 
         function resolveCenterAssetUrl(raw) {
@@ -757,9 +791,9 @@
             var maya = _centerPaymentDetails.maya || {};
             var bank = _centerPaymentDetails.bank_transfer || {};
 
-            var gcashEnabled = _centerPaymentMethods.indexOf('GCash') >= 0;
-            var mayaEnabled = _centerPaymentMethods.indexOf('Maya') >= 0;
-            var bankEnabled = _centerPaymentMethods.indexOf('Bank Transfer') >= 0;
+            var gcashEnabled = centerHasPaymentMethod('GCash');
+            var mayaEnabled = centerHasPaymentMethod('Maya');
+            var bankEnabled = centerHasPaymentMethod('Bank Transfer');
 
             var gcashAccountName = gcash.account_name || String(centerName || 'Not provided');
             var gcashNumber = gcash.number || 'Not provided';
@@ -850,14 +884,10 @@
             }
 
             if (gcashRadio && mayaRadio && bankRadio) {
-                gcashRadio.checked = false;
-                mayaRadio.checked = false;
-                bankRadio.checked = false;
-
-                if (gcashEnabled) gcashRadio.checked = true;
-                else if (mayaEnabled) mayaRadio.checked = true;
-                else if (bankEnabled) bankRadio.checked = true;
-                else gcashRadio.checked = true;
+                var selectedMethod = getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled);
+                gcashRadio.checked = selectedMethod === 'gcash';
+                mayaRadio.checked = selectedMethod === 'maya';
+                bankRadio.checked = selectedMethod === 'bank';
             }
 
             updatePaymentMethodUI();
@@ -867,29 +897,21 @@
             var now = new Date();
             _schYear = now.getFullYear(); _schMonth = now.getMonth();
             _schSelectedDate = null; _schStep = 1;
-            _schPaymentMethod = 'GCash';
             _schPaymentStatus = 'Pending';
             _schEnrollmentResp = null;
             _schReferenceNumber = '';
             var gcashRadio = document.getElementById('schPayGcash');
             var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
-            var gcashEnabled = _centerPaymentMethods.indexOf('GCash') >= 0;
-            var mayaEnabled = _centerPaymentMethods.indexOf('Maya') >= 0;
-            var bankEnabled = _centerPaymentMethods.indexOf('Bank Transfer') >= 0;
+            var gcashEnabled = centerHasPaymentMethod('GCash');
+            var mayaEnabled = centerHasPaymentMethod('Maya');
+            var bankEnabled = centerHasPaymentMethod('Bank Transfer');
+            var selectedMethod = getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled);
+            _schPaymentMethod = selectedMethod === 'maya' ? 'Maya' : (selectedMethod === 'bank' ? 'Bank Transfer' : 'GCash');
             if (gcashRadio && mayaRadio && bankRadio) {
-                gcashRadio.checked = false;
-                mayaRadio.checked = false;
-                bankRadio.checked = false;
-                if (gcashEnabled) {
-                    gcashRadio.checked = true;
-                } else if (mayaEnabled) {
-                    mayaRadio.checked = true;
-                } else if (bankEnabled) {
-                    bankRadio.checked = true;
-                } else {
-                    gcashRadio.checked = true;
-                }
+                gcashRadio.checked = selectedMethod === 'gcash';
+                mayaRadio.checked = selectedMethod === 'maya';
+                bankRadio.checked = selectedMethod === 'bank';
             }
             renderSchCal();
             schSetStep(1);

@@ -166,6 +166,11 @@
                             <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="Bank Transfer"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Bank Transfer</span></label>
                             <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="Over-the-Counter"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Over-the-Counter</span></label>
                         </div>
+                        <div style="margin-bottom:14px;">
+                            <label for="pmPreferredMethod" style="display:block;margin:0 0 6px;font-size:12px;font-weight:700;color:#1e3a8a;">Preferred Payment Method</label>
+                            <select id="pmPreferredMethod" style="width:100%;padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;background:#fff;"></select>
+                            <p style="margin:6px 0 0;font-size:11px;color:#64748b;">This will be auto-selected first for students in Schedule a Review.</p>
+                        </div>
                         <div id="paymentMethodDetailsWrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                             <div data-payment-detail="GCash" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;">
                                 <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">GCash Details</p>
@@ -264,6 +269,7 @@
 
         function defaultPaymentDetails() {
             return {
+                preferred_method: 'GCash',
                 gcash: { account_name: '', number: '', qr_url: '' },
                 maya: { account_name: '', number: '', qr_url: '' },
                 bank_transfer: { bank_name: '', account_name: '', account_number: '', qr_url: '' },
@@ -282,6 +288,16 @@
             return year + '-' + month + '-' + day;
         }
 
+        function canonicalizePaymentMethod(value) {
+            var normalized = String(value || '').trim().toLowerCase();
+            if (!normalized) return '';
+            if (normalized === 'gcash') return 'GCash';
+            if (normalized === 'maya') return 'Maya';
+            if (normalized === 'bank' || normalized === 'bank transfer' || normalized === 'bank_transfer' || normalized === 'bank-transfer') return 'Bank Transfer';
+            if (normalized === 'over-the-counter' || normalized === 'over the counter' || normalized === 'over_the_counter' || normalized === 'otc') return 'Over-the-Counter';
+            return '';
+        }
+
         function normalizePaymentMethods(value) {
             var arr = [];
             if (Array.isArray(value)) arr = value;
@@ -289,13 +305,14 @@
                 try {
                     var parsed = JSON.parse(value);
                     if (Array.isArray(parsed)) arr = parsed;
+                    else if (typeof parsed === 'string') arr = [parsed];
                 } catch (e) {
-                    arr = [];
+                    arr = String(value || '').split(',');
                 }
             }
 
             arr = arr
-                .map(function(item) { return String(item || '').trim(); })
+                .map(function(item) { return canonicalizePaymentMethod(item); })
                 .filter(Boolean);
 
             if (!arr.length) return ['GCash'];
@@ -311,6 +328,9 @@
             if (!raw || typeof raw !== 'object') raw = {};
 
             function txt(v) { return String(v || '').trim(); }
+
+            var preferredMethod = canonicalizePaymentMethod(txt(raw.preferred_method)) || 'GCash';
+            base.preferred_method = preferredMethod;
 
             if (raw.gcash && typeof raw.gcash === 'object') {
                 base.gcash.account_name = txt(raw.gcash.account_name);
@@ -339,8 +359,8 @@
             var m = String(method || '').toLowerCase();
             if (m === 'gcash') return 'gcash';
             if (m === 'maya') return 'maya';
-            if (m === 'bank transfer') return 'bank_transfer';
-            if (m === 'over-the-counter') return 'over_the_counter';
+            if (m === 'bank transfer' || m === 'bank_transfer' || m === 'bank' || m === 'bank-transfer') return 'bank_transfer';
+            if (m === 'over-the-counter' || m === 'over the counter' || m === 'over_the_counter' || m === 'otc') return 'over_the_counter';
             return '';
         }
 
@@ -450,6 +470,37 @@
             return checks.map(function(input) { return input.value; });
         }
 
+        function syncPreferredMethodOptions(preferredMethod) {
+            var select = document.getElementById('pmPreferredMethod');
+            if (!select) return;
+
+            var methods = getCheckedPaymentMethods();
+            var currentValue = String(select.value || '').trim();
+            var preferred = String(preferredMethod || currentValue || ((_centerPaymentDetails || {}).preferred_method || '')).trim();
+
+            select.innerHTML = '';
+
+            if (!methods.length) {
+                var emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = 'Select at least one payment method';
+                select.appendChild(emptyOption);
+                select.disabled = true;
+                return;
+            }
+
+            methods.forEach(function(method) {
+                var option = document.createElement('option');
+                option.value = method;
+                option.textContent = method;
+                select.appendChild(option);
+            });
+
+            if (methods.indexOf(preferred) === -1) preferred = methods[0];
+            select.value = preferred;
+            select.disabled = false;
+        }
+
         function syncPaymentDetailsVisibility() {
             var selected = getCheckedPaymentMethods();
             var detailBlocks = document.querySelectorAll('[data-payment-detail]');
@@ -457,6 +508,7 @@
                 var method = block.getAttribute('data-payment-detail');
                 block.style.display = selected.indexOf(method) >= 0 ? 'block' : 'none';
             });
+            syncPreferredMethodOptions();
         }
 
         function fillPaymentDetailsForm(details) {
@@ -487,6 +539,7 @@
             if (otcInstructions) otcInstructions.value = normalized.over_the_counter.instructions || '';
             if (gcashQrFile) gcashQrFile.value = '';
 
+            syncPreferredMethodOptions(normalized.preferred_method);
             setGcashQrPreview(normalized.gcash.qr_url || '');
             setMayaQrPreview(normalized.maya.qr_url || '');
             setBankQrPreview(normalized.bank_transfer.qr_url || '');
@@ -499,7 +552,11 @@
                 return String((el && el.value) || '').trim();
             }
 
+            var preferredSelect = document.getElementById('pmPreferredMethod');
+            var preferredMethod = String((preferredSelect && preferredSelect.value) || '').trim();
+
             return {
+                preferred_method: preferredMethod,
                 gcash: {
                     account_name: val('pmGcashAccountName'),
                     number: val('pmGcashNumber'),
@@ -606,6 +663,10 @@
             }
 
             var details = readPaymentDetailsForm();
+            var preferredMethod = String(details.preferred_method || '').trim();
+            if (selected.indexOf(preferredMethod) === -1) {
+                details.preferred_method = selected[0];
+            }
             var qrFileInput = document.getElementById('pmGcashQrFile');
             var qrFile = qrFileInput && qrFileInput.files && qrFileInput.files[0] ? qrFileInput.files[0] : null;
             var mayaQrFileInput = document.getElementById('pmMayaQrFile');

@@ -56,12 +56,30 @@ const getUploadedFileUrl = (file) => {
   return '';
 };
 
+const canonicalPaymentMethod = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '';
+  if (normalized === 'gcash') return 'GCash';
+  if (normalized === 'maya') return 'Maya';
+  if (normalized === 'bank' || normalized === 'bank transfer' || normalized === 'bank_transfer' || normalized === 'bank-transfer') return 'Bank Transfer';
+  if (normalized === 'over-the-counter' || normalized === 'over the counter' || normalized === 'over_the_counter' || normalized === 'otc') return 'Over-the-Counter';
+  return '';
+};
+
 const normalizePaymentMethods = (value) => {
-  const arr = parseJsonArray(value)
-    .map((item) => String(item || '').trim())
+  let arr = parseJsonArray(value);
+  if (!arr.length && typeof value === 'string') {
+    arr = String(value)
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  const normalized = arr
+    .map((item) => canonicalPaymentMethod(item))
     .filter(Boolean);
-  if (!arr.length) return ['GCash'];
-  return Array.from(new Set(arr)).slice(0, 8);
+  if (!normalized.length) return ['GCash'];
+  return Array.from(new Set(normalized)).slice(0, 8);
 };
 
 const normalizePaymentDetails = (value) => {
@@ -70,8 +88,10 @@ const normalizePaymentDetails = (value) => {
   const maya = parseJsonObject(raw.maya);
   const bankTransfer = parseJsonObject(raw.bank_transfer);
   const overTheCounter = parseJsonObject(raw.over_the_counter);
+  const preferredMethod = canonicalPaymentMethod(clipText(raw.preferred_method, 40)) || 'GCash';
 
   return {
+    preferred_method: preferredMethod,
     gcash: {
       account_name: clipText(gcash.account_name, 120),
       number: clipText(gcash.number, 32),

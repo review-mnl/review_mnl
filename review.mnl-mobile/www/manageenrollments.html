@@ -174,11 +174,10 @@
                                     <input id="pmGcashNumber" type="text" placeholder="GCash Number" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                                 </div>
                                 <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;">
-                                    <input id="pmGcashQrUrl" type="url" placeholder="QR image URL (optional)" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                                     <input id="pmGcashQrFile" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;background:#fff;">
                                     <div id="pmGcashQrPreviewWrap" style="min-height:120px;border:1px dashed #c8d8ff;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;">
                                         <img id="pmGcashQrPreview" alt="GCash QR preview" style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #d8e0f2;display:none;" />
-                                        <p id="pmGcashQrEmpty" style="margin:0;font-size:11px;color:#64748b;">No QR image yet. Add a URL or upload an image.</p>
+                                        <p id="pmGcashQrEmpty" style="margin:0;font-size:11px;color:#64748b;">No QR image yet. Upload an image.</p>
                                     </div>
                                 </div>
                             </div>
@@ -189,11 +188,10 @@
                                     <input id="pmMayaNumber" type="text" placeholder="Maya Number" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                                 </div>
                                 <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;">
-                                    <input id="pmMayaQrUrl" type="url" placeholder="Maya QR image URL (optional)" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                                     <input id="pmMayaQrFile" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;background:#fff;">
                                     <div id="pmMayaQrPreviewWrap" style="min-height:120px;border:1px dashed #c8d8ff;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;">
                                         <img id="pmMayaQrPreview" alt="Maya QR preview" style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #d8e0f2;display:none;" />
-                                        <p id="pmMayaQrEmpty" style="margin:0;font-size:11px;color:#64748b;">No Maya QR image yet. Add a URL or upload an image.</p>
+                                        <p id="pmMayaQrEmpty" style="margin:0;font-size:11px;color:#64748b;">No Maya QR image yet. Upload an image.</p>
                                     </div>
                                 </div>
                             </div>
@@ -227,11 +225,10 @@
                                     </div>
                                     <input id="pmBankAccountName" type="text" placeholder="Account Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                                     <input id="pmBankAccountNumber" type="text" placeholder="Account Number" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
-                                    <input id="pmBankQrUrl" type="url" placeholder="Bank QR image URL (optional)" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                                     <input id="pmBankQrFile" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;background:#fff;">
                                     <div id="pmBankQrPreviewWrap" style="min-height:120px;border:1px dashed #c8d8ff;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;">
                                         <img id="pmBankQrPreview" alt="Bank QR preview" style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #d8e0f2;display:none;" />
-                                        <p id="pmBankQrEmpty" style="margin:0;font-size:11px;color:#64748b;">No Bank QR image yet. Add a URL or upload an image.</p>
+                                        <p id="pmBankQrEmpty" style="margin:0;font-size:11px;color:#64748b;">No Bank QR image yet. Upload an image.</p>
                                     </div>
                                 </div>
                                 <div id="pmBankPreviewCard" style="margin-top:10px;padding:10px;border:1px solid #d5e2ff;border-radius:10px;background:#ffffff;box-shadow:0 1px 4px rgba(15,23,42,0.04);">
@@ -420,16 +417,17 @@
             var bankName = String((document.getElementById('pmBankName') || {}).value || '').trim();
             var accountName = String((document.getElementById('pmBankAccountName') || {}).value || '').trim();
             var accountNumber = String((document.getElementById('pmBankAccountNumber') || {}).value || '').trim();
-            var bankQrUrl = String((document.getElementById('pmBankQrUrl') || {}).value || '').trim();
             var bankNameEl = document.getElementById('pmBankPreviewName');
             var accountNameEl = document.getElementById('pmBankPreviewAccountName');
             var accountNumberEl = document.getElementById('pmBankPreviewAccountNumber');
             var qrStatusEl = document.getElementById('pmBankPreviewQrStatus');
+            var bankQrPreviewEl = document.getElementById('pmBankQrPreview');
+            var hasQr = !!(bankQrPreviewEl && bankQrPreviewEl.style.display !== 'none' && bankQrPreviewEl.getAttribute('src'));
 
             if (bankNameEl) bankNameEl.textContent = bankName || 'Bank Name not set';
             if (accountNameEl) accountNameEl.innerHTML = '<strong>Account Name:</strong> ' + escHtml(accountName || 'Not set');
             if (accountNumberEl) accountNumberEl.innerHTML = '<strong>Account Number:</strong> ' + escHtml(maskBankAccountNumber(accountNumber));
-            if (qrStatusEl) qrStatusEl.innerHTML = '<strong>Bank QR:</strong> ' + escHtml(bankQrUrl ? 'Configured' : 'Not set');
+            if (qrStatusEl) qrStatusEl.innerHTML = '<strong>Bank QR:</strong> ' + escHtml(hasQr ? 'Configured' : 'Not set');
 
             var quickButtons = document.querySelectorAll('#pmBankQuickPicks [data-bank-name]');
             quickButtons.forEach(function(btn) {
@@ -469,30 +467,24 @@
             var gcashNumber = document.getElementById('pmGcashNumber');
             var mayaName = document.getElementById('pmMayaAccountName');
             var mayaNumber = document.getElementById('pmMayaNumber');
-            var mayaQrUrl = document.getElementById('pmMayaQrUrl');
             var mayaQrFile = document.getElementById('pmMayaQrFile');
             var bankName = document.getElementById('pmBankName');
             var bankAccountName = document.getElementById('pmBankAccountName');
             var bankAccountNumber = document.getElementById('pmBankAccountNumber');
-            var bankQrUrl = document.getElementById('pmBankQrUrl');
             var bankQrFile = document.getElementById('pmBankQrFile');
             var otcInstructions = document.getElementById('pmOverTheCounterInstructions');
-            var gcashQrUrl = document.getElementById('pmGcashQrUrl');
             var gcashQrFile = document.getElementById('pmGcashQrFile');
 
             if (gcashName) gcashName.value = normalized.gcash.account_name || '';
             if (gcashNumber) gcashNumber.value = normalized.gcash.number || '';
             if (mayaName) mayaName.value = normalized.maya.account_name || '';
             if (mayaNumber) mayaNumber.value = normalized.maya.number || '';
-            if (mayaQrUrl) mayaQrUrl.value = normalized.maya.qr_url || '';
             if (mayaQrFile) mayaQrFile.value = '';
             if (bankName) bankName.value = normalized.bank_transfer.bank_name || '';
             if (bankAccountName) bankAccountName.value = normalized.bank_transfer.account_name || '';
             if (bankAccountNumber) bankAccountNumber.value = normalized.bank_transfer.account_number || '';
-            if (bankQrUrl) bankQrUrl.value = normalized.bank_transfer.qr_url || '';
             if (bankQrFile) bankQrFile.value = '';
             if (otcInstructions) otcInstructions.value = normalized.over_the_counter.instructions || '';
-            if (gcashQrUrl) gcashQrUrl.value = normalized.gcash.qr_url || '';
             if (gcashQrFile) gcashQrFile.value = '';
 
             setGcashQrPreview(normalized.gcash.qr_url || '');
@@ -511,18 +503,18 @@
                 gcash: {
                     account_name: val('pmGcashAccountName'),
                     number: val('pmGcashNumber'),
-                    qr_url: val('pmGcashQrUrl'),
+                    qr_url: String(((_centerPaymentDetails.gcash || {}).qr_url) || '').trim(),
                 },
                 maya: {
                     account_name: val('pmMayaAccountName'),
                     number: val('pmMayaNumber'),
-                    qr_url: val('pmMayaQrUrl'),
+                    qr_url: String(((_centerPaymentDetails.maya || {}).qr_url) || '').trim(),
                 },
                 bank_transfer: {
                     bank_name: val('pmBankName'),
                     account_name: val('pmBankAccountName'),
                     account_number: val('pmBankAccountNumber'),
-                    qr_url: val('pmBankQrUrl'),
+                    qr_url: String(((_centerPaymentDetails.bank_transfer || {}).qr_url) || '').trim(),
                 },
                 over_the_counter: {
                     instructions: val('pmOverTheCounterInstructions'),
@@ -681,8 +673,6 @@
                         throw new Error('Failed to upload GCash QR image.');
                     }
                     details.gcash.qr_url = uploadedQrUrl;
-                    var qrUrlInput = document.getElementById('pmGcashQrUrl');
-                    if (qrUrlInput) qrUrlInput.value = uploadedQrUrl;
                     setGcashQrPreview(uploadedQrUrl);
                 }
 
@@ -695,8 +685,6 @@
                         throw new Error('Failed to upload Bank QR image.');
                     }
                     details.bank_transfer.qr_url = uploadedBankQrUrl;
-                    var bankQrUrlInput = document.getElementById('pmBankQrUrl');
-                    if (bankQrUrlInput) bankQrUrlInput.value = uploadedBankQrUrl;
                     setBankQrPreview(uploadedBankQrUrl);
                     updateBankTransferPreview();
                 }
@@ -710,8 +698,6 @@
                         throw new Error('Failed to upload Maya QR image.');
                     }
                     details.maya.qr_url = uploadedMayaQrUrl;
-                    var mayaQrUrlInput = document.getElementById('pmMayaQrUrl');
-                    if (mayaQrUrlInput) mayaQrUrlInput.value = uploadedMayaQrUrl;
                     setMayaQrPreview(uploadedMayaQrUrl);
                 }
 
@@ -744,50 +730,35 @@
         })();
 
         (function bindPaymentQrInputs() {
-            function bindQrInputGroup(urlInputId, fileInputId, previewId, emptyId, previewFn, onPreviewUpdated) {
-                var urlInput = document.getElementById(urlInputId);
+            function bindQrFileOnlyInputGroup(fileInputId, previewFn, getPersistedUrlFn, onPreviewUpdated) {
                 var fileInput = document.getElementById(fileInputId);
-                var preview = document.getElementById(previewId);
-                var empty = document.getElementById(emptyId);
+                if (!fileInput) return;
 
-                if (preview) {
-                    preview.addEventListener('error', function() {
-                        preview.style.display = 'none';
-                        preview.removeAttribute('src');
-                        if (empty) empty.style.display = 'block';
+                fileInput.addEventListener('change', function() {
+                    var file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+                    if (!file) {
+                        previewFn(typeof getPersistedUrlFn === 'function' ? getPersistedUrlFn() : '');
                         if (typeof onPreviewUpdated === 'function') onPreviewUpdated();
-                    });
-                }
-
-                if (urlInput) {
-                    urlInput.addEventListener('input', function() {
-                        if (fileInput && fileInput.files && fileInput.files[0]) return;
-                        previewFn(urlInput.value);
+                        return;
+                    }
+                    var reader = new FileReader();
+                    reader.onload = function(event) {
+                        previewFn((event && event.target && event.target.result) || '');
                         if (typeof onPreviewUpdated === 'function') onPreviewUpdated();
-                    });
-                }
-
-                if (fileInput) {
-                    fileInput.addEventListener('change', function() {
-                        var file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-                        if (!file) {
-                            previewFn(urlInput ? urlInput.value : '');
-                            if (typeof onPreviewUpdated === 'function') onPreviewUpdated();
-                            return;
-                        }
-                        var reader = new FileReader();
-                        reader.onload = function(event) {
-                            previewFn((event && event.target && event.target.result) || '');
-                            if (typeof onPreviewUpdated === 'function') onPreviewUpdated();
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                }
+                    };
+                    reader.readAsDataURL(file);
+                });
             }
 
-            bindQrInputGroup('pmGcashQrUrl', 'pmGcashQrFile', 'pmGcashQrPreview', 'pmGcashQrEmpty', setGcashQrPreview);
-            bindQrInputGroup('pmMayaQrUrl', 'pmMayaQrFile', 'pmMayaQrPreview', 'pmMayaQrEmpty', setMayaQrPreview);
-            bindQrInputGroup('pmBankQrUrl', 'pmBankQrFile', 'pmBankQrPreview', 'pmBankQrEmpty', setBankQrPreview, updateBankTransferPreview);
+            bindQrFileOnlyInputGroup('pmGcashQrFile', setGcashQrPreview, function() {
+                return String(((_centerPaymentDetails.gcash || {}).qr_url) || '').trim();
+            });
+            bindQrFileOnlyInputGroup('pmMayaQrFile', setMayaQrPreview, function() {
+                return String(((_centerPaymentDetails.maya || {}).qr_url) || '').trim();
+            });
+            bindQrFileOnlyInputGroup('pmBankQrFile', setBankQrPreview, function() {
+                return String(((_centerPaymentDetails.bank_transfer || {}).qr_url) || '').trim();
+            }, updateBankTransferPreview);
         })();
 
         (function bindBankTransferPreview() {

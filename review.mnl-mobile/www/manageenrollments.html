@@ -283,38 +283,10 @@
             if (paymentVerifyModal) paymentVerifyModal.style.display = 'none';
             if (paymentMethodsModal) paymentMethodsModal.style.display = 'none';
             document.body.style.overflow = '';
-            syncManageEnrollmentsInteractionLayers();
-        }
-
-        function syncManageEnrollmentsInteractionLayers() {
-            var sidebar = document.getElementById('sidebar');
-            var overlay = document.querySelector('.sidebar-overlay');
-            var paymentVerifyModal = document.getElementById('paymentVerifyModal');
-            var paymentMethodsModal = document.getElementById('paymentMethodsModal');
-
-            var sidebarOpen = Boolean(sidebar && sidebar.classList.contains('active'));
-            if (overlay) {
-                overlay.style.pointerEvents = sidebarOpen ? 'auto' : 'none';
-                if (!sidebarOpen) {
-                    overlay.classList.remove('active');
-                    overlay.style.opacity = '0';
-                    overlay.style.visibility = 'hidden';
-                }
-            }
-
-            if (paymentVerifyModal) {
-                var paymentModalOpen = paymentVerifyModal.style.display === 'flex';
-                paymentVerifyModal.style.pointerEvents = paymentModalOpen ? 'auto' : 'none';
-            }
-            if (paymentMethodsModal) {
-                var paymentMethodsOpen = paymentMethodsModal.style.display === 'flex';
-                paymentMethodsModal.style.pointerEvents = paymentMethodsOpen ? 'auto' : 'none';
-            }
         }
 
         resetManageEnrollmentsTransientUi();
         window.addEventListener('pageshow', resetManageEnrollmentsTransientUi);
-        window.addEventListener('focus', syncManageEnrollmentsInteractionLayers);
 
         function defaultPaymentDetails() {
             return {
@@ -668,14 +640,12 @@
             syncPaymentDetailsVisibility();
             showPaymentMethodsFeedback('', '');
             modal.style.display = 'flex';
-            syncManageEnrollmentsInteractionLayers();
         }
 
         function closePaymentMethodsModal() {
             var modal = document.getElementById('paymentMethodsModal');
             if (!modal) return;
             modal.style.display = 'none';
-            syncManageEnrollmentsInteractionLayers();
         }
 
         (function bindPaymentMethodsModalDismiss() {
@@ -956,13 +926,11 @@
             }
 
             document.getElementById('paymentVerifyModal').style.display = 'flex';
-            syncManageEnrollmentsInteractionLayers();
         }
 
         function closePaymentModal() {
             document.getElementById('paymentVerifyModal').style.display = 'none';
             _activePaymentEnrollment = null;
-            syncManageEnrollmentsInteractionLayers();
         }
 
         function renderCenterEnrollments(enrollments) {
@@ -1326,7 +1294,6 @@
             if (!sidebar || !overlay) return;
             sidebar.classList.add('active');
             overlay.classList.add('active');
-            syncManageEnrollmentsInteractionLayers();
         }
 
         function closeSidebar() {
@@ -1335,7 +1302,6 @@
             if (!sidebar || !overlay) return;
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
-            syncManageEnrollmentsInteractionLayers();
         }
 
         function toggleSidebar() {
@@ -1423,7 +1389,6 @@
                 avatarEl.style.backgroundImage = '';
                 avatarEl.textContent = avatarInitial(displayName || (conversation && conversation.other_name), fallbackName);
             }
-            syncManageEnrollmentsInteractionLayers();
         }
 
         function isImageAttachment(mimeType, fileName, url) {
@@ -1788,161 +1753,6 @@
 
         window.openConvByKey = openConvByKey;
         window.openChatFromEnrollment = openChatFromEnrollment;
-        </script>
-
-        <script>
-        (function manageEnrollmentsFallbackBootstrap() {
-            if (window.__manageEnrollmentsFallbackBootstrapped) return;
-            window.__manageEnrollmentsFallbackBootstrapped = true;
-
-            function bindProfileDropdownFallback() {
-                var btn = document.getElementById('profileBtn');
-                var dd = document.getElementById('profileDropdown');
-                if (!btn || !dd || btn.__fallbackBound) return;
-                btn.__fallbackBound = true;
-                btn.addEventListener('click', function(ev) {
-                    ev.stopPropagation();
-                    var isOpen = dd.style.display === 'block';
-                    dd.style.display = isOpen ? 'none' : 'block';
-                    btn.setAttribute('aria-expanded', String(!isOpen));
-                });
-                document.addEventListener('click', function() {
-                    dd.style.display = 'none';
-                    btn.setAttribute('aria-expanded', 'false');
-                });
-            }
-
-            function ensureSidebarToggleFallback() {
-                if (typeof window.toggleSidebar === 'function') return;
-                window.toggleSidebar = function() {
-                    var sidebar = document.getElementById('sidebar');
-                    var overlay = document.querySelector('.sidebar-overlay');
-                    if (!sidebar || !overlay) return;
-                    sidebar.classList.toggle('active');
-                    overlay.classList.toggle('active');
-                    overlay.style.pointerEvents = sidebar.classList.contains('active') ? 'auto' : 'none';
-                };
-            }
-
-            function ensurePaymentModalFallback() {
-                if (typeof window.openPaymentMethodsModal !== 'function') {
-                    window.openPaymentMethodsModal = function() {
-                        var modal = document.getElementById('paymentMethodsModal');
-                        if (!modal) return;
-                        modal.style.display = 'flex';
-                        modal.style.pointerEvents = 'auto';
-                    };
-                }
-                if (typeof window.closePaymentMethodsModal !== 'function') {
-                    window.closePaymentMethodsModal = function() {
-                        var modal = document.getElementById('paymentMethodsModal');
-                        if (!modal) return;
-                        modal.style.display = 'none';
-                        modal.style.pointerEvents = 'none';
-                    };
-                }
-            }
-
-            function hardResetInteractionLayers() {
-                var overlay = document.querySelector('.sidebar-overlay');
-                var sidebar = document.getElementById('sidebar');
-                var msgList = document.getElementById('msgList');
-                var convPanel = document.getElementById('convPanel');
-                var paymentVerifyModal = document.getElementById('paymentVerifyModal');
-                var paymentMethodsModal = document.getElementById('paymentMethodsModal');
-
-                if (overlay && sidebar && !sidebar.classList.contains('active')) {
-                    overlay.classList.remove('active');
-                    overlay.style.opacity = '0';
-                    overlay.style.visibility = 'hidden';
-                    overlay.style.pointerEvents = 'none';
-                }
-                if (msgList && convPanel && convPanel.style.display === 'none') {
-                    msgList.style.display = 'block';
-                }
-                if (paymentVerifyModal && paymentVerifyModal.style.display !== 'flex') {
-                    paymentVerifyModal.style.display = 'none';
-                    paymentVerifyModal.style.pointerEvents = 'none';
-                }
-                if (paymentMethodsModal && paymentMethodsModal.style.display !== 'flex') {
-                    paymentMethodsModal.style.display = 'none';
-                    paymentMethodsModal.style.pointerEvents = 'none';
-                }
-            }
-
-            async function fallbackLoadEnrollments() {
-                if (typeof window.loadCenterEnrollments === 'function') return;
-                if (!window.CentersAPI || typeof window.CentersAPI.getMyEnrollments !== 'function') return;
-                var list = document.getElementById('centerEnrollmentsList');
-                if (!list) return;
-
-                try {
-                    var status = (document.getElementById('enrollmentStatusFilter') || {}).value || 'all';
-                    var sort = (document.getElementById('enrollmentSort') || {}).value || 'latest';
-                    var res = await window.CentersAPI.getMyEnrollments(status, sort);
-                    var enrollments = (res && res.enrollments) ? res.enrollments : [];
-                    if (!enrollments.length) {
-                        list.innerHTML = '<p style="margin:0;color:#666;font-size:13px;">No enrolled students yet.</p>';
-                        return;
-                    }
-                    list.innerHTML = enrollments.map(function(item) {
-                        var studentName = String(item.student_name || 'Student');
-                        var program = String(item.program_enrolled || 'Program not specified');
-                        var statusLabel = String(item.status || 'pending');
-                        return '<div style="background:#f9fafb;border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid #e7ecf7;">'
-                            + '<strong style="color:#0d1b4b;font-size:14px;">' + studentName.replace(/</g, '&lt;') + '</strong>'
-                            + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Program: ' + program.replace(/</g, '&lt;') + '</p>'
-                            + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Status: ' + statusLabel.replace(/</g, '&lt;') + '</p>'
-                            + '</div>';
-                    }).join('');
-                } catch (e) {
-                    list.innerHTML = '<p style="margin:0;color:#b71c1c;font-size:13px;">Failed to load enrollments.</p>';
-                }
-            }
-
-            function bindFiltersFallback() {
-                var filterEl = document.getElementById('enrollmentStatusFilter');
-                var sortEl = document.getElementById('enrollmentSort');
-                if (filterEl && !filterEl.__fallbackBound) {
-                    filterEl.__fallbackBound = true;
-                    filterEl.addEventListener('change', function() {
-                        if (typeof window.loadCenterEnrollments === 'function') window.loadCenterEnrollments();
-                        else fallbackLoadEnrollments();
-                    });
-                }
-                if (sortEl && !sortEl.__fallbackBound) {
-                    sortEl.__fallbackBound = true;
-                    sortEl.addEventListener('change', function() {
-                        if (typeof window.loadCenterEnrollments === 'function') window.loadCenterEnrollments();
-                        else fallbackLoadEnrollments();
-                    });
-                }
-            }
-
-            function initFallback() {
-                ensureSidebarToggleFallback();
-                ensurePaymentModalFallback();
-                bindProfileDropdownFallback();
-                bindFiltersFallback();
-                hardResetInteractionLayers();
-
-                if (typeof window.loadConversations === 'function') {
-                    try { window.loadConversations(); } catch (e) {}
-                }
-                if (typeof window.loadCenterEnrollments === 'function') {
-                    try { window.loadCenterEnrollments(); } catch (e) {}
-                } else {
-                    fallbackLoadEnrollments();
-                }
-            }
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initFallback, { once: true });
-            } else {
-                initFallback();
-            }
-            window.addEventListener('pageshow', initFallback);
-        })();
         </script>
 
         <section class="footer">

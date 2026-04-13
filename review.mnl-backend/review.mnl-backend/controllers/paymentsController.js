@@ -176,6 +176,7 @@ const createGcashEnrollment = async (req, res) => {
       payer_number_masked: maskedNumber || null,
       payer_name: payerName || null,
       reference_number: referenceNumber || null,
+      student_reference_number: referenceNumber || null,
       payment_proof_url: paymentProofUrl || null,
       program_enrolled: programEnrolled,
       enrollment_date: enrollmentDate,
@@ -205,6 +206,7 @@ const createGcashEnrollment = async (req, res) => {
       ]
     );
     const paymentId = result.insertId;
+    const siteReference = 'RMNL-' + paymentId + '-' + Date.now();
 
     // Create the enrollment with payment_verified = 0 and status = pending
     const [enrollmentInsert] = await conn.query(
@@ -214,8 +216,8 @@ const createGcashEnrollment = async (req, res) => {
     const enrollmentId = enrollmentInsert.insertId;
 
     await conn.query(
-      'UPDATE payments SET metadata = JSON_SET(COALESCE(metadata, JSON_OBJECT()), "$.enrollment_id", ?, "$.created_at", ?) WHERE id = ?',
-      [enrollmentId, new Date().toISOString(), paymentId]
+      'UPDATE payments SET metadata = JSON_SET(COALESCE(metadata, JSON_OBJECT()), "$.enrollment_id", ?, "$.created_at", ?, "$.site_reference", ?) WHERE id = ?',
+      [enrollmentId, new Date().toISOString(), siteReference, paymentId]
     );
 
     const enrollmentConfirmationMessage = methodConfig.confirmationMessage;

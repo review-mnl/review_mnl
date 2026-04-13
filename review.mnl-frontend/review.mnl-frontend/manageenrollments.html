@@ -948,6 +948,22 @@
                 var approveDisabled = item.status !== 'pending' ? 'disabled' : '';
                 var rejectDisabled = item.status !== 'pending' ? 'disabled' : '';
 
+                var pr = item.payment || {};
+                var ref = pr.reference_number || null;
+                var studentRef = pr.student_reference_number || null;
+                var siteRef = pr.site_reference || null;
+                var refHtmlParts = [];
+                if (studentRef && String(studentRef) !== String(ref)) {
+                    refHtmlParts.push('<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Student Ref: ' + escHtml(studentRef) + '</p>');
+                }
+                if (ref) {
+                    refHtmlParts.push('<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Ref No: ' + escHtml(ref) + '</p>');
+                }
+                if (siteRef) {
+                    refHtmlParts.push('<p style="margin:2px 0 0;color:#475569;font-size:11px;background:#f1f5f9;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Site Ref: ' + escHtml(siteRef) + '</p>');
+                }
+                var combinedRefs = refHtmlParts.join(' ');
+
                 return '<div style="background:#f9fafb;border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid #e7ecf7;">'
                     + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">'
                     + '<div>'
@@ -967,7 +983,7 @@
                     + '<p style="margin:0;color:#555;font-size:12px;">Amount: Php ' + escHtml(item.payment && item.payment.amount || 0) + '</p>'
                     + '<p style="margin:2px 0 0;color:#555;font-size:12px;">Method: ' + escHtml(item.payment && item.payment.method || 'Not set') + '</p>'
                     + (item.payment && item.payment.gcash_name ? '<p style="margin:2px 0 0;color:#555;font-size:12px;">Acc Name: ' + escHtml(item.payment.gcash_name) + '</p>' : '')
-                    + (item.payment && item.payment.reference_number ? '<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Ref No: ' + escHtml(item.payment.reference_number) + '</p>' : '')
+                    + (combinedRefs ? combinedRefs : '')
                     + (item.payment && item.payment.review_reason ? '<p style="margin:6px 0 0;color:#7f1d1d;font-size:12px;">Reason: ' + escHtml(item.payment.review_reason) + '</p>' : '')
                     + '</div>'
                     + '<div>'

@@ -85,6 +85,8 @@ const getCenterEnrollmentsByCenterId = async (req, res) => {
         amount: row.amount,
         provider: row.provider,
         reference_number: row.reference_number,
+        student_reference_number: (metadata && (metadata.reference_number || metadata.student_reference_number)) || row.reference_number || null,
+        site_reference: (metadata && metadata.site_reference) || null,
         metadata,
       };
     });

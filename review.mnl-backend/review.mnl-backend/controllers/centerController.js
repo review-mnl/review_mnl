@@ -468,6 +468,8 @@ const getMyCenterEnrollments = async (req, res) => {
             status: row.payment_status || 'pending',
             verified: Boolean(row.payment_verified),
             reference_number: metadata.reference_number || null,
+            student_reference_number: metadata.student_reference_number || metadata.reference_number || null,
+            site_reference: metadata.site_reference || null,
             gcash_name: metadata.gcash_name || null,
             gcash_number_masked: metadata.gcash_number_masked || null,
             payment_screenshot_url: metadata.payment_proof_url || null,

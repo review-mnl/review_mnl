@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { broadcastToUser } = require('./notificationController');
 require('dotenv').config();
 
 const parseJsonObject = (raw) => {
@@ -241,6 +242,27 @@ const createGcashEnrollment = async (req, res) => {
     );
     const enrollmentId = enrollmentInsert.insertId;
 
+    // Notify the review center owner that a new enrollment came in
+    try {
+      const centerNotificationMessage = 'New enrollment received from ' + String(studentName || 'a student') + (programEnrolled ? ' (' + String(programEnrolled) + ').' : '.');
+      const [notifResult] = await conn.query(
+        `INSERT INTO enrollment_notifications (enrollment_id, user_id, center_id, status, message, is_read)
+         VALUES (?, ?, ?, 'pending', ?, 0)`,
+        [enrollmentId, center.user_id, centerId, centerNotificationMessage]
+      );
+      broadcastToUser(center.user_id, {
+        type: 'notification_created',
+        notification_id: notifResult.insertId,
+        enrollment_id: enrollmentId,
+        status: 'pending',
+        message: centerNotificationMessage,
+        is_read: false,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.warn('[Enrollment] Failed to notify center for new enrollment', e);
+    }
+
     await conn.query(
       'UPDATE payments SET metadata = JSON_SET(COALESCE(metadata, JSON_OBJECT()), "$.enrollment_id", ?, "$.created_at", ?, "$.site_reference", ?) WHERE id = ?',
       [enrollmentId, new Date().toISOString(), siteReference, paymentId]
@@ -367,6 +389,31 @@ const completeMockPayment = async (req, res) => {
          VALUES (?, ?, ?, ?, ?, ?, 0)`,
         [p.user_id, p.center_id, enrollmentId, centerRows[0].user_id, p.user_id, enrollmentConfirmationMessage]
       );
+
+      // Notify the review center owner that a new enrollment came in
+      try {
+        const [studentRows] = await conn.query('SELECT first_name, last_name FROM users WHERE id = ? LIMIT 1', [p.user_id]);
+        const studentName = studentRows.length
+          ? String((studentRows[0].first_name || '') + ' ' + (studentRows[0].last_name || '')).trim()
+          : 'a student';
+        const centerNotificationMessage = 'New enrollment received from ' + (studentName || 'a student') + '.';
+        const [notifResult] = await conn.query(
+          `INSERT INTO enrollment_notifications (enrollment_id, user_id, center_id, status, message, is_read)
+           VALUES (?, ?, ?, 'pending', ?, 0)`,
+          [enrollmentId, centerRows[0].user_id, p.center_id, centerNotificationMessage]
+        );
+        broadcastToUser(centerRows[0].user_id, {
+          type: 'notification_created',
+          notification_id: notifResult.insertId,
+          enrollment_id: enrollmentId,
+          status: 'pending',
+          message: centerNotificationMessage,
+          is_read: false,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.warn('[Enrollment] Failed to notify center for mock enrollment', e);
+      }
     }
 
     await conn.commit();

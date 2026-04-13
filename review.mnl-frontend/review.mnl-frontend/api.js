@@ -442,6 +442,12 @@ const NotificationAPI = {
 
     markAsRead: (id) =>
         apiRequest('PUT', '/api/notifications/' + id + '/read'),
+
+    markAllAsRead: () =>
+        apiRequest('PUT', '/api/notifications/me/read'),
+
+    clearMy: () =>
+        apiRequest('DELETE', '/api/notifications/me'),
 };
 
 function getMessagesLandingPathForRole(role) {
@@ -689,12 +695,12 @@ function initGlobalNotificationBell(options) {
                 var isUnread = !item.is_read;
                 return '<div class="rmnl-global-item" data-id="' + Number(item.notification_id || 0) + '" style="cursor:pointer;border:1px solid ' + (isUnread ? '#b9d0ff' : '#e5e7eb') + ';background:' + (isUnread ? '#f5f9ff' : '#fff') + ';border-radius:10px;padding:10px 11px;margin-bottom:9px;">'
                     + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">'
-                    + '<p style="margin:0;font-size:12px;color:#111827;font-weight:' + (isUnread ? '700' : '500') + ';line-height:1.45;">' + (String(item.message || '').replace(/[&<>"']/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]); })) + '</p>'
+                    + '<p style="margin:0;font-size:12px;color:#111827;font-weight:' + (isUnread ? '700' : '500') + ';line-height:1.45;flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;">' + (String(item.message || '').replace(/[&<>"']/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]); })) + '</p>'
                     + '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;color:' + st.color + ';background:' + st.bg + ';">' + (st.s.charAt(0).toUpperCase() + st.s.slice(1)) + '</span>'
                     + '</div>'
                     + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;">'
                     + '<span style="font-size:11px;color:#6b7280;">' + new Date(item.created_at).toLocaleString(undefined, { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) + '</span>'
-                    + (item.center_user_id
+                    + ((item.center_user_id || item.student_user_id)
                         ? '<button type="button" class="rmnl-global-open-chat" data-id="' + Number(item.notification_id || 0) + '" style="padding:5px 9px;border:1px solid #d0dcff;background:#fff;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">Open Chat</button>'
                         : '<span style="font-size:10px;color:' + (isUnread ? '#b45309' : '#6b7280') + ';font-weight:600;">' + (isUnread ? 'Unread' : 'Read') + '</span>')
                     + '</div>'
@@ -738,6 +744,9 @@ function initGlobalNotificationBell(options) {
             if (!isOpen) {
                 closeProfileDropdowns();
                 placeDropNearButton();
+                try {
+                    Promise.resolve(NotificationAPI.markAllAsRead()).then(refresh).catch(function(){});
+                } catch (e) {}
             }
             drop.style.display = isOpen ? 'none' : 'block';
             btn.setAttribute('aria-expanded', String(!isOpen));
@@ -2018,13 +2027,24 @@ function initFullMessagesPage(options) {
                         return Number(item.notification_id) === notificationId;
                     });
 
-                    if (target && Number(target.center_user_id || target.student_user_id || 0) > 0) {
-                        var otherUserId = Number(target.center_user_id || target.student_user_id || 0);
+                    if (target) {
+                        var me = null;
+                        try { me = getUser(); } catch (e) {}
+                        var role = String((me && me.role) || '').toLowerCase();
+                        var preferStudent = (role === 'review_center' || role === 'admin' || role === 'center');
+                        var otherUserId = preferStudent
+                            ? Number(target.student_user_id || 0)
+                            : Number(target.center_user_id || 0);
+
+                        // Fallback in case older payloads are missing one side
+                        if (!otherUserId) otherUserId = Number(target.center_user_id || target.student_user_id || 0);
+
+                        if (otherUserId > 0) {
                         var convFromNotif = conversationMap[String(otherUserId)] || {
                             other_user_id: otherUserId,
                             center_id: Number(target.center_id || 0),
                             enrollment_id: Number(target.enrollment_id || 0) || null,
-                            other_name: target.center_name || target.student_name || conversationFallbackName,
+                            other_name: (preferStudent ? (target.student_name || '') : (target.center_name || '')) || target.center_name || target.student_name || conversationFallbackName,
                         };
 
                         try {

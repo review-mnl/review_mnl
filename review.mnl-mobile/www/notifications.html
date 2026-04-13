@@ -89,6 +89,10 @@
             color: #111827;
             line-height: 1.45;
             font-weight: 500;
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
         .notif-item.unread .notif-message {
             font-weight: 700;
@@ -99,6 +103,7 @@
             padding: 4px 9px;
             border-radius: 999px;
             white-space: nowrap;
+            flex: 0 0 auto;
         }
         .notif-meta {
             margin-top: 9px;
@@ -115,6 +120,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .notif-empty {
             background: #fff;
@@ -172,7 +178,10 @@
 
             <div class="notif-toolbar">
                 <span class="count" id="notifSummary">Loading notifications...</span>
-                <button type="button" class="notif-btn" id="notifRefreshBtn">Refresh</button>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button type="button" class="notif-btn" id="notifRefreshBtn">Refresh</button>
+                    <button type="button" class="notif-btn" id="notifClearBtn">Clear</button>
+                </div>
             </div>
 
             <div class="notif-list" id="notifList"></div>
@@ -239,8 +248,10 @@
             const listEl = document.getElementById('notifList');
             const summaryEl = document.getElementById('notifSummary');
             const refreshBtn = document.getElementById('notifRefreshBtn');
+            const clearBtn = document.getElementById('notifClearBtn');
             let source = null;
             let fallbackTimer = null;
+            let isMarkingAll = false;
 
             function escapeHtml(str) {
                 return String(str || '').replace(/[&<>"']/g, function(ch) {
@@ -261,6 +272,13 @@
                 try { await NotificationAPI.markAsRead(id); } catch (e) {}
             }
 
+            async function markAllRead() {
+                if (isMarkingAll) return;
+                isMarkingAll = true;
+                try { await NotificationAPI.markAllAsRead(); } catch (e) {}
+                isMarkingAll = false;
+            }
+
             function attachHandlers() {
                 listEl.querySelectorAll('[data-action="mark-read"]').forEach(function(btn) {
                     btn.addEventListener('click', async function() {
@@ -277,7 +295,7 @@
                         var id = Number(btn.getAttribute('data-id') || 0);
                         if (id > 0) {
                             await markRead(id);
-                            window.location.href = 'messages.html?openChatNotification=' + id;
+                            window.location.href = getMessagesLandingPath() + '?openChatNotification=' + id;
                         }
                     });
                 });
@@ -308,7 +326,7 @@
                         + (isUnread
                             ? '<button type="button" class="notif-btn" data-action="mark-read" data-id="' + Number(item.notification_id || 0) + '">Mark as Read</button>'
                             : '<span style="font-size:12px;color:#6b7280;font-weight:600;">Read</span>')
-                        + (item.center_user_id
+                        + ((item.center_user_id || item.student_user_id)
                             ? '<button type="button" class="notif-btn" data-action="open-chat" data-id="' + Number(item.notification_id || 0) + '">Open Chat</button>'
                             : '')
                         + '    </div>'
@@ -317,6 +335,12 @@
                 }).join('');
 
                 attachHandlers();
+
+                // If the user is on the notifications page, treat that as "viewed"
+                // and automatically clear unread indicators.
+                if (unread > 0) {
+                    markAllRead().then(load).catch(function(){});
+                }
             }
 
             async function load() {
@@ -383,7 +407,15 @@
             }
 
             refreshBtn.addEventListener('click', load);
-            load();
+            clearBtn.addEventListener('click', async function() {
+                var ok = window.confirm('Clear all notifications?');
+                if (!ok) return;
+                try { await NotificationAPI.clearMy(); } catch (e) {}
+                await load();
+            });
+
+            // On open, mark everything as read to remove the red indicators.
+            markAllRead().then(load).catch(load);
             startRealtime();
 
             window.addEventListener('beforeunload', function() {

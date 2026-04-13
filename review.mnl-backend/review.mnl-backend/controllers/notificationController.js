@@ -134,9 +134,13 @@ const getMyNotifications = async (req, res) => {
          en.read_at,
          en.created_at,
          rc.user_id AS center_user_id,
-         rc.business_name AS center_name
+         rc.business_name AS center_name,
+         u.id AS student_user_id,
+         CONCAT(u.first_name, ' ', u.last_name) AS student_name
        FROM enrollment_notifications en
        LEFT JOIN review_centers rc ON rc.id = en.center_id
+       LEFT JOIN enrollments e ON e.id = en.enrollment_id
+       LEFT JOIN users u ON u.id = e.user_id
        WHERE en.user_id = ?
        ORDER BY en.created_at DESC`,
       [userId]
@@ -148,6 +152,8 @@ const getMyNotifications = async (req, res) => {
       center_id: row.center_id,
       center_user_id: row.center_user_id,
       center_name: row.center_name,
+      student_user_id: row.student_user_id,
+      student_name: row.student_name,
       enrollment_id: row.enrollment_id,
       status: row.status,
       message: row.message,
@@ -195,6 +201,50 @@ const markNotificationAsRead = async (req, res) => {
     return res.json({ message: 'Notification marked as read.', notification_id: notificationId });
   } catch (err) {
     console.error('Mark notification read error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const markAllMyNotificationsAsRead = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [result] = await db.query(
+      'UPDATE enrollment_notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0',
+      [userId]
+    );
+
+    const updated = Number(result && result.affectedRows) || 0;
+    if (updated > 0) {
+      broadcastToUser(userId, {
+        type: 'notifications_read_all',
+        updated,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({ message: 'Notifications marked as read.', updated });
+  } catch (err) {
+    console.error('Mark all notifications read error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const clearMyNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [result] = await db.query('DELETE FROM enrollment_notifications WHERE user_id = ?', [userId]);
+    const deleted = Number(result && result.affectedRows) || 0;
+
+    broadcastToUser(userId, {
+      type: 'notifications_cleared',
+      deleted,
+      timestamp: new Date().toISOString(),
+    });
+
+    return res.json({ message: 'Notifications cleared.', deleted });
+  } catch (err) {
+    console.error('Clear notifications error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -253,5 +303,8 @@ module.exports = {
   createNotification,
   getMyNotifications,
   markNotificationAsRead,
+  markAllMyNotificationsAsRead,
+  clearMyNotifications,
   streamMyNotifications,
+  broadcastToUser,
 };

@@ -92,7 +92,7 @@ const normalizePaymentDetails = (value) => {
   const preferredMethod = canonicalPaymentMethod(clipText(raw.preferred_method, 40)) || 'GCash';
   const parsedPricingAmount = Number(pricing.amount !== undefined ? pricing.amount : raw.pricing_amount);
   const pricingAmount = Number.isFinite(parsedPricingAmount) && parsedPricingAmount > 0
-    ? Math.round(parsedPricingAmount * 100) / 100
+    ? Math.round(parsedPricingAmount)
     : 1550;
 
   return {
@@ -678,10 +678,14 @@ const updateEnrollmentReviewStatus = async (req, res) => {
     const nextLegacyStatus = requestedStatus === 'approved' ? 'active' : 'cancelled';
     const centerName = enrollment.business_name || 'the review center';
     const centerAddress = String(enrollment.address || '').trim();
+    const mapsQuery = [centerName, centerAddress].filter(Boolean).join(' ').trim();
+    const mapsUrl = mapsQuery
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`
+      : '';
     const notificationMessage = requestedStatus === 'approved'
       ? (centerAddress
-          ? `Congratulations! You are now successfully enrolled in ${centerName}. Location: ${centerAddress}.`
-          : `Congratulations! You are now successfully enrolled in ${centerName}.`)
+          ? `Congratulations! You are now successfully enrolled in ${centerName}. Location: ${centerAddress}.${mapsUrl ? ` Google Maps: ${mapsUrl}` : ''}`
+          : `Congratulations! You are now successfully enrolled in ${centerName}.${mapsUrl ? ` Google Maps: ${mapsUrl}` : ''}`)
       : 'Your enrollment has been rejected.';
 
     await conn.query(

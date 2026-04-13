@@ -698,7 +698,7 @@
             var preferredMethod = canonicalizeCenterPaymentMethod(String(details.preferred_method || '').trim()) || 'GCash';
             var parsedPricingAmount = Number(pricing.amount !== undefined ? pricing.amount : details.pricing_amount);
             var pricingAmount = Number.isFinite(parsedPricingAmount) && parsedPricingAmount > 0
-                ? Math.round(parsedPricingAmount * 100) / 100
+                ? Math.round(parsedPricingAmount)
                 : 1550;
             return {
                 preferred_method: preferredMethod,
@@ -730,14 +730,14 @@
         function formatPhpAmount(amount) {
             var value = Number(amount);
             if (!Number.isFinite(value) || value < 0) value = 0;
-            return '₱ ' + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return '₱ ' + value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
         function resolveCenterEnrollmentPrice(details) {
             var pricing = details && details.pricing && typeof details.pricing === 'object' ? details.pricing : {};
             var parsed = Number(pricing.amount);
             if (!Number.isFinite(parsed) || parsed <= 0) return 1550;
-            return Math.round(parsed * 100) / 100;
+            return Math.round(parsed);
         }
 
         function updateEnrollmentPriceSummary() {

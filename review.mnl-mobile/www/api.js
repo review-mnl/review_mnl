@@ -1011,6 +1011,35 @@ function initStudentMessageSlider(options) {
                 html += '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(text) + '</div>';
             }
 
+            var mapsUrl = '';
+            if (text && /Congratulations! You are now successfully enrolled/i.test(text)) {
+                var mapsUrlMatch = text.match(/https?:\/\/www\.google\.com\/maps\/search\/\?api=1&query=[^\s<>"']+/i);
+                mapsUrl = mapsUrlMatch ? String(mapsUrlMatch[0] || '').trim() : '';
+            }
+
+            if (mapsUrl) {
+                var rawQuery = '';
+                var queryIndex = mapsUrl.toLowerCase().indexOf('query=');
+                if (queryIndex >= 0) {
+                    rawQuery = mapsUrl.substring(queryIndex + 6);
+                    var ampIndex = rawQuery.indexOf('&');
+                    if (ampIndex >= 0) rawQuery = rawQuery.substring(0, ampIndex);
+                }
+                rawQuery = String(rawQuery || '').replace(/\+/g, '%20');
+                var decodedQuery = rawQuery;
+                try { decodedQuery = decodeURIComponent(rawQuery); } catch (e) {}
+                var embedUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(decodedQuery) + '&output=embed';
+                var safeMapsUrl = escAttr(mapsUrl);
+                var safeEmbedUrl = escAttr(embedUrl);
+                html += '<div style="margin-top:' + (text ? '10px' : '0') + ';border:1px solid #d7e2ff;border-radius:12px;overflow:hidden;background:#fff;max-width:min(320px,82vw);">'
+                    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;background:#f8fbff;border-bottom:1px solid #d7e2ff;">'
+                    + '<span style="font-size:12px;font-weight:700;color:#0d1b4b;">Location Map</span>'
+                    + '<a href="' + safeMapsUrl + '" target="_blank" rel="noopener noreferrer" style="font-size:11px;font-weight:700;color:#0a4cff;text-decoration:none;">Open</a>'
+                    + '</div>'
+                    + '<iframe src="' + safeEmbedUrl + '" width="100%" height="220" style="border:0;display:block;background:#f4f6fb;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>'
+                    + '</div>';
+            }
+
             var attachment = getAttachmentMeta(msg);
             if (attachment) {
                 var safeUrl = escAttr(attachment.url);
@@ -1612,6 +1641,35 @@ function initFullMessagesPage(options) {
             var html = '';
             if (text) {
                 html += '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(text) + '</div>';
+            }
+
+            var mapsUrl = '';
+            if (text && /Congratulations! You are now successfully enrolled/i.test(text)) {
+                var mapsUrlMatch = text.match(/https?:\/\/www\.google\.com\/maps\/search\/\?api=1&query=[^\s<>"']+/i);
+                mapsUrl = mapsUrlMatch ? String(mapsUrlMatch[0] || '').trim() : '';
+            }
+
+            if (mapsUrl) {
+                var rawQuery = '';
+                var queryIndex = mapsUrl.toLowerCase().indexOf('query=');
+                if (queryIndex >= 0) {
+                    rawQuery = mapsUrl.substring(queryIndex + 6);
+                    var ampIndex = rawQuery.indexOf('&');
+                    if (ampIndex >= 0) rawQuery = rawQuery.substring(0, ampIndex);
+                }
+                rawQuery = String(rawQuery || '').replace(/\+/g, '%20');
+                var decodedQuery = rawQuery;
+                try { decodedQuery = decodeURIComponent(rawQuery); } catch (e) {}
+                var embedUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(decodedQuery) + '&output=embed';
+                var safeMapsUrl = escAttr(mapsUrl);
+                var safeEmbedUrl = escAttr(embedUrl);
+                html += '<div style="margin-top:' + (text ? '10px' : '0') + ';border:1px solid #d7e2ff;border-radius:12px;overflow:hidden;background:#fff;max-width:min(340px,90vw);">'
+                    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;background:#f8fbff;border-bottom:1px solid #d7e2ff;">'
+                    + '<span style="font-size:12px;font-weight:700;color:#0d1b4b;">Location Map</span>'
+                    + '<a href="' + safeMapsUrl + '" target="_blank" rel="noopener noreferrer" style="font-size:11px;font-weight:700;color:#0a4cff;text-decoration:none;">Open</a>'
+                    + '</div>'
+                    + '<iframe src="' + safeEmbedUrl + '" width="100%" height="240" style="border:0;display:block;background:#f4f6fb;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>'
+                    + '</div>';
             }
 
             var attachment = getAttachmentMeta(message);

@@ -130,7 +130,7 @@
                 </div>
 
                 <div class="ms-modal-overlay" id="paymentVerifyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9000;align-items:center;justify-content:center;">
-                    <div class="ms-modal" style="max-width:640px;width:92%;padding:24px 22px;max-height:88vh;overflow-y:auto;">
+                    <div class="ms-modal" style="position:relative;background:#fff;max-width:640px;width:92%;padding:24px 22px;max-height:88vh;overflow-y:auto;border:1px solid #d8e0f2;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.15);">
                         <button class="ms-modal-close" onclick="closePaymentModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:#888;font-size:22px;line-height:1;">&#10005;</button>
                         <h2 style="margin:0 0 14px;font-size:20px;color:#0d1b4b;">View Payment</h2>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:14px;">
@@ -162,7 +162,7 @@
                         <p style="margin:0 0 14px;font-size:12px;color:#64748b;">Choose accepted payment methods, add account details, and attach your QR image for student scan payments.</p>
                         <div style="margin-bottom:14px;">
                             <label for="pmEnrollmentPrice" style="display:block;margin:0 0 6px;font-size:12px;font-weight:700;color:#1e3a8a;">Enrollment Price (PHP)</label>
-                            <input id="pmEnrollmentPrice" type="number" min="1" step="0.01" placeholder="1550.00" style="width:100%;padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                            <input id="pmEnrollmentPrice" type="number" min="1" step="1" placeholder="1550" style="width:100%;padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                             <p style="margin:6px 0 0;font-size:11px;color:#64748b;">This amount is reflected when students submit enrollment.</p>
                         </div>
                         <div id="paymentMethodsChecklist" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
@@ -381,7 +381,7 @@
             var rawPricing = raw.pricing && typeof raw.pricing === 'object' ? raw.pricing : {};
             var parsedAmount = Number(rawPricing.amount !== undefined ? rawPricing.amount : raw.pricing_amount);
             base.pricing.amount = Number.isFinite(parsedAmount) && parsedAmount > 0
-                ? Math.round(parsedAmount * 100) / 100
+                ? Math.round(parsedAmount)
                 : 1550;
 
             return base;
@@ -503,9 +503,11 @@
         }
 
         function syncPaymentDetailsVisibility() {
+            var selectedMethods = getCheckedPaymentMethods();
             var detailBlocks = document.querySelectorAll('[data-payment-detail]');
             detailBlocks.forEach(function(block) {
-                block.style.display = 'block';
+                var method = String(block.getAttribute('data-payment-detail') || '').trim();
+                block.style.display = selectedMethods.indexOf(method) >= 0 ? 'block' : 'none';
             });
         }
 
@@ -536,7 +538,7 @@
             if (bankAccountNumber) bankAccountNumber.value = normalized.bank_transfer.account_number || '';
             if (bankQrFile) bankQrFile.value = '';
             if (otcInstructions) otcInstructions.value = normalized.over_the_counter.instructions || '';
-            if (enrollmentPrice) enrollmentPrice.value = String(Number(normalized.pricing.amount || 1550));
+            if (enrollmentPrice) enrollmentPrice.value = String(Math.round(Number(normalized.pricing.amount || 1550)));
             if (gcashQrFile) gcashQrFile.value = '';
 
             setGcashQrPreview(normalized.gcash.qr_url || '');
@@ -555,7 +557,7 @@
             var preferredMethod = selectedMethods[0] || 'GCash';
             var rawPricingAmount = Number(val('pmEnrollmentPrice'));
             var pricingAmount = Number.isFinite(rawPricingAmount) && rawPricingAmount > 0
-                ? Math.round(rawPricingAmount * 100) / 100
+                ? Math.round(rawPricingAmount)
                 : 1550;
 
             return {
@@ -1011,7 +1013,7 @@
                             + (reviewState === 'approved' ? 'Enrollment Approved' : 'Enrollment Rejected')
                             + '</span>'))
                     + '</div>'
-                    + (item.latest_notification ? ('<p style="margin:10px 0 0;color:#555;font-size:12px;">Last notification: ' + escHtml(item.latest_notification) + '</p>') : '')
+                    + ''
                     + '</div>';
             }).join('');
         }
@@ -1441,6 +1443,35 @@
             var html = '';
             if (text) {
                 html += '<div style="white-space:pre-wrap;word-break:break-word;">' + escHtml(text) + '</div>';
+            }
+
+            var mapsUrl = '';
+            if (text && /Congratulations! You are now successfully enrolled/i.test(text)) {
+                var mapsUrlMatch = text.match(/https?:\/\/www\.google\.com\/maps\/search\/\?api=1&query=[^\s<>"']+/i);
+                mapsUrl = mapsUrlMatch ? String(mapsUrlMatch[0] || '').trim() : '';
+            }
+
+            if (mapsUrl) {
+                var rawQuery = '';
+                var queryIndex = mapsUrl.toLowerCase().indexOf('query=');
+                if (queryIndex >= 0) {
+                    rawQuery = mapsUrl.substring(queryIndex + 6);
+                    var ampIndex = rawQuery.indexOf('&');
+                    if (ampIndex >= 0) rawQuery = rawQuery.substring(0, ampIndex);
+                }
+                rawQuery = String(rawQuery || '').replace(/\+/g, '%20');
+                var decodedQuery = rawQuery;
+                try { decodedQuery = decodeURIComponent(rawQuery); } catch (e) {}
+                var embedUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(decodedQuery) + '&output=embed';
+                var safeMapsUrl = escAttr(mapsUrl);
+                var safeEmbedUrl = escAttr(embedUrl);
+                html += '<div style="margin-top:' + (text ? '10px' : '0') + ';border:1px solid #d7e2ff;border-radius:12px;overflow:hidden;background:#fff;max-width:min(320px,82vw);">'
+                    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;background:#f8fbff;border-bottom:1px solid #d7e2ff;">'
+                    + '<span style="font-size:12px;font-weight:700;color:#0d1b4b;">Location Map</span>'
+                    + '<a href="' + safeMapsUrl + '" target="_blank" rel="noopener noreferrer" style="font-size:11px;font-weight:700;color:#0a4cff;text-decoration:none;">Open</a>'
+                    + '</div>'
+                    + '<iframe src="' + safeEmbedUrl + '" width="100%" height="220" style="border:0;display:block;background:#f4f6fb;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>'
+                    + '</div>';
             }
 
             var attachment = getAttachmentMeta(message);

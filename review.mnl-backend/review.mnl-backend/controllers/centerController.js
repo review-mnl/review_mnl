@@ -664,14 +664,7 @@ const updateEnrollmentReviewStatus = async (req, res) => {
     });
 
     if (requestedStatus === 'approved') {
-      if (!enrollment.payment_verified) {
-        await conn.rollback();
-        return res.status(400).json({ message: 'Please verify payment before approving enrollment.' });
-      }
-      if ((enrollment.payment_status || 'pending') !== 'paid') {
-        await conn.rollback();
-        return res.status(400).json({ message: 'Payment status must be paid before approval.' });
-      }
+      // Approval is allowed based on review center decision without blocking on payment verification.
     }
 
     const nextLegacyStatus = requestedStatus === 'approved' ? 'active' : 'cancelled';

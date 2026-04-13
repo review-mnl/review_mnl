@@ -963,7 +963,7 @@
         <div class="ms-modal-overlay" id="paymentModal">
             <div class="ms-modal" style="max-width:680px;">
                 <button class="ms-modal-close" onclick="closePaymentModal()">&#10005;</button>
-                <h2>Verify Payment</h2>
+                <h2>View Payment Proof</h2>
                 <div class="ms-detail-grid" style="margin-bottom:14px;">
                     <div class="ms-detail-item">
                         <label>Student Name</label>
@@ -989,14 +989,8 @@
                         <p id="pNoImage" style="margin:0;color:#7a8699;font-size:13px;">No payment uploaded</p>
                     </div>
                 </div>
-                <div style="margin-bottom:14px;">
-                    <label class="sch-label" style="display:block;margin-bottom:6px;font-size:12px;color:#0d1b4b;font-weight:600;">Rejection Reason (optional)</label>
-                    <textarea id="pRejectReason" rows="3" placeholder="Reason for rejecting payment..." style="width:100%;border:1.5px solid #dde3f0;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:12px;box-sizing:border-box;"></textarea>
-                </div>
                 <div class="ms-modal-actions">
                     <button class="btn-modal-close" onclick="closePaymentModal()">Close</button>
-                    <button id="pRejectBtn" class="btn-modal-remove" onclick="rejectPaymentFromModal()">Reject Payment</button>
-                    <button id="pApproveBtn" class="btn-modal-approve" onclick="approvePaymentFromModal()">Approve Payment</button>
                 </div>
             </div>
         </div>
@@ -1360,7 +1354,6 @@
             document.getElementById('pProgram').textContent = s.program || 'Program not specified';
             document.getElementById('pStatus').innerHTML = paymentBadge(s.payment);
             document.getElementById('pUploaded').textContent = s.uploadedAt ? new Date(s.uploadedAt).toLocaleString() : '—';
-            document.getElementById('pRejectReason').value = '';
 
             var img = document.getElementById('pImage');
             var noImg = document.getElementById('pNoImage');
@@ -1374,40 +1367,12 @@
                 noImg.style.display = 'block';
             }
 
-            var isPending = s.rawPaymentStatus === 'pending';
-            document.getElementById('pApproveBtn').disabled = !isPending;
-            document.getElementById('pRejectBtn').disabled = !isPending;
-
             document.getElementById('paymentModal').classList.add('open');
         }
 
         function closePaymentModal() {
             document.getElementById('paymentModal').classList.remove('open');
             currentPaymentStudent = null;
-        }
-
-        async function approvePaymentFromModal() {
-            if (!currentPaymentStudent) return;
-            try {
-                await CentersAPI.verifyEnrollmentPayment(currentPaymentStudent.enrollmentId, 'paid');
-                closePaymentModal();
-                await refreshStudentsAndRender();
-                alert('Payment verified successfully');
-            } catch (e) {
-                alert(e && e.message ? e.message : 'Failed to verify payment.');
-            }
-        }
-
-        async function rejectPaymentFromModal() {
-            if (!currentPaymentStudent) return;
-            var reason = String(document.getElementById('pRejectReason').value || '').trim();
-            try {
-                await CentersAPI.verifyEnrollmentPayment(currentPaymentStudent.enrollmentId, 'failed', reason);
-                closePaymentModal();
-                await refreshStudentsAndRender();
-            } catch (e) {
-                alert(e && e.message ? e.message : 'Failed to reject payment.');
-            }
         }
 
         function renderPagination(pages) {
@@ -1476,10 +1441,6 @@
         function confirmApprove(id) {
             const s = _students.find(function(x){ return x.id === id; });
             if (!s) return;
-            if (s.rawPaymentStatus !== 'paid') {
-                viewPayment(id);
-                return;
-            }
             _pendingAction = async function() {
                 await CentersAPI.updateEnrollmentStatus(s.enrollmentId, 'approved');
                 await refreshStudentsAndRender();

@@ -144,13 +144,10 @@
                             </div>
                         </div>
                         <div style="margin-top:12px;">
-                            <label for="pvRejectReason" style="font-size:12px;font-weight:600;color:#0d1b4b;display:block;margin-bottom:6px;">Rejection Reason (required only when rejecting)</label>
-                            <textarea id="pvRejectReason" rows="3" placeholder="State why the payment was rejected..." style="width:100%;box-sizing:border-box;border:1px solid #d8e0f2;border-radius:8px;padding:8px 10px;font-family:Poppins,sans-serif;font-size:12px;resize:vertical;"></textarea>
+                            <p style="margin:0;font-size:12px;color:#64748b;">Review the submitted payment screenshot, then use the enrollment Approve or Reject buttons below the student card.</p>
                         </div>
                         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap;">
                             <button onclick="closePaymentModal()" style="padding:8px 12px;border:1px solid #d8e0f2;background:#fff;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:#334155;">Close</button>
-                            <button id="pvApproveBtn" onclick="approvePaymentFromModal()" style="padding:8px 12px;border:none;background:#2e7d32;color:#fff;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Approve</button>
-                            <button id="pvRejectBtn" onclick="rejectPaymentFromModal()" style="padding:8px 12px;border:none;background:#d32f2f;color:#fff;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>
                         </div>
                     </div>
                 </div>
@@ -891,7 +888,6 @@
                 ? new Date(enrollment.payment.uploaded_at).toLocaleString()
                 : '—';
             document.getElementById('pvPaymentStatus').innerHTML = paymentStatusBadge(enrollment.payment && enrollment.payment.status);
-            document.getElementById('pvRejectReason').value = '';
 
             var imageUrl = enrollment.payment && enrollment.payment.payment_screenshot_url;
             var imageEl = document.getElementById('pvImage');
@@ -906,44 +902,12 @@
                 noImageEl.style.display = 'block';
             }
 
-            var pending = String((enrollment.payment && enrollment.payment.status) || 'pending').toLowerCase() === 'pending';
-            document.getElementById('pvApproveBtn').disabled = !pending;
-            document.getElementById('pvRejectBtn').disabled = !pending;
             document.getElementById('paymentVerifyModal').style.display = 'flex';
         }
 
         function closePaymentModal() {
             document.getElementById('paymentVerifyModal').style.display = 'none';
             _activePaymentEnrollment = null;
-        }
-
-        async function approvePaymentFromModal() {
-            if (!_activePaymentEnrollment) return;
-            try {
-                await CentersAPI.verifyEnrollmentPayment(_activePaymentEnrollment.enrollment_id, 'paid');
-                closePaymentModal();
-                await loadCenterEnrollments();
-                showToast('Payment Approved Successfully');
-            } catch (err) {
-                alert(err.message || 'Failed to approve payment.');
-            }
-        }
-
-        async function rejectPaymentFromModal() {
-            if (!_activePaymentEnrollment) return;
-            var reason = String(document.getElementById('pvRejectReason').value || '').trim();
-            if (!reason) {
-                alert('Please provide a rejection reason.');
-                return;
-            }
-            try {
-                await CentersAPI.verifyEnrollmentPayment(_activePaymentEnrollment.enrollment_id, 'failed', reason);
-                closePaymentModal();
-                await loadCenterEnrollments();
-                showToast('Payment Rejected');
-            } catch (err) {
-                alert(err.message || 'Failed to reject payment.');
-            }
         }
 
         function renderCenterEnrollments(enrollments) {
@@ -1074,6 +1038,7 @@
         }
 
         async function updateEnrollmentStatus(enrollmentId, status) {
+            clearToast();
             try {
                 await CentersAPI.updateEnrollmentStatus(enrollmentId, status);
                 await loadCenterEnrollments();

@@ -17,6 +17,28 @@ const parseMetadata = (raw) => {
   }
 };
 
+const parseJsonArray = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  return [];
+};
+
+const normalizePaymentMethods = (value) => {
+  const arr = parseJsonArray(value)
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+  if (!arr.length) return ['GCash'];
+  return Array.from(new Set(arr)).slice(0, 8);
+};
+
 const toPaymentMethodLabel = (provider, metadata) => {
   const fromMetadata = metadata && typeof metadata.payment_method === 'string'
     ? metadata.payment_method.trim()
@@ -54,7 +76,7 @@ const getCenterById = async (req, res) => {
   try {
     const [center] = await db.query(
             `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.latitude, rc.longitude, rc.logo_url,
-              rc.description, rc.programs, rc.achievements, rc.schedule,
+              rc.description, rc.programs, rc.achievements, rc.schedule, rc.payment_methods,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -77,7 +99,10 @@ const getCenterById = async (req, res) => {
       if (enrollment.length > 0) isEnrolled = true;
     }
 
-    res.json({ ...center[0], testimonials, isEnrolled });
+    const payload = { ...center[0], testimonials, isEnrolled };
+    payload.payment_methods = normalizePaymentMethods(payload.payment_methods);
+
+    res.json(payload);
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }
@@ -142,7 +167,7 @@ const updateCenterLocation = async (req, res) => {
 };
 
 const updateCenterProfile = async (req, res) => {
-  const { business_name, email, address, description, programs, achievements, schedule } = req.body;
+  const { business_name, email, address, description, programs, achievements, schedule, payment_methods } = req.body;
   const userId = req.user.id;
   try {
     // If email is provided, ensure it's not used by another user
@@ -162,6 +187,10 @@ const updateCenterProfile = async (req, res) => {
     if (programs !== undefined) { updates.push('programs = ?'); vals.push(JSON.stringify(programs)); }
     if (achievements !== undefined) { updates.push('achievements = ?'); vals.push(JSON.stringify(achievements)); }
     if (schedule !== undefined) { updates.push('schedule = ?'); vals.push(JSON.stringify(schedule)); }
+    if (payment_methods !== undefined) {
+      updates.push('payment_methods = ?');
+      vals.push(JSON.stringify(normalizePaymentMethods(payment_methods)));
+    }
 
     if (updates.length > 0) {
       vals.push(userId);
@@ -181,7 +210,7 @@ const updateCenterProfile = async (req, res) => {
     // Return updated center profile
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url, rc.description,
-              rc.programs, rc.achievements, rc.schedule,
+              rc.programs, rc.achievements, rc.schedule, rc.payment_methods,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -197,6 +226,7 @@ const updateCenterProfile = async (req, res) => {
     if (center.achievements && typeof center.achievements === 'string') {
       try { center.achievements = JSON.parse(center.achievements); } catch(e) { center.achievements = []; }
     }
+    center.payment_methods = normalizePaymentMethods(center.payment_methods);
     res.json(center);
   } catch (err) {
     console.error('Update center profile error:', err);
@@ -234,7 +264,7 @@ const getMyCenterProfile = async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.logo_url, rc.description,
-              rc.programs, rc.achievements, rc.schedule,
+              rc.programs, rc.achievements, rc.schedule, rc.payment_methods,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -251,6 +281,7 @@ const getMyCenterProfile = async (req, res) => {
     if (center.achievements && typeof center.achievements === 'string') {
       try { center.achievements = JSON.parse(center.achievements); } catch(e) { center.achievements = []; }
     }
+    center.payment_methods = normalizePaymentMethods(center.payment_methods);
     res.json(center);
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
@@ -328,6 +359,7 @@ const getMyCenterEnrollments = async (req, res) => {
           review_center_name: row.review_center_name,
           program: metadata.program_enrolled || 'Program not specified',
           program_enrolled: metadata.program_enrolled || 'Program not specified',
+          enrollment_date: metadata.enrollment_date || null,
           submitted_documents: Array.isArray(documents) ? documents : (documents ? [documents] : []),
           paymentStatus: row.payment_status || 'pending',
           payment_method: paymentMethodLabel,

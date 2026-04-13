@@ -82,8 +82,32 @@
         <section class="admin-dashboard">
             <div class="admin-container">
 
+                <div class="activities-section" id="centerScheduleDashboard" style="display:none;padding:24px;">
+                    <div id="centerScheduleGrid" style="display:grid;grid-template-columns:minmax(280px,1.1fr) minmax(280px,1fr);gap:18px;align-items:start;">
+                        <div style="background:#f8faff;border:1px solid #dbe7ff;border-radius:14px;padding:14px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                                <button type="button" class="arrow-circle-btn" onclick="changeCenterCalendarMonth(-1)" style="width:30px;height:30px;">&#10094;</button>
+                                <h3 id="centerCalendarMonthLabel" style="margin:0;font-size:16px;color:#0d1b4b;font-weight:700;">Month Year</h3>
+                                <button type="button" class="arrow-circle-btn" onclick="changeCenterCalendarMonth(1)" style="width:30px;height:30px;">&#10095;</button>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px;font-size:11px;color:#64748b;font-weight:700;text-align:center;">
+                                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                            </div>
+                            <div id="centerCalendarGrid" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;"></div>
+                            <p style="margin:10px 0 0;color:#64748b;font-size:12px;">Click a date to view students enrolled on that day.</p>
+                        </div>
+
+                        <div style="background:#f8faff;border:1px solid #dbe7ff;border-radius:14px;padding:14px;min-height:320px;">
+                            <h3 style="margin:0 0 10px;font-size:16px;color:#0d1b4b;font-weight:700;">Students Enrolled on <span id="centerSelectedDateLabel">--</span></h3>
+                            <div id="centerDailyEnrolledList" style="display:flex;flex-direction:column;gap:10px;">
+                                <p style="margin:0;color:#64748b;font-size:13px;">No students enrolled on this date.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Stats Cards -->
-                <div class="stats-row">
+                <div class="stats-row" id="adminStatsRow">
                     <div class="stat-card">
                         <div class="stat-header">
                             <h3 id="statStudentsLabel">Total Students Enrolled</h3>
@@ -121,6 +145,14 @@
             </div>
         </section>
 
+        <style>
+            @media (max-width: 900px) {
+                #centerScheduleGrid {
+                    grid-template-columns: 1fr !important;
+                }
+            }
+        </style>
+
         <script src="api.js"></script>
         <script>
         if (!isAuthenticated()) { window.location.href = 'login.html'; }
@@ -143,20 +175,190 @@
             }
         }
 
+        var _centerCalendarState = {
+            monthDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+            selectedDateKey: '',
+            enrollmentsByDate: {},
+        };
+
+        function toDateKey(value) {
+            if (!value) return '';
+            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+            var d = new Date(value);
+            if (isNaN(d.getTime())) return '';
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function formatDateKeyLabel(dateKey) {
+            if (!dateKey) return '--';
+            var d = new Date(dateKey + 'T00:00:00');
+            if (isNaN(d.getTime())) return dateKey;
+            return d.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            });
+        }
+
+        function buildCenterEnrollmentsByDate(items) {
+            var map = {};
+            (Array.isArray(items) ? items : []).forEach(function(item) {
+                var status = String((item && (item.status || item.enrollmentStatus)) || '').toLowerCase();
+                if (status !== 'approved') return;
+                var dateKey = toDateKey((item && item.enrollment_date) || (item && item.reviewed_at) || (item && item.date_submitted));
+                if (!dateKey) return;
+                if (!map[dateKey]) map[dateKey] = [];
+                map[dateKey].push(item);
+            });
+            return map;
+        }
+
+        function renderCenterDailyEnrolledList() {
+            var listEl = document.getElementById('centerDailyEnrolledList');
+            var labelEl = document.getElementById('centerSelectedDateLabel');
+            if (!listEl || !labelEl) return;
+
+            var key = _centerCalendarState.selectedDateKey;
+            labelEl.textContent = formatDateKeyLabel(key);
+
+            var data = (_centerCalendarState.enrollmentsByDate && _centerCalendarState.enrollmentsByDate[key]) || [];
+            if (!data.length) {
+                listEl.innerHTML = '<p style="margin:0;color:#64748b;font-size:13px;">No students enrolled on this date.</p>';
+                return;
+            }
+
+            listEl.innerHTML = data.map(function(item) {
+                var studentName = item.student_name || item.studentName || 'Student';
+                var program = item.program_enrolled || item.program || 'Program not specified';
+                var paymentMethod = (item.payment && item.payment.method) || item.payment_method || 'Not set';
+                var submittedAt = item.date_submitted ? new Date(item.date_submitted).toLocaleString() : 'N/A';
+                return '<div style="border:1px solid #dbe7ff;border-radius:10px;background:#fff;padding:10px 12px;">'
+                    + '<p style="margin:0;color:#0d1b4b;font-size:13px;font-weight:700;">' + escHtml(studentName) + '</p>'
+                    + '<p style="margin:4px 0 0;color:#475569;font-size:12px;">Program: ' + escHtml(program) + '</p>'
+                    + '<p style="margin:2px 0 0;color:#475569;font-size:12px;">Payment: ' + escHtml(paymentMethod) + '</p>'
+                    + '<p style="margin:2px 0 0;color:#64748b;font-size:11px;">Submitted: ' + escHtml(submittedAt) + '</p>'
+                    + '</div>';
+            }).join('');
+        }
+
+        function renderCenterCalendar() {
+            var monthLabelEl = document.getElementById('centerCalendarMonthLabel');
+            var gridEl = document.getElementById('centerCalendarGrid');
+            if (!monthLabelEl || !gridEl) return;
+
+            var monthDate = _centerCalendarState.monthDate;
+            var year = monthDate.getFullYear();
+            var month = monthDate.getMonth();
+            var firstDow = new Date(year, month, 1).getDay();
+            var daysInMonth = new Date(year, month + 1, 0).getDate();
+            var todayKey = toDateKey(new Date());
+
+            monthLabelEl.textContent = monthDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+            gridEl.innerHTML = '';
+
+            for (var i = 0; i < firstDow; i++) {
+                var blank = document.createElement('div');
+                blank.style.height = '40px';
+                gridEl.appendChild(blank);
+            }
+
+            for (var day = 1; day <= daysInMonth; day++) {
+                var date = new Date(year, month, day);
+                var dateKey = toDateKey(date);
+                var count = ((_centerCalendarState.enrollmentsByDate || {})[dateKey] || []).length;
+                var isSelected = dateKey === _centerCalendarState.selectedDateKey;
+                var isToday = dateKey === todayKey;
+
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.style.cssText = 'border:1px solid #dbe7ff;border-radius:10px;background:#fff;height:40px;position:relative;cursor:pointer;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;color:#1e3a8a;';
+                if (count > 0) {
+                    btn.style.background = '#edf4ff';
+                    btn.style.borderColor = '#9fbafc';
+                }
+                if (isToday) {
+                    btn.style.boxShadow = 'inset 0 0 0 1px #0a4cff';
+                }
+                if (isSelected) {
+                    btn.style.background = '#0a4cff';
+                    btn.style.borderColor = '#0a4cff';
+                    btn.style.color = '#fff';
+                }
+                btn.textContent = String(day);
+
+                if (count > 0) {
+                    var badge = document.createElement('span');
+                    badge.textContent = String(count);
+                    badge.style.cssText = 'position:absolute;top:2px;right:4px;min-width:14px;height:14px;border-radius:999px;background:' + (isSelected ? '#fff' : '#1d4ed8') + ';color:' + (isSelected ? '#1d4ed8' : '#fff') + ';font-size:9px;line-height:14px;padding:0 3px;font-weight:700;';
+                    btn.appendChild(badge);
+                }
+
+                (function(key) {
+                    btn.addEventListener('click', function() {
+                        _centerCalendarState.selectedDateKey = key;
+                        renderCenterCalendar();
+                        renderCenterDailyEnrolledList();
+                    });
+                })(dateKey);
+
+                gridEl.appendChild(btn);
+            }
+        }
+
+        function changeCenterCalendarMonth(step) {
+            var d = _centerCalendarState.monthDate;
+            _centerCalendarState.monthDate = new Date(d.getFullYear(), d.getMonth() + Number(step || 0), 1);
+            renderCenterCalendar();
+        }
+
+        async function loadCenterCalendarDashboard() {
+            var listEl = document.getElementById('centerDailyEnrolledList');
+            if (listEl) listEl.innerHTML = '<p style="margin:0;color:#64748b;font-size:13px;">Loading enrolled students...</p>';
+
+            try {
+                var res = await CentersAPI.getMyEnrollments('all', 'latest');
+                var enrollments = (res && res.enrollments) ? res.enrollments : [];
+                _centerCalendarState.enrollmentsByDate = buildCenterEnrollmentsByDate(enrollments);
+
+                var todayKey = toDateKey(new Date());
+                var keys = Object.keys(_centerCalendarState.enrollmentsByDate).sort();
+                _centerCalendarState.selectedDateKey = todayKey;
+                if (!_centerCalendarState.enrollmentsByDate[todayKey]) {
+                    _centerCalendarState.selectedDateKey = keys.length ? keys[0] : todayKey;
+                }
+
+                var selectedDate = new Date((_centerCalendarState.selectedDateKey || todayKey) + 'T00:00:00');
+                if (!isNaN(selectedDate.getTime())) {
+                    _centerCalendarState.monthDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                }
+
+                renderCenterCalendar();
+                renderCenterDailyEnrolledList();
+            } catch (err) {
+                console.error('Failed to load center calendar dashboard:', err);
+                if (listEl) listEl.innerHTML = '<p style="margin:0;color:#b91c1c;font-size:13px;">Failed to load enrolled students.</p>';
+            }
+        }
+
+        window.changeCenterCalendarMonth = changeCenterCalendarMonth;
+
         // ── Load dashboard data ─────────────────────────────────────────────
         (async function loadDashboard() {
             try {
                 if (dashboardRole === 'review_center') {
-                    document.getElementById('centerEnrollmentsSection').style.display = '';
-                    document.getElementById('pendingSection').style.display = 'none';
-                    document.getElementById('testiSection').style.display = 'none';
+                    var centerSchedule = document.getElementById('centerScheduleDashboard');
+                    var adminStatsRow = document.getElementById('adminStatsRow');
+                    var pendingSection = document.getElementById('pendingSection');
+                    var testiSection = document.getElementById('testiSection');
+                    if (centerSchedule) centerSchedule.style.display = '';
+                    if (adminStatsRow) adminStatsRow.style.display = 'none';
+                    if (pendingSection) pendingSection.style.display = 'none';
+                    if (testiSection) testiSection.style.display = 'none';
 
-                    var filterEl = document.getElementById('enrollmentStatusFilter');
-                    var sortEl = document.getElementById('enrollmentSort');
-                    if (filterEl) filterEl.addEventListener('change', loadCenterEnrollments);
-                    if (sortEl) sortEl.addEventListener('change', loadCenterEnrollments);
-
-                    
+                    await loadCenterCalendarDashboard();
                     return;
                 }
 

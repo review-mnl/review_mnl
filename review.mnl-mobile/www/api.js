@@ -577,7 +577,10 @@ function initGlobalNotificationBell(options) {
             + '<div class="rmnl-global-drop">'
             + '  <div class="rmnl-global-drop-head">'
             + '    <strong style="font-size:14px;color:#0d1b4b;">Enrollment Notifications</strong>'
-            + '    <span class="rmnl-global-unread" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;">0 Unread</span>'
+            + '    <div style="display:flex;align-items:center;gap:8px;">'
+            + '      <span class="rmnl-global-unread" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;">0 Unread</span>'
+            + '      <button type="button" class="rmnl-global-clear" style="border:1px solid #c9d5ff;background:#fff;color:#1d4ed8;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Clear All</button>'
+            + '    </div>'
             + '  </div>'
             + '  <div class="rmnl-global-drop-list"></div>'
             + '  <div class="rmnl-global-drop-foot"><a href="notifications.html" style="font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;">View All Notifications</a></div>'
@@ -596,6 +599,7 @@ function initGlobalNotificationBell(options) {
         var drop = wrapper.querySelector('.rmnl-global-drop');
         var dropList = wrapper.querySelector('.rmnl-global-drop-list');
         var unreadEl = wrapper.querySelector('.rmnl-global-unread');
+        var clearBtn = wrapper.querySelector('.rmnl-global-clear');
 
         // Render dropdown at document level so page-specific stacking contexts
         // (e.g., map panes) can never overlap it.
@@ -734,6 +738,19 @@ function initGlobalNotificationBell(options) {
             } catch (e) {
                 render([]);
             }
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var ok = window.confirm('Clear all notifications?');
+                if (!ok) return;
+                try {
+                    await NotificationAPI.clearMy();
+                } catch (err) {}
+                await refresh();
+            });
         }
 
         btn.addEventListener('click', function(e) {

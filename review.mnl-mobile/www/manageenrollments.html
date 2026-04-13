@@ -86,7 +86,7 @@
                 <div class="stats-row">
                     <div class="stat-card">
                         <div class="stat-header">
-                            <h3 id="statStudentsLabel">Schedule</h3>
+                            <h3 id="statStudentsLabel">Schedule Settings</h3>
                             <button class="arrow-circle-btn" onclick="window.location.href='schedule.html'">
                                 <span class="material-symbols-outlined">arrow_forward_ios</span>
                             </button>
@@ -96,7 +96,7 @@
                     </div>
                     <div class="stat-card" id="setPaymentCard" style="cursor:pointer;" onclick="openPaymentMethodsModal()">
                         <div class="stat-header">
-                            <h3 id="statPendingLabel">Payment</h3>
+                            <h3 id="statPendingLabel">Payment Settings</h3>
                             <button class="arrow-circle-btn" id="pendingArrow" type="button" onclick="event.stopPropagation();openPaymentMethodsModal();">
                                 <span class="material-symbols-outlined">arrow_forward_ios</span>
                             </button>
@@ -155,16 +155,16 @@
                     </div>
                 </div>
 
-                <div class="ms-modal-overlay" id="paymentMethodsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9001;align-items:center;justify-content:center;">
-                    <div class="ms-modal" style="max-width:520px;width:92%;padding:24px 22px;max-height:88vh;overflow-y:auto;">
+                <div class="ms-modal-overlay" id="paymentMethodsModal" style="display:none;position:fixed;inset:0;background:rgba(8,18,46,0.62);backdrop-filter:blur(3px);z-index:9001;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;">
+                    <div class="ms-modal" style="position:relative;background:#ffffff;max-width:560px;width:100%;padding:24px 22px;max-height:88vh;overflow-y:auto;border:1px solid #d7e3ff;border-radius:18px;box-shadow:0 24px 56px rgba(9,30,66,0.34);">
                         <button class="ms-modal-close" onclick="closePaymentMethodsModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:#888;font-size:22px;line-height:1;">&#10005;</button>
-                        <h2 style="margin:0 0 10px;font-size:20px;color:#0d1b4b;">Set Payment Methods</h2>
-                        <p style="margin:0 0 14px;font-size:12px;color:#64748b;">Select which payment methods your review center can currently receive.</p>
+                        <h2 style="margin:0 0 10px;font-size:20px;color:#0d1b4b;">Payment Settings</h2>
+                        <p style="margin:0 0 14px;font-size:12px;color:#64748b;">Choose accepted payment methods, add account details, and attach your QR image for student scan payments.</p>
                         <div id="paymentMethodsChecklist" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-                            <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #dce7ff;border-radius:10px;cursor:pointer;"><input type="checkbox" value="GCash"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">GCash</span></label>
-                            <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #dce7ff;border-radius:10px;cursor:pointer;"><input type="checkbox" value="Maya"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Maya</span></label>
-                            <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #dce7ff;border-radius:10px;cursor:pointer;"><input type="checkbox" value="Bank Transfer"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Bank Transfer</span></label>
-                            <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #dce7ff;border-radius:10px;cursor:pointer;"><input type="checkbox" value="Over-the-Counter"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Over-the-Counter</span></label>
+                            <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="GCash"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">GCash</span></label>
+                            <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="Maya"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Maya</span></label>
+                            <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="Bank Transfer"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Bank Transfer</span></label>
+                            <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="Over-the-Counter"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Over-the-Counter</span></label>
                         </div>
                         <div id="paymentMethodDetailsWrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                             <div data-payment-detail="GCash" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;">
@@ -172,6 +172,14 @@
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                                     <input id="pmGcashAccountName" type="text" placeholder="Account Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                                     <input id="pmGcashNumber" type="text" placeholder="GCash Number" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;">
+                                    <input id="pmGcashQrUrl" type="url" placeholder="QR image URL (optional)" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                    <input id="pmGcashQrFile" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;background:#fff;">
+                                    <div id="pmGcashQrPreviewWrap" style="min-height:120px;border:1px dashed #c8d8ff;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;">
+                                        <img id="pmGcashQrPreview" alt="GCash QR preview" style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #d8e0f2;display:none;" />
+                                        <p id="pmGcashQrEmpty" style="margin:0;font-size:11px;color:#64748b;">No QR image yet. Add a URL or upload an image.</p>
+                                    </div>
                                 </div>
                             </div>
                             <div data-payment-detail="Maya" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
@@ -215,7 +223,7 @@
         function defaultPaymentDetails() {
             return {
                 gcash: { account_name: '', number: '', qr_url: '' },
-                maya: { account_name: '', number: '' },
+                maya: { account_name: '', number: '', qr_url: '' },
                 bank_transfer: { bank_name: '', account_name: '', account_number: '' },
                 over_the_counter: { instructions: '' },
             };
@@ -270,6 +278,7 @@
             if (raw.maya && typeof raw.maya === 'object') {
                 base.maya.account_name = txt(raw.maya.account_name);
                 base.maya.number = txt(raw.maya.number);
+                base.maya.qr_url = txt(raw.maya.qr_url);
             }
             if (raw.bank_transfer && typeof raw.bank_transfer === 'object') {
                 base.bank_transfer.bank_name = txt(raw.bank_transfer.bank_name);
@@ -290,6 +299,32 @@
             if (m === 'bank transfer') return 'bank_transfer';
             if (m === 'over-the-counter') return 'over_the_counter';
             return '';
+        }
+
+        function normalizePaymentQrUrl(value) {
+            var raw = String(value || '').trim();
+            if (!raw) return '';
+            if (/^https?:\/\//i.test(raw) || /^data:/i.test(raw)) return raw;
+            if (raw.charAt(0) === '/') return API_BASE + raw;
+            return raw;
+        }
+
+        function setGcashQrPreview(url) {
+            var img = document.getElementById('pmGcashQrPreview');
+            var empty = document.getElementById('pmGcashQrEmpty');
+            if (!img || !empty) return;
+
+            var resolved = normalizePaymentQrUrl(url);
+            if (!resolved) {
+                img.style.display = 'none';
+                img.removeAttribute('src');
+                empty.style.display = 'block';
+                return;
+            }
+
+            img.src = resolved;
+            img.style.display = 'block';
+            empty.style.display = 'none';
         }
 
         function getCheckedPaymentMethods() {
@@ -318,6 +353,8 @@
             var bankAccountName = document.getElementById('pmBankAccountName');
             var bankAccountNumber = document.getElementById('pmBankAccountNumber');
             var otcInstructions = document.getElementById('pmOverTheCounterInstructions');
+            var gcashQrUrl = document.getElementById('pmGcashQrUrl');
+            var gcashQrFile = document.getElementById('pmGcashQrFile');
 
             if (gcashName) gcashName.value = normalized.gcash.account_name || '';
             if (gcashNumber) gcashNumber.value = normalized.gcash.number || '';
@@ -327,6 +364,10 @@
             if (bankAccountName) bankAccountName.value = normalized.bank_transfer.account_name || '';
             if (bankAccountNumber) bankAccountNumber.value = normalized.bank_transfer.account_number || '';
             if (otcInstructions) otcInstructions.value = normalized.over_the_counter.instructions || '';
+            if (gcashQrUrl) gcashQrUrl.value = normalized.gcash.qr_url || '';
+            if (gcashQrFile) gcashQrFile.value = '';
+
+            setGcashQrPreview(normalized.gcash.qr_url || '');
         }
 
         function readPaymentDetailsForm() {
@@ -339,11 +380,12 @@
                 gcash: {
                     account_name: val('pmGcashAccountName'),
                     number: val('pmGcashNumber'),
-                    qr_url: '',
+                    qr_url: val('pmGcashQrUrl'),
                 },
                 maya: {
                     account_name: val('pmMayaAccountName'),
                     number: val('pmMayaNumber'),
+                    qr_url: '',
                 },
                 bank_transfer: {
                     bank_name: val('pmBankName'),
@@ -363,7 +405,7 @@
             var countEl = document.getElementById('statPending');
             var subEl = document.getElementById('statPendingSub');
             var labelEl = document.getElementById('statPendingLabel');
-            if (labelEl) labelEl.textContent = 'Payment';
+            if (labelEl) labelEl.textContent = 'Payment Settings';
             if (countEl) countEl.textContent = '';
             if (subEl) subEl.textContent = '';
         }
@@ -440,10 +482,21 @@
             }
 
             var details = readPaymentDetailsForm();
+            var qrFileInput = document.getElementById('pmGcashQrFile');
+            var qrFile = qrFileInput && qrFileInput.files && qrFileInput.files[0] ? qrFileInput.files[0] : null;
 
             if (selected.indexOf('GCash') >= 0 && (!details.gcash.account_name || !details.gcash.number)) {
                 showPaymentMethodsFeedback('error', 'Please provide GCash account name and number.');
                 return;
+            }
+            if (selected.indexOf('GCash') >= 0 && qrFile) {
+                var fileType = String(qrFile.type || '').toLowerCase();
+                var validMime = fileType === 'image/jpeg' || fileType === 'image/png';
+                var validExt = /\.(jpg|jpeg|png)$/i.test(String(qrFile.name || ''));
+                if (!validMime && !validExt) {
+                    showPaymentMethodsFeedback('error', 'GCash QR image must be JPG or PNG.');
+                    return;
+                }
             }
             if (selected.indexOf('Maya') >= 0 && (!details.maya.account_name || !details.maya.number)) {
                 showPaymentMethodsFeedback('error', 'Please provide Maya account name and number.');
@@ -465,6 +518,20 @@
             }
 
             try {
+                if (selected.indexOf('GCash') >= 0 && qrFile) {
+                    var qrFormData = new FormData();
+                    qrFormData.append('payment_qr', qrFile);
+                    var uploadResp = await CentersAPI.uploadPaymentQr(qrFormData);
+                    var uploadedQrUrl = String((uploadResp && uploadResp.qr_url) || '').trim();
+                    if (!uploadedQrUrl) {
+                        throw new Error('Failed to upload GCash QR image.');
+                    }
+                    details.gcash.qr_url = uploadedQrUrl;
+                    var qrUrlInput = document.getElementById('pmGcashQrUrl');
+                    if (qrUrlInput) qrUrlInput.value = uploadedQrUrl;
+                    setGcashQrPreview(uploadedQrUrl);
+                }
+
                 await CentersAPI.updateMyProfile({
                     payment_methods: selected,
                     payment_details: details,
@@ -472,6 +539,7 @@
                 setPaymentMethodsCard(selected);
                 _centerPaymentDetails = normalizePaymentDetails(details);
                 showPaymentMethodsFeedback('success', 'Payment methods updated.');
+                if (qrFileInput) qrFileInput.value = '';
                 setTimeout(closePaymentMethodsModal, 600);
             } catch (err) {
                 showPaymentMethodsFeedback('error', (err && err.message) ? err.message : 'Failed to save payment methods.');
@@ -488,6 +556,43 @@
             checks.forEach(function(input) {
                 input.addEventListener('change', syncPaymentDetailsVisibility);
             });
+        })();
+
+        (function bindPaymentQrInputs() {
+            var urlInput = document.getElementById('pmGcashQrUrl');
+            var fileInput = document.getElementById('pmGcashQrFile');
+            var preview = document.getElementById('pmGcashQrPreview');
+            var empty = document.getElementById('pmGcashQrEmpty');
+
+            if (preview) {
+                preview.addEventListener('error', function() {
+                    preview.style.display = 'none';
+                    preview.removeAttribute('src');
+                    if (empty) empty.style.display = 'block';
+                });
+            }
+
+            if (urlInput) {
+                urlInput.addEventListener('input', function() {
+                    if (fileInput && fileInput.files && fileInput.files[0]) return;
+                    setGcashQrPreview(urlInput.value);
+                });
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function() {
+                    var file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+                    if (!file) {
+                        setGcashQrPreview(urlInput ? urlInput.value : '');
+                        return;
+                    }
+                    var reader = new FileReader();
+                    reader.onload = function(event) {
+                        setGcashQrPreview((event && event.target && event.target.result) || '');
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
         })();
 
         function paymentStatusBadge(status) {
@@ -663,12 +768,12 @@
                 }).length;
                 var filtered = enrollments;
 
-                document.getElementById('statStudentsLabel').textContent = 'Schedule';
+                document.getElementById('statStudentsLabel').textContent = 'Schedule Settings';
                 document.getElementById('statStudents').textContent = scheduledTodayCount;
                 document.getElementById('statDate').textContent = scheduledTodayCount > 0
                     ? (scheduledTodayCount + ' student(s) scheduled today')
                     : 'No students scheduled today';
-                document.getElementById('statPendingLabel').textContent = 'Payment';
+                document.getElementById('statPendingLabel').textContent = 'Payment Settings';
 
                 renderCenterEnrollments(filtered);
                 window._latestCenterEnrollments = filtered;

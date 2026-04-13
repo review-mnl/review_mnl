@@ -318,6 +318,8 @@ const CentersAPI = {
         apiRequest('PUT', '/api/centers/me', data),
     uploadLogo: (formData) =>
         apiRequest('PUT', '/api/centers/me/logo', formData, true),
+    uploadPaymentQr: (formData) =>
+        apiRequest('POST', '/api/centers/me/payment-qr', formData, true),
     getMyEnrollments: (status, sort) => {
         var qs = [];
         if (status) qs.push('status=' + encodeURIComponent(status));

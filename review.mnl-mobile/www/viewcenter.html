@@ -366,7 +366,7 @@
                         <!-- Notice -->
                         <div style="background:#fffbea;border:1.5px dashed #f6c344;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#7a5a00;">
                             <span class="material-symbols-outlined" style="font-size:18px;color:#e6a800;flex-shrink:0;margin-top:1px;">info</span>
-                            <span>Use the payment details set by the review center. Online enrollment submission currently supports GCash.</span>
+                            <span>Use the payment details below. If a QR code is provided, scan it directly in your GCash app before uploading proof of payment.</span>
                         </div>
 
                         <!-- Booking summary -->
@@ -384,7 +384,7 @@
                         </div>
 
                         <!-- Payment methods -->
-                        <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Payment Method</h4>
+                        <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Choose Payment Method</h4>
                         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
                             <label class="sch-pay-option sch-pay-selected" id="schPayGcashOption" for="schPayGcash">
                                 <input type="radio" id="schPayGcash" name="schPayMethod" value="gcash" checked>
@@ -409,8 +409,11 @@
                                 <button type="button" onclick="copyGcashNumber()" style="padding:4px 10px;border:1px solid #c7d6ff;background:#fff;color:#1d4ed8;border-radius:999px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">Copy Number</button>
                             </div>
                             <div style="display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;">
-                                <img src="https://via.placeholder.com/200x200?text=GCash+QR" alt="GCash QR placeholder" style="width:160px;height:160px;border-radius:10px;border:1px solid #dbe7ff;background:#fff;" />
-                                <p style="margin:0;max-width:280px;font-size:11px;line-height:1.5;color:#64748b;">Send the exact amount and upload proof of payment after sending.</p>
+                                <div style="width:160px;height:160px;border-radius:10px;border:1px solid #dbe7ff;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
+                                    <img id="schGcashQrImage" alt="GCash QR" style="width:100%;height:100%;object-fit:contain;border-radius:8px;display:none;" />
+                                    <span id="schGcashQrEmpty" style="font-size:11px;color:#64748b;text-align:center;line-height:1.4;">QR code not uploaded yet.</span>
+                                </div>
+                                <p id="schGcashQrHint" style="margin:0;max-width:280px;font-size:11px;line-height:1.5;color:#64748b;">Scan the QR code with your GCash app, send the exact amount, then upload proof of payment.</p>
                             </div>
                         </div>
 
@@ -632,6 +635,14 @@
             };
         }
 
+        function resolveCenterAssetUrl(raw) {
+            var value = String(raw || '').trim();
+            if (!value) return '';
+            if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+            if (value.charAt(0) === '/') return API_BASE + value;
+            return value;
+        }
+
         function setScheduleProgramOptions(programs) {
             var select = document.getElementById('schProgram');
             if (!select) return;
@@ -666,17 +677,41 @@
         function applyCenterPaymentInfo(centerName) {
             var accountName = (_centerPaymentDetails.gcash && _centerPaymentDetails.gcash.account_name) || String(centerName || 'Not provided');
             var number = (_centerPaymentDetails.gcash && _centerPaymentDetails.gcash.number) || 'Not provided';
+            var qrUrl = resolveCenterAssetUrl((_centerPaymentDetails.gcash && _centerPaymentDetails.gcash.qr_url) || '');
             var gcashEnabled = _centerPaymentMethods.indexOf('GCash') >= 0;
             var bankEnabled = _centerPaymentMethods.indexOf('Bank Transfer') >= 0;
 
             var accountNameEl = document.getElementById('schGcashDisplayName');
             var numberEl = document.getElementById('schGcashDisplayNumber');
+            var qrImageEl = document.getElementById('schGcashQrImage');
+            var qrEmptyEl = document.getElementById('schGcashQrEmpty');
+            var qrHintEl = document.getElementById('schGcashQrHint');
             var gcashOption = document.getElementById('schPayGcashOption');
             var bankOption = document.getElementById('schPayBankOption');
             var gcashRadio = document.getElementById('schPayGcash');
             var bankRadio = document.getElementById('schPayBank');
             if (accountNameEl) accountNameEl.textContent = accountName;
             if (numberEl) numberEl.textContent = number;
+
+            if (qrImageEl && qrEmptyEl) {
+                if (qrUrl) {
+                    qrImageEl.onerror = function() {
+                        qrImageEl.style.display = 'none';
+                        qrImageEl.removeAttribute('src');
+                        qrEmptyEl.style.display = 'inline';
+                        if (qrHintEl) qrHintEl.textContent = 'QR image could not be loaded. Use the GCash number above instead.';
+                    };
+                    qrImageEl.src = qrUrl;
+                    qrImageEl.style.display = 'block';
+                    qrEmptyEl.style.display = 'none';
+                    if (qrHintEl) qrHintEl.textContent = 'Scan the QR code with your GCash app, send the exact amount, then upload proof of payment.';
+                } else {
+                    qrImageEl.removeAttribute('src');
+                    qrImageEl.style.display = 'none';
+                    qrEmptyEl.style.display = 'inline';
+                    if (qrHintEl) qrHintEl.textContent = 'No QR code uploaded yet. Use the GCash number above and upload proof of payment after transfer.';
+                }
+            }
 
             if (gcashOption) gcashOption.style.display = gcashEnabled ? 'flex' : 'none';
             if (bankOption) bankOption.style.display = bankEnabled ? 'flex' : 'none';

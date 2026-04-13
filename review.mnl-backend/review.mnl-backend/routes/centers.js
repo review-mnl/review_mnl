@@ -10,6 +10,7 @@ const {
 	updateCenterLocation,
 	updateCenterProfile,
 	updateCenterLogo,
+	uploadCenterPaymentQr,
 	getMyCenterProfile,
 	getMyCenterEnrollments,
 	verifyEnrollmentPayment,
@@ -30,6 +31,7 @@ router.get('/:id',       optionalAuth, getCenterById);
 router.put('/me/location', protect, centerOnly, updateCenterLocation);
 router.put('/me', protect, centerOnly, updateCenterProfile);
 router.put('/me/logo', protect, centerOnly, upload.single('logo'), updateCenterLogo);
+router.post('/me/payment-qr', protect, centerOnly, upload.single('payment_qr'), uploadCenterPaymentQr);
 router.post('/:id/testimonials', protect, postTestimonial);
 // Enrollment: student initiates a GCash payment to enroll in a center
 router.post('/:id/enroll/gcash', protect, studentOnly, upload.single('payment_proof'), createGcashEnrollment);

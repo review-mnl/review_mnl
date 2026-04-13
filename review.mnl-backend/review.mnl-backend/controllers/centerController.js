@@ -47,6 +47,15 @@ const parseJsonObject = (raw) => {
 
 const clipText = (value, maxLen) => String(value || '').trim().slice(0, maxLen);
 
+const getUploadedFileUrl = (file) => {
+  if (!file) return '';
+  if (file.secure_url) return String(file.secure_url).trim();
+  if (file.url) return String(file.url).trim();
+  if (file.path && /^https?:\/\//i.test(String(file.path))) return String(file.path).trim();
+  if (file.filename) return `/uploads/${file.filename}`;
+  return '';
+};
+
 const normalizePaymentMethods = (value) => {
   const arr = parseJsonArray(value)
     .map((item) => String(item || '').trim())
@@ -71,6 +80,7 @@ const normalizePaymentDetails = (value) => {
     maya: {
       account_name: clipText(maya.account_name, 120),
       number: clipText(maya.number, 32),
+      qr_url: clipText(maya.qr_url, 500),
     },
     bank_transfer: {
       bank_name: clipText(bankTransfer.bank_name, 120),
@@ -288,7 +298,7 @@ const updateCenterLogo = async (req, res) => {
   const userId = req.user.id;
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
-    const url = req.file.path || req.file.url || req.file.secure_url || null;
+    const url = getUploadedFileUrl(req.file) || null;
     if (!url) return res.status(500).json({ message: 'Upload failed.' });
 
     await db.query('UPDATE review_centers SET logo_url = ? WHERE user_id = ?', [url, userId]);
@@ -306,6 +316,22 @@ const updateCenterLogo = async (req, res) => {
   } catch (err) {
     console.error('Update center logo error:', err);
     res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const uploadCenterPaymentQr = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No QR image uploaded.' });
+    const qrUrl = getUploadedFileUrl(req.file);
+    if (!qrUrl) return res.status(500).json({ message: 'Upload failed.' });
+
+    return res.json({
+      message: 'QR image uploaded.',
+      qr_url: qrUrl,
+    });
+  } catch (err) {
+    console.error('Upload payment QR error:', err);
+    return res.status(500).json({ message: 'Server error.' });
   }
 };
 
@@ -678,6 +704,7 @@ module.exports = {
   updateCenterLocation,
   updateCenterProfile,
   updateCenterLogo,
+  uploadCenterPaymentQr,
   getMyCenterProfile,
   getMyCenterEnrollments,
   verifyEnrollmentPayment,

@@ -23,7 +23,10 @@
 <!-- Sidebar Panel -->
 <div class="sidebar" id="sidebar">
     <div class="messages-panel" id="msgList" style="padding-top:6px;">
-        <h4 class="messages-panel-title">Messages <span id="sidebarUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;"></span></h4>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <h4 class="messages-panel-title" style="margin:0;">Messages <span id="sidebarUnreadCount" style="display:none;background:#d32f2f;color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;"></span></h4>
+            <button id="sidebarCloseBtn" type="button" onclick="closeSidebar()" style="border:1px solid #d0dcff;background:#fff;color:#1d4ed8;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">Close</button>
+        </div>
         <div id="sidebarMessagesList"></div>
     </div>
 
@@ -168,11 +171,6 @@
                             <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="Bank Transfer"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Bank Transfer</span></label>
                             <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d6e2ff;border-radius:12px;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,0.04);"><input type="checkbox" value="Over-the-Counter"> <span style="font-size:13px;font-weight:600;color:#1e3a8a;">Over-the-Counter</span></label>
                         </div>
-                        <div style="margin-bottom:14px;">
-                            <label for="pmPreferredMethod" style="display:block;margin:0 0 6px;font-size:12px;font-weight:700;color:#1e3a8a;">Preferred Payment Method</label>
-                            <select id="pmPreferredMethod" style="width:100%;padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;background:#fff;"></select>
-                            <p style="margin:6px 0 0;font-size:11px;color:#64748b;">This will be auto-selected first for students in Schedule a Review.</p>
-                        </div>
                         <div id="paymentMethodDetailsWrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                             <div data-payment-detail="GCash" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;">
                                 <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">GCash Details</p>
@@ -188,7 +186,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div data-payment-detail="Maya" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
+                            <div data-payment-detail="Maya" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;">
                                 <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">Maya Details</p>
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                                     <input id="pmMayaAccountName" type="text" placeholder="Account Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
@@ -202,7 +200,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div data-payment-detail="Bank Transfer" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
+                            <div data-payment-detail="Bank Transfer" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;">
                                 <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">Bank Transfer Details</p>
                                 <p style="margin:0 0 8px;font-size:11px;color:#64748b;">Select a commonly used Philippine bank or type your preferred bank manually.</p>
                                 <div style="display:grid;grid-template-columns:1fr;gap:8px;">
@@ -246,7 +244,7 @@
                                     <p id="pmBankPreviewQrStatus" style="margin:4px 0 0;font-size:12px;color:#334155;"><strong>Bank QR:</strong> Not set</p>
                                 </div>
                             </div>
-                            <div data-payment-detail="Over-the-Counter" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
+                            <div data-payment-detail="Over-the-Counter" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;">
                                 <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">Over-the-Counter Details</p>
                                 <textarea id="pmOverTheCounterInstructions" rows="3" placeholder="Instructions for students" style="width:100%;padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;resize:vertical;"></textarea>
                             </div>
@@ -527,45 +525,11 @@
             return checks.map(function(input) { return input.value; });
         }
 
-        function syncPreferredMethodOptions(preferredMethod) {
-            var select = document.getElementById('pmPreferredMethod');
-            if (!select) return;
-
-            var methods = getCheckedPaymentMethods();
-            var currentValue = String(select.value || '').trim();
-            var preferred = String(preferredMethod || currentValue || ((_centerPaymentDetails || {}).preferred_method || '')).trim();
-
-            select.innerHTML = '';
-
-            if (!methods.length) {
-                var emptyOption = document.createElement('option');
-                emptyOption.value = '';
-                emptyOption.textContent = 'Select at least one payment method';
-                select.appendChild(emptyOption);
-                select.disabled = true;
-                return;
-            }
-
-            methods.forEach(function(method) {
-                var option = document.createElement('option');
-                option.value = method;
-                option.textContent = method;
-                select.appendChild(option);
-            });
-
-            if (methods.indexOf(preferred) === -1) preferred = methods[0];
-            select.value = preferred;
-            select.disabled = false;
-        }
-
         function syncPaymentDetailsVisibility() {
-            var selected = getCheckedPaymentMethods();
             var detailBlocks = document.querySelectorAll('[data-payment-detail]');
             detailBlocks.forEach(function(block) {
-                var method = block.getAttribute('data-payment-detail');
-                block.style.display = selected.indexOf(method) >= 0 ? 'block' : 'none';
+                block.style.display = 'block';
             });
-            syncPreferredMethodOptions();
         }
 
         function fillPaymentDetailsForm(details) {
@@ -598,7 +562,6 @@
             if (enrollmentPrice) enrollmentPrice.value = String(Number(normalized.pricing.amount || 1550));
             if (gcashQrFile) gcashQrFile.value = '';
 
-            syncPreferredMethodOptions(normalized.preferred_method);
             setGcashQrPreview(normalized.gcash.qr_url || '');
             setMayaQrPreview(normalized.maya.qr_url || '');
             setBankQrPreview(normalized.bank_transfer.qr_url || '');
@@ -611,8 +574,8 @@
                 return String((el && el.value) || '').trim();
             }
 
-            var preferredSelect = document.getElementById('pmPreferredMethod');
-            var preferredMethod = String((preferredSelect && preferredSelect.value) || '').trim();
+            var selectedMethods = getCheckedPaymentMethods();
+            var preferredMethod = selectedMethods[0] || 'GCash';
             var rawPricingAmount = Number(val('pmEnrollmentPrice'));
             var pricingAmount = Number.isFinite(rawPricingAmount) && rawPricingAmount > 0
                 ? Math.round(rawPricingAmount * 100) / 100
@@ -726,15 +689,13 @@
         async function savePaymentMethods() {
             var selected = getCheckedPaymentMethods();
             if (!selected.length) {
-                showPaymentMethodsFeedback('error', 'Please select at least one payment method.');
-                return;
+                selected = ['GCash'];
+                var gcashCheck = document.querySelector('#paymentMethodsChecklist input[type="checkbox"][value="GCash"]');
+                if (gcashCheck) gcashCheck.checked = true;
             }
 
             var details = readPaymentDetailsForm();
-            var preferredMethod = String(details.preferred_method || '').trim();
-            if (selected.indexOf(preferredMethod) === -1) {
-                details.preferred_method = selected[0];
-            }
+            details.preferred_method = selected[0] || 'GCash';
             var qrFileInput = document.getElementById('pmGcashQrFile');
             var qrFile = qrFileInput && qrFileInput.files && qrFileInput.files[0] ? qrFileInput.files[0] : null;
             var mayaQrFileInput = document.getElementById('pmMayaQrFile');
@@ -1359,14 +1320,34 @@
             return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
-        function toggleSidebar() {
+        function openSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
             if (!sidebar || !overlay) return;
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
             syncManageEnrollmentsInteractionLayers();
         }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (!sidebar || !overlay) return;
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            syncManageEnrollmentsInteractionLayers();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+            if (sidebar.classList.contains('active')) closeSidebar();
+            else openSidebar();
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') closeSidebar();
+        });
 
         function escAttr(str) {
             return String(str || '').replace(/[&<>"']/g, function(ch) {
@@ -1442,6 +1423,7 @@
                 avatarEl.style.backgroundImage = '';
                 avatarEl.textContent = avatarInitial(displayName || (conversation && conversation.other_name), fallbackName);
             }
+            syncManageEnrollmentsInteractionLayers();
         }
 
         function isImageAttachment(mimeType, fileName, url) {
@@ -1869,7 +1851,7 @@
                 var paymentVerifyModal = document.getElementById('paymentVerifyModal');
                 var paymentMethodsModal = document.getElementById('paymentMethodsModal');
 
-                if (overlay && !sidebar.classList.contains('active')) {
+                if (overlay && sidebar && !sidebar.classList.contains('active')) {
                     overlay.classList.remove('active');
                     overlay.style.opacity = '0';
                     overlay.style.visibility = 'hidden';

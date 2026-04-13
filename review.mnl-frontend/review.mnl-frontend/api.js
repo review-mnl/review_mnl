@@ -509,6 +509,29 @@ function clearMessageSyncState() {
 }
 
 // ---------------------------------------------------------------------------
+// Conversation caching helpers
+// Save the latest conversations so other pages (full messages view) can
+// render immediately while the live API request finishes.
+function setConversationsCache(conversations) {
+    try {
+        var key = 'rmnl_conversations_cache_' + (getMessageSyncStorageKey() || 'global');
+        var payload = { ts: Date.now(), conversations: Array.isArray(conversations) ? conversations : [] };
+        localStorage.setItem(key, JSON.stringify(payload));
+    } catch (e) {}
+}
+
+function getConversationsCache() {
+    try {
+        var key = 'rmnl_conversations_cache_' + (getMessageSyncStorageKey() || 'global');
+        var raw = localStorage.getItem(key);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.conversations)) return null;
+        return parsed;
+    } catch (e) { return null; }
+}
+
+// ---------------------------------------------------------------------------
 // Global notification bell (shared navbar behavior)
 // ---------------------------------------------------------------------------
 function initGlobalNotificationBell(options) {
@@ -1408,6 +1431,7 @@ function initStudentMessageSlider(options) {
                     renderConversationHeaderAvatar(activeConversation);
                 }
                 renderConversationList(conversations);
+                try { setConversationsCache(conversations); } catch (e) {}
             } catch (e) {
                 console.warn('Failed to load message slider conversations', e);
                 renderConversationList([]);
@@ -1961,6 +1985,7 @@ function initFullMessagesPage(options) {
                     renderConversationHeaderAvatar(activeConversation);
                 }
                 renderConversationList(conversations);
+                try { setConversationsCache(conversations); } catch (e) {}
                 if (tryOpenFromQuery !== false) {
                     await maybeOpenFromQuery();
                     if (!activeConversation) {
@@ -2018,6 +2043,15 @@ function initFullMessagesPage(options) {
             convPanel.style.display = 'none';
             if (emptyPanel) emptyPanel.style.display = 'flex';
         }
+
+        try {
+            var __cached = getConversationsCache();
+            if (__cached && Array.isArray(__cached.conversations) && __cached.conversations.length) {
+                conversationMap = {};
+                __cached.conversations.forEach(function(item) { conversationMap[String(item.other_user_id)] = item; });
+                renderConversationList(__cached.conversations);
+            }
+        } catch (e) {}
 
         setStatus('Loading conversations...', false);
         loadConversations(true);
@@ -2107,3 +2141,10 @@ const AdminAPI = {
     deleteTestimonial: (id) =>
         apiRequest('DELETE', '/api/admin/testimonials/' + id),
 };
+
+// Auto-initialize the global notification bell on pages that include this script.
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (typeof initGlobalNotificationBell === 'function') initGlobalNotificationBell();
+    } catch (e) {}
+});

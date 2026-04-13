@@ -2040,25 +2040,26 @@ function initFullMessagesPage(options) {
                         if (!otherUserId) otherUserId = Number(target.center_user_id || target.student_user_id || 0);
 
                         if (otherUserId > 0) {
-                        var convFromNotif = conversationMap[String(otherUserId)] || {
-                            other_user_id: otherUserId,
-                            center_id: Number(target.center_id || 0),
-                            enrollment_id: Number(target.enrollment_id || 0) || null,
-                            other_name: (preferStudent ? (target.student_name || '') : (target.center_name || '')) || target.center_name || target.student_name || conversationFallbackName,
-                        };
+                            var convFromNotif = conversationMap[String(otherUserId)] || {
+                                other_user_id: otherUserId,
+                                center_id: Number(target.center_id || 0),
+                                enrollment_id: Number(target.enrollment_id || 0) || null,
+                                other_name: (preferStudent ? (target.student_name || '') : (target.center_name || '')) || target.center_name || target.student_name || conversationFallbackName,
+                            };
 
-                        try {
-                            if (!target.is_read) await NotificationAPI.markAsRead(notificationId);
-                        } catch (e) {}
+                            try {
+                                if (!target.is_read) await NotificationAPI.markAsRead(notificationId);
+                            } catch (e) {}
 
-                        params.delete('openChatNotification');
-                        var cleanQuery = params.toString();
-                        var cleanUrl = window.location.pathname + (cleanQuery ? ('?' + cleanQuery) : '');
-                        window.history.replaceState({}, '', cleanUrl);
+                            params.delete('openChatNotification');
+                            var cleanQuery = params.toString();
+                            var cleanUrl = window.location.pathname + (cleanQuery ? ('?' + cleanQuery) : '');
+                            window.history.replaceState({}, '', cleanUrl);
 
-                        await openConversation(convFromNotif);
-                        clearMessageSyncState();
-                        return;
+                            await openConversation(convFromNotif);
+                            clearMessageSyncState();
+                            return;
+                        }
                     }
                 } catch (e) {
                     console.warn('Failed to resolve openChatNotification on full messages page', e);
@@ -2077,8 +2078,6 @@ function initFullMessagesPage(options) {
             await openConversation(conv);
             clearMessageSyncState();
             return;
-
-            
         }
 
         async function maybeOpenFromSyncState() {

@@ -86,23 +86,23 @@
                 <div class="stats-row">
                     <div class="stat-card">
                         <div class="stat-header">
-                            <h3 id="statStudentsLabel">Total Students Enrolled</h3>
+                            <h3 id="statStudentsLabel">Pending Enrollments</h3>
                             <button class="arrow-circle-btn" onclick="window.location.href='managestudents.html'">
                                 <span class="material-symbols-outlined">arrow_forward_ios</span>
                             </button>
                         </div>
                         <div class="stat-number" id="statStudents">—</div>
-                        <p class="stat-date" id="statDate">Loading...</p>
+                        <p class="stat-date" id="statDate">Needs approval</p>
                     </div>
                     <div class="stat-card">
                         <div class="stat-header">
-                            <h3 id="statPendingLabel">Pending Center Applications</h3>
+                            <h3 id="statPendingLabel">Set Payment</h3>
                             <button class="arrow-circle-btn" id="pendingArrow">
                                 <span class="material-symbols-outlined">arrow_forward_ios</span>
                             </button>
                         </div>
                         <div class="stat-number" id="statPending">—</div>
-                        <p class="stat-date" id="statPendingSub">Awaiting your review</p>
+                        <p class="stat-date" id="statPendingSub">No payment method yet</p>
                     </div>
                 </div>
 
@@ -290,7 +290,7 @@
                     + '<div>'
                     + '<p style="margin:0 0 6px;color:#0d1b4b;font-size:12px;font-weight:700;">Payment Details</p>'
                     + '<p style="margin:0;color:#555;font-size:12px;">Amount: Php ' + escHtml(item.payment && item.payment.amount || 0) + '</p>'
-                    + '<p style="margin:2px 0 0;color:#555;font-size:12px;">Method: ' + escHtml(item.payment && item.payment.method || 'gcash') + '</p>'
+                    + '<p style="margin:2px 0 0;color:#555;font-size:12px;">Method: ' + escHtml(item.payment && item.payment.method || 'Not set') + '</p>'
                     + (item.payment && item.payment.gcash_name ? '<p style="margin:2px 0 0;color:#555;font-size:12px;">Acc Name: ' + escHtml(item.payment.gcash_name) + '</p>' : '')
                     + (item.payment && item.payment.reference_number ? '<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Ref No: ' + escHtml(item.payment.reference_number) + '</p>' : '')
                     + (item.payment && item.payment.review_reason ? '<p style="margin:6px 0 0;color:#7f1d1d;font-size:12px;">Reason: ' + escHtml(item.payment.review_reason) + '</p>' : '')
@@ -319,6 +319,9 @@
                 var res = await CentersAPI.getMyEnrollments(status, sort);
                 var enrollments = (res && res.enrollments) ? res.enrollments : [];
 
+                var statsRes = await CentersAPI.getMyEnrollments('all', 'latest');
+                var allEnrollments = (statsRes && statsRes.enrollments) ? statsRes.enrollments : [];
+
                 if (!window._myCenterId && enrollments.length) {
                     window._myCenterId = Number(enrollments[0].reviewCenterId || enrollments[0].review_center_id || 0);
                 }
@@ -331,15 +334,28 @@
                     sampleReviewCenterId: enrollments[0] ? (enrollments[0].reviewCenterId || enrollments[0].review_center_id || null) : null,
                 });
 
-                var pendingCount = enrollments.filter(function(e){ return e.status === 'pending'; }).length;
+                var pendingCount = allEnrollments.filter(function(e){ return e.status === 'pending'; }).length;
+                var latestPaymentMethod = (allEnrollments.find(function(e) {
+                    return e && e.payment && e.payment.method;
+                }) || {}).payment;
+                var pendingPaymentCount = allEnrollments.filter(function(e){
+                    var paymentStatus = String((e && e.payment && e.payment.status) || 'pending').toLowerCase();
+                    return paymentStatus === 'pending';
+                }).length;
                 var filtered = enrollments;
 
-                document.getElementById('statStudentsLabel').textContent = 'Total Students Enrolled';
-                document.getElementById('statStudents').textContent = enrollments.length;
-                document.getElementById('statDate').textContent = 'As of ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                document.getElementById('statPendingLabel').textContent = 'Pending Center Applications';
-                document.getElementById('statPending').textContent = pendingCount;
-                document.getElementById('statPendingSub').textContent = 'Awaiting your review';
+                document.getElementById('statStudentsLabel').textContent = 'Pending Enrollments';
+                document.getElementById('statStudents').textContent = pendingCount;
+                document.getElementById('statDate').textContent = pendingCount > 0
+                    ? (pendingCount + ' awaiting review')
+                    : 'No pending enrollments';
+                document.getElementById('statPendingLabel').textContent = 'Set Payment';
+                document.getElementById('statPending').textContent = latestPaymentMethod && latestPaymentMethod.method
+                    ? latestPaymentMethod.method
+                    : '—';
+                document.getElementById('statPendingSub').textContent = pendingPaymentCount > 0
+                    ? (pendingPaymentCount + ' payment(s) awaiting verification')
+                    : 'No pending payments';
 
                 renderCenterEnrollments(filtered);
                 window._latestCenterEnrollments = filtered;
@@ -374,8 +390,10 @@
             try {
                 if (dashboardRole === 'review_center') {
                     document.getElementById('centerEnrollmentsSection').style.display = '';
-                    document.getElementById('pendingSection').style.display = 'none';
-                    document.getElementById('testiSection').style.display = 'none';
+                    var pendingSection = document.getElementById('pendingSection');
+                    var testiSection = document.getElementById('testiSection');
+                    if (pendingSection) pendingSection.style.display = 'none';
+                    if (testiSection) testiSection.style.display = 'none';
 
                     var filterEl = document.getElementById('enrollmentStatusFilter');
                     var sortEl = document.getElementById('enrollmentSort');

@@ -17,6 +17,21 @@ const parseMetadata = (raw) => {
   }
 };
 
+const toPaymentMethodLabel = (provider, metadata) => {
+  const fromMetadata = metadata && typeof metadata.payment_method === 'string'
+    ? metadata.payment_method.trim()
+    : '';
+  if (fromMetadata) return fromMetadata;
+
+  const normalized = String(provider || '').trim().toLowerCase();
+  if (!normalized) return 'Not set';
+  if (normalized.indexOf('gcash') >= 0) return 'GCash';
+
+  return normalized
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
+};
+
 const getApprovedCenters = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -298,6 +313,7 @@ const getMyCenterEnrollments = async (req, res) => {
         const documents = metadata.submitted_documents || metadata.documents || [];
         const createdAt = row.date_submitted;
         const studentName = [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || row.student_email || 'Student';
+        const paymentMethodLabel = toPaymentMethodLabel(row.payment_method, metadata);
         return {
           enrollmentId: row.enrollment_id,
           enrollment_id: row.enrollment_id,
@@ -314,10 +330,11 @@ const getMyCenterEnrollments = async (req, res) => {
           program_enrolled: metadata.program_enrolled || 'Program not specified',
           submitted_documents: Array.isArray(documents) ? documents : (documents ? [documents] : []),
           paymentStatus: row.payment_status || 'pending',
+          payment_method: paymentMethodLabel,
           payment: {
             payment_id: row.payment_id,
             amount: row.amount || 0,
-            method: row.payment_method || 'gcash',
+            method: paymentMethodLabel,
             status: row.payment_status || 'pending',
             verified: Boolean(row.payment_verified),
             reference_number: metadata.reference_number || null,

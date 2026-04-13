@@ -86,6 +86,7 @@ const normalizePaymentDetails = (value) => {
       bank_name: clipText(bankTransfer.bank_name, 120),
       account_name: clipText(bankTransfer.account_name, 120),
       account_number: clipText(bankTransfer.account_number, 64),
+      qr_url: clipText(bankTransfer.qr_url, 500),
     },
     over_the_counter: {
       instructions: clipText(overTheCounter.instructions, 500),

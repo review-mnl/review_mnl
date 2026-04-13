@@ -366,7 +366,7 @@
                         <!-- Notice -->
                         <div style="background:#fffbea;border:1.5px dashed #f6c344;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#7a5a00;">
                             <span class="material-symbols-outlined" style="font-size:18px;color:#e6a800;flex-shrink:0;margin-top:1px;">info</span>
-                            <span>Use the payment details below. If a QR code is provided, scan it directly in your GCash app before uploading proof of payment.</span>
+                            <span>Use the payment details below. If a QR code is provided, scan it in the selected payment app before uploading proof of payment.</span>
                         </div>
 
                         <!-- Booking summary -->
@@ -390,14 +390,21 @@
                                 <input type="radio" id="schPayGcash" name="schPayMethod" value="gcash" checked>
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance_wallet</span>
                                 <span>GCash</span>
-                                <span style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
+                                <span id="schPayGcashBadge" style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
+                            </label>
+
+                            <label class="sch-pay-option" id="schPayMayaOption" for="schPayMaya" style="display:none;">
+                                <input type="radio" id="schPayMaya" name="schPayMethod" value="maya">
+                                <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">qr_code_2</span>
+                                <span>Maya</span>
+                                <span id="schPayMayaBadge" class="sch-pay-coming">Coming Soon</span>
                             </label>
 
                             <label class="sch-pay-option" id="schPayBankOption" for="schPayBank">
                                 <input type="radio" id="schPayBank" name="schPayMethod" value="bank">
                                 <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">account_balance</span>
                                 <span>Bank Transfer</span>
-                                <span class="sch-pay-coming">Coming Soon</span>
+                                <span id="schPayBankBadge" class="sch-pay-coming">Coming Soon</span>
                             </label>
                         </div>
 
@@ -417,7 +424,37 @@
                             </div>
                         </div>
 
-                        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+                        <div id="schMayaDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+                            <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0d1b4b;">Pay via Maya</h4>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Account Name:</strong> <span id="schMayaDisplayName">Not provided</span></p>
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                                <p style="margin:0;font-size:12px;color:#334155;"><strong>Maya Number:</strong> <span id="schMayaDisplayNumber">Not provided</span></p>
+                                <button type="button" onclick="copyMayaNumber()" style="padding:4px 10px;border:1px solid #c7d6ff;background:#fff;color:#1d4ed8;border-radius:999px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">Copy Number</button>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;">
+                                <div style="width:160px;height:160px;border-radius:10px;border:1px solid #dbe7ff;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
+                                    <img id="schMayaQrImage" alt="Maya QR" style="width:100%;height:100%;object-fit:contain;border-radius:8px;display:none;" />
+                                    <span id="schMayaQrEmpty" style="font-size:11px;color:#64748b;text-align:center;line-height:1.4;">QR code not uploaded yet.</span>
+                                </div>
+                                <p id="schMayaQrHint" style="margin:0;max-width:280px;font-size:11px;line-height:1.5;color:#64748b;">Scan the QR code using Maya, send the exact amount, then upload proof of payment.</p>
+                            </div>
+                        </div>
+
+                        <div id="schBankDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+                            <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0d1b4b;">Pay via Bank Transfer</h4>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Bank:</strong> <span id="schBankDisplayName">Not provided</span></p>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Account Name:</strong> <span id="schBankDisplayAccountName">Not provided</span></p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;"><strong>Account Number:</strong> <span id="schBankDisplayAccountNumber">Not provided</span></p>
+                            <div style="display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;">
+                                <div style="width:160px;height:160px;border-radius:10px;border:1px solid #dbe7ff;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
+                                    <img id="schBankQrImage" alt="Bank QR" style="width:100%;height:100%;object-fit:contain;border-radius:8px;display:none;" />
+                                    <span id="schBankQrEmpty" style="font-size:11px;color:#64748b;text-align:center;line-height:1.4;">QR code not uploaded yet.</span>
+                                </div>
+                                <p id="schBankQrHint" style="margin:0;max-width:280px;font-size:11px;line-height:1.5;color:#64748b;">Scan the QR in your bank app or transfer manually using the account details above.</p>
+                            </div>
+                        </div>
+
+                        <div id="schGcashSubmissionFields" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                             <div>
                                 <label class="sch-label">GCash Number</label>
                                 <input id="schGcashNumber" name="gcashNumber" type="tel" class="sch-input" placeholder="09XXXXXXXXX" maxlength="11">
@@ -602,6 +639,8 @@
         var _centerPaymentMethods = ['GCash'];
         var _centerPaymentDetails = {
             gcash: { account_name: '', number: '', qr_url: '' },
+            maya: { account_name: '', number: '', qr_url: '' },
+            bank_transfer: { bank_name: '', account_name: '', account_number: '', qr_url: '' },
         };
 
         function normalizeCenterPaymentMethods(value) {
@@ -626,12 +665,25 @@
             }
             if (!details || typeof details !== 'object') details = {};
             var gcash = details.gcash && typeof details.gcash === 'object' ? details.gcash : {};
+            var maya = details.maya && typeof details.maya === 'object' ? details.maya : {};
+            var bank = details.bank_transfer && typeof details.bank_transfer === 'object' ? details.bank_transfer : {};
             return {
                 gcash: {
                     account_name: String(gcash.account_name || '').trim(),
                     number: String(gcash.number || '').trim(),
                     qr_url: String(gcash.qr_url || '').trim(),
-                }
+                },
+                maya: {
+                    account_name: String(maya.account_name || '').trim(),
+                    number: String(maya.number || '').trim(),
+                    qr_url: String(maya.qr_url || '').trim(),
+                },
+                bank_transfer: {
+                    bank_name: String(bank.bank_name || '').trim(),
+                    account_name: String(bank.account_name || '').trim(),
+                    account_number: String(bank.account_number || '').trim(),
+                    qr_url: String(bank.qr_url || '').trim(),
+                },
             };
         }
 
@@ -674,57 +726,122 @@
             select.disabled = false;
         }
 
+        function setPaymentQrDisplay(imageId, emptyId, hintId, qrUrl, loadedHint, fallbackHint, errorHint) {
+            var imageEl = document.getElementById(imageId);
+            var emptyEl = document.getElementById(emptyId);
+            var hintEl = document.getElementById(hintId);
+            if (!imageEl || !emptyEl) return;
+
+            if (qrUrl) {
+                imageEl.onerror = function() {
+                    imageEl.style.display = 'none';
+                    imageEl.removeAttribute('src');
+                    emptyEl.style.display = 'inline';
+                    if (hintEl) hintEl.textContent = errorHint;
+                };
+                imageEl.src = qrUrl;
+                imageEl.style.display = 'block';
+                emptyEl.style.display = 'none';
+                if (hintEl) hintEl.textContent = loadedHint;
+                return;
+            }
+
+            imageEl.removeAttribute('src');
+            imageEl.style.display = 'none';
+            emptyEl.style.display = 'inline';
+            if (hintEl) hintEl.textContent = fallbackHint;
+        }
+
         function applyCenterPaymentInfo(centerName) {
-            var accountName = (_centerPaymentDetails.gcash && _centerPaymentDetails.gcash.account_name) || String(centerName || 'Not provided');
-            var number = (_centerPaymentDetails.gcash && _centerPaymentDetails.gcash.number) || 'Not provided';
-            var qrUrl = resolveCenterAssetUrl((_centerPaymentDetails.gcash && _centerPaymentDetails.gcash.qr_url) || '');
+            var gcash = _centerPaymentDetails.gcash || {};
+            var maya = _centerPaymentDetails.maya || {};
+            var bank = _centerPaymentDetails.bank_transfer || {};
+
             var gcashEnabled = _centerPaymentMethods.indexOf('GCash') >= 0;
+            var mayaEnabled = _centerPaymentMethods.indexOf('Maya') >= 0;
             var bankEnabled = _centerPaymentMethods.indexOf('Bank Transfer') >= 0;
 
-            var accountNameEl = document.getElementById('schGcashDisplayName');
-            var numberEl = document.getElementById('schGcashDisplayNumber');
-            var qrImageEl = document.getElementById('schGcashQrImage');
-            var qrEmptyEl = document.getElementById('schGcashQrEmpty');
-            var qrHintEl = document.getElementById('schGcashQrHint');
+            var gcashAccountName = gcash.account_name || String(centerName || 'Not provided');
+            var gcashNumber = gcash.number || 'Not provided';
+            var gcashQrUrl = resolveCenterAssetUrl(gcash.qr_url || '');
+
+            var mayaAccountName = maya.account_name || String(centerName || 'Not provided');
+            var mayaNumber = maya.number || 'Not provided';
+            var mayaQrUrl = resolveCenterAssetUrl(maya.qr_url || '');
+
+            var bankName = bank.bank_name || 'Not provided';
+            var bankAccountName = bank.account_name || 'Not provided';
+            var bankAccountNumber = bank.account_number || 'Not provided';
+            var bankQrUrl = resolveCenterAssetUrl(bank.qr_url || '');
+
             var gcashOption = document.getElementById('schPayGcashOption');
+            var mayaOption = document.getElementById('schPayMayaOption');
             var bankOption = document.getElementById('schPayBankOption');
             var gcashRadio = document.getElementById('schPayGcash');
+            var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
-            if (accountNameEl) accountNameEl.textContent = accountName;
-            if (numberEl) numberEl.textContent = number;
 
-            if (qrImageEl && qrEmptyEl) {
-                if (qrUrl) {
-                    qrImageEl.onerror = function() {
-                        qrImageEl.style.display = 'none';
-                        qrImageEl.removeAttribute('src');
-                        qrEmptyEl.style.display = 'inline';
-                        if (qrHintEl) qrHintEl.textContent = 'QR image could not be loaded. Use the GCash number above instead.';
-                    };
-                    qrImageEl.src = qrUrl;
-                    qrImageEl.style.display = 'block';
-                    qrEmptyEl.style.display = 'none';
-                    if (qrHintEl) qrHintEl.textContent = 'Scan the QR code with your GCash app, send the exact amount, then upload proof of payment.';
-                } else {
-                    qrImageEl.removeAttribute('src');
-                    qrImageEl.style.display = 'none';
-                    qrEmptyEl.style.display = 'inline';
-                    if (qrHintEl) qrHintEl.textContent = 'No QR code uploaded yet. Use the GCash number above and upload proof of payment after transfer.';
-                }
-            }
+            var gcashAccountNameEl = document.getElementById('schGcashDisplayName');
+            var gcashNumberEl = document.getElementById('schGcashDisplayNumber');
+            var mayaAccountNameEl = document.getElementById('schMayaDisplayName');
+            var mayaNumberEl = document.getElementById('schMayaDisplayNumber');
+            var bankNameEl = document.getElementById('schBankDisplayName');
+            var bankAccountNameEl = document.getElementById('schBankDisplayAccountName');
+            var bankAccountNumberEl = document.getElementById('schBankDisplayAccountNumber');
+
+            if (gcashAccountNameEl) gcashAccountNameEl.textContent = gcashAccountName;
+            if (gcashNumberEl) gcashNumberEl.textContent = gcashNumber;
+            if (mayaAccountNameEl) mayaAccountNameEl.textContent = mayaAccountName;
+            if (mayaNumberEl) mayaNumberEl.textContent = mayaNumber;
+            if (bankNameEl) bankNameEl.textContent = bankName;
+            if (bankAccountNameEl) bankAccountNameEl.textContent = bankAccountName;
+            if (bankAccountNumberEl) bankAccountNumberEl.textContent = bankAccountNumber;
+
+            setPaymentQrDisplay(
+                'schGcashQrImage',
+                'schGcashQrEmpty',
+                'schGcashQrHint',
+                gcashQrUrl,
+                'Scan the QR code with your GCash app, send the exact amount, then upload proof of payment.',
+                'No QR code uploaded yet. Use the GCash number above and upload proof of payment after transfer.',
+                'GCash QR image could not be loaded. Use the GCash number above instead.'
+            );
+
+            setPaymentQrDisplay(
+                'schMayaQrImage',
+                'schMayaQrEmpty',
+                'schMayaQrHint',
+                mayaQrUrl,
+                'Scan the QR code with Maya, send the exact amount, then upload proof of payment.',
+                'No Maya QR code uploaded yet. Use the Maya number above for manual transfer.',
+                'Maya QR image could not be loaded. Use the Maya number above instead.'
+            );
+
+            setPaymentQrDisplay(
+                'schBankQrImage',
+                'schBankQrEmpty',
+                'schBankQrHint',
+                bankQrUrl,
+                'Scan the bank QR in your banking app or transfer manually using the account details above.',
+                'No bank QR code uploaded yet. Use the account details above for manual transfer.',
+                'Bank QR image could not be loaded. Use the account details above instead.'
+            );
 
             if (gcashOption) gcashOption.style.display = gcashEnabled ? 'flex' : 'none';
+            if (mayaOption) mayaOption.style.display = mayaEnabled ? 'flex' : 'none';
             if (bankOption) bankOption.style.display = bankEnabled ? 'flex' : 'none';
 
-            if (gcashRadio && bankRadio) {
-                if (gcashEnabled) {
-                    gcashRadio.checked = true;
-                    bankRadio.checked = false;
-                } else if (bankEnabled) {
-                    gcashRadio.checked = false;
-                    bankRadio.checked = true;
-                }
+            if (gcashRadio && mayaRadio && bankRadio) {
+                gcashRadio.checked = false;
+                mayaRadio.checked = false;
+                bankRadio.checked = false;
+
+                if (gcashEnabled) gcashRadio.checked = true;
+                else if (mayaEnabled) mayaRadio.checked = true;
+                else if (bankEnabled) bankRadio.checked = true;
+                else gcashRadio.checked = true;
             }
+
             updatePaymentMethodUI();
         }
 
@@ -737,16 +854,23 @@
             _schEnrollmentResp = null;
             _schReferenceNumber = '';
             var gcashRadio = document.getElementById('schPayGcash');
+            var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
             var gcashEnabled = _centerPaymentMethods.indexOf('GCash') >= 0;
+            var mayaEnabled = _centerPaymentMethods.indexOf('Maya') >= 0;
             var bankEnabled = _centerPaymentMethods.indexOf('Bank Transfer') >= 0;
-            if (gcashRadio && bankRadio) {
+            if (gcashRadio && mayaRadio && bankRadio) {
+                gcashRadio.checked = false;
+                mayaRadio.checked = false;
+                bankRadio.checked = false;
                 if (gcashEnabled) {
                     gcashRadio.checked = true;
-                    bankRadio.checked = false;
+                } else if (mayaEnabled) {
+                    mayaRadio.checked = true;
                 } else if (bankEnabled) {
-                    gcashRadio.checked = false;
                     bankRadio.checked = true;
+                } else {
+                    gcashRadio.checked = true;
                 }
             }
             renderSchCal();
@@ -832,10 +956,11 @@
             window.location.href = '/enrollments';
         }
 
-        function showBankComingSoonMessage() {
+        function showUnsupportedMethodMessage(methodLabel) {
             var msgEl = document.getElementById('schPaymentMsg');
             if (!msgEl) return;
-            msgEl.textContent = 'Please contact the review center for this payment method. Online enrollment submission currently supports GCash.';
+            var label = String(methodLabel || 'this payment method').trim();
+            msgEl.textContent = 'You selected ' + label + '. Please contact the review center for this payment method. Online enrollment submission currently supports GCash.';
             msgEl.style.display = 'block';
             msgEl.style.background = '#fff8e1';
             msgEl.style.color = '#7a5a00';
@@ -853,15 +978,16 @@
         }
 
         function getSelectedPaymentMethod() {
-            var bankRadio = document.getElementById('schPayBank');
-            return bankRadio && bankRadio.checked ? 'bank' : 'gcash';
+            var checked = document.querySelector('input[name="schPayMethod"]:checked');
+            var value = String((checked && checked.value) || '').toLowerCase();
+            return value || 'gcash';
         }
 
         function updateProceedButton() {
             var selectedMethod = getSelectedPaymentMethod();
             var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
             if (!proceedBtn) return;
-            if (selectedMethod === 'bank') {
+            if (selectedMethod !== 'gcash') {
                 proceedBtn.disabled = true;
                 return;
             }
@@ -955,54 +1081,77 @@
 
         function updatePaymentMethodUI() {
             var gcashRadio = document.getElementById('schPayGcash');
+            var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
             var gcashOption = document.getElementById('schPayGcashOption');
+            var mayaOption = document.getElementById('schPayMayaOption');
             var bankOption = document.getElementById('schPayBankOption');
             var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
             var gcashDetailsCard = document.getElementById('schGcashDetailsCard');
+            var mayaDetailsCard = document.getElementById('schMayaDetailsCard');
+            var bankDetailsCard = document.getElementById('schBankDetailsCard');
+            var gcashFields = document.getElementById('schGcashSubmissionFields');
+            var selectedMethod = getSelectedPaymentMethod();
 
             if (gcashOption) gcashOption.classList.toggle('sch-pay-selected', !!(gcashRadio && gcashRadio.checked));
+            if (mayaOption) mayaOption.classList.toggle('sch-pay-selected', !!(mayaRadio && mayaRadio.checked));
             if (bankOption) bankOption.classList.toggle('sch-pay-selected', !!(bankRadio && bankRadio.checked));
+            if (gcashDetailsCard) gcashDetailsCard.style.display = selectedMethod === 'gcash' ? 'block' : 'none';
+            if (mayaDetailsCard) mayaDetailsCard.style.display = selectedMethod === 'maya' ? 'block' : 'none';
+            if (bankDetailsCard) bankDetailsCard.style.display = selectedMethod === 'bank' ? 'block' : 'none';
+            if (gcashFields) gcashFields.style.display = selectedMethod === 'gcash' ? 'flex' : 'none';
 
-            if (bankRadio && bankRadio.checked) {
-                _schPaymentMethod = 'Bank Payment';
-                showBankComingSoonMessage();
+            if (selectedMethod === 'maya') {
+                _schPaymentMethod = 'Maya';
+                showUnsupportedMethodMessage('Maya');
                 if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
-                if (gcashDetailsCard) gcashDetailsCard.style.display = 'none';
+            } else if (selectedMethod === 'bank') {
+                _schPaymentMethod = 'Bank Transfer';
+                showUnsupportedMethodMessage('Bank Transfer');
+                if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
             } else {
                 _schPaymentMethod = 'GCash';
                 hidePaymentMessage();
                 if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
-                if (gcashDetailsCard) gcashDetailsCard.style.display = 'block';
             }
 
             updateProceedButton();
         }
 
         function copyGcashNumber() {
-            var numberEl = document.getElementById('schGcashDisplayNumber');
-            var value = numberEl ? String(numberEl.textContent || '').trim() : '';
+            copyPaymentNumber('schGcashDisplayNumber', 'GCash', 'GCash number is not set yet by this review center.');
+        }
+
+        function copyMayaNumber() {
+            copyPaymentNumber('schMayaDisplayNumber', 'Maya', 'Maya number is not set yet by this review center.');
+        }
+
+        function copyPaymentNumber(elementId, label, missingMessage) {
+            var valueEl = document.getElementById(elementId);
+            var value = valueEl ? String(valueEl.textContent || '').trim() : '';
             if (!value || value === 'Not provided') {
-                alert('GCash number is not set yet by this review center.');
+                alert(missingMessage || 'Number is not set yet.');
                 return;
             }
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(value).then(function() {
-                        alert('GCash number copied');
+                        alert(label + ' number copied');
                     }).catch(function() {
                         alert('Unable to copy. Please copy manually: ' + value);
                     });
                     return;
                 }
             } catch (e) {}
-            alert('Copy this GCash number: ' + value);
+            alert('Copy this ' + label + ' number: ' + value);
         }
 
         function setupPaymentMethodListeners() {
             var gcashRadio = document.getElementById('schPayGcash');
+            var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
             if (gcashRadio) gcashRadio.addEventListener('change', updatePaymentMethodUI);
+            if (mayaRadio) mayaRadio.addEventListener('change', updatePaymentMethodUI);
             if (bankRadio) bankRadio.addEventListener('change', updatePaymentMethodUI);
 
             var gcashNumberInput = document.getElementById('schGcashNumber');
@@ -1422,9 +1571,9 @@
             try {
                 const token = getActiveToken();
                 if (!token) { alert('Please login to continue to payment.'); return; }
-                const bankRadio = document.getElementById('schPayBank');
-                if (bankRadio && bankRadio.checked) {
-                    showBankComingSoonMessage();
+                var selectedMethod = getSelectedPaymentMethod();
+                if (selectedMethod !== 'gcash') {
+                    showUnsupportedMethodMessage(selectedMethod === 'maya' ? 'Maya' : 'Bank Transfer');
                     return;
                 }
                 const params = new URLSearchParams(window.location.search);

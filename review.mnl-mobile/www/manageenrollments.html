@@ -821,8 +821,17 @@
             activeConversation = conversation;
             activeConversationKey = nextKey;
             clearPendingAttachment();
-            document.getElementById('convName').textContent = conversation.other_name || 'Chat';
-            renderConversationHeaderAvatar(conversation, conversation.other_name || 'Chat', 'Student');
+            var studentDisplayName = conversation.other_name || 'Student';
+            document.getElementById('convName').textContent = studentDisplayName;
+            renderConversationHeaderAvatar(conversation, studentDisplayName, 'Student');
+            if (typeof saveMessageSyncState === 'function') {
+                saveMessageSyncState({
+                    other_user_id: conversation.other_user_id,
+                    center_id: conversation.center_id || 0,
+                    enrollment_id: conversation.enrollment_id || null,
+                    other_name: studentDisplayName,
+                });
+            }
             document.getElementById('msgList').style.display = 'none';
             document.getElementById('convPanel').style.display = 'flex';
 

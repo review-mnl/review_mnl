@@ -526,8 +526,9 @@ const updateEnrollmentReviewStatus = async (req, res) => {
     }
 
     const nextLegacyStatus = requestedStatus === 'approved' ? 'active' : 'cancelled';
+    const centerName = enrollment.business_name || 'the review center';
     const notificationMessage = requestedStatus === 'approved'
-      ? 'Your enrollment has been approved.'
+      ? `Congratulations! You are now successfully enrolled in ${centerName}.`
       : 'Your enrollment has been rejected.';
 
     await conn.query(

@@ -48,7 +48,7 @@ const createGcashEnrollment = async (req, res) => {
     }
 
     // Ensure center exists
-    const [centerRows] = await db.query('SELECT id, business_name FROM review_centers WHERE id = ?', [centerId]);
+    const [centerRows] = await db.query('SELECT id, user_id, business_name FROM review_centers WHERE id = ?', [centerId]);
     if (!centerRows || centerRows.length === 0) return res.status(404).json({ message: 'Center not found.' });
     const center = centerRows[0];
 
@@ -116,6 +116,13 @@ const createGcashEnrollment = async (req, res) => {
     await conn.query(
       'UPDATE payments SET metadata = JSON_SET(COALESCE(metadata, JSON_OBJECT()), "$.enrollment_id", ?, "$.created_at", ?) WHERE id = ?',
       [enrollmentId, new Date().toISOString(), paymentId]
+    );
+
+    const enrollmentConfirmationMessage = 'Your enrollment request was submitted successfully. Please wait while the review center verifies your payment.';
+    await conn.query(
+      `INSERT INTO chat_messages (student_id, center_id, enrollment_id, sender_id, receiver_id, message, is_read)
+       VALUES (?, ?, ?, ?, ?, ?, 0)`,
+      [userId, centerId, enrollmentId, center.user_id, userId, enrollmentConfirmationMessage]
     );
 
     console.log('[Enrollment] Saved Pending Manual GCash Payment', {
@@ -217,10 +224,21 @@ const completeMockPayment = async (req, res) => {
     await conn.query('UPDATE payments SET status = ?, provider_payment_id = ? WHERE id = ?', ['paid', providerPaymentId, paymentId]);
 
     // Create enrollment
-    await conn.query(
+    const [enrollmentInsert] = await conn.query(
       'INSERT INTO enrollments (user_id, center_id, payment_id, status, review_status, payment_verified) VALUES (?, ?, ?, ?, ?, ?)',
       [p.user_id, p.center_id, paymentId, 'pending', 'pending', 0]
     );
+    const enrollmentId = enrollmentInsert.insertId;
+
+    const [centerRows] = await conn.query('SELECT user_id FROM review_centers WHERE id = ? LIMIT 1', [p.center_id]);
+    if (centerRows.length > 0) {
+      const enrollmentConfirmationMessage = 'Your enrollment request was submitted successfully. Please wait while the review center verifies your payment.';
+      await conn.query(
+        `INSERT INTO chat_messages (student_id, center_id, enrollment_id, sender_id, receiver_id, message, is_read)
+         VALUES (?, ?, ?, ?, ?, ?, 0)`,
+        [p.user_id, p.center_id, enrollmentId, centerRows[0].user_id, p.user_id, enrollmentConfirmationMessage]
+      );
+    }
 
     await conn.commit();
     return res.json({ message: 'Payment completed and enrollment created.' });

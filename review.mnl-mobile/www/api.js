@@ -434,6 +434,58 @@ function getMessagesLandingPath() {
     return getMessagesLandingPathForRole(me && me.role);
 }
 
+function getMessageSyncStorageKey() {
+    try {
+        var me = getUser() || {};
+        var role = String((me && me.role) || '').toLowerCase();
+        var roleScope = (role === 'review_center' || role === 'admin' || role === 'center') ? 'center' : 'student';
+        var idPart = me && (me.id != null ? me.id : (me.email || 'anon'));
+        return 'rmnl_message_sync_' + roleScope + '_' + String(idPart || 'anon');
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveMessageSyncState(state) {
+    try {
+        var key = getMessageSyncStorageKey();
+        if (!key || !state || typeof state !== 'object') return;
+
+        var payload = {
+            other_user_id: Number(state.other_user_id || 0) || 0,
+            center_id: Number(state.center_id || 0) || 0,
+            enrollment_id: state.enrollment_id != null ? (Number(state.enrollment_id) || null) : null,
+            other_name: String(state.other_name || '').trim(),
+            updated_at: new Date().toISOString(),
+        };
+
+        if (!payload.other_user_id) return;
+        localStorage.setItem(key, JSON.stringify(payload));
+    } catch (e) {}
+}
+
+function readMessageSyncState() {
+    try {
+        var key = getMessageSyncStorageKey();
+        if (!key) return null;
+        var raw = localStorage.getItem(key);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        return parsed;
+    } catch (e) {
+        return null;
+    }
+}
+
+function clearMessageSyncState() {
+    try {
+        var key = getMessageSyncStorageKey();
+        if (!key) return;
+        localStorage.removeItem(key);
+    } catch (e) {}
+}
+
 // ---------------------------------------------------------------------------
 // Global notification bell (shared navbar behavior)
 // ---------------------------------------------------------------------------
@@ -1157,6 +1209,12 @@ function initStudentMessageSlider(options) {
             if (!conversation || !conversation.other_user_id) return;
             activeConversation = conversation;
             activeConversationKey = String(conversation.other_user_id);
+            saveMessageSyncState({
+                other_user_id: conversation.other_user_id,
+                center_id: conversation.center_id || 0,
+                enrollment_id: conversation.enrollment_id || null,
+                other_name: conversation.other_name || conversationFallbackName,
+            });
             convName.textContent = conversation.other_name || conversationFallbackName;
             renderConversationHeaderAvatar(conversation);
             listPanel.style.display = 'none';
@@ -1588,6 +1646,12 @@ function initFullMessagesPage(options) {
             if (!conversation || !conversation.other_user_id) return;
             activeConversation = conversation;
             activeConversationKey = String(conversation.other_user_id);
+            saveMessageSyncState({
+                other_user_id: conversation.other_user_id,
+                center_id: conversation.center_id || 0,
+                enrollment_id: conversation.enrollment_id || null,
+                other_name: conversation.other_name || conversationFallbackName,
+            });
             convName.textContent = conversation.other_name || conversationFallbackName;
             renderConversationHeaderAvatar(conversation);
             openConversationUi();
@@ -1706,6 +1770,7 @@ function initFullMessagesPage(options) {
                         window.history.replaceState({}, '', cleanUrl);
 
                         await openConversation(convFromNotif);
+                        clearMessageSyncState();
                         return;
                     }
                 } catch (e) {
@@ -1723,6 +1788,40 @@ function initFullMessagesPage(options) {
                 other_name: conversationFallbackName,
             };
             await openConversation(conv);
+            clearMessageSyncState();
+            return;
+
+            
+        }
+
+        async function maybeOpenFromSyncState() {
+            var syncState = readMessageSyncState();
+            if (!syncState) return;
+
+            var syncedUserId = Number(syncState.other_user_id || 0);
+            if (!syncedUserId || syncedUserId <= 0) {
+                clearMessageSyncState();
+                return;
+            }
+
+            var parsedTs = Date.parse(syncState.updated_at || '');
+            if (!isNaN(parsedTs)) {
+                var ageMs = Date.now() - parsedTs;
+                if (ageMs > 30 * 60 * 1000) {
+                    clearMessageSyncState();
+                    return;
+                }
+            }
+
+            var convFromSync = conversationMap[String(syncedUserId)] || {
+                other_user_id: syncedUserId,
+                center_id: Number(syncState.center_id || 0),
+                enrollment_id: Number(syncState.enrollment_id || 0) || null,
+                other_name: String(syncState.other_name || conversationFallbackName) || conversationFallbackName,
+            };
+
+            await openConversation(convFromSync);
+            clearMessageSyncState();
         }
 
         async function loadConversations(tryOpenFromQuery) {
@@ -1740,6 +1839,9 @@ function initFullMessagesPage(options) {
                 renderConversationList(conversations);
                 if (tryOpenFromQuery !== false) {
                     await maybeOpenFromQuery();
+                    if (!activeConversation) {
+                        await maybeOpenFromSyncState();
+                    }
                 }
             } catch (e) {
                 renderConversationList([]);

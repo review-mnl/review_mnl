@@ -606,63 +606,6 @@
             wrap.scrollTop = wrap.scrollHeight;
         }
 
-        async function resolveReviewCenterHeaderName(conversation) {
-            var fallback = 'Review Center';
-            var centerId = Number((conversation && conversation.center_id) || 0);
-            var me = getUser();
-            window._chatCenterNameCache = window._chatCenterNameCache || {};
-
-            if (centerId > 0 && window._chatCenterNameCache[String(centerId)]) {
-                var cachedName = window._chatCenterNameCache[String(centerId)];
-                console.log('[Chat][Center] Header center name (cache)', {
-                    reviewCenterId: centerId,
-                    reviewCenterName: cachedName,
-                    usedCurrentUserStudentName: false,
-                });
-                return cachedName;
-            }
-
-            if (centerId > 0) {
-                try {
-                    var centerRes = await CentersAPI.getById(centerId);
-                    var centerName = (centerRes && centerRes.center && centerRes.center.business_name)
-                        || (centerRes && centerRes.business_name)
-                        || '';
-                    if (centerName) {
-                        window._chatCenterNameCache[String(centerId)] = centerName;
-                        console.log('[Chat][Center] Header center name (fetched)', {
-                            reviewCenterId: centerId,
-                            reviewCenterName: centerName,
-                            usedCurrentUserStudentName: false,
-                        });
-                        return centerName;
-                    }
-                } catch (e) {
-                    console.warn('[Chat][Center] Failed to fetch center name for header', {
-                        reviewCenterId: centerId,
-                        error: e,
-                    });
-                }
-            }
-
-            var ownCenterName = (me && (me.business_name || '').trim()) || '';
-            if (ownCenterName) {
-                console.log('[Chat][Center] Header center name (session fallback)', {
-                    reviewCenterId: centerId,
-                    reviewCenterName: ownCenterName,
-                    usedCurrentUserStudentName: false,
-                });
-                return ownCenterName;
-            }
-
-            console.log('[Chat][Center] Header center name fallback', {
-                reviewCenterId: centerId,
-                reviewCenterName: fallback,
-                usedCurrentUserStudentName: false,
-            });
-            return fallback;
-        }
-
         async function openConv(conversation) {
             if (!conversation || !conversation.other_user_id) return;
             var nextKey = String(conversation.other_user_id);
@@ -670,20 +613,25 @@
             activeConversation = conversation;
             activeConversationKey = nextKey;
             clearPendingAttachment();
-            document.getElementById('convName').textContent = 'Review Center';
-            renderConversationHeaderAvatar(conversation, 'Review Center', 'Student');
+            var studentDisplayName = conversation.other_name || 'Student';
+            document.getElementById('convName').textContent = studentDisplayName;
+            renderConversationHeaderAvatar(conversation, studentDisplayName, 'Student');
+            if (typeof saveMessageSyncState === 'function') {
+                saveMessageSyncState({
+                    other_user_id: conversation.other_user_id,
+                    center_id: conversation.center_id || 0,
+                    enrollment_id: conversation.enrollment_id || null,
+                    other_name: studentDisplayName,
+                });
+            }
             document.getElementById('msgList').style.display = 'none';
             document.getElementById('convPanel').style.display = 'flex';
-
-            var headerName = await resolveReviewCenterHeaderName(conversation);
-            document.getElementById('convName').textContent = headerName || 'Review Center';
-            renderConversationHeaderAvatar(conversation, headerName || 'Review Center', 'Student');
 
             console.log('[Chat][Center] Opening conversation', {
                 conversationKey: nextKey,
                 switching: isSwitchingConversation,
                 reviewCenterId: Number(conversation.center_id || 0),
-                headerName: headerName || 'Review Center',
+                headerName: studentDisplayName,
             });
             await loadActiveThread();
 

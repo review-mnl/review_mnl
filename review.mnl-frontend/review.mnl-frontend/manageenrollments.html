@@ -191,10 +191,40 @@
                             </div>
                             <div data-payment-detail="Bank Transfer" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
                                 <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#1e3a8a;">Bank Transfer Details</p>
+                                <p style="margin:0 0 8px;font-size:11px;color:#64748b;">Select a commonly used Philippine bank or type your preferred bank manually.</p>
                                 <div style="display:grid;grid-template-columns:1fr;gap:8px;">
-                                    <input id="pmBankName" type="text" placeholder="Bank Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                    <input id="pmBankName" type="text" placeholder="Bank Name" list="pmBankSuggestions" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                    <datalist id="pmBankSuggestions">
+                                        <option value="BDO Unibank"></option>
+                                        <option value="Bank of the Philippine Islands (BPI)"></option>
+                                        <option value="Metrobank"></option>
+                                        <option value="Land Bank of the Philippines"></option>
+                                        <option value="Philippine National Bank (PNB)"></option>
+                                        <option value="Security Bank"></option>
+                                        <option value="UnionBank"></option>
+                                        <option value="RCBC"></option>
+                                        <option value="China Bank"></option>
+                                        <option value="EastWest Bank"></option>
+                                        <option value="Maybank Philippines"></option>
+                                        <option value="CIMB Bank Philippines"></option>
+                                        <option value="Tonik Digital Bank"></option>
+                                    </datalist>
+                                    <div id="pmBankQuickPicks" style="display:flex;flex-wrap:wrap;gap:6px;">
+                                        <button type="button" data-bank-name="BDO Unibank" style="padding:5px 10px;border:1px solid #cddcff;background:#fff;color:#1e3a8a;border-radius:999px;font-family:Poppins,sans-serif;font-size:11px;font-weight:600;cursor:pointer;">BDO</button>
+                                        <button type="button" data-bank-name="Bank of the Philippine Islands (BPI)" style="padding:5px 10px;border:1px solid #cddcff;background:#fff;color:#1e3a8a;border-radius:999px;font-family:Poppins,sans-serif;font-size:11px;font-weight:600;cursor:pointer;">BPI</button>
+                                        <button type="button" data-bank-name="Metrobank" style="padding:5px 10px;border:1px solid #cddcff;background:#fff;color:#1e3a8a;border-radius:999px;font-family:Poppins,sans-serif;font-size:11px;font-weight:600;cursor:pointer;">Metrobank</button>
+                                        <button type="button" data-bank-name="Land Bank of the Philippines" style="padding:5px 10px;border:1px solid #cddcff;background:#fff;color:#1e3a8a;border-radius:999px;font-family:Poppins,sans-serif;font-size:11px;font-weight:600;cursor:pointer;">LandBank</button>
+                                        <button type="button" data-bank-name="UnionBank" style="padding:5px 10px;border:1px solid #cddcff;background:#fff;color:#1e3a8a;border-radius:999px;font-family:Poppins,sans-serif;font-size:11px;font-weight:600;cursor:pointer;">UnionBank</button>
+                                        <button type="button" data-bank-name="RCBC" style="padding:5px 10px;border:1px solid #cddcff;background:#fff;color:#1e3a8a;border-radius:999px;font-family:Poppins,sans-serif;font-size:11px;font-weight:600;cursor:pointer;">RCBC</button>
+                                    </div>
                                     <input id="pmBankAccountName" type="text" placeholder="Account Name" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
                                     <input id="pmBankAccountNumber" type="text" placeholder="Account Number" style="padding:8px 10px;border:1px solid #d8e0f2;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;">
+                                </div>
+                                <div id="pmBankPreviewCard" style="margin-top:10px;padding:10px;border:1px solid #d5e2ff;border-radius:10px;background:#ffffff;box-shadow:0 1px 4px rgba(15,23,42,0.04);">
+                                    <p style="margin:0 0 4px;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Bank Transfer Preview</p>
+                                    <p id="pmBankPreviewName" style="margin:0 0 6px;font-size:13px;color:#0d1b4b;font-weight:700;">Bank Name not set</p>
+                                    <p id="pmBankPreviewAccountName" style="margin:0 0 4px;font-size:12px;color:#334155;"><strong>Account Name:</strong> Not set</p>
+                                    <p id="pmBankPreviewAccountNumber" style="margin:0;font-size:12px;color:#334155;"><strong>Account Number:</strong> Not set</p>
                                 </div>
                             </div>
                             <div data-payment-detail="Over-the-Counter" style="border:1px solid #dce7ff;border-radius:10px;padding:10px;background:#f8fbff;display:none;">
@@ -327,6 +357,41 @@
             empty.style.display = 'none';
         }
 
+        function maskBankAccountNumber(value) {
+            var raw = String(value || '').replace(/\s+/g, '');
+            if (!raw) return 'Not set';
+            if (raw.length <= 4) return raw;
+            return raw.slice(0, -4).replace(/./g, '•') + raw.slice(-4);
+        }
+
+        function updateBankTransferPreview() {
+            var bankName = String((document.getElementById('pmBankName') || {}).value || '').trim();
+            var accountName = String((document.getElementById('pmBankAccountName') || {}).value || '').trim();
+            var accountNumber = String((document.getElementById('pmBankAccountNumber') || {}).value || '').trim();
+            var bankNameEl = document.getElementById('pmBankPreviewName');
+            var accountNameEl = document.getElementById('pmBankPreviewAccountName');
+            var accountNumberEl = document.getElementById('pmBankPreviewAccountNumber');
+
+            if (bankNameEl) bankNameEl.textContent = bankName || 'Bank Name not set';
+            if (accountNameEl) accountNameEl.innerHTML = '<strong>Account Name:</strong> ' + escHtml(accountName || 'Not set');
+            if (accountNumberEl) accountNumberEl.innerHTML = '<strong>Account Number:</strong> ' + escHtml(maskBankAccountNumber(accountNumber));
+
+            var quickButtons = document.querySelectorAll('#pmBankQuickPicks [data-bank-name]');
+            quickButtons.forEach(function(btn) {
+                var matched = String(btn.getAttribute('data-bank-name') || '').toLowerCase() === bankName.toLowerCase();
+                btn.style.background = matched ? '#eaf1ff' : '#fff';
+                btn.style.borderColor = matched ? '#9bb8ff' : '#cddcff';
+            });
+        }
+
+        function applyBankQuickPick(bankName) {
+            var bankInput = document.getElementById('pmBankName');
+            if (!bankInput) return;
+            bankInput.value = String(bankName || '').trim();
+            updateBankTransferPreview();
+            bankInput.focus();
+        }
+
         function getCheckedPaymentMethods() {
             var checks = Array.prototype.slice.call(document.querySelectorAll('#paymentMethodsChecklist input[type="checkbox"]:checked'));
             return checks.map(function(input) { return input.value; });
@@ -368,6 +433,7 @@
             if (gcashQrFile) gcashQrFile.value = '';
 
             setGcashQrPreview(normalized.gcash.qr_url || '');
+            updateBankTransferPreview();
         }
 
         function readPaymentDetailsForm() {
@@ -593,6 +659,26 @@
                     reader.readAsDataURL(file);
                 });
             }
+        })();
+
+        (function bindBankTransferPreview() {
+            var bankInput = document.getElementById('pmBankName');
+            var accountNameInput = document.getElementById('pmBankAccountName');
+            var accountNumberInput = document.getElementById('pmBankAccountNumber');
+            var quickButtons = document.querySelectorAll('#pmBankQuickPicks [data-bank-name]');
+
+            [bankInput, accountNameInput, accountNumberInput].forEach(function(input) {
+                if (!input) return;
+                input.addEventListener('input', updateBankTransferPreview);
+            });
+
+            quickButtons.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    applyBankQuickPick(btn.getAttribute('data-bank-name'));
+                });
+            });
+
+            updateBankTransferPreview();
         })();
 
         function paymentStatusBadge(status) {

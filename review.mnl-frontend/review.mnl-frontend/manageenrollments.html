@@ -862,7 +862,25 @@
         }
 
         function showToast(message) {
-            alert(message);
+            try {
+                var id = 'rmnlToast';
+                var existing = document.getElementById(id);
+                if (!existing) {
+                    existing = document.createElement('div');
+                    existing.id = id;
+                    existing.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483000;max-width:360px;padding:10px 14px;border-radius:10px;color:#fff;font-weight:700;background:rgba(13,27,75,0.92);box-shadow:0 12px 30px rgba(2,6,23,0.4);font-family:Poppins,sans-serif;';
+                    document.body.appendChild(existing);
+                }
+                existing.textContent = String(message || '');
+                existing.style.opacity = '1';
+                if (existing.__rmnlToastTimer) clearTimeout(existing.__rmnlToastTimer);
+                existing.__rmnlToastTimer = setTimeout(function() {
+                    try { existing.style.opacity = '0'; } catch (e) {}
+                    try { setTimeout(function(){ if (existing && existing.parentNode) existing.parentNode.removeChild(existing); }, 300); } catch (e) {}
+                }, 4000);
+            } catch (e) {
+                try { alert(message); } catch (err) {}
+            }
         }
 
         function openPaymentModal(enrollment) {
@@ -1060,7 +1078,7 @@
                 await CentersAPI.updateEnrollmentStatus(enrollmentId, status);
                 await loadCenterEnrollments();
             } catch (err) {
-                alert(err.message || 'Failed to update enrollment status.');
+                showToast((err && err.message) ? err.message : 'Failed to update enrollment status.');
             }
         }
 

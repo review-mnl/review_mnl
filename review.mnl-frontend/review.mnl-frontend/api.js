@@ -372,7 +372,9 @@ const PaymentsAPI = {
             ? 'maya'
             : (requestedMethod === 'bank' || requestedMethod === 'bank transfer' || requestedMethod === 'bank_transfer')
                 ? 'bank'
-                : 'gcash';
+                : (requestedMethod === 'over_the_counter' || requestedMethod === 'over-the-counter' || requestedMethod === 'over the counter' || requestedMethod === 'otc')
+                    ? 'over_the_counter'
+                    : 'gcash';
 
         var payerNumber = String(
             (payload && (payload.payer_number || payload.gcash_number || payload.maya_number || payload.bank_account_number)) || ''

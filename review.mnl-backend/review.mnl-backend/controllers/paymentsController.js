@@ -1,7 +1,7 @@
 const db = require('../config/db');
 require('dotenv').config();
 
-// Manual payment enrollment flow for GCash, Maya, and Bank Transfer.
+// Manual payment enrollment flow for GCash, Maya, Bank Transfer, and Over-the-Counter.
 // It stores payment details and marks the transaction as pending for admin verification.
 const createGcashEnrollment = async (req, res) => {
   let conn;
@@ -19,9 +19,25 @@ const createGcashEnrollment = async (req, res) => {
       ? 'maya'
       : (requestedMethod === 'bank' || requestedMethod === 'bank transfer' || requestedMethod === 'bank_transfer')
         ? 'bank'
-        : 'gcash';
+        : (requestedMethod === 'over_the_counter' || requestedMethod === 'over-the-counter' || requestedMethod === 'over the counter' || requestedMethod === 'otc')
+          ? 'over_the_counter'
+          : 'gcash';
 
-    const methodConfig = normalizedMethod === 'maya'
+    const methodConfig = normalizedMethod === 'over_the_counter'
+      ? {
+          provider: 'over_the_counter_manual',
+          label: 'Over-the-Counter',
+          numberLabel: 'payer number',
+          nameLabel: 'payer name',
+          referenceLabel: 'reference number',
+          metadataNameKey: 'payer_name',
+          metadataNumberKey: 'payer_number_masked',
+          requiresReference: false,
+          requiresPayer: false,
+          successMessage: 'Enrollment submitted. Please follow the review center\'s over-the-counter payment instructions.',
+          confirmationMessage: 'Your enrollment request was submitted successfully. Please proceed with over-the-counter payment and wait for center confirmation.',
+        }
+      : normalizedMethod === 'maya'
       ? {
           provider: 'maya_manual',
           label: 'Maya',
@@ -30,6 +46,10 @@ const createGcashEnrollment = async (req, res) => {
           referenceLabel: 'Maya reference number',
           metadataNameKey: 'maya_name',
           metadataNumberKey: 'maya_number_masked',
+          requiresReference: true,
+          requiresPayer: true,
+          successMessage: 'Payment tracking saved. Please wait for the Center Admin to verify your Maya reference number.',
+          confirmationMessage: 'Your enrollment request was submitted successfully. Please wait while the review center verifies your payment.',
         }
       : normalizedMethod === 'bank'
         ? {
@@ -40,6 +60,10 @@ const createGcashEnrollment = async (req, res) => {
             referenceLabel: 'bank transfer reference number',
             metadataNameKey: 'bank_account_name',
             metadataNumberKey: 'bank_account_number_masked',
+            requiresReference: true,
+            requiresPayer: true,
+            successMessage: 'Payment tracking saved. Please wait for the Center Admin to verify your bank transfer reference number.',
+            confirmationMessage: 'Your enrollment request was submitted successfully. Please wait while the review center verifies your payment.',
           }
         : {
             provider: 'gcash_manual',
@@ -49,6 +73,10 @@ const createGcashEnrollment = async (req, res) => {
             referenceLabel: 'GCash reference number',
             metadataNameKey: 'gcash_name',
             metadataNumberKey: 'gcash_number_masked',
+            requiresReference: true,
+            requiresPayer: true,
+            successMessage: 'Payment tracking saved. Please wait for the Center Admin to verify your GCash reference number.',
+            confirmationMessage: 'Your enrollment request was submitted successfully. Please wait while the review center verifies your payment.',
           };
 
     const payerNumber = String(
@@ -83,26 +111,26 @@ const createGcashEnrollment = async (req, res) => {
       hasPaymentProof: Boolean(paymentProofUrl)
     });
 
-    if (!referenceNumber) {
+    if (methodConfig.requiresReference && !referenceNumber) {
       return res.status(400).json({ message: methodConfig.referenceLabel + ' is required.' });
     }
 
-    if (!payerNumber || !payerName) {
+    if (methodConfig.requiresPayer && (!payerNumber || !payerName)) {
       return res.status(400).json({ message: methodConfig.numberLabel + ' and ' + methodConfig.nameLabel + ' are required.' });
     }
 
     // Basic local validation
-    if (normalizedMethod === 'gcash' || normalizedMethod === 'maya') {
+    if (methodConfig.requiresPayer && (normalizedMethod === 'gcash' || normalizedMethod === 'maya')) {
       if (!/^09\d{9}$/.test(payerNumber)) {
         return res.status(400).json({ message: 'Please enter a valid ' + methodConfig.numberLabel + ' (e.g., 09XXXXXXXXX).' });
       }
-    } else {
+    } else if (methodConfig.requiresPayer && normalizedMethod === 'bank') {
       const compactAccountNumber = payerNumber.replace(/\s+/g, '');
       if (compactAccountNumber.length < 6) {
         return res.status(400).json({ message: 'Please enter a valid bank account number.' });
       }
     }
-    if (payerName.length < 2) {
+    if (methodConfig.requiresPayer && payerName.length < 2) {
       return res.status(400).json({ message: 'Please enter a valid account name.' });
     }
     if (amount <= 0) {
@@ -118,13 +146,15 @@ const createGcashEnrollment = async (req, res) => {
     const student = studentRows && studentRows.length ? studentRows[0] : null;
     const studentName = [student && student.first_name, student && student.last_name].filter(Boolean).join(' ').trim() || (student && student.email) || 'Student';
 
-    // Manual references should be unique per provider.
-    const [existingReferenceRows] = await db.query(
-      'SELECT id, status, user_id, center_id FROM payments WHERE provider = ? AND provider_payment_id = ? LIMIT 1',
-      [methodConfig.provider, referenceNumber]
-    );
-    if (existingReferenceRows.length > 0) {
-      return res.status(409).json({ message: 'This ' + methodConfig.referenceLabel + ' has already been submitted. Please check your reference and try again.' });
+    // Manual references should be unique per provider when a reference is used.
+    if (methodConfig.requiresReference && referenceNumber) {
+      const [existingReferenceRows] = await db.query(
+        'SELECT id, status, user_id, center_id FROM payments WHERE provider = ? AND provider_payment_id = ? LIMIT 1',
+        [methodConfig.provider, referenceNumber]
+      );
+      if (existingReferenceRows.length > 0) {
+        return res.status(409).json({ message: 'This ' + methodConfig.referenceLabel + ' has already been submitted. Please check your reference and try again.' });
+      }
     }
 
     const compactPayerNumber = payerNumber.replace(/\s+/g, '');
@@ -134,7 +164,28 @@ const createGcashEnrollment = async (req, res) => {
     
     // Status is 'pending' because the admin needs to verify the reference number manually
     const status = 'pending';
-    const providerPaymentId = referenceNumber;
+    const providerPaymentId = methodConfig.requiresReference ? referenceNumber : null;
+
+    const paymentMetadata = {
+      enrollment_id: null,
+      student_id: userId,
+      student_name: studentName,
+      review_center_id: centerId,
+      review_center_name: center.business_name,
+      payment_method: methodConfig.label,
+      payer_number_masked: maskedNumber || null,
+      payer_name: payerName || null,
+      reference_number: referenceNumber || null,
+      payment_proof_url: paymentProofUrl || null,
+      program_enrolled: programEnrolled,
+      enrollment_date: enrollmentDate,
+      payment_status: 'pending',
+      enrollment_status: 'pending',
+      manual_verification_required: true,
+    };
+
+    if (methodConfig.metadataNumberKey) paymentMetadata[methodConfig.metadataNumberKey] = maskedNumber || null;
+    if (methodConfig.metadataNameKey) paymentMetadata[methodConfig.metadataNameKey] = payerName || null;
 
     conn = await db.getConnection();
     await conn.beginTransaction();
@@ -150,25 +201,7 @@ const createGcashEnrollment = async (req, res) => {
         amount,
         'PHP',
         status,
-        JSON.stringify({
-          enrollment_id: null,
-          student_id: userId,
-          student_name: studentName,
-          review_center_id: centerId,
-          review_center_name: center.business_name,
-          payment_method: methodConfig.label,
-          payer_number_masked: maskedNumber,
-          payer_name: payerName,
-          [methodConfig.metadataNumberKey]: maskedNumber,
-          [methodConfig.metadataNameKey]: payerName,
-          reference_number: referenceNumber,
-          payment_proof_url: paymentProofUrl || null,
-          program_enrolled: programEnrolled,
-          enrollment_date: enrollmentDate,
-          payment_status: 'pending',
-          enrollment_status: 'pending',
-          manual_verification_required: true,
-        }),
+        JSON.stringify(paymentMetadata),
       ]
     );
     const paymentId = result.insertId;
@@ -185,7 +218,7 @@ const createGcashEnrollment = async (req, res) => {
       [enrollmentId, new Date().toISOString(), paymentId]
     );
 
-    const enrollmentConfirmationMessage = 'Your enrollment request was submitted successfully. Please wait while the review center verifies your payment.';
+    const enrollmentConfirmationMessage = methodConfig.confirmationMessage;
     await conn.query(
       `INSERT INTO chat_messages (student_id, center_id, enrollment_id, sender_id, receiver_id, message, is_read)
        VALUES (?, ?, ?, ?, ?, ?, 0)`,
@@ -202,7 +235,7 @@ const createGcashEnrollment = async (req, res) => {
       transactionStatus: status,
       paymentMethod: methodConfig.label,
       programEnrolled,
-      referenceNumber,
+      referenceNumber: referenceNumber || null,
     });
 
     await conn.commit();
@@ -228,7 +261,7 @@ const createGcashEnrollment = async (req, res) => {
       amount,
       payment_method: methodConfig.label + ' Manual',
       transaction_status: status,
-      message: 'Payment tracking saved. Please wait for the Center Admin to verify your ' + methodConfig.referenceLabel + '.',
+      message: methodConfig.successMessage,
     });
   } catch (err) {
     if (err && err.code === 'ER_DUP_ENTRY') {

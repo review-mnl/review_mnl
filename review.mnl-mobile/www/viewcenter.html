@@ -406,6 +406,13 @@
                                 <span>Bank Transfer</span>
                                 <span id="schPayBankBadge" style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
                             </label>
+
+                            <label class="sch-pay-option" id="schPayOtcOption" for="schPayOtc" style="display:none;">
+                                <input type="radio" id="schPayOtc" name="schPayMethod" value="over_the_counter">
+                                <span class="material-symbols-outlined" style="font-size:18px;color:#0a4cff;">storefront</span>
+                                <span>Over-the-Counter</span>
+                                <span id="schPayOtcBadge" style="margin-left:auto;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-weight:600;">Available</span>
+                            </label>
                         </div>
 
                         <div id="schGcashDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
@@ -452,6 +459,12 @@
                                 </div>
                                 <p id="schBankQrHint" style="margin:0;max-width:280px;font-size:11px;line-height:1.5;color:#64748b;">Scan the QR in your bank app or transfer manually using the account details above.</p>
                             </div>
+                        </div>
+
+                        <div id="schOtcDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+                            <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0d1b4b;">Pay via Over-the-Counter</h4>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">Please follow the review center's instructions for over-the-counter payment.</p>
+                            <p id="schOtcInstructions" style="margin:0;font-size:12px;line-height:1.6;color:#475569;">Pay directly at the center and coordinate with the center staff for payment confirmation.</p>
                         </div>
 
                         <div id="schGcashSubmissionFields" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
@@ -642,6 +655,7 @@
             gcash: { account_name: '', number: '', qr_url: '' },
             maya: { account_name: '', number: '', qr_url: '' },
             bank_transfer: { bank_name: '', account_name: '', account_number: '', qr_url: '' },
+            over_the_counter: { instructions: '' },
         };
 
         function canonicalizeCenterPaymentMethod(value) {
@@ -678,6 +692,7 @@
             var gcash = details.gcash && typeof details.gcash === 'object' ? details.gcash : {};
             var maya = details.maya && typeof details.maya === 'object' ? details.maya : {};
             var bank = details.bank_transfer && typeof details.bank_transfer === 'object' ? details.bank_transfer : {};
+            var otc = details.over_the_counter && typeof details.over_the_counter === 'object' ? details.over_the_counter : {};
             var preferredMethod = canonicalizeCenterPaymentMethod(String(details.preferred_method || '').trim()) || 'GCash';
             return {
                 preferred_method: preferredMethod,
@@ -697,19 +712,24 @@
                     account_number: String(bank.account_number || '').trim(),
                     qr_url: String(bank.qr_url || '').trim(),
                 },
+                over_the_counter: {
+                    instructions: String(otc.instructions || '').trim(),
+                },
             };
         }
 
-        function getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled) {
+        function getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled, otcEnabled) {
             var preferred = canonicalizeCenterPaymentMethod(((_centerPaymentDetails || {}).preferred_method) || '');
 
             if (preferred === 'GCash' && gcashEnabled) return 'gcash';
             if (preferred === 'Maya' && mayaEnabled) return 'maya';
             if (preferred === 'Bank Transfer' && bankEnabled) return 'bank';
+            if (preferred === 'Over-the-Counter' && otcEnabled) return 'over_the_counter';
 
             if (gcashEnabled) return 'gcash';
             if (mayaEnabled) return 'maya';
             if (bankEnabled) return 'bank';
+            if (otcEnabled) return 'over_the_counter';
             return 'gcash';
         }
 
@@ -790,10 +810,12 @@
             var gcash = _centerPaymentDetails.gcash || {};
             var maya = _centerPaymentDetails.maya || {};
             var bank = _centerPaymentDetails.bank_transfer || {};
+            var otc = _centerPaymentDetails.over_the_counter || {};
 
             var gcashEnabled = centerHasPaymentMethod('GCash');
             var mayaEnabled = centerHasPaymentMethod('Maya');
             var bankEnabled = centerHasPaymentMethod('Bank Transfer');
+            var otcEnabled = centerHasPaymentMethod('Over-the-Counter');
 
             var gcashAccountName = gcash.account_name || String(centerName || 'Not provided');
             var gcashNumber = gcash.number || 'Not provided';
@@ -807,16 +829,20 @@
             var bankAccountName = bank.account_name || 'Not provided';
             var bankAccountNumber = bank.account_number || 'Not provided';
             var bankQrUrl = resolveCenterAssetUrl(bank.qr_url || '');
+            var otcInstructions = String(otc.instructions || '').trim() || 'Pay directly at the center and coordinate with the center staff for payment confirmation.';
 
             var gcashOption = document.getElementById('schPayGcashOption');
             var mayaOption = document.getElementById('schPayMayaOption');
             var bankOption = document.getElementById('schPayBankOption');
+            var otcOption = document.getElementById('schPayOtcOption');
             var gcashBadge = document.getElementById('schPayGcashBadge');
             var mayaBadge = document.getElementById('schPayMayaBadge');
             var bankBadge = document.getElementById('schPayBankBadge');
+            var otcBadge = document.getElementById('schPayOtcBadge');
             var gcashRadio = document.getElementById('schPayGcash');
             var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
+            var otcRadio = document.getElementById('schPayOtc');
 
             var gcashAccountNameEl = document.getElementById('schGcashDisplayName');
             var gcashNumberEl = document.getElementById('schGcashDisplayNumber');
@@ -825,6 +851,7 @@
             var bankNameEl = document.getElementById('schBankDisplayName');
             var bankAccountNameEl = document.getElementById('schBankDisplayAccountName');
             var bankAccountNumberEl = document.getElementById('schBankDisplayAccountNumber');
+            var otcInstructionsEl = document.getElementById('schOtcInstructions');
 
             if (gcashAccountNameEl) gcashAccountNameEl.textContent = gcashAccountName;
             if (gcashNumberEl) gcashNumberEl.textContent = gcashNumber;
@@ -833,6 +860,7 @@
             if (bankNameEl) bankNameEl.textContent = bankName;
             if (bankAccountNameEl) bankAccountNameEl.textContent = bankAccountName;
             if (bankAccountNumberEl) bankAccountNumberEl.textContent = bankAccountNumber;
+            if (otcInstructionsEl) otcInstructionsEl.textContent = otcInstructions;
 
             setPaymentQrDisplay(
                 'schGcashQrImage',
@@ -867,6 +895,7 @@
             if (gcashOption) gcashOption.style.display = gcashEnabled ? 'flex' : 'none';
             if (mayaOption) mayaOption.style.display = mayaEnabled ? 'flex' : 'none';
             if (bankOption) bankOption.style.display = bankEnabled ? 'flex' : 'none';
+            if (otcOption) otcOption.style.display = otcEnabled ? 'flex' : 'none';
             if (gcashBadge) {
                 gcashBadge.textContent = gcashEnabled ? 'Available' : 'Unavailable';
                 gcashBadge.style.background = gcashEnabled ? '#e8f5e9' : '#f1f5f9';
@@ -882,12 +911,18 @@
                 bankBadge.style.background = bankEnabled ? '#e8f5e9' : '#f1f5f9';
                 bankBadge.style.color = bankEnabled ? '#2e7d32' : '#475569';
             }
+            if (otcBadge) {
+                otcBadge.textContent = otcEnabled ? 'Available' : 'Unavailable';
+                otcBadge.style.background = otcEnabled ? '#e8f5e9' : '#f1f5f9';
+                otcBadge.style.color = otcEnabled ? '#2e7d32' : '#475569';
+            }
 
-            if (gcashRadio && mayaRadio && bankRadio) {
-                var selectedMethod = getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled);
+            if (gcashRadio && mayaRadio && bankRadio && otcRadio) {
+                var selectedMethod = getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled, otcEnabled);
                 gcashRadio.checked = selectedMethod === 'gcash';
                 mayaRadio.checked = selectedMethod === 'maya';
                 bankRadio.checked = selectedMethod === 'bank';
+                otcRadio.checked = selectedMethod === 'over_the_counter';
             }
 
             updatePaymentMethodUI();
@@ -903,15 +938,22 @@
             var gcashRadio = document.getElementById('schPayGcash');
             var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
+            var otcRadio = document.getElementById('schPayOtc');
             var gcashEnabled = centerHasPaymentMethod('GCash');
             var mayaEnabled = centerHasPaymentMethod('Maya');
             var bankEnabled = centerHasPaymentMethod('Bank Transfer');
-            var selectedMethod = getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled);
-            _schPaymentMethod = selectedMethod === 'maya' ? 'Maya' : (selectedMethod === 'bank' ? 'Bank Transfer' : 'GCash');
-            if (gcashRadio && mayaRadio && bankRadio) {
+            var otcEnabled = centerHasPaymentMethod('Over-the-Counter');
+            var selectedMethod = getPreferredStudentPaymentMethod(gcashEnabled, mayaEnabled, bankEnabled, otcEnabled);
+            _schPaymentMethod = selectedMethod === 'maya'
+                ? 'Maya'
+                : (selectedMethod === 'bank'
+                    ? 'Bank Transfer'
+                    : (selectedMethod === 'over_the_counter' ? 'Over-the-Counter' : 'GCash'));
+            if (gcashRadio && mayaRadio && bankRadio && otcRadio) {
                 gcashRadio.checked = selectedMethod === 'gcash';
                 mayaRadio.checked = selectedMethod === 'maya';
                 bankRadio.checked = selectedMethod === 'bank';
+                otcRadio.checked = selectedMethod === 'over_the_counter';
             }
             renderSchCal();
             schSetStep(1);
@@ -1028,6 +1070,22 @@
 
         function getSelectedPaymentMethodInfo() {
             var method = getSelectedPaymentMethod();
+            if (method === 'over_the_counter') {
+                return {
+                    key: 'over_the_counter',
+                    displayName: 'Over-the-Counter',
+                    numberLabel: 'Payer Number',
+                    nameLabel: 'Payer Name',
+                    referenceLabel: 'Reference Number',
+                    numberPlaceholder: 'Optional',
+                    namePlaceholder: 'Optional',
+                    referenceHint: 'Follow the review center instructions for over-the-counter payment.',
+                    helperMessage: 'Over-the-Counter selected. Submit enrollment and settle payment directly at the center.',
+                    requiresPayer: false,
+                    requiresReference: false,
+                    requiresProof: false,
+                };
+            }
             if (method === 'maya') {
                 return {
                     key: 'maya',
@@ -1039,6 +1097,9 @@
                     namePlaceholder: 'Juan Dela Cruz',
                     referenceHint: 'Transfer the amount to the center\'s Maya account and input the reference number here.',
                     helperMessage: 'Maya payment selected. Upload your proof and submit for review center verification.',
+                    requiresPayer: true,
+                    requiresReference: true,
+                    requiresProof: true,
                 };
             }
             if (method === 'bank') {
@@ -1052,6 +1113,9 @@
                     namePlaceholder: 'Juan Dela Cruz',
                     referenceHint: 'Use the transfer reference from your bank app and upload proof of payment.',
                     helperMessage: 'Bank transfer selected. Upload your proof and submit for review center verification.',
+                    requiresPayer: true,
+                    requiresReference: true,
+                    requiresProof: true,
                 };
             }
             return {
@@ -1064,6 +1128,9 @@
                 namePlaceholder: 'Juan Dela Cruz',
                 referenceHint: 'Transfer the amount to the center\'s GCash and input the reference number here.',
                 helperMessage: 'GCash selected. Upload your proof and submit for review center verification.',
+                requiresPayer: true,
+                requiresReference: true,
+                requiresProof: true,
             };
         }
 
@@ -1130,27 +1197,31 @@
             var refError = '';
             var proofError = '';
 
-            if (!payerNumber) {
-                numberError = 'This field is required';
-            } else if (methodInfo.key === 'bank') {
-                if (!/^[0-9\- ]{6,30}$/.test(payerNumber)) {
-                    numberError = 'Please enter a valid account number';
+            if (methodInfo.requiresPayer) {
+                if (!payerNumber) {
+                    numberError = 'This field is required';
+                } else if (methodInfo.key === 'bank') {
+                    if (!/^[0-9\- ]{6,30}$/.test(payerNumber)) {
+                        numberError = 'Please enter a valid account number';
+                    }
+                } else if (!/^09\d{9}$/.test(payerNumber)) {
+                    numberError = 'Please enter a valid ' + methodInfo.displayName + ' number (09XXXXXXXXX)';
                 }
-            } else if (!/^09\d{9}$/.test(payerNumber)) {
-                numberError = 'Please enter a valid ' + methodInfo.displayName + ' number (09XXXXXXXXX)';
+                if (!payerName) nameError = 'This field is required';
             }
 
-            if (!payerName) nameError = 'This field is required';
-            if (!referenceNumber) refError = 'This field is required';
+            if (methodInfo.requiresReference && !referenceNumber) refError = 'This field is required';
 
-            if (!paymentProofFile) {
-                proofError = 'Please upload proof of payment';
-            } else {
-                var fileType = String(paymentProofFile.type || '').toLowerCase();
-                var validMime = fileType === 'image/jpeg' || fileType === 'image/png';
-                var validExt = /\.(jpg|jpeg|png)$/i.test(String(paymentProofFile.name || ''));
-                if (!validMime && !validExt) {
-                    proofError = 'Only JPG and PNG files are accepted';
+            if (methodInfo.requiresProof) {
+                if (!paymentProofFile) {
+                    proofError = 'Please upload proof of payment';
+                } else {
+                    var fileType = String(paymentProofFile.type || '').toLowerCase();
+                    var validMime = fileType === 'image/jpeg' || fileType === 'image/png';
+                    var validExt = /\.(jpg|jpeg|png)$/i.test(String(paymentProofFile.name || ''));
+                    if (!validMime && !validExt) {
+                        proofError = 'Only JPG and PNG files are accepted';
+                    }
                 }
             }
 
@@ -1165,7 +1236,7 @@
                 payerNumber: payerNumber,
                 payerName: payerName,
                 referenceNumber: referenceNumber,
-                paymentProofFile: paymentProofFile,
+                paymentProofFile: methodInfo.requiresProof ? paymentProofFile : null,
                 primaryError: proofError || numberError || nameError || refError || 'Please complete all required fields before proceeding.'
             };
         }
@@ -1174,13 +1245,16 @@
             var gcashRadio = document.getElementById('schPayGcash');
             var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
+            var otcRadio = document.getElementById('schPayOtc');
             var gcashOption = document.getElementById('schPayGcashOption');
             var mayaOption = document.getElementById('schPayMayaOption');
             var bankOption = document.getElementById('schPayBankOption');
+            var otcOption = document.getElementById('schPayOtcOption');
             var proceedBtn = document.getElementById('proceed-btn') || document.getElementById('proceedPaymentBtn');
             var gcashDetailsCard = document.getElementById('schGcashDetailsCard');
             var mayaDetailsCard = document.getElementById('schMayaDetailsCard');
             var bankDetailsCard = document.getElementById('schBankDetailsCard');
+            var otcDetailsCard = document.getElementById('schOtcDetailsCard');
             var gcashFields = document.getElementById('schGcashSubmissionFields');
             var numberLabel = document.getElementById('schPaymentNumberLabel');
             var nameLabel = document.getElementById('schPaymentNameLabel');
@@ -1190,20 +1264,31 @@
             var nameInput = document.getElementById('schGcashName');
             var selectedMethod = getSelectedPaymentMethod();
             var methodInfo = getSelectedPaymentMethodInfo();
+            var requiresSubmissionFields = !!(methodInfo.requiresPayer || methodInfo.requiresReference || methodInfo.requiresProof);
 
             if (gcashOption) gcashOption.classList.toggle('sch-pay-selected', !!(gcashRadio && gcashRadio.checked));
             if (mayaOption) mayaOption.classList.toggle('sch-pay-selected', !!(mayaRadio && mayaRadio.checked));
             if (bankOption) bankOption.classList.toggle('sch-pay-selected', !!(bankRadio && bankRadio.checked));
+            if (otcOption) otcOption.classList.toggle('sch-pay-selected', !!(otcRadio && otcRadio.checked));
             if (gcashDetailsCard) gcashDetailsCard.style.display = selectedMethod === 'gcash' ? 'block' : 'none';
             if (mayaDetailsCard) mayaDetailsCard.style.display = selectedMethod === 'maya' ? 'block' : 'none';
             if (bankDetailsCard) bankDetailsCard.style.display = selectedMethod === 'bank' ? 'block' : 'none';
-            if (gcashFields) gcashFields.style.display = 'flex';
-            if (numberLabel) numberLabel.innerHTML = methodInfo.numberLabel + ' <span class="req">*</span>';
-            if (nameLabel) nameLabel.innerHTML = methodInfo.nameLabel + ' <span class="req">*</span>';
-            if (referenceLabel) referenceLabel.innerHTML = methodInfo.referenceLabel + ' <span class="req">*</span>';
+            if (otcDetailsCard) otcDetailsCard.style.display = selectedMethod === 'over_the_counter' ? 'block' : 'none';
+            if (gcashFields) gcashFields.style.display = requiresSubmissionFields ? 'flex' : 'none';
+            if (numberLabel) numberLabel.innerHTML = methodInfo.numberLabel + (methodInfo.requiresPayer ? ' <span class="req">*</span>' : '');
+            if (nameLabel) nameLabel.innerHTML = methodInfo.nameLabel + (methodInfo.requiresPayer ? ' <span class="req">*</span>' : '');
+            if (referenceLabel) referenceLabel.innerHTML = methodInfo.referenceLabel + (methodInfo.requiresReference ? ' <span class="req">*</span>' : '');
             if (referenceHint) referenceHint.textContent = methodInfo.referenceHint;
             if (numberInput) numberInput.placeholder = methodInfo.numberPlaceholder;
             if (nameInput) nameInput.placeholder = methodInfo.namePlaceholder;
+
+            if (!requiresSubmissionFields) {
+                setFieldError('schGcashNumber', 'schGcashNumberError', '', false);
+                setFieldError('schGcashName', 'schGcashNameError', '', false);
+                setFieldError('schReferenceNumber', 'schReferenceNumberError', '', false);
+                setFieldError('schPaymentProof', 'schPaymentProofError', '', false);
+            }
+
             _schPaymentMethod = methodInfo.displayName;
             showMethodInfoMessage(methodInfo.helperMessage);
             if (proceedBtn) proceedBtn.textContent = 'Proceed Payment';
@@ -1243,9 +1328,11 @@
             var gcashRadio = document.getElementById('schPayGcash');
             var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
+            var otcRadio = document.getElementById('schPayOtc');
             if (gcashRadio) gcashRadio.addEventListener('change', updatePaymentMethodUI);
             if (mayaRadio) mayaRadio.addEventListener('change', updatePaymentMethodUI);
             if (bankRadio) bankRadio.addEventListener('change', updatePaymentMethodUI);
+            if (otcRadio) otcRadio.addEventListener('change', updatePaymentMethodUI);
 
             var gcashNumberInput = document.getElementById('schGcashNumber');
             var gcashNameInput = document.getElementById('schGcashName');

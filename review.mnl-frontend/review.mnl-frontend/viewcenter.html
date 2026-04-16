@@ -143,8 +143,8 @@
                 </div> <!-- Closing achievements card -->
 
                 <section class="testimonials-section" style="padding:20px 22px;box-sizing:border-box;flex:1 1 320px;min-width:280px;">
-                    <h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews / Testimonials</h2>
-                    <button id="writeFeedbackBtn" style="display:none;padding:10px 18px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">Write Feedback / Testimonial</button>
+                    <h2 style="color:#0d1b4b;margin-bottom:20px;">Reviews</h2>
+                    <button id="writeFeedbackBtn" style="display:none;padding:10px 18px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">Write Review</button>
                     <div id="testimonialFormWrap" style="display:none;margin:0 auto 16px;background:#f0f4ff;border-radius:12px;padding:16px;width:100%;box-sizing:border-box;">
                         <p id="testiError" style="display:none;color:#d32f2f;font-size:12px;margin-bottom:8px;"></p>
                         <p id="testiSuccess" style="display:none;color:#2e7d32;font-size:12px;margin-bottom:8px;"></p>
@@ -156,8 +156,8 @@
                             <option value="2">2 - Poor</option>
                             <option value="1">1 - Very Poor</option>
                         </select>
-                        <textarea id="testiContent" rows="4" placeholder="Write your feedback..." style="width:100%;height:170px;min-height:170px;max-height:170px;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;box-sizing:border-box;resize:none;overflow-y:auto;margin-bottom:10px;"></textarea>
-                        <button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Feedback</button>
+                        <textarea id="testiContent" rows="4" placeholder="Write your review..." style="width:100%;height:170px;min-height:170px;max-height:170px;padding:8px 10px;border:1.5px solid #c0cef0;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;box-sizing:border-box;resize:none;overflow-y:auto;margin-bottom:10px;"></textarea>
+                        <button id="testiSubmitBtn" style="padding:9px 24px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Submit Review</button>
                     </div>
                     <div id="testimonialsList"></div>
                 </section>
@@ -1731,7 +1731,7 @@
                             okEl.style.display = 'none';
 
                             if (!content || !rating) {
-                                errEl.textContent = 'Rating and feedback are required.';
+                                errEl.textContent = 'Rating and review are required.';
                                 errEl.style.display = 'block';
                                 return;
                             }
@@ -1740,7 +1740,7 @@
                             submitBtn.textContent = 'Submitting...';
                             try {
                                 const resp = await CentersAPI.postTestimonial(centerId, content, parseInt(rating, 10));
-                                okEl.textContent = (resp && resp.message) ? resp.message : 'Feedback submitted successfully.';
+                                okEl.textContent = (resp && resp.message) ? resp.message : 'Review submitted successfully.';
                                 okEl.style.display = 'block';
 
                                 document.getElementById('testiContent').value = '';
@@ -1760,11 +1760,11 @@
                                     created_at: new Date().toISOString(),
                                 }, true);
                             } catch (err) {
-                                errEl.textContent = err.message || 'Failed to submit feedback.';
+                                errEl.textContent = err.message || 'Failed to submit review.';
                                 errEl.style.display = 'block';
                             } finally {
                                 submitBtn.disabled = false;
-                                submitBtn.textContent = 'Submit Feedback';
+                                submitBtn.textContent = 'Submit Review';
                             }
                         });
                     }

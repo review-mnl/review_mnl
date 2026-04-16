@@ -1,3 +1,18 @@
+(function highlightActiveNav() {
+    try {
+        var path = window.location.pathname.split('/').pop() || 'index.html';
+        var navs = document.querySelectorAll('.nav-links ul li a');
+        navs.forEach(function(link) {
+            var href = link.getAttribute('href');
+            if (!href) return;
+            // Only compare filename (ignore query/hash)
+            var hrefFile = href.split('?')[0].split('#')[0];
+            if (hrefFile === path) {
+                link.classList.add('active-nav');
+            }
+        });
+    } catch(e) {}
+})();
 // review.mnl — shared API helper
 // All fetch calls go through here so only one place needs updating for the base URL.
 

@@ -660,7 +660,7 @@ function initGlobalNotificationBell(options) {
         profileWrapper.style.alignItems = 'center';
         profileWrapper.style.gap = '8px';
         profileWrapper.style.zIndex = '12000';
-        profileWrapper.insertBefore(wrapper, profileWrapper.firstChild);
+        profileWrapper.parentNode.insertBefore(wrapper, profileWrapper);
 
         var btn = wrapper.querySelector('.rmnl-global-bell-btn');
         var badge = wrapper.querySelector('.rmnl-global-bell-badge');

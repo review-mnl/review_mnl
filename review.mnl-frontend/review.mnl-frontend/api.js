@@ -1353,15 +1353,13 @@ function initStudentMessageSlider(options) {
             let updatedConversation = { ...conversation };
             try {
                 if (conversation.other_user_id) {
-                    const res = await fetch(API_BASE + '/api/users/' + conversation.other_user_id, {
-                        credentials: 'include',
-                    });
+                    const res = await fetch(API_BASE + '/api/users/' + conversation.other_user_id + '/public');
                     if (res.ok) {
                         const userData = await res.json();
-                        // Update avatar/profile fields if available
-                        updatedConversation.other_avatar_url = userData.avatar_url || userData.profile_picture_url || userData.photo_url || userData.avatar || '';
-                        updatedConversation.other_profile_picture_url = userData.profile_picture_url || userData.avatar_url || userData.photo_url || userData.avatar || '';
-                        updatedConversation.other_name = userData.name || userData.full_name || conversation.other_name;
+                        const user = userData.user || {};
+                        updatedConversation.other_avatar_url = user.profile_picture_url || '';
+                        updatedConversation.other_profile_picture_url = user.profile_picture_url || '';
+                        updatedConversation.other_name = (user.first_name && user.last_name) ? (user.first_name + ' ' + user.last_name) : conversation.other_name;
                     }
                 }
             } catch (e) {

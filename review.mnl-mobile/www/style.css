@@ -3980,3 +3980,113 @@ nav img{
         font-size: 20px;
     }
 }
+
+/* ---------------------------------------------------------------------------
+   Responsive sizing pack (any screen size)
+   - Fluid nav spacing/type via clamp()
+   - Scrollable nav links on small screens
+   - Prevents horizontal overflow on small screens
+   - Makes View Center map fit and scale
+--------------------------------------------------------------------------- */
+
+/* Foundation (all pages / all sizes) */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+video,
+iframe {
+    max-width: 100%;
+}
+
+/* Fluid nav sizing (keeps desktop intact but scales down smoothly) */
+nav {
+    padding: clamp(10px, 2vw, 18px) clamp(12px, 4vw, 60px);
+}
+
+.nav-links ul {
+    gap: clamp(8px, 1.6vw, 18px);
+}
+
+.nav-links ul li a {
+    font-size: clamp(11.5px, 1.2vw, 14px);
+    padding: clamp(7px, 0.9vw, 10px) clamp(10px, 1.8vw, 18px);
+    transform: none;
+}
+
+.register-btn {
+    font-size: clamp(11.5px, 1.2vw, 14px);
+    padding: clamp(7px, 0.9vw, 10px) clamp(12px, 2vw, 18px);
+}
+
+/* Small screens: avoid overflow + keep nav usable */
+@media (max-width: 900px) {
+    html, body { overflow-x: hidden; }
+
+    #headerMapContainer {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: clamp(180px, 30vh, 260px) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        width: 100%;
+        flex: 1 1 100%;
+        order: 3;
+        min-width: 0;
+    }
+
+    .nav-links ul {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start;
+        padding: 4px 0 2px;
+    }
+
+    .nav-links ul::-webkit-scrollbar { display: none; }
+
+    .header .search-form { width: 100%; }
+}
+
+@media (max-width: 560px) {
+    nav {
+        padding: 12px 12px;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .nav-links ul {
+        gap: 8px;
+    }
+
+    .nav-links ul li { padding: 0; }
+
+    .nav-links ul li a {
+        padding: 8px 12px;
+        font-size: 12px;
+        white-space: nowrap;
+        border-radius: 999px;
+    }
+
+    .profile-icon .material-symbols-outlined {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header { min-height: 60vh; }
+
+    .nav-links ul li a {
+        padding: 7px 10px;
+        font-size: 11.5px;
+    }
+
+    #headerMapContainer {
+        height: 180px !important;
+    }
+}

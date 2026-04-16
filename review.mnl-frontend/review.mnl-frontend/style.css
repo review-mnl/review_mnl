@@ -4106,34 +4106,27 @@ nav {
     /* Keep header balanced: logo left, icons right, menu on next row */
     nav { align-items: center; }
 
-    nav .top-logo { order: 1; }
+    /* Push everything after the logo to the right */
+    nav .top-logo { order: 1; margin-right: auto; }
 
+    /* Force consistent icon order: bell then profile (matches My Profile) */
     nav .notification-wrapper,
-    nav .rmnl-global-bell,
-    nav .profile-wrapper,
-    nav .register-btn {
+    nav .rmnl-global-bell {
         order: 2;
     }
 
-    /* Push icon group to the right (handles pages with/without a bell). */
-    nav .notification-wrapper { margin-left: auto; }
-    nav .rmnl-global-bell { margin-left: auto; }
-    nav .profile-wrapper { margin-left: auto; }
-    nav .register-btn { margin-left: auto; }
+    nav .profile-wrapper {
+        order: 3;
+    }
 
-    nav .notification-wrapper + .rmnl-global-bell,
-    nav .notification-wrapper + .profile-wrapper,
-    nav .notification-wrapper + .register-btn,
-    nav .rmnl-global-bell + .profile-wrapper,
-    nav .rmnl-global-bell + .register-btn,
-    nav .profile-wrapper + .register-btn {
-        margin-left: 0;
+    nav .register-btn {
+        order: 4;
     }
 
     .nav-links {
         width: 100%;
         flex: 1 1 100%;
-        order: 3;
+        order: 10;
         min-width: 0;
         text-align: center;
     }

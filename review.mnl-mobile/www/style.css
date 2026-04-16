@@ -2294,6 +2294,9 @@ nav img{
     color: #0a4cff;
     font-size: 14px;
     line-height: 1.5;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .testimonials-section {
@@ -3644,6 +3647,9 @@ nav img{
 
 .center-right.flex-column .achievement-item p {
     font-size: 12px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .center-right.flex-column .testimonial-card {
@@ -3772,6 +3778,9 @@ nav img{
 
 .center-right.flex-column .achievement-item p {
     font-size: 13px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .center-right.flex-column .testimonial-card {
@@ -4045,10 +4054,27 @@ nav {
     nav { align-items: center; }
 
     nav .top-logo { order: 1; }
+
+    nav .notification-wrapper,
+    nav .rmnl-global-bell,
     nav .profile-wrapper,
     nav .register-btn {
         order: 2;
-        margin-left: auto;
+    }
+
+    /* Push icon group to the right (handles pages with/without a bell). */
+    nav .notification-wrapper { margin-left: auto; }
+    nav .rmnl-global-bell { margin-left: auto; }
+    nav .profile-wrapper { margin-left: auto; }
+    nav .register-btn { margin-left: auto; }
+
+    nav .notification-wrapper + .rmnl-global-bell,
+    nav .notification-wrapper + .profile-wrapper,
+    nav .notification-wrapper + .register-btn,
+    nav .rmnl-global-bell + .profile-wrapper,
+    nav .rmnl-global-bell + .register-btn,
+    nav .profile-wrapper + .register-btn {
+        margin-left: 0;
     }
 
     .nav-links {

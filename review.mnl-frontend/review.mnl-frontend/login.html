@@ -232,6 +232,22 @@
                 background: #f0f5ff;
             }
 
+            /* Google brand colors for the Font Awesome "G" icon */
+            .social-btn .fa-google { color: #4285F4; } /* fallback */
+            .social-btn .fa-google::before {
+                display: inline-block;
+                background: conic-gradient(
+                    #4285F4 0 25%,
+                    #34A853 25% 50%,
+                    #FBBC05 50% 75%,
+                    #EA4335 75% 100%
+                );
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                -webkit-text-fill-color: transparent;
+            }
+
             .signup-link {
                 text-align: center;
                 color: #666;

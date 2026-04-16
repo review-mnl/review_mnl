@@ -105,17 +105,51 @@ function saveSession(data, rememberMe) {
 
 function clearSession(removeStoredSession) {
     try {
+        var active = null;
+        try {
+            active = sessionStorage.getItem('rmnl_active_session') || localStorage.getItem('rmnl_active_session');
+        } catch (e) {
+            active = null;
+        }
+
         // remove active session id from this tab
-        var active = sessionStorage.getItem('rmnl_active_session') || localStorage.getItem('rmnl_active_session');
-        if (active) {
-            sessionStorage.removeItem('rmnl_active_session');
-            localStorage.removeItem('rmnl_active_session');
+        try { sessionStorage.removeItem('rmnl_active_session'); } catch (e) {}
+        try { localStorage.removeItem('rmnl_active_session'); } catch (e) {}
+
+        // always clear legacy token used by some pages for SSE
+        try { localStorage.removeItem('token'); } catch (e) {}
+        try { sessionStorage.removeItem('token'); } catch (e) {}
+
+        // optionally remove stored session objects & message caches
+        if (removeStoredSession) {
+            if (active) {
+                try { localStorage.removeItem('rmnl_session_' + active); } catch (e) {}
+            }
+
+            try {
+                for (var i = (localStorage && localStorage.length ? localStorage.length - 1 : -1); i >= 0; i--) {
+                    var k = null;
+                    try { k = localStorage.key(i); } catch (e) { k = null; }
+                    if (!k) continue;
+
+                    if (k.indexOf('rmnl_session_') === 0) {
+                        try { localStorage.removeItem(k); } catch (e) {}
+                        continue;
+                    }
+
+                    if (k.indexOf('rmnl_message_sync_') === 0) {
+                        try { localStorage.removeItem(k); } catch (e) {}
+                        continue;
+                    }
+
+                    if (k.indexOf('rmnl_conversations_cache_') === 0) {
+                        try { localStorage.removeItem(k); } catch (e) {}
+                        continue;
+                    }
+                }
+            } catch (e) {}
         }
-        // optionally remove the stored persistent session object
-        if (removeStoredSession && active) {
-            try { localStorage.removeItem('rmnl_session_' + active); } catch(e) {}
-        }
-    } catch(e) {}
+    } catch (e) {}
 }
 
 (function bindGlobalLogoutHandlers() {

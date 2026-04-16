@@ -1,5 +1,16 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const path = require('path');
+
+const getUploadedFileUrl = (fileObj) => {
+  if (!fileObj) return null;
+  if (fileObj.secure_url) return String(fileObj.secure_url);
+  if (fileObj.url && /^https?:\/\//i.test(String(fileObj.url))) return String(fileObj.url);
+  if (fileObj.path && /^https?:\/\//i.test(String(fileObj.path))) return String(fileObj.path);
+  if (fileObj.filename) return '/uploads/' + String(fileObj.filename);
+  if (fileObj.path) return '/uploads/' + path.basename(String(fileObj.path));
+  return null;
+};
 
 const toReviewStatus = (reviewStatus, legacyStatus) => {
   if (reviewStatus === 'approved' || reviewStatus === 'rejected' || reviewStatus === 'pending') return reviewStatus;
@@ -283,7 +294,7 @@ const updateMyProfile = async (req, res) => {
 const updateMyProfilePhoto = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
-    const url = req.file.path || req.file.url || req.file.secure_url || null;
+    const url = getUploadedFileUrl(req.file);
     if (!url) return res.status(500).json({ message: 'Upload failed.' });
     await db.query('UPDATE users SET profile_picture_url = ? WHERE id = ?', [url, req.user.id]);
     const [rows] = await db.query(

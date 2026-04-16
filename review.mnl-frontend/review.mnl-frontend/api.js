@@ -123,7 +123,11 @@ function clearSession(removeStoredSession) {
         if (window.__rmnlLogoutHandlersBound) return;
         window.__rmnlLogoutHandlersBound = true;
         document.addEventListener('click', function(event) {
-            var target = event.target && event.target.closest ? event.target.closest('#logoutBtn, #contactLogoutBtn, .sa-logout-btn, [data-logout]') : null;
+            var rawTarget = event.target || null;
+            var baseTarget = rawTarget && rawTarget.nodeType === 3 ? rawTarget.parentElement : rawTarget;
+            var target = baseTarget && baseTarget.closest
+                ? baseTarget.closest('#logoutBtn, #contactLogoutBtn, .sa-logout-btn, [data-logout]')
+                : null;
             if (!target) return;
             event.preventDefault();
             event.stopImmediatePropagation();

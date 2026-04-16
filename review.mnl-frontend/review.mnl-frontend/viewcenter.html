@@ -80,6 +80,19 @@
                 const dd = document.getElementById('profileDropdown');
                 const logout = document.getElementById('logoutBtn');
                 if(!btn || !dd) return;
+
+                function performLogout() {
+                    try {
+                        if (typeof clearSession === 'function') {
+                            try { clearSession(true); } catch (e) { clearSession(); }
+                        } else {
+                            sessionStorage.removeItem('rmnl_active_session');
+                            localStorage.removeItem('rmnl_active_session');
+                        }
+                    } catch (e) {}
+                    window.location.href = 'index.html';
+                }
+
                 btn.addEventListener('click', function(e){
                     e.stopPropagation();
                     const isOpen = dd.style.display === 'block';
@@ -89,6 +102,7 @@
                 if (logout) {
                     logout.addEventListener('click', function(e){
                         e.stopPropagation();
+                        performLogout();
                     });
                 }
                 document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });

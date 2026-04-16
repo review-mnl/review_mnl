@@ -17,7 +17,7 @@
 // All fetch calls go through here so only one place needs updating for the base URL.
 
 // Production-only API routing: all requests go to Railway unless explicitly overridden.
-const API_BASE = window.BACKEND_URL || 'https://reviewmnl-production-67eb.up.railway.app';
+const API_BASE = window.API_BASE || 'http://localhost:3000';
 
 // Redirect any duplicated consecutive path segments (e.g. "/review.mnl-frontend/review.mnl-frontend/..." )
 // to the site root to avoid exposing duplicated copies of the site.

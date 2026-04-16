@@ -601,7 +601,20 @@ function initGlobalNotificationBell(options) {
         var nav = options.navElement || document.querySelector(options.navSelector || 'nav');
         if (!nav) return;
 
-        // Prevent duplicate mount on pages that already provide custom bell logic.
+        // If the page already renders its own bell UI, don't mount the global one.
+        if (document.getElementById('notificationBellBtn') || nav.querySelector('.notification-wrapper')) return;
+
+        // Ensure only one global bell exists (some pages may init more than once).
+        var existingBells = document.querySelectorAll('.rmnl-global-bell');
+        if (existingBells && existingBells.length) {
+            // Remove extras (keep the first).
+            for (var i = 1; i < existingBells.length; i++) {
+                try { existingBells[i].remove(); } catch (e) {}
+            }
+            return;
+        }
+
+        // Prevent duplicate mount within the same nav.
         if (nav.querySelector('.rmnl-global-bell')) return;
 
         var profileWrapper = nav.querySelector(options.profileWrapperSelector || '.profile-wrapper');

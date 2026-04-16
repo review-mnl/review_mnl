@@ -4084,23 +4084,41 @@ nav {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+    /* Undo absolute-centered nav links used on some headers (breaks on mobile/tablet). */
+    .header-loggedin nav .nav-links,
+    .header-search nav .nav-links {
+        position: static;
+        left: auto;
+        transform: none;
+        width: 100%;
+    }
+
+    /* Keep header balanced: logo left, icons right, menu on next row */
+    nav { align-items: center; }
+
+    nav .top-logo { order: 1; }
+    nav .profile-wrapper,
+    nav .register-btn {
+        order: 2;
+        margin-left: auto;
+    }
+
     .nav-links {
         width: 100%;
         flex: 1 1 100%;
         order: 3;
         min-width: 0;
+        text-align: center;
     }
 
+    /* Tablet/small screens: wrap normally (no forced horizontal scrolling) */
     .nav-links ul {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        justify-content: flex-start;
+        flex-wrap: wrap;
+        overflow-x: visible;
+        justify-content: center;
         padding: 4px 0 2px;
     }
-
-    .nav-links ul::-webkit-scrollbar { display: none; }
 
     .header .search-form { width: 100%; }
 }
@@ -4115,7 +4133,14 @@ nav {
 
     .nav-links ul {
         gap: 8px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        justify-content: center;
+        padding: 4px 0 2px;
     }
+
+    .nav-links ul::-webkit-scrollbar { display: none; }
 
     .nav-links ul li { padding: 0; }
 

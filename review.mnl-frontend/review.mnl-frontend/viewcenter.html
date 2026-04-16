@@ -27,7 +27,7 @@
                     </button>
                     <div id="profileDropdown" class="profile-dropdown" style="display:none;position:absolute;right:0;top:42px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.15);min-width:160px;overflow:hidden;z-index:1000;">
                         <a href="userdashboard.html" style="display:block;padding:12px 16px;color:#0a4cff;text-decoration:none;border-bottom:1px solid #eee;">My Profile</a>
-                        <button id="logoutBtn" type="button" data-logout data-logout-target="index.html" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;">Logout</button>
+                        <a id="logoutBtn" href="index.html" data-logout data-logout-target="index.html" style="display:block;width:100%;padding:12px 16px;background:none;border:none;text-align:left;color:#333;cursor:pointer;text-decoration:none;">Logout</a>
                     </div>
                 </div>
             </nav>
@@ -101,9 +101,10 @@
                 });
                 if (logout) {
                     logout.addEventListener('click', function(e){
+                        e.preventDefault();
                         e.stopPropagation();
                         performLogout();
-                    });
+                    }, true);
                 }
                 document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
             })();

@@ -1206,10 +1206,13 @@ function initStudentMessageSlider(options) {
         function renderConversationAvatar(conversation, className) {
             var cls = 'message-avatar' + (className ? (' ' + className) : '');
             var url = conversationAvatarUrl(conversation);
+            var fallback = avatarInitial(conversation && conversation.other_name);
             if (url) {
-                return '<div class="' + cls + '" style="background-image:url(' + cssUrlToken(url) + ');" aria-hidden="true"></div>';
+                return '<div class="' + cls + '" data-fallback="' + escAttr(fallback) + '" aria-hidden="true">'
+                    + '<img src="' + escAttr(url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentNode; this.remove(); if(p){ p.textContent=p.getAttribute(\'data-fallback\')||\'?\'; }" />'
+                    + '</div>';
             }
-            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(avatarInitial(conversation && conversation.other_name)) + '</div>';
+            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(fallback) + '</div>';
         }
 
         function renderConversationHeaderAvatar(conversation) {
@@ -1221,12 +1224,14 @@ function initStudentMessageSlider(options) {
                 convName.parentNode.insertBefore(avatarEl, convName);
             }
             var url = conversationAvatarUrl(conversation);
+            var fallback = avatarInitial(conversation && conversation.other_name);
             if (url) {
-                avatarEl.style.backgroundImage = 'url(' + cssUrlToken(url) + ')';
-                avatarEl.textContent = '';
+                avatarEl.style.backgroundImage = '';
+                avatarEl.setAttribute('data-fallback', fallback);
+                avatarEl.innerHTML = '<img src="' + escAttr(url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentNode; this.remove(); if(p){ p.textContent=p.getAttribute(\'data-fallback\')||\'?\'; }" />';
             } else {
                 avatarEl.style.backgroundImage = '';
-                avatarEl.textContent = avatarInitial(conversation && conversation.other_name);
+                avatarEl.textContent = fallback;
             }
         }
 
@@ -1267,10 +1272,13 @@ function initStudentMessageSlider(options) {
         function renderConversationAvatar(conversation, className) {
             var cls = 'message-avatar' + (className ? (' ' + className) : '');
             var url = conversationAvatarUrl(conversation);
+            var fallback = avatarInitial(conversation && conversation.other_name);
             if (url) {
-                return '<div class="' + cls + '" style="background-image:url(' + cssUrlToken(url) + ');" aria-hidden="true"></div>';
+                return '<div class="' + cls + '" data-fallback="' + escAttr(fallback) + '" aria-hidden="true">'
+                    + '<img src="' + escAttr(url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentNode; this.remove(); if(p){ p.textContent=p.getAttribute(\'data-fallback\')||\'?\'; }" />'
+                    + '</div>';
             }
-            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(avatarInitial(conversation && conversation.other_name)) + '</div>';
+            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(fallback) + '</div>';
         }
 
         function renderConversationHeaderAvatar(conversation) {
@@ -1282,12 +1290,14 @@ function initStudentMessageSlider(options) {
                 convName.parentNode.insertBefore(avatarEl, convName);
             }
             var url = conversationAvatarUrl(conversation);
+            var fallback = avatarInitial(conversation && conversation.other_name);
             if (url) {
-                avatarEl.style.backgroundImage = 'url(' + cssUrlToken(url) + ')';
-                avatarEl.textContent = '';
+                avatarEl.style.backgroundImage = '';
+                avatarEl.setAttribute('data-fallback', fallback);
+                avatarEl.innerHTML = '<img src="' + escAttr(url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentNode; this.remove(); if(p){ p.textContent=p.getAttribute(\'data-fallback\')||\'?\'; }" />';
             } else {
                 avatarEl.style.backgroundImage = '';
-                avatarEl.textContent = avatarInitial(conversation && conversation.other_name);
+                avatarEl.textContent = fallback;
             }
         }
 
@@ -1814,10 +1824,13 @@ function initFullMessagesPage(options) {
         function renderConversationAvatar(conversation, className) {
             var cls = 'message-avatar' + (className ? (' ' + className) : '');
             var url = conversationAvatarUrl(conversation);
+            var fallback = avatarInitial(conversation && conversation.other_name);
             if (url) {
-                return '<div class="' + cls + '" style="background-image:url(' + cssUrlToken(url) + ');" aria-hidden="true"></div>';
+                return '<div class="' + cls + '" data-fallback="' + escAttr(fallback) + '" aria-hidden="true">'
+                    + '<img src="' + escAttr(url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentNode; this.remove(); if(p){ p.textContent=p.getAttribute(\'data-fallback\')||\'?\'; }" />'
+                    + '</div>';
             }
-            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(avatarInitial(conversation && conversation.other_name)) + '</div>';
+            return '<div class="' + cls + '" aria-hidden="true">' + escHtml(fallback) + '</div>';
         }
 
         function renderConversationHeaderAvatar(conversation) {
@@ -1829,12 +1842,14 @@ function initFullMessagesPage(options) {
                 convName.parentNode.insertBefore(avatarEl, convName);
             }
             var url = conversationAvatarUrl(conversation);
+            var fallback = avatarInitial(conversation && conversation.other_name);
             if (url) {
-                avatarEl.style.backgroundImage = 'url(' + cssUrlToken(url) + ')';
-                avatarEl.textContent = '';
+                avatarEl.style.backgroundImage = '';
+                avatarEl.setAttribute('data-fallback', fallback);
+                avatarEl.innerHTML = '<img src="' + escAttr(url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentNode; this.remove(); if(p){ p.textContent=p.getAttribute(\'data-fallback\')||\'?\'; }" />';
             } else {
                 avatarEl.style.backgroundImage = '';
-                avatarEl.textContent = avatarInitial(conversation && conversation.other_name);
+                avatarEl.textContent = fallback;
             }
         }
 
@@ -1949,16 +1964,39 @@ function initFullMessagesPage(options) {
 
         async function openConversation(conversation) {
             if (!conversation || !conversation.other_user_id) return;
-            activeConversation = conversation;
-            activeConversationKey = String(conversation.other_user_id);
+            var latestConversation = Object.assign({}, conversation);
+            try {
+                var publicRes = await fetch(API_BASE + '/api/users/' + Number(conversation.other_user_id) + '/public', {
+                    cache: 'no-store',
+                });
+                if (publicRes.ok) {
+                    var publicJson = await publicRes.json();
+                    var publicUser = (publicJson && publicJson.user) ? publicJson.user : null;
+                    if (publicUser) {
+                        var fullName = [publicUser.first_name, publicUser.last_name].filter(Boolean).join(' ').trim();
+                        if (publicUser.profile_picture_url) {
+                            latestConversation.other_avatar_url = publicUser.profile_picture_url;
+                            latestConversation.other_profile_picture_url = publicUser.profile_picture_url;
+                        }
+                        if (fullName) {
+                            latestConversation.other_name = fullName;
+                        }
+                    }
+                }
+            } catch (e) {
+                // Keep original conversation data if public profile lookup fails.
+            }
+
+            activeConversation = latestConversation;
+            activeConversationKey = String(latestConversation.other_user_id);
             saveMessageSyncState({
-                other_user_id: conversation.other_user_id,
-                center_id: conversation.center_id || 0,
-                enrollment_id: conversation.enrollment_id || null,
-                other_name: conversation.other_name || conversationFallbackName,
+                other_user_id: latestConversation.other_user_id,
+                center_id: latestConversation.center_id || 0,
+                enrollment_id: latestConversation.enrollment_id || null,
+                other_name: latestConversation.other_name || conversationFallbackName,
             });
-            convName.textContent = conversation.other_name || conversationFallbackName;
-            renderConversationHeaderAvatar(conversation);
+            convName.textContent = latestConversation.other_name || conversationFallbackName;
+            renderConversationHeaderAvatar(latestConversation);
             updateDeleteButtonState();
             openConversationUi();
             await loadActiveThread();

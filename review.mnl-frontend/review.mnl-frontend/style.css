@@ -455,21 +455,33 @@ nav img{
 }
 
 .nav-links ul li a.active-nav {
-    background: #fff;
     color: #0a4cff !important;
-    border-radius: 8px;
+    background: linear-gradient(90deg, #fff 80%, #e6f0ff 100%);
+    border-radius: 22px;
     font-weight: 700;
-    box-shadow: 0 2px 10px rgba(10,76,255,0.08);
-    padding: 8px 18px;
+    box-shadow: 0 4px 18px rgba(10,76,255,0.10);
+    padding: 8px 22px;
     position: relative;
     z-index: 2;
-    /* Optional: add a subtle animation */
-    animation: navActiveFade 0.5s;
+    transition: background 0.35s cubic-bezier(.4,0,.2,1), color 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1), padding 0.25s;
+    outline: none;
+    border: none;
+    letter-spacing: 0.5px;
+    /* Add a subtle scale effect */
+    transform: scale(1.08);
 }
 
-@keyframes navActiveFade {
-    from { background: #0a4cff; color: #fff; }
-    to   { background: #fff; color: #0a4cff; }
+.nav-links ul li a.active-nav::after {
+    content: '';
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 7px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #0a4cff 60%, #7aaaff 100%);
+    opacity: 0.18;
+    transition: opacity 0.35s cubic-bezier(.4,0,.2,1);
 }
 
 .textbox{

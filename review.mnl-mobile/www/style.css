@@ -360,6 +360,10 @@ body svg {
     z-index: 1;
 }
 
+/* Fix: keep profile dropdown clickable over header content (map, etc.) */
+.header-viewcenter nav { z-index: 50; }
+.header-viewcenter nav .profile-wrapper { position: relative; z-index: 60; }
+
 .header-editcenter {
     background-image: url(images/bg-editcenter.png);
 }

@@ -476,37 +476,23 @@ nav img{
 }
 
 .nav-links ul li a.active-nav {
-    color: #fff !important;
-    background: linear-gradient(90deg, #0a4cff 70%, #7aaaff 100%);
-    border-radius: 16px;
+    color: #0a4cff !important;
+    background: #fff;
+    border-radius: 18px;
     font-weight: 700;
-    box-shadow: 0 4px 18px rgba(10,76,255,0.13);
+    box-shadow: none;
     padding: 6px 17px;
     position: relative;
     z-index: 2;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.2px;
     outline: none;
     border: none;
-    transform: scale(1.11) translateY(-1.5px);
-    transition: 
-        background 0.38s cubic-bezier(.4,0,.2,1),
-        color 0.38s cubic-bezier(.4,0,.2,1),
-        box-shadow 0.38s cubic-bezier(.4,0,.2,1),
-        transform 0.38s cubic-bezier(.4,0,.2,1),
-        letter-spacing 0.22s;
+    transform: none;
+    transition: background 0.25s, color 0.25s;
 }
 
 .nav-links ul li a.active-nav::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 4px;
-    height: 3px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, #fff 0%, #7aaaff 100%);
-    opacity: 0.22;
-    transition: opacity 0.38s cubic-bezier(.4,0,.2,1);
+    display: none;
 }
 
 .textbox{

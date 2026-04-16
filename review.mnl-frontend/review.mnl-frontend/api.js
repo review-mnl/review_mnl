@@ -1349,16 +1349,34 @@ function initStudentMessageSlider(options) {
 
         async function openConversation(conversation) {
             if (!conversation || !conversation.other_user_id) return;
-            activeConversation = conversation;
-            activeConversationKey = String(conversation.other_user_id);
+            // Always fetch the latest profile info for the other user before opening the conversation
+            let updatedConversation = { ...conversation };
+            try {
+                if (conversation.other_user_id) {
+                    const res = await fetch(API_BASE + '/api/users/' + conversation.other_user_id, {
+                        credentials: 'include',
+                    });
+                    if (res.ok) {
+                        const userData = await res.json();
+                        // Update avatar/profile fields if available
+                        updatedConversation.other_avatar_url = userData.avatar_url || userData.profile_picture_url || userData.photo_url || userData.avatar || '';
+                        updatedConversation.other_profile_picture_url = userData.profile_picture_url || userData.avatar_url || userData.photo_url || userData.avatar || '';
+                        updatedConversation.other_name = userData.name || userData.full_name || conversation.other_name;
+                    }
+                }
+            } catch (e) {
+                // If fetch fails, fallback to original conversation object
+            }
+            activeConversation = updatedConversation;
+            activeConversationKey = String(updatedConversation.other_user_id);
             saveMessageSyncState({
-                other_user_id: conversation.other_user_id,
-                center_id: conversation.center_id || 0,
-                enrollment_id: conversation.enrollment_id || null,
-                other_name: conversation.other_name || conversationFallbackName,
+                other_user_id: updatedConversation.other_user_id,
+                center_id: updatedConversation.center_id || 0,
+                enrollment_id: updatedConversation.enrollment_id || null,
+                other_name: updatedConversation.other_name || conversationFallbackName,
             });
-            convName.textContent = conversation.other_name || conversationFallbackName;
-            renderConversationHeaderAvatar(conversation);
+            convName.textContent = updatedConversation.other_name || conversationFallbackName;
+            renderConversationHeaderAvatar(updatedConversation);
             updateDeleteButtonState();
             listPanel.style.display = 'none';
             convPanel.style.display = 'flex';

@@ -4104,23 +4104,37 @@ nav {
     }
 
     /* Keep header balanced: logo left, icons right, menu on next row */
-    nav { align-items: center; }
+    nav {
+        align-items: center;
+        justify-content: flex-start;
+    }
 
-    /* Push everything after the logo to the right */
+    /* Keep icon order as in the HTML (matches website) */
     nav .top-logo { order: 1; margin-right: auto; }
 
-    /* Force consistent icon order: bell then profile (matches My Profile) */
     nav .notification-wrapper,
-    nav .rmnl-global-bell {
+    nav .rmnl-global-bell,
+    nav .profile-wrapper,
+    nav .register-btn {
         order: 2;
     }
 
-    nav .profile-wrapper {
-        order: 3;
+    /* Push the icon group to the right without reordering it */
+    nav .top-logo ~ .notification-wrapper,
+    nav .top-logo ~ .rmnl-global-bell,
+    nav .top-logo ~ .profile-wrapper,
+    nav .top-logo ~ .register-btn {
+        margin-left: auto;
     }
 
-    nav .register-btn {
-        order: 4;
+    nav .notification-wrapper ~ .rmnl-global-bell,
+    nav .notification-wrapper ~ .profile-wrapper,
+    nav .notification-wrapper ~ .register-btn,
+    nav .rmnl-global-bell ~ .profile-wrapper,
+    nav .rmnl-global-bell ~ .register-btn,
+    nav .profile-wrapper ~ .rmnl-global-bell,
+    nav .profile-wrapper ~ .register-btn {
+        margin-left: 0;
     }
 
     .nav-links {

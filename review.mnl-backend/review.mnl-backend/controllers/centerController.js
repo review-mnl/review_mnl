@@ -139,6 +139,17 @@ const toPaymentMethodLabel = (provider, metadata) => {
 
 const getApprovedCenters = async (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 10));
+    const offset = (page - 1) * limit;
+
+    // Get total count
+    const [countResult] = await db.query(
+      `SELECT COUNT(*) as total FROM review_centers WHERE status = 'approved'`
+    );
+    const total = countResult[0]?.total || 0;
+
+    // Get paginated results
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url, rc.description, rc.programs,
               IFNULL(AVG(t.rating), 0) AS avg_rating,
@@ -146,9 +157,21 @@ const getApprovedCenters = async (req, res) => {
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
        WHERE rc.status = 'approved'
-       GROUP BY rc.id ORDER BY avg_rating DESC`
+       GROUP BY rc.id ORDER BY avg_rating DESC
+       LIMIT ? OFFSET ?`,
+      [limit, offset]
     );
-    res.json(rows);
+
+    // Return paginated response
+    res.json({
+      data: rows,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }
@@ -194,9 +217,27 @@ const getCenterById = async (req, res) => {
 
 const getCentersNearby = async (req, res) => {
   const { lat, lng, radius = 10 } = req.query;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 10));
+  const offset = (page - 1) * limit;
+
   if (!lat || !lng)
     return res.status(400).json({ message: 'Latitude and longitude are required.' });
   try {
+    // Get total count
+    const [countResult] = await db.query(
+      `SELECT COUNT(*) as total FROM review_centers rc
+       WHERE rc.status = 'approved' AND rc.latitude IS NOT NULL
+         AND (6371 * ACOS(
+            COS(RADIANS(?)) * COS(RADIANS(rc.latitude)) *
+            COS(RADIANS(rc.longitude) - RADIANS(?)) +
+            SIN(RADIANS(?)) * SIN(RADIANS(rc.latitude))
+          )) <= ?`,
+      [lat, lng, lat, radius]
+    );
+    const total = countResult[0]?.total || 0;
+
+    // Get paginated results
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count,
@@ -208,10 +249,20 @@ const getCentersNearby = async (req, res) => {
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
        WHERE rc.status = 'approved' AND rc.latitude IS NOT NULL
-       GROUP BY rc.id HAVING distance_km <= ? ORDER BY distance_km ASC`,
-      [lat, lng, lat, radius]
+       GROUP BY rc.id HAVING distance_km <= ? ORDER BY distance_km ASC
+       LIMIT ? OFFSET ?`,
+      [lat, lng, lat, radius, limit, offset]
     );
-    res.json(rows);
+
+    res.json({
+      data: rows,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }
@@ -219,18 +270,41 @@ const getCentersNearby = async (req, res) => {
 
 const searchCenters = async (req, res) => {
   const { q } = req.query;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 10));
+  const offset = (page - 1) * limit;
+
   if (!q) return res.status(400).json({ message: 'Search query is required.' });
   try {
+    // Get total count
+    const [countResult] = await db.query(
+      `SELECT COUNT(*) as total FROM review_centers rc
+       WHERE rc.status = 'approved' AND rc.business_name LIKE ?`,
+      [`%${q}%`]
+    );
+    const total = countResult[0]?.total || 0;
+
+    // Get paginated results
     const [rows] = await db.query(
       `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url, rc.description, rc.programs,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
        WHERE rc.status = 'approved' AND rc.business_name LIKE ?
-       GROUP BY rc.id ORDER BY avg_rating DESC`,
-      [`%${q}%`]
+       GROUP BY rc.id ORDER BY avg_rating DESC
+       LIMIT ? OFFSET ?`,
+      [`%${q}%`, limit, offset]
     );
-    res.json(rows);
+
+    res.json({
+      data: rows,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }

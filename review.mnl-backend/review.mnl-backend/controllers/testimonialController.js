@@ -68,10 +68,82 @@ const approveTestimonial = async (req, res) => {
 };
 
 const deleteTestimonial = async (req, res) => {
-  const { id } = req.params;
+  const { testimonialId } = req.params;
+  const userId = req.user.id;
+  const userRole = req.user.role;
+
   try {
-    await db.query('DELETE FROM testimonials WHERE id = ?', [id]);
-    res.json({ message: 'Testimonial deleted.' });
+    // Get the testimonial to check who created it
+    const [testimonial] = await db.query(
+      'SELECT id, student_id FROM testimonials WHERE id = ?',
+      [testimonialId]
+    );
+
+    if (testimonial.length === 0) {
+      return res.status(404).json({ message: 'Testimonial not found.' });
+    }
+
+    // Only the creator or an admin can delete
+    if (testimonial[0].student_id !== userId && userRole !== 'superadmin' && userRole !== 'admin') {
+      return res.status(403).json({ message: 'You can only delete your own testimonials.' });
+    }
+
+    await db.query('DELETE FROM testimonials WHERE id = ?', [testimonialId]);
+    res.json({ message: 'Testimonial deleted successfully.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+const updateTestimonial = async (req, res) => {
+  const { testimonialId } = req.params;
+  const { content, rating } = req.body;
+  const userId = req.user.id;
+
+  if (!content || !String(content).trim()) {
+    return res.status(400).json({ message: 'Review content is required.' });
+  }
+
+  const parsedRating = Number(rating);
+  if (!Number.isFinite(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+    return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
+  }
+
+  try {
+    // Get the testimonial to check who created it
+    const [testimonial] = await db.query(
+      'SELECT id, student_id FROM testimonials WHERE id = ?',
+      [testimonialId]
+    );
+
+    if (testimonial.length === 0) {
+      return res.status(404).json({ message: 'Testimonial not found.' });
+    }
+
+    // Only the creator can edit their own testimonial
+    if (testimonial[0].student_id !== userId) {
+      return res.status(403).json({ message: 'You can only edit your own testimonials.' });
+    }
+
+    // Update the testimonial
+    await db.query(
+      'UPDATE testimonials SET content = ?, rating = ?, updated_at = NOW() WHERE id = ?',
+      [String(content).trim(), parsedRating, testimonialId]
+    );
+
+    // Return updated testimonial
+    const [updated] = await db.query(
+      `SELECT t.id, t.content, t.rating, t.created_at, t.updated_at, u.first_name, u.last_name
+       FROM testimonials t
+       JOIN users u ON u.id = t.student_id
+       WHERE t.id = ? LIMIT 1`,
+      [testimonialId]
+    );
+
+    res.json({
+      message: 'Testimonial updated successfully.',
+      testimonial: updated[0] || null
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }
@@ -109,4 +181,4 @@ const getMyCenterTestimonials = async (req, res) => {
   }
 };
 
-module.exports = { postTestimonial, getPendingTestimonials, approveTestimonial, deleteTestimonial, getMyCenterTestimonials };
+module.exports = { postTestimonial, getPendingTestimonials, approveTestimonial, deleteTestimonial, updateTestimonial, getMyCenterTestimonials };

@@ -1114,8 +1114,8 @@ nav img{
 .filter-container {
     padding: 40px;
     background-color: #ffffff;
-    max-width: 2400px;
-    margin-top: 0px;
+    max-width: none;
+    margin: 0;
     position: relative;
     z-index: 5;
     box-shadow: none;
@@ -1805,7 +1805,7 @@ nav img{
     margin: auto 0;
     align-items: center;
     gap: 56px;
-    padding: 18px 3%;
+    padding: 18px 6%;
     display: flex;
     justify-content: space-between;
     width: 100%;
@@ -3513,8 +3513,8 @@ nav img{
 }
 
 .header-viewcenter .center-header-content {
-    max-width: 1240px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
 }
 
 .center-details {
@@ -3903,7 +3903,7 @@ nav img{
 
     /* Final bigger view-center sizing */
     .header-viewcenter .center-header-content {
-        padding: 28px 3% 30px;
+        padding: 28px 6% 30px;
         gap: 64px;
     }
 

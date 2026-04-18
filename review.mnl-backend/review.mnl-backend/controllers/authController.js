@@ -71,8 +71,37 @@ const insertWithLegacyRequiredColumns = async (conn, tableName, valuesMap) => {
   return conn.query(sql, vals);
 };
 
+const getSiteSettings = async () => {
+  try {
+    const [rows] = await db.query(
+      'SELECT site_name, maintenance_mode, allow_center_registrations, allow_student_registrations FROM site_settings ORDER BY id ASC LIMIT 1'
+    );
+    if (rows.length) return rows[0];
+  } catch (e) {
+    // ignore and use defaults
+  }
+  return {
+    site_name: 'Review.MNL',
+    maintenance_mode: 0,
+    allow_center_registrations: 1,
+    allow_student_registrations: 1,
+  };
+};
+
 const registerStudent = async (req, res) => {
   const { fullname, email, password } = req.body;
+
+  try {
+    const settings = await getSiteSettings();
+    if (Number(settings.maintenance_mode) === 1) {
+      return res.status(403).json({ message: 'Registrations are temporarily paused due to maintenance.' });
+    }
+    if (Number(settings.allow_student_registrations) === 0) {
+      return res.status(403).json({ message: 'Student signups are currently closed.' });
+    }
+  } catch (e) {
+    // ignore settings errors and continue
+  }
   
   // Input validation
   if (!fullname || !fullname.trim())
@@ -112,6 +141,18 @@ const registerStudent = async (req, res) => {
 
 const registerCenter = async (req, res) => {
   const { business_name, email, password } = req.body;
+
+  try {
+    const settings = await getSiteSettings();
+    if (Number(settings.maintenance_mode) === 1) {
+      return res.status(403).json({ message: 'Registrations are temporarily paused due to maintenance.' });
+    }
+    if (Number(settings.allow_center_registrations) === 0) {
+      return res.status(403).json({ message: 'Review center registrations are currently closed.' });
+    }
+  } catch (e) {
+    // ignore settings errors and continue
+  }
   
   // Input validation
   if (!business_name || !business_name.trim())

@@ -1,9 +1,9 @@
 const express = require('express');
 const router  = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
-const { getPendingCenters, getAllCenters, updateCenterStatus, getAllStudents, deleteUser, deleteCenter, getCenterDocuments } = require('../controllers/adminController');
+const { getPendingCenters, getAllCenters, updateCenterStatus, getAllStudents, deleteUser, deleteCenter, getCenterDocuments, getSiteSettings, updateSiteSettings } = require('../controllers/adminController');
 const { getPendingTestimonials, approveTestimonial, deleteTestimonial } = require('../controllers/testimonialController');
-const { getReports, updateReportStatus } = require('../controllers/reportController');
+const { getReports, updateReportStatus, sendReportWarning } = require('../controllers/reportController');
 
 router.use(protect, adminOnly);
 
@@ -19,5 +19,8 @@ router.put('/testimonials/:id/approve', approveTestimonial);
 router.delete('/testimonials/:id',      deleteTestimonial);
 router.get('/reports',                  getReports);
 router.put('/reports/:id/status',       updateReportStatus);
+router.post('/reports/:id/warn',        sendReportWarning);
+router.get('/settings',                 getSiteSettings);
+router.put('/settings',                 updateSiteSettings);
 
 module.exports = router;

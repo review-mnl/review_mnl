@@ -828,6 +828,9 @@ function initGlobalNotificationBell(options) {
 
         function statusStyle(status) {
             var s = String(status || 'pending').toLowerCase();
+            if (s === 'warning') {
+                return { s: s, bg: '#fff4e5', color: '#b45309' };
+            }
             return {
                 s: s,
                 bg: s === 'approved' ? '#e8f5e9' : (s === 'rejected' ? '#ffebee' : '#e3f2fd'),
@@ -2674,6 +2677,15 @@ const AdminAPI = {
 
     updateReportStatus: (id, status) =>
         apiRequest('PUT', '/api/admin/reports/' + id + '/status', { status }),
+
+    sendReportWarning: (id, message) =>
+        apiRequest('POST', '/api/admin/reports/' + id + '/warn', { message }),
+
+    getSiteSettings: () =>
+        apiRequest('GET', '/api/admin/settings'),
+
+    updateSiteSettings: (payload) =>
+        apiRequest('PUT', '/api/admin/settings', payload),
 };
 
 function initPageTransitions() {

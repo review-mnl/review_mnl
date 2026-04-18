@@ -145,6 +145,18 @@ CREATE TABLE IF NOT EXISTS enrollment_notifications (
   INDEX idx_enrollment_created_at (enrollment_id, created_at)
 );
 
+CREATE TABLE IF NOT EXISTS user_notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  kind VARCHAR(30) DEFAULT 'info',
+  message VARCHAR(500) NOT NULL,
+  is_read TINYINT(1) DEFAULT 0,
+  read_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_notifications_user_created (user_id, created_at),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS chat_messages (
   id INT AUTO_INCREMENT PRIMARY KEY,
   student_id INT NOT NULL,
@@ -180,6 +192,15 @@ CREATE TABLE IF NOT EXISTS center_ratings (
   FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE CASCADE,
   UNIQUE KEY uniq_student_center_rating (student_id, center_id),
   CHECK (rating BETWEEN 1 AND 5)
+);
+
+CREATE TABLE IF NOT EXISTS site_settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  site_name VARCHAR(120) DEFAULT 'Review.MNL',
+  maintenance_mode TINYINT(1) DEFAULT 0,
+  allow_center_registrations TINYINT(1) DEFAULT 1,
+  allow_student_registrations TINYINT(1) DEFAULT 1,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 INSERT IGNORE INTO users (first_name, last_name, email, password, role, is_verified)

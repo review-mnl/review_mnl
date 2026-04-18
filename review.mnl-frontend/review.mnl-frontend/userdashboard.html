@@ -280,35 +280,6 @@
             </div>
         </section>
 
-        <div id="reviewEditModal" class="modal-overlay">
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>Edit Review</h3>
-                    <button class="modal-close" onclick="closeReviewEditModal()">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p id="reviewEditCenterName" style="margin:0 0 10px;color:#1f2937;font-weight:600;"></p>
-                    <p id="reviewEditHint" style="margin:0 0 12px;color:#64748b;font-size:12px;">Update your rating and review. You can edit again after 3 days.</p>
-                    <label for="reviewEditRating">Rating</label>
-                    <select id="reviewEditRating">
-                        <option value="">Select rating (1-5)...</option>
-                        <option value="5">5 - Excellent</option>
-                        <option value="4">4 - Good</option>
-                        <option value="3">3 - Average</option>
-                        <option value="2">2 - Poor</option>
-                        <option value="1">1 - Very Poor</option>
-                    </select>
-                    <label for="reviewEditContent" style="margin-top:12px;">Review</label>
-                    <textarea id="reviewEditContent" rows="5" placeholder="Update your review..."></textarea>
-                    <p id="reviewEditCooldown" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:12px;"></p>
-                    <p id="reviewEditStatus" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:12px;"></p>
-                </div>
-                <div style="display:flex;justify-content:flex-end;gap:10px;padding:0 24px 20px;">
-                    <button type="button" onclick="closeReviewEditModal()" style="padding:8px 14px;border:1px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Cancel</button>
-                    <button type="button" id="reviewEditSaveBtn" onclick="saveReviewEdit()" style="padding:8px 16px;border:none;background:#0a4cff;color:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Save Changes</button>
-                </div>
-            </div>
-        </div>
             <script src="api.js"></script>
             <script>
                 if (!isAuthenticated()) { window.location.href = 'login.html'; }
@@ -974,17 +945,6 @@
                     });
                 }
 
-                function getReviewCooldown(review) {
-                    var last = (review && (review.testimonial_updated_at || review.testimonial_created_at)) || null;
-                    if (!last) return { allowed: true, remainingHours: 0 };
-                    var lastTime = new Date(last).getTime();
-                    if (isNaN(lastTime)) return { allowed: true, remainingHours: 0 };
-                    var cooldownMs = 3 * 24 * 60 * 60 * 1000;
-                    var elapsed = Date.now() - lastTime;
-                    if (elapsed >= cooldownMs) return { allowed: true, remainingHours: 0 };
-                    var remainingHours = Math.max(1, Math.ceil((cooldownMs - elapsed) / (60 * 60 * 1000)));
-                    return { allowed: false, remainingHours: remainingHours };
-                }
 
                 function resolveCenterLogo(rawUrl) {
                     if (!rawUrl) return '';
@@ -1076,11 +1036,6 @@
                         var rating = Number(item.rating || 0);
                         var logo = resolveCenterLogo(item.center_logo);
                         var reviewContent = item.testimonial_content ? String(item.testimonial_content) : '';
-                        var cooldownInfo = getReviewCooldown(item);
-                        var canEdit = Boolean(item.testimonial_id) && cooldownInfo.allowed;
-                        var cooldownText = !cooldownInfo.allowed
-                            ? ('You can edit again in ' + cooldownInfo.remainingHours + ' hour(s).')
-                            : '';
                         var stars = [1, 2, 3, 4, 5].map(function(v) {
                             return starButton(centerId, rating, v);
                         }).join('');
@@ -1092,12 +1047,6 @@
                             + '<p style="margin:3px 0 7px;color:#4b5563;">' + (rating > 0 ? ('Your rating: ' + rating + '/5') : 'Rate this center from 1 to 5 stars') + '</p>'
                             + '<div style="display:flex;align-items:center;gap:2px;">' + stars + '</div>'
                             + '<p style="margin:8px 0 6px;color:#6b7280;font-size:12px;">' + (reviewContent ? escHtml(reviewContent) : 'No written review yet.') + '</p>'
-                            + (item.testimonial_id
-                                ? ('<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
-                                    + '<button type="button" onclick="openReviewEditModal(' + centerId + ')" style="padding:6px 10px;border:1px solid #d7def5;background:#fff;border-radius:8px;font-size:11px;font-weight:600;color:#1d4ed8;cursor:pointer;" ' + (canEdit ? '' : 'disabled') + '>Edit Review</button>'
-                                    + (cooldownText ? ('<span style="font-size:11px;color:#b91c1c;">' + escHtml(cooldownText) + '</span>') : '')
-                                + '</div>')
-                                : '')
                             + '</div>'
                             + '</div>';
                     }).join('');
@@ -1122,129 +1071,6 @@
                     }
                 }
 
-                function openReviewEditModal(centerId) {
-                    var review = window._myReviewsMap && window._myReviewsMap[String(centerId)];
-                    if (!review || !review.testimonial_id) {
-                        alert('No review found to edit.');
-                        return;
-                    }
-
-                    var modal = document.getElementById('reviewEditModal');
-                    var nameEl = document.getElementById('reviewEditCenterName');
-                    var ratingEl = document.getElementById('reviewEditRating');
-                    var contentEl = document.getElementById('reviewEditContent');
-                    var cooldownEl = document.getElementById('reviewEditCooldown');
-                    var saveBtn = document.getElementById('reviewEditSaveBtn');
-
-                    clearReviewEditStatus();
-
-                    var cooldownInfo = getReviewCooldown(review);
-                    if (cooldownEl) {
-                        cooldownEl.style.display = cooldownInfo.allowed ? 'none' : 'block';
-                        cooldownEl.textContent = cooldownInfo.allowed ? '' : ('You can edit again in ' + cooldownInfo.remainingHours + ' hour(s).');
-                    }
-                    if (saveBtn) saveBtn.disabled = !cooldownInfo.allowed;
-
-                    window._activeReviewEdit = {
-                        centerId: Number(centerId || 0),
-                        testimonialId: Number(review.testimonial_id || 0)
-                    };
-
-                    if (nameEl) nameEl.textContent = review.center_name || 'Review Center';
-                    if (ratingEl) ratingEl.value = review.testimonial_rating ? String(review.testimonial_rating) : '';
-                    if (contentEl) contentEl.value = review.testimonial_content || '';
-
-                    if (modal) modal.classList.add('active');
-                }
-
-                function closeReviewEditModal() {
-                    var modal = document.getElementById('reviewEditModal');
-                    if (modal) modal.classList.remove('active');
-                    clearReviewEditStatus();
-                    var cooldownEl = document.getElementById('reviewEditCooldown');
-                    if (cooldownEl) cooldownEl.style.display = 'none';
-                    window._activeReviewEdit = null;
-                }
-
-                function setReviewEditStatus(message, isError) {
-                    var statusEl = document.getElementById('reviewEditStatus');
-                    if (!statusEl) return;
-                    statusEl.textContent = message || '';
-                    statusEl.style.display = message ? 'block' : 'none';
-                    statusEl.style.color = isError ? '#b91c1c' : '#15803d';
-                }
-
-                function clearReviewEditStatus() {
-                    setReviewEditStatus('', true);
-                }
-
-                async function saveReviewEdit() {
-                    var state = window._activeReviewEdit || {};
-                    var centerId = Number(state.centerId || 0);
-                    var testimonialId = Number(state.testimonialId || 0);
-                    if (!centerId || !testimonialId) return;
-
-                    var ratingEl = document.getElementById('reviewEditRating');
-                    var contentEl = document.getElementById('reviewEditContent');
-                    var saveBtn = document.getElementById('reviewEditSaveBtn');
-                    var cooldownEl = document.getElementById('reviewEditCooldown');
-
-                    var rating = ratingEl ? Number(ratingEl.value) : 0;
-                    var content = contentEl ? String(contentEl.value || '').trim() : '';
-
-                    if (!rating || rating < 1 || rating > 5) {
-                        setReviewEditStatus('Please select a rating between 1 and 5.', true);
-                        return;
-                    }
-                    if (!content) {
-                        setReviewEditStatus('Please enter your review.', true);
-                        return;
-                    }
-
-                    if (saveBtn) {
-                        saveBtn.disabled = true;
-                        saveBtn.textContent = 'Saving...';
-                    }
-                    clearReviewEditStatus();
-                    try {
-                        var resp = await CentersAPI.updateTestimonial(centerId, testimonialId, content, rating);
-                        var review = window._myReviewsMap && window._myReviewsMap[String(centerId)];
-                        if (review) {
-                            review.testimonial_content = content;
-                            review.testimonial_rating = rating;
-                            review.testimonial_updated_at = (resp && resp.testimonial && resp.testimonial.updated_at)
-                                ? resp.testimonial.updated_at
-                                : new Date().toISOString();
-                            review.rating = rating;
-                        }
-                        renderMyReviews(Object.keys(window._myReviewsMap || {}).map(function(key) { return window._myReviewsMap[key]; }));
-                        closeReviewEditModal();
-                    } catch (e) {
-                        if (cooldownEl) {
-                            cooldownEl.style.display = 'block';
-                            cooldownEl.textContent = e.message || 'Failed to update review.';
-                        }
-                        setReviewEditStatus(e.message || 'Failed to update review.', true);
-                    } finally {
-                        if (saveBtn) {
-                            saveBtn.disabled = false;
-                            saveBtn.textContent = 'Save Changes';
-                        }
-                    }
-                }
-
-                window.openReviewEditModal = openReviewEditModal;
-                window.closeReviewEditModal = closeReviewEditModal;
-                window.saveReviewEdit = saveReviewEdit;
-
-                (function() {
-                    var modal = document.getElementById('reviewEditModal');
-                    if (modal) {
-                        modal.addEventListener('click', function(e) {
-                            if (e.target === modal) closeReviewEditModal();
-                        });
-                    }
-                })();
 
                 async function setCenterRating(centerId, rating) {
                     var id = Number(centerId || 0);
@@ -1363,6 +1189,9 @@
 
                 function getNotificationStatusStyle(status) {
                     var s = String(status || 'pending').toLowerCase();
+                    if (s === 'warning') {
+                        return { status: s, bg: '#fff4e5', color: '#b45309' };
+                    }
                     return {
                         status: s,
                         bg: s === 'approved' ? '#e8f5e9' : (s === 'rejected' ? '#ffebee' : '#e3f2fd'),

@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { createUserNotification } = require('./notificationController');
 
 const ALLOWED_TYPES = ['center', 'message', 'testimonial', 'rating'];
 const ALLOWED_STATUSES = ['open', 'resolved', 'dismissed'];
@@ -83,12 +84,14 @@ const getReports = async (req, res) => {
               CONCAT(COALESCE(rep.first_name, ''), ' ', COALESCE(rep.last_name, '')) AS reporter_name,
               CONCAT(COALESCE(target.first_name, ''), ' ', COALESCE(target.last_name, '')) AS reported_name,
               rc.business_name AS center_name,
-              t.content AS testimonial_content
+              t.content AS testimonial_content,
+              cm.message AS message_content
        FROM reports r
        LEFT JOIN users rep ON rep.id = r.reporter_id
        LEFT JOIN users target ON target.id = r.reported_user_id
        LEFT JOIN review_centers rc ON rc.id = r.center_id
        LEFT JOIN testimonials t ON t.id = r.testimonial_id
+            LEFT JOIN chat_messages cm ON cm.id = r.message_id
        ORDER BY r.created_at DESC`
     );
 
@@ -120,4 +123,48 @@ const updateReportStatus = async (req, res) => {
   }
 };
 
-module.exports = { createReport, getReports, updateReportStatus };
+const sendReportWarning = async (req, res) => {
+  const reportId = normalizeId(req.params && req.params.id);
+  const message = String((req.body && req.body.message) || '').trim();
+
+  if (!reportId) return res.status(400).json({ message: 'Invalid report id.' });
+
+  try {
+    const [rows] = await db.query(
+      `SELECT r.id, r.report_type, r.reason, r.details, r.reported_user_id,
+              rc.business_name AS center_name,
+              t.content AS testimonial_content,
+              cm.message AS message_content
+       FROM reports r
+       LEFT JOIN review_centers rc ON rc.id = r.center_id
+       LEFT JOIN testimonials t ON t.id = r.testimonial_id
+       LEFT JOIN chat_messages cm ON cm.id = r.message_id
+       WHERE r.id = ?
+       LIMIT 1`,
+      [reportId]
+    );
+
+    if (!rows.length) return res.status(404).json({ message: 'Report not found.' });
+
+    const report = rows[0];
+    const targetUserId = normalizeId(report.reported_user_id);
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'Report has no reported user.' });
+    }
+
+    const base = 'Warning: Your account has been reported.';
+    const reason = report.reason ? (' Reason: ' + report.reason + '.') : '';
+    const type = report.report_type ? (' Type: ' + report.report_type + '.') : '';
+    const details = report.details ? (' Details: ' + report.details + '.') : '';
+    const finalMessage = message || (base + reason + type + details).trim();
+
+    await createUserNotification(targetUserId, finalMessage, 'warning');
+
+    return res.json({ message: 'Warning sent.', report_id: reportId });
+  } catch (err) {
+    console.error('Send report warning error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { createReport, getReports, updateReportStatus, sendReportWarning };

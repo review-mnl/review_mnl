@@ -28,6 +28,41 @@ const broadcastToUser = (userId, payload) => {
   });
 };
 
+const createUserNotification = async (userId, message, kind) => {
+  const uid = Number(userId);
+  const text = String(message || '').trim();
+  const type = String(kind || 'info').trim().toLowerCase() || 'info';
+
+  if (!Number.isInteger(uid) || uid <= 0) {
+    throw new Error('Invalid user id.');
+  }
+  if (!text) {
+    throw new Error('Notification message is required.');
+  }
+
+  const [result] = await db.query(
+    'INSERT INTO user_notifications (user_id, kind, message, is_read) VALUES (?, ?, ?, 0)',
+    [uid, type, text]
+  );
+
+  broadcastToUser(uid, {
+    type: 'notification_created',
+    notification_id: result.insertId,
+    status: type,
+    message: text,
+    is_read: false,
+    timestamp: new Date().toISOString(),
+  });
+
+  return {
+    id: result.insertId,
+    user_id: uid,
+    kind: type,
+    message: text,
+    is_read: false,
+  };
+};
+
 const normalizeStatus = (status) => {
   const s = String(status || '').toLowerCase();
   if (s === 'approved' || s === 'rejected' || s === 'pending') return s;
@@ -146,7 +181,22 @@ const getMyNotifications = async (req, res) => {
       [userId]
     );
 
-    const notifications = rows.map((row) => ({
+    const [userRows] = await db.query(
+      `SELECT
+         un.id AS notification_id,
+         un.user_id,
+         un.kind,
+         un.message,
+         un.is_read,
+         un.read_at,
+         un.created_at
+       FROM user_notifications un
+       WHERE un.user_id = ?
+       ORDER BY un.created_at DESC`,
+      [userId]
+    );
+
+    const enrollmentNotifications = rows.map((row) => ({
       notification_id: row.notification_id,
       user_id: row.user_id,
       center_id: row.center_id,
@@ -161,6 +211,28 @@ const getMyNotifications = async (req, res) => {
       read_at: row.read_at,
       created_at: row.created_at,
     }));
+
+    const userNotifications = (userRows || []).map((row) => ({
+      notification_id: row.notification_id,
+      user_id: row.user_id,
+      center_id: null,
+      center_user_id: null,
+      center_name: null,
+      student_user_id: null,
+      student_name: null,
+      enrollment_id: null,
+      status: row.kind || 'info',
+      message: row.message,
+      is_read: Boolean(row.is_read),
+      read_at: row.read_at,
+      created_at: row.created_at,
+    }));
+
+    const notifications = enrollmentNotifications.concat(userNotifications).sort((a, b) => {
+      const da = new Date(a.created_at).getTime();
+      const db = new Date(b.created_at).getTime();
+      return db - da;
+    });
 
     return res.json({ notifications });
   } catch (err) {
@@ -182,13 +254,32 @@ const markNotificationAsRead = async (req, res) => {
       'SELECT id, user_id, is_read FROM enrollment_notifications WHERE id = ? AND user_id = ?',
       [notificationId, userId]
     );
-    if (!rows.length) {
+    if (rows.length) {
+      if (!rows[0].is_read) {
+        await db.query(
+          'UPDATE enrollment_notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?',
+          [notificationId, userId]
+        );
+        broadcastToUser(userId, {
+          type: 'notification_read',
+          notification_id: notificationId,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      return res.json({ message: 'Notification marked as read.', notification_id: notificationId });
+    }
+
+    const [userRows] = await db.query(
+      'SELECT id, user_id, is_read FROM user_notifications WHERE id = ? AND user_id = ?',
+      [notificationId, userId]
+    );
+    if (!userRows.length) {
       return res.status(404).json({ message: 'Notification not found.' });
     }
 
-    if (!rows[0].is_read) {
+    if (!userRows[0].is_read) {
       await db.query(
-        'UPDATE enrollment_notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?',
+        'UPDATE user_notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?',
         [notificationId, userId]
       );
       broadcastToUser(userId, {
@@ -209,12 +300,18 @@ const markAllMyNotificationsAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [result] = await db.query(
+    const [resultEnroll] = await db.query(
       'UPDATE enrollment_notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0',
       [userId]
     );
 
-    const updated = Number(result && result.affectedRows) || 0;
+    const [resultUser] = await db.query(
+      'UPDATE user_notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0',
+      [userId]
+    );
+
+    const updated = (Number(resultEnroll && resultEnroll.affectedRows) || 0)
+      + (Number(resultUser && resultUser.affectedRows) || 0);
     if (updated > 0) {
       broadcastToUser(userId, {
         type: 'notifications_read_all',
@@ -233,8 +330,10 @@ const markAllMyNotificationsAsRead = async (req, res) => {
 const clearMyNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const [result] = await db.query('DELETE FROM enrollment_notifications WHERE user_id = ?', [userId]);
-    const deleted = Number(result && result.affectedRows) || 0;
+    const [resultEnroll] = await db.query('DELETE FROM enrollment_notifications WHERE user_id = ?', [userId]);
+    const [resultUser] = await db.query('DELETE FROM user_notifications WHERE user_id = ?', [userId]);
+    const deleted = (Number(resultEnroll && resultEnroll.affectedRows) || 0)
+      + (Number(resultUser && resultUser.affectedRows) || 0);
 
     broadcastToUser(userId, {
       type: 'notifications_cleared',
@@ -301,6 +400,7 @@ const streamMyNotifications = async (req, res) => {
 
 module.exports = {
   createNotification,
+  createUserNotification,
   getMyNotifications,
   markNotificationAsRead,
   markAllMyNotificationsAsRead,

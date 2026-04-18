@@ -120,15 +120,35 @@
                 function parseArrayField(raw) {
                     if (!raw) return [];
                     if (Array.isArray(raw)) return raw;
-                    if (typeof raw === 'string') {
-                        const trimmed = raw.trim();
-                        if (!trimmed) return [];
+                    if (typeof raw === 'object') {
+                        // Defensive: handle rare cases where JSON arrays are returned as objects.
                         try {
-                            const parsed = JSON.parse(trimmed);
-                            return Array.isArray(parsed) ? parsed : [];
-                        } catch (e) {
-                            return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                            var values = Object.values(raw);
+                            if (Array.isArray(values) && values.length) {
+                                return values.map(function(v) { return String(v || '').trim(); }).filter(Boolean);
+                            }
+                        } catch (e) {}
+                        return [];
+                    }
+                    if (typeof raw === 'string') {
+                        var trimmed = raw.trim();
+                        if (!trimmed) return [];
+                        // Handle nested/double-encoded JSON like "[\"A\",\"B\"]".
+                        for (var i = 0; i < 3; i++) {
+                            try {
+                                var parsed = JSON.parse(trimmed);
+                                if (Array.isArray(parsed)) return parsed;
+                                if (typeof parsed === 'string') {
+                                    trimmed = parsed.trim();
+                                    if (!trimmed) return [];
+                                    continue;
+                                }
+                                break;
+                            } catch (e) {
+                                break;
+                            }
                         }
+                        return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
                     }
                     return [];
                 }
@@ -158,14 +178,20 @@
                     const programTagsEl = document.getElementById('programTagsDisplay');
                     if (programTagsEl) {
                         const programs = parseArrayField(center.programs);
+                        window._centerPrograms = Array.isArray(programs) ? programs.slice() : [];
+                        programTagsEl.innerHTML = '';
                         if (programs.length > 0) {
-                            programTagsEl.innerHTML = '';
                             programs.forEach(function(program) {
                                 const btn = document.createElement('button');
                                 btn.className = 'program-tag';
                                 btn.textContent = String(program).trim();
                                 programTagsEl.appendChild(btn);
                             });
+                        } else {
+                            programTagsEl.innerHTML = '<button class="program-tag">No programs listed yet</button>';
+                        }
+                        if (typeof window._refreshTeacherProgramPills === 'function') {
+                            window._refreshTeacherProgramPills();
                         }
                     }
 
@@ -1795,11 +1821,16 @@ window.dSchedSaveBackend = async function() {
 
     function getCenterProgramsFromTags() {
         var tags = document.querySelectorAll('#programTagsDisplay .program-tag');
-        if (!tags || !tags.length) return [];
-        return Array.from(tags)
+        var fromTags = (!tags || !tags.length) ? [] : Array.from(tags)
             .map(function(t) { return String(t && t.textContent || '').trim(); })
             .filter(Boolean)
             .filter(function(p) { return p.toLowerCase() !== 'no programs listed yet'; });
+        if (fromTags.length) return fromTags;
+        var cached = window._centerPrograms;
+        if (Array.isArray(cached) && cached.length) {
+            return cached.map(function(p) { return String(p || '').trim(); }).filter(Boolean);
+        }
+        return [];
     }
 
     function setTeacherProgramValue(value) {
@@ -1842,6 +1873,12 @@ window.dSchedSaveBackend = async function() {
             setTeacherProgramValue(programInput.value);
         }
     }
+
+    // Allow program pills to refresh after async center load.
+    window._refreshTeacherProgramPills = function() {
+        if (!programPillsEl) return;
+        renderTeacherProgramPills();
+    };
 
     function setTeacherFormOpen(isOpen) {
         if (!form) return;

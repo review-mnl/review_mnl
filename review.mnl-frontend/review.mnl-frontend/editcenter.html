@@ -208,10 +208,20 @@
                     if (!raw) return [];
                     if (Array.isArray(raw)) return raw;
                     if (typeof raw === 'string') {
-                        const trimmed = raw.trim();
+                        let trimmed = raw.trim();
                         if (!trimmed) return [];
                         try {
-                            const parsed = JSON.parse(trimmed);
+                            let parsed = JSON.parse(trimmed);
+                            for (let i = 0; i < 3; i++) {
+                                if (Array.isArray(parsed)) return parsed;
+                                if (typeof parsed === 'string') {
+                                    trimmed = parsed.trim();
+                                    if (!trimmed) return [];
+                                    parsed = JSON.parse(trimmed);
+                                    continue;
+                                }
+                                break;
+                            }
                             return Array.isArray(parsed) ? parsed : [];
                         } catch (e) {
                             return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);

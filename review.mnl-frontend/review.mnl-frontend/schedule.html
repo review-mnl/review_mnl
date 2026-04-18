@@ -230,6 +230,11 @@
                     </div>
                     <div class="ec-teacher-form">
                         <input id="ecTeacherName" type="text" placeholder="Full name">
+                        <input id="ecTeacherProgram" type="hidden" value="">
+                        <div class="ec-teacher-program">
+                            <div class="ec-teacher-program-label">Program</div>
+                            <div id="ecTeacherProgramPills" class="ec-teacher-program-pills"></div>
+                        </div>
                         <input id="ecTeacherSubject" type="text" placeholder="Subject / Specialty">
                         <input id="ecTeacherEmail" type="email" placeholder="Email">
                         <textarea id="ecTeacherNotes" placeholder="Notes (optional)"></textarea>
@@ -951,6 +956,49 @@
                 justify-self: start;
             }
 
+            .ec-teacher-program {
+                grid-column: 1 / -1;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .ec-teacher-program-label {
+                font-size: 12px;
+                font-weight: 700;
+                color: #334155;
+            }
+
+            .ec-teacher-program-pills {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .ec-prog-pill {
+                padding: 6px 10px;
+                border: 1.5px solid #dde3f0;
+                border-radius: 999px;
+                background: #fff;
+                color: #475569;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .ec-prog-pill.active {
+                border-color: #0a4cff;
+                background: #eef2ff;
+                color: #1f3a8a;
+            }
+
+            .ec-prog-pill-disabled {
+                font-size: 12px;
+                color: #94a3b8;
+                padding: 6px 0;
+            }
+
             .ec-teacher-toggle {
                 padding: 8px 12px;
                 border: 1.5px solid #cbd5f5;
@@ -1178,13 +1226,14 @@ function normalizeTeacherItem(item) {
     if (!item) return null;
     if (typeof item === "string") {
         var rawName = normalizeTeacherName(item);
-        return rawName ? { name: rawName, subject: "", email: "", notes: "" } : null;
+        return rawName ? { name: rawName, program: "", subject: "", email: "", notes: "" } : null;
     }
     if (typeof item !== "object") return null;
     var name = normalizeTeacherName(item.name || item.full_name || "");
     if (!name) return null;
     return {
         name: name,
+        program: normalizeTeacherName(item.program || item.course || item.program_name || ""),
         subject: normalizeTeacherName(item.subject || item.specialty || ""),
         email: normalizeTeacherName(item.email || ""),
         notes: normalizeTeacherName(item.notes || ""),
@@ -1240,7 +1289,8 @@ function buildTeacherOptions(selected) {
     TEACHER_LIST.forEach(function(teacher) {
         var name = teacher.name;
         var label = name;
-        if (teacher.subject) label = name + ' · ' + teacher.subject;
+        if (teacher.program) label = name + ' · ' + teacher.program;
+        else if (teacher.subject) label = name + ' · ' + teacher.subject;
         var isSelected = current && name.toLowerCase() === current.toLowerCase();
         options.push('<option value="' + name + '"' + (isSelected ? ' selected' : '') + '>' + label + '</option>');
     });
@@ -1269,6 +1319,7 @@ function renderTeacherList() {
     }
     listEl.innerHTML = TEACHER_LIST.map(function(teacher) {
         var metaParts = [];
+        if (teacher.program) metaParts.push(teacher.program);
         if (teacher.subject) metaParts.push(teacher.subject);
         if (teacher.email) metaParts.push(teacher.email);
         if (teacher.notes) metaParts.push(teacher.notes);
@@ -1352,7 +1403,7 @@ function removeTeacher(name) {
     var target = normalizeTeacherName(name);
     if (!target) return;
     TEACHER_LIST = TEACHER_LIST.filter(function(item) {
-        return item.toLowerCase() !== target.toLowerCase();
+        return normalizeTeacherName(item && item.name).toLowerCase() !== target.toLowerCase();
     });
     clearTeacherAssignments(target);
     renderTeacherList();
@@ -1733,12 +1784,64 @@ window.dSchedSaveBackend = async function() {
 
 (function bindTeacherControls() {
     var nameInput = document.getElementById('ecTeacherName');
+    var programInput = document.getElementById('ecTeacherProgram');
+    var programPillsEl = document.getElementById('ecTeacherProgramPills');
     var subjectInput = document.getElementById('ecTeacherSubject');
     var emailInput = document.getElementById('ecTeacherEmail');
     var notesInput = document.getElementById('ecTeacherNotes');
     var btn = document.getElementById('ecTeacherAddBtn');
     var toggleBtn = document.getElementById('ecTeacherToggleBtn');
     var form = document.querySelector('.ec-teacher-form');
+
+    function getCenterProgramsFromTags() {
+        var tags = document.querySelectorAll('#programTagsDisplay .program-tag');
+        if (!tags || !tags.length) return [];
+        return Array.from(tags)
+            .map(function(t) { return String(t && t.textContent || '').trim(); })
+            .filter(Boolean)
+            .filter(function(p) { return p.toLowerCase() !== 'no programs listed yet'; });
+    }
+
+    function setTeacherProgramValue(value) {
+        if (programInput) programInput.value = String(value || '').trim();
+        if (!programPillsEl) return;
+        var selected = String((programInput && programInput.value) || '').trim().toLowerCase();
+        Array.from(programPillsEl.querySelectorAll('button.ec-prog-pill')).forEach(function(btn) {
+            var val = String(btn.getAttribute('data-program') || '').trim().toLowerCase();
+            btn.classList.toggle('active', Boolean(selected) && val === selected);
+        });
+    }
+
+    function renderTeacherProgramPills() {
+        if (!programPillsEl) return;
+        var programs = getCenterProgramsFromTags();
+        programPillsEl.innerHTML = '';
+        if (!programs.length) {
+            var hint = document.createElement('div');
+            hint.className = 'ec-prog-pill-disabled';
+            hint.textContent = 'Set programs first to pick a teacher role.';
+            programPillsEl.appendChild(hint);
+            return;
+        }
+        programs.forEach(function(program) {
+            var label = String(program || '').trim();
+            if (!label) return;
+            var pill = document.createElement('button');
+            pill.type = 'button';
+            pill.className = 'ec-prog-pill';
+            pill.textContent = label;
+            pill.setAttribute('data-program', label);
+            pill.addEventListener('click', function() {
+                setTeacherProgramValue(label);
+            });
+            programPillsEl.appendChild(pill);
+        });
+        if (!String((programInput && programInput.value) || '').trim()) {
+            setTeacherProgramValue(programs[0]);
+        } else {
+            setTeacherProgramValue(programInput.value);
+        }
+    }
 
     function setTeacherFormOpen(isOpen) {
         if (!form) return;
@@ -1747,11 +1850,18 @@ window.dSchedSaveBackend = async function() {
         if (isOpen && nameInput) {
             try { nameInput.focus(); } catch (e) {}
         }
+        if (isOpen) {
+            renderTeacherProgramPills();
+        }
     }
 
     function readTeacherForm() {
+        var programs = getCenterProgramsFromTags();
+        var selectedProgram = String((programInput && programInput.value) || '').trim();
+        if (programs.length && !selectedProgram) selectedProgram = String(programs[0] || '').trim();
         return {
             name: nameInput ? nameInput.value : '',
+            program: selectedProgram,
             subject: subjectInput ? subjectInput.value : '',
             email: emailInput ? emailInput.value : '',
             notes: notesInput ? notesInput.value : '',
@@ -1760,9 +1870,15 @@ window.dSchedSaveBackend = async function() {
 
     function clearTeacherForm() {
         if (nameInput) nameInput.value = '';
+        if (programInput) programInput.value = '';
         if (subjectInput) subjectInput.value = '';
         if (emailInput) emailInput.value = '';
         if (notesInput) notesInput.value = '';
+        if (programPillsEl) {
+            Array.from(programPillsEl.querySelectorAll('button.ec-prog-pill')).forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+        }
     }
 
     if (btn) {

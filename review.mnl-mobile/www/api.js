@@ -652,33 +652,8 @@ function initGlobalNotificationBell(options) {
         var unreadEl = wrapper.querySelector('.rmnl-global-unread');
         var clearBtn = wrapper.querySelector('.rmnl-global-clear');
 
-        // Render dropdown at document level so page-specific stacking contexts
-        // (e.g., map panes) can never overlap it.
-        if (drop && drop.parentElement !== document.body) {
-            document.body.appendChild(drop);
-        }
-        if (drop) {
-            drop.style.position = 'fixed';
-            drop.style.zIndex = '2147483000';
-        }
-
-        function placeDropNearButton() {
-            if (!drop || !btn) return;
-            var rect = btn.getBoundingClientRect();
-            var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
-            var dropWidth = drop.offsetWidth || 360;
-            var margin = 10;
-
-            var left = rect.right - dropWidth;
-            if (left < margin) left = margin;
-            if (left + dropWidth > viewportWidth - margin) {
-                left = Math.max(margin, viewportWidth - dropWidth - margin);
-            }
-
-            drop.style.left = left + 'px';
-            drop.style.top = (rect.bottom + 8) + 'px';
-            drop.style.right = 'auto';
-        }
+        // Keep dropdown inside wrapper with absolute positioning relative to bell button.
+        // This ensures it respects the header's stacking context and doesn't overlap.
 
         function closeProfileDropdowns() {
             var profileDropdowns = document.querySelectorAll('#profileDropdown, #contactProfileDropdown, .profile-dropdown');
@@ -809,7 +784,6 @@ function initGlobalNotificationBell(options) {
             var isOpen = drop.style.display === 'block';
             if (!isOpen) {
                 closeProfileDropdowns();
-                placeDropNearButton();
                 try {
                     Promise.resolve(NotificationAPI.markAllAsRead()).then(refresh).catch(function(){});
                 } catch (e) {}
@@ -828,11 +802,11 @@ function initGlobalNotificationBell(options) {
         });
 
         window.addEventListener('resize', function() {
-            if (drop.style.display === 'block') placeDropNearButton();
+            // Dropdown uses CSS absolute positioning, no need to recalculate
         });
 
         window.addEventListener('scroll', function() {
-            if (drop.style.display === 'block') placeDropNearButton();
+            // Dropdown uses CSS absolute positioning, no need to recalculate
         }, true);
 
         if (window.__rmnlGlobalNotifTimer) {

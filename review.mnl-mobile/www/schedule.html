@@ -172,11 +172,14 @@
                     if (center.description) {
                         document.getElementById('aboutDisplay').textContent = center.description;
                     }
-                    
+
+                    // Cache programs for teacher role picker even on pages
+                    // that don't render the Programs Offered section.
+                    const programs = parseArrayField(center.programs);
+                    window._centerPrograms = Array.isArray(programs) ? programs.slice() : [];
+
                     const programTagsEl = document.getElementById('programTagsDisplay');
                     if (programTagsEl) {
-                        const programs = parseArrayField(center.programs);
-                        window._centerPrograms = Array.isArray(programs) ? programs.slice() : [];
                         programTagsEl.innerHTML = '';
                         if (programs.length > 0) {
                             programs.forEach(function(program) {
@@ -188,9 +191,10 @@
                         } else {
                             programTagsEl.innerHTML = '<button class="program-tag">No programs listed yet</button>';
                         }
-                        if (typeof window._refreshTeacherProgramPills === 'function') {
-                            window._refreshTeacherProgramPills();
-                        }
+                    }
+
+                    if (typeof window._refreshTeacherProgramPills === 'function') {
+                        window._refreshTeacherProgramPills();
                     }
 
                     const achievementsEl = document.getElementById('achievementListDisplay');
@@ -1828,6 +1832,12 @@ window.dSchedSaveBackend = async function() {
         if (Array.isArray(cached) && cached.length) {
             return cached.map(function(p) { return String(p || '').trim(); }).filter(Boolean);
         }
+        try {
+            var u = (typeof getUser === 'function') ? getUser() : null;
+            if (u && Array.isArray(u.programs) && u.programs.length) {
+                return u.programs.map(function(p) { return String(p || '').trim(); }).filter(Boolean);
+            }
+        } catch (e) {}
         return [];
     }
 

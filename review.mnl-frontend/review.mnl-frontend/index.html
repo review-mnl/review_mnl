@@ -123,21 +123,10 @@
                             return API_BASE + '/' + normalized.replace(/^\/+/, '');
                         }
 
-                        const response = await CentersAPI.getAll();
+                        const centers = await CentersAPI.getAll();
                         const container = document.getElementById('featuredCards');
                         const loading = document.getElementById('featuredLoading');
                         if (loading) loading.remove();
-                        
-                        // Handle both paginated and non-paginated responses
-                        let centers;
-                        if (response && response.data) {
-                            centers = Array.isArray(response.data) ? response.data : [];
-                        } else if (Array.isArray(response)) {
-                            centers = response;
-                        } else {
-                            centers = Array.isArray(response.centers) ? response.centers : [];
-                        }
-                        
                         const top = centers.slice(0, 3);
                         if (top.length === 0) {
                             container.innerHTML = '<p style="color:#888;font-size:14px;">No review centers available yet.</p>';

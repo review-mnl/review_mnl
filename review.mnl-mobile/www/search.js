@@ -304,21 +304,10 @@ async function loadCenters() {
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const q = urlParams.get('q') || '';
-        let response;
-        if (q) response = await CentersAPI.search(q);
-        else response = await CentersAPI.getAll();
-        
-        // Handle both paginated and non-paginated responses
-        if (response && response.data) {
-            // Paginated response from API
-            _allCenters = Array.isArray(response.data) ? response.data : [];
-        } else if (Array.isArray(response)) {
-            // Direct array response (backward compatibility)
-            _allCenters = response;
-        } else {
-            // Fallback to centers property
-            _allCenters = Array.isArray(response.centers) ? response.centers : [];
-        }
+        let centers;
+        if (q) centers = await CentersAPI.search(q);
+        else centers = await CentersAPI.getAll();
+        _allCenters = Array.isArray(centers) ? centers : (centers.centers || []);
     } catch (err) {
         if (loadingMsg) loadingMsg.textContent = 'Failed to load centers. Is the server running?';
         return;

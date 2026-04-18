@@ -355,7 +355,6 @@
             </div>
         </div>
         <script src="api.js"></script>
-        <script src="form-validation.js"></script>
         <script>            // If already logged in, redirect away from login
             (function() {
                 var user = getActiveUser();
@@ -458,15 +457,6 @@
                 const remember = document.querySelector('input[name="remember"]').checked;
                 const btn      = document.querySelector('.login-btn');
                 const errEl    = document.getElementById('loginError');
-                
-                // Validate using FormValidation utility
-                const validation = FormValidation.validateLogin(email, password);
-                if (!validation.isValid) {
-                    errEl.textContent = validation.errors.join(' ');
-                    errEl.style.display = 'block';
-                    return;
-                }
-
                 errEl.style.display = 'none';
                 btn.disabled = true;
                 btn.textContent = 'Logging in...';

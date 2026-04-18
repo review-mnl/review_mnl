@@ -354,26 +354,14 @@ const CentersAPI = {
     getAll: () =>
         apiRequest('GET', '/api/centers'),
 
-    getAllPaginated: (page = 1, limit = 10) =>
-        apiRequest('GET', '/api/centers?page=' + encodeURIComponent(page) + '&limit=' + encodeURIComponent(limit)),
-
     search: (q) =>
         apiRequest('GET', '/api/centers/search?q=' + encodeURIComponent(q)),
-
-    searchPaginated: (q, page = 1, limit = 10) =>
-        apiRequest('GET', '/api/centers/search?q=' + encodeURIComponent(q) + '&page=' + encodeURIComponent(page) + '&limit=' + encodeURIComponent(limit)),
 
     getById: (id) =>
         apiRequest('GET', '/api/centers/' + id),
 
     postTestimonial: (centerId, content, rating) =>
         apiRequest('POST', '/api/centers/' + centerId + '/testimonials', { content, rating }),
-
-    updateTestimonial: (centerId, testimonialId, content, rating) =>
-        apiRequest('PUT', '/api/centers/' + centerId + '/testimonials/' + testimonialId, { content, rating }),
-
-    deleteTestimonial: (centerId, testimonialId) =>
-        apiRequest('DELETE', '/api/centers/' + centerId + '/testimonials/' + testimonialId),
 
     getMyProfile: () =>
         apiRequest('GET', '/api/centers/me'),

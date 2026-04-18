@@ -488,7 +488,6 @@
             </div>
         </div>
         <script src="api.js"></script>
-        <script src="form-validation.js"></script>
         <script>
             // ── OAuth buttons ───────────────────────────────────────────────
             document.getElementById('googleSignupBtn').addEventListener('click', function () {
@@ -558,33 +557,22 @@
 
             document.getElementById('signupForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
+                const termsChecked = document.getElementById('termsCheckbox').checked;
+                const termsError = document.getElementById('termsError');
+                if (!termsChecked) { termsError.style.display = 'block'; return; }
+                termsError.style.display = 'none';
+
                 const role     = document.getElementById('signupRole').value;
                 const email    = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
                 const confirm  = document.getElementById('confirm-password').value;
-                const termsChecked = document.getElementById('termsCheckbox').checked;
                 const errEl    = document.getElementById('signupError');
-                const termsError = document.getElementById('termsError');
-                
                 errEl.style.display = 'none';
-                termsError.style.display = 'none';
                 document.getElementById('signupLoginHint').style.display = 'none';
                 document.getElementById('email').style.borderColor = '';
 
-                // Validate using FormValidation utility
-                let validation;
-                if (role === 'admin') {
-                    const businessName = document.getElementById('centername').value.trim();
-                    const bpFile = document.getElementById('businessPermit').files[0];
-                    const dtiFile = document.getElementById('dtiDoc').files[0];
-                    validation = FormValidation.validateCenterSignup(businessName, email, password, confirm, termsChecked, bpFile, dtiFile);
-                } else {
-                    const fullname = document.getElementById('fullname').value.trim();
-                    validation = FormValidation.validateStudentSignup(fullname, email, password, confirm, termsChecked);
-                }
-
-                if (!validation.isValid) {
-                    errEl.textContent = validation.errors.join(' ');
+                if (password !== confirm) {
+                    errEl.textContent = 'Passwords do not match.';
                     errEl.style.display = 'block';
                     return;
                 }
@@ -598,10 +586,18 @@
                         // Review Center registration — multipart/form-data
                         const fd = new FormData();
                         fd.append('business_name', document.getElementById('centername').value.trim());
+                        // No owner_first/owner_last needed anymore
                         fd.append('email',  email);
                         fd.append('password', password);
                         const bpFile = document.getElementById('businessPermit').files[0];
                         const dtiFile = document.getElementById('dtiDoc').files[0];
+                        if (!bpFile || !dtiFile) {
+                            errEl.textContent = 'Please upload both verification documents.';
+                            errEl.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'CREATE ACCOUNT';
+                            return;
+                        }
                         fd.append('business_permit', bpFile);
                         fd.append('dti_sec_reg',     dtiFile);
                         await AuthAPI.registerCenter(fd);

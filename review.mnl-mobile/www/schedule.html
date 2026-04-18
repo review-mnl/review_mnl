@@ -212,10 +212,30 @@
 
         <!-- Operating Schedule Section -->
         <section class="ec-schedule-section">
-            <div class="ec-schedule-header">
-                <div>
-                    <h2>Operating Schedule</h2>
-                    <p>Days and hours the review center is open</p>
+            <div class="ec-schedule-left">
+                <div class="ec-schedule-header">
+                    <div>
+                        <h2>Operating Schedule</h2>
+                        <p>Days and hours the review center is open</p>
+                    </div>
+                </div>
+
+                <div class="ec-teacher-card">
+                    <div class="ec-teacher-head">
+                        <div>
+                            <h4>Teachers</h4>
+                            <p>Add teachers so you can assign them to schedule shifts.</p>
+                        </div>
+                        <button type="button" id="ecTeacherToggleBtn" class="ec-teacher-toggle">+ Add</button>
+                    </div>
+                    <div class="ec-teacher-form">
+                        <input id="ecTeacherName" type="text" placeholder="Full name">
+                        <input id="ecTeacherSubject" type="text" placeholder="Subject / Specialty">
+                        <input id="ecTeacherEmail" type="email" placeholder="Email">
+                        <textarea id="ecTeacherNotes" placeholder="Notes (optional)"></textarea>
+                        <button type="button" id="ecTeacherAddBtn">Add Teacher</button>
+                    </div>
+                    <div id="ecTeacherList" class="ec-teacher-list"></div>
                 </div>
             </div>
 
@@ -246,23 +266,6 @@
                 </div>
             </div>
 
-            <div class="ec-teacher-card">
-                <div class="ec-teacher-head">
-                    <div>
-                        <h4>Teachers</h4>
-                        <p>Add teachers so you can assign them to schedule shifts.</p>
-                    </div>
-                    <button type="button" id="ecTeacherToggleBtn" class="ec-teacher-toggle">+ Add</button>
-                </div>
-                <div class="ec-teacher-form">
-                    <input id="ecTeacherName" type="text" placeholder="Full name">
-                    <input id="ecTeacherSubject" type="text" placeholder="Subject / Specialty">
-                    <input id="ecTeacherEmail" type="email" placeholder="Email">
-                    <textarea id="ecTeacherNotes" placeholder="Notes (optional)"></textarea>
-                    <button type="button" id="ecTeacherAddBtn">Add Teacher</button>
-                </div>
-                <div id="ecTeacherList" class="ec-teacher-list"></div>
-            </div>
         </section>
 
         <section class="gap1"></section>
@@ -654,6 +657,14 @@
                 align-items: start;
             }
 
+            .ec-schedule-left {
+                grid-column: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 22px;
+                min-width: 0;
+            }
+
             .ec-schedule-header {
                 display: flex;
                 align-items: flex-start;
@@ -664,8 +675,6 @@
                 margin-right: 0;
                 width: 100%;
                 text-align: left;
-                grid-column: 1;
-                grid-row: 1;
             }
 
             .ec-schedule-header h2 {
@@ -691,7 +700,7 @@
                 max-width: calc(170px + 560px + 12px);
                 margin-left: 0;
                 margin-right: 0;
-                justify-self: end;
+                justify-self: start;
                 grid-column: 2;
                 grid-row: 1;
             }
@@ -1101,9 +1110,10 @@
 
             @media (max-width: 900px) {
                 .ec-schedule-section { grid-template-columns: 1fr; row-gap: 18px; column-gap: 0; }
-                .ec-schedule-header { grid-column: 1; grid-row: 1; }
+                .ec-schedule-left { grid-column: 1; grid-row: 1; }
                 .ec-schedule-body { grid-column: 1; grid-row: 2; justify-self: start; max-width: none; }
-                .ec-teacher-card { grid-column: 1; grid-row: 3; justify-self: start; max-width: none; }
+
+                .ec-teacher-card { max-width: none; }
 
                 .ec-schedule-body { grid-template-columns: 1fr; align-items: stretch; justify-items: center; }
                 .ec-day-pills { flex-direction: row; flex-wrap: wrap; min-width: unset; grid-column: 1 / -1; justify-content: center; }

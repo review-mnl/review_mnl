@@ -2398,6 +2398,9 @@ const AdminAPI = {
 // Auto-initialize the global notification bell on pages that include this script.
 document.addEventListener('DOMContentLoaded', function() {
     try {
+        if (document.body) document.body.classList.remove('rmnl-preload');
+    } catch (e) {}
+    try {
         if (typeof initGlobalNotificationBell === 'function') initGlobalNotificationBell();
     } catch (e) {}
 });

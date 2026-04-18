@@ -643,7 +643,11 @@ function initGlobalNotificationBell(options) {
         profileWrapper.style.alignItems = 'center';
         profileWrapper.style.gap = '8px';
         profileWrapper.style.zIndex = '12000';
-        profileWrapper.parentNode.insertBefore(wrapper, profileWrapper);
+        if (profileWrapper.firstChild) {
+            profileWrapper.insertBefore(wrapper, profileWrapper.firstChild);
+        } else {
+            profileWrapper.appendChild(wrapper);
+        }
 
         var btn = wrapper.querySelector('.rmnl-global-bell-btn');
         var badge = wrapper.querySelector('.rmnl-global-bell-badge');

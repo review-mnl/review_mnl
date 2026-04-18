@@ -288,6 +288,7 @@
                 </div>
                 <div class="modal-body">
                     <p id="reviewEditCenterName" style="margin:0 0 10px;color:#1f2937;font-weight:600;"></p>
+                    <p id="reviewEditHint" style="margin:0 0 12px;color:#64748b;font-size:12px;">Update your rating and review. You can edit again after 3 days.</p>
                     <label for="reviewEditRating">Rating</label>
                     <select id="reviewEditRating">
                         <option value="">Select rating (1-5)...</option>
@@ -300,6 +301,7 @@
                     <label for="reviewEditContent" style="margin-top:12px;">Review</label>
                     <textarea id="reviewEditContent" rows="5" placeholder="Update your review..."></textarea>
                     <p id="reviewEditCooldown" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:12px;"></p>
+                    <p id="reviewEditStatus" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:12px;"></p>
                 </div>
                 <div style="display:flex;justify-content:flex-end;gap:10px;padding:0 24px 20px;">
                     <button type="button" onclick="closeReviewEditModal()" style="padding:8px 14px;border:1px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Cancel</button>
@@ -1134,6 +1136,8 @@
                     var cooldownEl = document.getElementById('reviewEditCooldown');
                     var saveBtn = document.getElementById('reviewEditSaveBtn');
 
+                    clearReviewEditStatus();
+
                     var cooldownInfo = getReviewCooldown(review);
                     if (cooldownEl) {
                         cooldownEl.style.display = cooldownInfo.allowed ? 'none' : 'block';
@@ -1156,7 +1160,22 @@
                 function closeReviewEditModal() {
                     var modal = document.getElementById('reviewEditModal');
                     if (modal) modal.classList.remove('active');
+                    clearReviewEditStatus();
+                    var cooldownEl = document.getElementById('reviewEditCooldown');
+                    if (cooldownEl) cooldownEl.style.display = 'none';
                     window._activeReviewEdit = null;
+                }
+
+                function setReviewEditStatus(message, isError) {
+                    var statusEl = document.getElementById('reviewEditStatus');
+                    if (!statusEl) return;
+                    statusEl.textContent = message || '';
+                    statusEl.style.display = message ? 'block' : 'none';
+                    statusEl.style.color = isError ? '#b91c1c' : '#15803d';
+                }
+
+                function clearReviewEditStatus() {
+                    setReviewEditStatus('', true);
                 }
 
                 async function saveReviewEdit() {
@@ -1174,15 +1193,19 @@
                     var content = contentEl ? String(contentEl.value || '').trim() : '';
 
                     if (!rating || rating < 1 || rating > 5) {
-                        alert('Please select a rating between 1 and 5.');
+                        setReviewEditStatus('Please select a rating between 1 and 5.', true);
                         return;
                     }
                     if (!content) {
-                        alert('Please enter your review.');
+                        setReviewEditStatus('Please enter your review.', true);
                         return;
                     }
 
-                    if (saveBtn) saveBtn.disabled = true;
+                    if (saveBtn) {
+                        saveBtn.disabled = true;
+                        saveBtn.textContent = 'Saving...';
+                    }
+                    clearReviewEditStatus();
                     try {
                         var resp = await CentersAPI.updateTestimonial(centerId, testimonialId, content, rating);
                         var review = window._myReviewsMap && window._myReviewsMap[String(centerId)];
@@ -1200,11 +1223,13 @@
                         if (cooldownEl) {
                             cooldownEl.style.display = 'block';
                             cooldownEl.textContent = e.message || 'Failed to update review.';
-                        } else {
-                            alert(e.message || 'Failed to update review.');
                         }
+                        setReviewEditStatus(e.message || 'Failed to update review.', true);
                     } finally {
-                        if (saveBtn) saveBtn.disabled = false;
+                        if (saveBtn) {
+                            saveBtn.disabled = false;
+                            saveBtn.textContent = 'Save Changes';
+                        }
                     }
                 }
 

@@ -1645,17 +1645,35 @@
                 const reportCenterBtn = document.getElementById('reportCenterBtn');
                 const user = getUser();
 
-                function submitReport(payload, promptLabel) {
+                function submitReport(payload, modalOptions) {
                     if (!ReportsAPI || typeof ReportsAPI.create !== 'function') {
                         alert('Reporting is not available right now.');
                         return;
                     }
-                    var reason = window.prompt(promptLabel || 'Why are you reporting this?');
-                    if (!reason) return;
-                    var data = Object.assign({}, payload, { reason: reason });
-                    ReportsAPI.create(data)
-                        .then(function() { alert('Report submitted.'); })
-                        .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                    if (typeof openReportModal !== 'function') {
+                        alert('Reporting is not available right now.');
+                        return;
+                    }
+                    var opts = modalOptions || {};
+                    openReportModal({
+                        title: opts.title || 'Report',
+                        target: opts.target || '',
+                        reasons: opts.reasons,
+                        prefillDetails: opts.prefillDetails || ''
+                    }).then(function(result) {
+                        if (!result) return;
+                        var baseDetails = String((payload && payload.details) || '').trim();
+                        var extra = String(result.details || '').trim();
+                        var data = Object.assign({}, payload, { reason: result.reason });
+                        if (extra) {
+                            data.details = baseDetails ? (baseDetails + ' | ' + extra) : extra;
+                        } else if (baseDetails) {
+                            data.details = baseDetails;
+                        }
+                        ReportsAPI.create(data)
+                            .then(function() { alert('Report submitted.'); })
+                            .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                    });
                 }
 
                 if (nameEl) nameEl.textContent = centerName;
@@ -1683,7 +1701,10 @@
                             report_type: 'center',
                             center_id: Number(centerId || 0),
                             details: 'Report review center: ' + centerName
-                        }, 'Why are you reporting this review center?');
+                        }, {
+                            title: 'Report Center',
+                            target: centerName
+                        });
                     };
                 }
 
@@ -1763,7 +1784,10 @@
                                 reported_user_id: Number(t.student_id || 0),
                                 center_id: Number(centerId || 0),
                                 details: 'Report review by ' + studentName
-                            }, 'Why are you reporting this review?');
+                            }, {
+                                title: 'Report Review',
+                                target: studentName
+                            });
                         });
                     }
                     if (prepend && testimonialsListEl.firstChild) {

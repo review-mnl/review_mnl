@@ -307,6 +307,113 @@ async function apiRequest(method, path, body, isFormData) {
 }
 
 // ---------------------------------------------------------------------------
+// Report modal helper
+// ---------------------------------------------------------------------------
+function ensureReportModal() {
+    if (document.getElementById('rmnlReportModal')) return;
+
+    var overlay = document.createElement('div');
+    overlay.id = 'rmnlReportModal';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = ''
+        + '<div class="modal-box" style="max-width:520px;">'
+        + '  <div class="modal-header">'
+        + '    <h3 id="rmnlReportTitle">Report</h3>'
+        + '    <button class="modal-close" type="button" data-report-close>&times;</button>'
+        + '  </div>'
+        + '  <div class="modal-body">'
+        + '    <p id="rmnlReportTarget" style="margin:0 0 10px;color:#4b5563;font-size:12px;"></p>'
+        + '    <label for="rmnlReportReason">Reason</label>'
+        + '    <select id="rmnlReportReason"></select>'
+        + '    <label for="rmnlReportDetails" style="margin-top:12px;">Details (optional)</label>'
+        + '    <textarea id="rmnlReportDetails" rows="4" placeholder="Add more context..."></textarea>'
+        + '    <p id="rmnlReportError" style="display:none;color:#b91c1c;font-size:12px;margin-top:8px;"></p>'
+        + '  </div>'
+        + '  <div style="display:flex;justify-content:flex-end;gap:10px;padding:0 24px 20px;">'
+        + '    <button type="button" data-report-cancel style="padding:8px 14px;border:1px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Cancel</button>'
+        + '    <button type="button" data-report-submit style="padding:8px 16px;border:none;background:#0a4cff;color:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Submit Report</button>'
+        + '  </div>'
+        + '</div>';
+
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeReportModal(null);
+    });
+
+    var closeBtn = overlay.querySelector('[data-report-close]');
+    var cancelBtn = overlay.querySelector('[data-report-cancel]');
+    if (closeBtn) closeBtn.addEventListener('click', function() { closeReportModal(null); });
+    if (cancelBtn) cancelBtn.addEventListener('click', function() { closeReportModal(null); });
+
+    var submitBtn = overlay.querySelector('[data-report-submit]');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function() {
+            var reasonEl = document.getElementById('rmnlReportReason');
+            var detailsEl = document.getElementById('rmnlReportDetails');
+            var errEl = document.getElementById('rmnlReportError');
+            var reason = reasonEl ? String(reasonEl.value || '').trim() : '';
+            var details = detailsEl ? String(detailsEl.value || '').trim() : '';
+            if (!reason) {
+                if (errEl) {
+                    errEl.textContent = 'Please select a reason.';
+                    errEl.style.display = 'block';
+                }
+                return;
+            }
+            if (errEl) {
+                errEl.textContent = '';
+                errEl.style.display = 'none';
+            }
+            closeReportModal({ reason: reason, details: details });
+        });
+    }
+}
+
+function closeReportModal(result) {
+    var overlay = document.getElementById('rmnlReportModal');
+    if (overlay) overlay.classList.remove('active');
+    var resolver = window.__rmnlReportModalResolve;
+    window.__rmnlReportModalResolve = null;
+    if (typeof resolver === 'function') resolver(result || null);
+}
+
+function openReportModal(options) {
+    ensureReportModal();
+    var overlay = document.getElementById('rmnlReportModal');
+    var titleEl = document.getElementById('rmnlReportTitle');
+    var targetEl = document.getElementById('rmnlReportTarget');
+    var reasonEl = document.getElementById('rmnlReportReason');
+    var detailsEl = document.getElementById('rmnlReportDetails');
+    var errEl = document.getElementById('rmnlReportError');
+
+    var opts = options || {};
+    if (titleEl) titleEl.textContent = String(opts.title || 'Report');
+    if (targetEl) targetEl.textContent = opts.target ? ('Reporting: ' + String(opts.target)) : '';
+    if (detailsEl) detailsEl.value = String(opts.prefillDetails || '');
+    if (errEl) {
+        errEl.textContent = '';
+        errEl.style.display = 'none';
+    }
+
+    if (reasonEl) {
+        var reasons = Array.isArray(opts.reasons) && opts.reasons.length
+            ? opts.reasons
+            : ['Harassment', 'Spam', 'Scam', 'Misleading', 'Inappropriate', 'Other'];
+        reasonEl.innerHTML = '<option value="">Select reason...</option>'
+            + reasons.map(function(r) { return '<option value="' + String(r) + '">' + String(r) + '</option>'; }).join('');
+    }
+
+    if (overlay) overlay.classList.add('active');
+
+    return new Promise(function(resolve) {
+        window.__rmnlReportModalResolve = resolve;
+    });
+}
+
+window.openReportModal = openReportModal;
+
+// ---------------------------------------------------------------------------
 // Auth API
 // ---------------------------------------------------------------------------
 const AuthAPI = {
@@ -1034,18 +1141,30 @@ function initStudentMessageSlider(options) {
                     event.preventDefault();
                     event.stopPropagation();
                     if (!activeConversation || !activeConversation.other_user_id) return;
-                    var reason = window.prompt('Why are you reporting this conversation?');
-                    if (!reason) return;
-                    var payload = {
-                        report_type: 'message',
-                        reason: reason,
-                        details: 'Conversation report',
-                        reported_user_id: Number(activeConversation.other_user_id || 0),
-                        center_id: Number(activeConversation.center_id || 0)
-                    };
-                    ReportsAPI.create(payload)
-                        .then(function() { alert('Report submitted.'); })
-                        .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                    if (typeof openReportModal !== 'function') {
+                        alert('Reporting is not available right now.');
+                        return;
+                    }
+                    var targetName = activeConversation.other_name || 'Conversation';
+                    openReportModal({
+                        title: 'Report Conversation',
+                        target: targetName
+                    }).then(function(result) {
+                        if (!result) return;
+                        var details = 'Conversation report';
+                        var extra = String(result.details || '').trim();
+                        if (extra) details = details ? (details + ' | ' + extra) : extra;
+                        var payload = {
+                            report_type: 'message',
+                            reason: result.reason,
+                            details: details,
+                            reported_user_id: Number(activeConversation.other_user_id || 0),
+                            center_id: Number(activeConversation.center_id || 0)
+                        };
+                        ReportsAPI.create(payload)
+                            .then(function() { alert('Report submitted.'); })
+                            .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                    });
                 });
                 convName.parentNode.appendChild(btn);
             }
@@ -1723,18 +1842,30 @@ function initFullMessagesPage(options) {
                     event.preventDefault();
                     event.stopPropagation();
                     if (!activeConversation || !activeConversation.other_user_id) return;
-                    var reason = window.prompt('Why are you reporting this conversation?');
-                    if (!reason) return;
-                    var payload = {
-                        report_type: 'message',
-                        reason: reason,
-                        details: 'Conversation report',
-                        reported_user_id: Number(activeConversation.other_user_id || 0),
-                        center_id: Number(activeConversation.center_id || 0)
-                    };
-                    ReportsAPI.create(payload)
-                        .then(function() { alert('Report submitted.'); })
-                        .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                    if (typeof openReportModal !== 'function') {
+                        alert('Reporting is not available right now.');
+                        return;
+                    }
+                    var targetName = activeConversation.other_name || 'Conversation';
+                    openReportModal({
+                        title: 'Report Conversation',
+                        target: targetName
+                    }).then(function(result) {
+                        if (!result) return;
+                        var details = 'Conversation report';
+                        var extra = String(result.details || '').trim();
+                        if (extra) details = details ? (details + ' | ' + extra) : extra;
+                        var payload = {
+                            report_type: 'message',
+                            reason: result.reason,
+                            details: details,
+                            reported_user_id: Number(activeConversation.other_user_id || 0),
+                            center_id: Number(activeConversation.center_id || 0)
+                        };
+                        ReportsAPI.create(payload)
+                            .then(function() { alert('Report submitted.'); })
+                            .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                    });
                 });
                 convName.parentNode.appendChild(btn);
             }

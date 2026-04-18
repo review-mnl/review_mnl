@@ -854,11 +854,11 @@
             return null;
         }
 
-        function buildTeacherScheduleMapForSelectedDate() {
-            var map = {};
-            if (!_centerScheduleData || !_schSelectedDate) return map;
+        function buildTeacherShiftListForSelectedDate() {
+            var list = [];
+            if (!_centerScheduleData || !_schSelectedDate) return list;
             var daySched = getScheduleForDate(_centerScheduleData, _schSelectedDate);
-            if (!daySched) return map;
+            if (!daySched) return list;
             var shifts = daySched.shifts ? parseJsonMaybe(daySched.shifts, daySched.shifts) : [];
             if (!Array.isArray(shifts)) shifts = [];
 
@@ -867,15 +867,52 @@
                 var from = normalizeTeacherName(sh && sh.from);
                 var to = normalizeTeacherName(sh && sh.to);
                 if (!teacher || !from || !to) return;
-                var key = teacher.toLowerCase();
-                if (!map[key]) map[key] = [];
-                map[key].push({ from: from, to: to });
+                list.push({
+                    teacherKey: teacher.toLowerCase(),
+                    name: teacher,
+                    from: from,
+                    to: to,
+                });
             });
+            return list;
+        }
 
-            Object.keys(map).forEach(function(key) {
-                map[key] = mergeRanges(map[key]);
-            });
-            return map;
+        function parseTeacherSelectionValue(rawValue) {
+            var value = String(rawValue || '').trim();
+            if (!value) return null;
+            if (value.charAt(0) === '{') {
+                try {
+                    var obj = JSON.parse(value);
+                    if (obj && typeof obj === 'object') return obj;
+                } catch (e) {}
+            }
+            return { name: value };
+        }
+
+        function getSelectedTeacherSelection() {
+            var select = document.getElementById('schTeacher');
+            if (!select) {
+                return { mode: 'missing', display: '—', teacher_name: null, teacher_from: null, teacher_to: null, teacher_program: null };
+            }
+            if (select.disabled) {
+                return { mode: 'disabled', display: '—', teacher_name: null, teacher_from: null, teacher_to: null, teacher_program: null };
+            }
+            var raw = String(select.value || '').trim();
+            if (!raw) {
+                return { mode: 'auto', display: 'Auto-assign', teacher_name: null, teacher_from: null, teacher_to: null, teacher_program: null };
+            }
+            var parsed = parseTeacherSelectionValue(raw) || { name: raw };
+            var opt = select.options && select.options.length ? select.options[select.selectedIndex] : null;
+            var display = String((opt && opt.textContent) || '').trim();
+            if (!display) display = String(parsed.name || raw).trim();
+            return {
+                mode: 'manual',
+                display: display,
+                teacher_name: String(parsed.name || raw).trim() || null,
+                teacher_program: String(parsed.program || '').trim() || null,
+                teacher_from: String(parsed.from || '').trim() || null,
+                teacher_to: String(parsed.to || '').trim() || null,
+            };
         }
 
         function resolveCenterTeacherList(center) {
@@ -910,14 +947,8 @@
             var allTeachers = Array.isArray(_centerTeachersAll) ? _centerTeachersAll : [];
             var selectedProgram = getSelectedProgramValue();
             var filtered = filterTeachersByProgram(allTeachers, selectedProgram);
-            var scheduleMap = buildTeacherScheduleMapForSelectedDate();
+            var scheduleShifts = buildTeacherShiftListForSelectedDate();
             var isDateScoped = !!(_schSelectedDate && _centerScheduleData);
-            if (isDateScoped) {
-                filtered = filtered.filter(function(t) {
-                    var key = normalizeTeacherName(t && t.name).toLowerCase();
-                    return !!(scheduleMap[key] && scheduleMap[key].length);
-                });
-            }
             var currentValue = String(select.value || '').trim();
 
             select.innerHTML = '';
@@ -948,22 +979,65 @@
                 return;
             }
 
-            filtered.forEach(function(teacher) {
-                var name = normalizeTeacherName(teacher && teacher.name);
-                if (!name) return;
-                var scheduleKey = name.toLowerCase();
-                var ranges = scheduleMap[scheduleKey] || [];
-                var timeLabel = ranges.length
-                    ? ranges.map(function(r) { return fmt12(r.from) + '–' + fmt12(r.to); }).join(', ')
-                    : '';
-                var option = document.createElement('option');
-                option.value = name;
-                var baseLabel = teacher.program
-                    ? (name + ' · ' + teacher.program)
-                    : (teacher.subject ? (name + ' · ' + teacher.subject) : name);
-                option.textContent = timeLabel ? (baseLabel + ' · ' + timeLabel) : baseLabel;
-                select.appendChild(option);
-            });
+            if (isDateScoped) {
+                var teacherByKey = {};
+                filtered.forEach(function(t) {
+                    var key = normalizeTeacherName(t && t.name);
+                    if (!key) return;
+                    teacherByKey[key.toLowerCase()] = t;
+                });
+
+                var shiftOptions = scheduleShifts
+                    .filter(function(shift) { return !!teacherByKey[shift.teacherKey]; })
+                    .sort(function(a, b) {
+                        if (a.teacherKey < b.teacherKey) return -1;
+                        if (a.teacherKey > b.teacherKey) return 1;
+                        return (timeToMinutes(a.from) || 0) - (timeToMinutes(b.from) || 0);
+                    });
+
+                if (!shiftOptions.length) {
+                    var noneForDate = document.createElement('option');
+                    noneForDate.value = '';
+                    noneForDate.textContent = selectedProgram
+                        ? 'No teachers for selected program/date'
+                        : 'No teachers assigned for selected date';
+                    select.appendChild(noneForDate);
+                    select.disabled = false;
+                    select.value = '';
+                    return;
+                }
+
+                shiftOptions.forEach(function(shift) {
+                    var teacher = teacherByKey[shift.teacherKey] || {};
+                    var name = normalizeTeacherName(shift.name);
+                    if (!name) return;
+                    var baseLabel = teacher.program
+                        ? (name + ' · ' + teacher.program)
+                        : (teacher.subject ? (name + ' · ' + teacher.subject) : name);
+                    var timeLabel = fmt12(shift.from) + '–' + fmt12(shift.to);
+                    var option = document.createElement('option');
+                    option.value = JSON.stringify({
+                        name: name,
+                        program: teacher.program || '',
+                        from: shift.from,
+                        to: shift.to,
+                    });
+                    option.textContent = baseLabel + ' · ' + timeLabel;
+                    select.appendChild(option);
+                });
+            } else {
+                filtered.forEach(function(teacher) {
+                    var name = normalizeTeacherName(teacher && teacher.name);
+                    if (!name) return;
+                    var option = document.createElement('option');
+                    option.value = name;
+                    var baseLabel = teacher.program
+                        ? (name + ' · ' + teacher.program)
+                        : (teacher.subject ? (name + ' · ' + teacher.subject) : name);
+                    option.textContent = baseLabel;
+                    select.appendChild(option);
+                });
+            }
 
             select.disabled = false;
 
@@ -1353,11 +1427,7 @@
             if (n === 3) {
                 document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
                 document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
-                document.getElementById('summTeacher').textContent = (function(){
-                    var el = document.getElementById('schTeacher');
-                    if (!el || el.disabled) return '—';
-                    return (el.value || '').trim() || 'Auto-assign';
-                })();
+                document.getElementById('summTeacher').textContent = getSelectedTeacherSelection().display;
                 document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
                 updateEnrollmentPriceSummary();
                 updatePaymentMethodUI();
@@ -1383,11 +1453,7 @@
                 var amountValue = Number((_schEnrollmentResp && _schEnrollmentResp.amount) || _centerEnrollmentPrice || 0);
                 var enrollmentStatus = String((_schEnrollmentResp && _schEnrollmentResp.enrollment_status) || 'pending').toLowerCase();
 
-                var teacherValue = (function(){
-                    var el = document.getElementById('schTeacher');
-                    if (!el || el.disabled) return '—';
-                    return (el.value || '').trim() || 'Auto-assign';
-                })();
+                var teacherValue = getSelectedTeacherSelection().display;
                 var scheduleDateValue = _schSelectedDate ? schFmtDate(_schSelectedDate) : '—';
                 var studentNameValue = (document.getElementById('schName').value || '').trim() || '—';
                 var centerNameValue = (function(){
@@ -2259,6 +2325,7 @@
                 const enrollmentDate = _schSelectedDate
                     ? _schSelectedDate.toISOString().slice(0, 10)
                     : new Date().toISOString().slice(0, 10);
+                var teacherSel = getSelectedTeacherSelection();
                 if (payBtn) {
                     payBtn.disabled = true;
                     payBtn.textContent = 'Processing...';
@@ -2276,7 +2343,12 @@
                     reference_number: validation.referenceNumber,
                     program_enrolled: programEnrolled,
                     enrollment_date: enrollmentDate,
-                    teacher: String(((document.getElementById('schTeacher') || {}).value) || '').trim(),
+                    teacher: teacherSel.mode === 'manual' ? String(teacherSel.teacher_name || '').trim() : '',
+                    teacher_name: teacherSel.mode === 'manual' ? String(teacherSel.teacher_name || '').trim() : '',
+                    teacher_program: teacherSel.mode === 'manual' ? (teacherSel.teacher_program || '') : '',
+                    teacher_from: teacherSel.mode === 'manual' ? (teacherSel.teacher_from || '') : '',
+                    teacher_to: teacherSel.mode === 'manual' ? (teacherSel.teacher_to || '') : '',
+                    teacher_label: teacherSel.mode === 'manual' ? (teacherSel.display || '') : 'Auto-assign',
                     payment_proof: paymentProofFile,
                 };
                 console.log('[Enrollment] Sending enrollment payload', {

@@ -134,6 +134,11 @@ const createGcashEnrollment = async (req, res) => {
       || ''
     ).trim();
 
+    const teacherFrom = String(req.body.teacher_from || '').trim();
+    const teacherTo = String(req.body.teacher_to || '').trim();
+    const teacherProgram = String(req.body.teacher_program || '').trim();
+    const teacherLabel = String(req.body.teacher_label || '').trim();
+
     if (methodConfig.requiresReference && !referenceNumber) {
       return res.status(400).json({ message: methodConfig.referenceLabel + ' is required.' });
     }
@@ -216,6 +221,10 @@ const createGcashEnrollment = async (req, res) => {
       program_enrolled: programEnrolled,
       enrollment_date: enrollmentDate,
       teacher: teacherName || null,
+      teacher_from: teacherFrom || null,
+      teacher_to: teacherTo || null,
+      teacher_program: teacherProgram || null,
+      teacher_label: teacherLabel || null,
       payment_status: 'pending',
       enrollment_status: 'pending',
       manual_verification_required: true,

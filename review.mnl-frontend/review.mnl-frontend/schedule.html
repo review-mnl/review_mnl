@@ -648,20 +648,24 @@
             .ec-schedule-section {
                 background: #f4f6fb;
                 padding: 48px 2% 48px 10%;
-                display: flex;
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: minmax(260px, 360px) 1fr;
+                column-gap: 48px;
+                align-items: start;
             }
 
             .ec-schedule-header {
                 display: flex;
                 align-items: flex-start;
                 justify-content: flex-start;
-                margin-bottom: 22px;
+                margin-bottom: 0;
                 max-width: none;
                 margin-left: 0;
                 margin-right: 0;
                 width: 100%;
                 text-align: left;
+                grid-column: 1;
+                grid-row: 1;
             }
 
             .ec-schedule-header h2 {
@@ -679,15 +683,17 @@
 
             .ec-schedule-body {
                 display: grid;
-                order: 1;
                 grid-template-columns: minmax(120px, 170px) minmax(420px, 560px);
                 gap: 12px;
                 align-items: start;
                 justify-content: start;
                 width: 100%;
-                max-width: 1100px;
-                margin-left: auto;
+                max-width: calc(170px + 560px + 12px);
+                margin-left: 0;
                 margin-right: 0;
+                justify-self: end;
+                grid-column: 2;
+                grid-row: 1;
             }
 
             /* Day pills column */
@@ -860,15 +866,18 @@
             }
 
             .ec-teacher-card {
-                order: 2;
                 margin-top: 22px;
                 background: #fff;
                 border-radius: 14px;
                 box-shadow: 0 2px 12px rgba(10,76,255,0.07);
                 padding: 18px 20px;
-                max-width: 1100px;
-                margin-left: auto;
+                width: 100%;
+                max-width: calc(170px + 560px + 12px);
+                margin-left: 0;
                 margin-right: 0;
+                justify-self: end;
+                grid-column: 2;
+                grid-row: 2;
             }
 
             .ec-teacher-head {
@@ -1091,6 +1100,11 @@
             .sched-toggle:checked::after { left: 19px; }
 
             @media (max-width: 900px) {
+                .ec-schedule-section { grid-template-columns: 1fr; row-gap: 18px; column-gap: 0; }
+                .ec-schedule-header { grid-column: 1; grid-row: 1; }
+                .ec-schedule-body { grid-column: 1; grid-row: 2; justify-self: start; max-width: none; }
+                .ec-teacher-card { grid-column: 1; grid-row: 3; justify-self: start; max-width: none; }
+
                 .ec-schedule-body { grid-template-columns: 1fr; align-items: stretch; justify-items: center; }
                 .ec-day-pills { flex-direction: row; flex-wrap: wrap; min-width: unset; grid-column: 1 / -1; justify-content: center; }
                 .ec-cal-wrap { width: 100%; max-width: 500px; }

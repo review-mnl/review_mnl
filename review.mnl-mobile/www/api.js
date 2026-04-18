@@ -2378,20 +2378,42 @@ const AdminAPI = {
         apiRequest('DELETE', '/api/admin/testimonials/' + id),
 };
 
-function initPageLoader() {
-    var loader = document.getElementById('rmnlPageLoader');
-    if (!loader) return;
-    var done = false;
-    function hideLoader() {
-        if (done) return;
-        done = true;
-        loader.classList.add('rmnl-page-loader--hidden');
+function initPageTransitions() {
+    var body = document.body;
+    if (!body) return;
+    body.classList.add('rmnl-ready');
+
+    window.addEventListener('pageshow', function() {
+        body.classList.add('rmnl-ready');
+        body.classList.remove('rmnl-fadeout');
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.defaultPrevented) return;
+        var link = e.target && e.target.closest ? e.target.closest('a') : null;
+        if (!link) return;
+        if (link.target && link.target !== '_self') return;
+        if (link.hasAttribute('download')) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+        var href = link.getAttribute('href');
+        if (!href || href.charAt(0) === '#') return;
+        if (/^(mailto:|tel:|javascript:)/i.test(href)) return;
+
+        var url;
+        try {
+            url = new URL(href, window.location.href);
+        } catch (err) {
+            return;
+        }
+        if (url.origin !== window.location.origin) return;
+
+        e.preventDefault();
+        body.classList.add('rmnl-fadeout');
         setTimeout(function() {
-            loader.style.display = 'none';
-        }, 220);
-    }
-    window.rmnlMarkPageReady = hideLoader;
-    window.addEventListener('load', hideLoader);
+            window.location.href = url.href;
+        }, 140);
+    });
 }
 
 // Auto-initialize the global notification bell on pages that include this script.
@@ -2400,6 +2422,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof initGlobalNotificationBell === 'function') initGlobalNotificationBell();
     } catch (e) {}
     try {
-        initPageLoader();
+        initPageTransitions();
     } catch (e) {}
 });

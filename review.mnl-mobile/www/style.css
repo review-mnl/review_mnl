@@ -5,45 +5,23 @@
     box-sizing: border-box;
 }
 
-.rmnl-page-loader {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 10px;
-    background: #f4f6fb;
-    color: #1d4ed8;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    z-index: 9999;
+body {
     opacity: 1;
-    transition: opacity 200ms ease;
+    transition: opacity 160ms ease;
 }
 
-.rmnl-page-loader--hidden {
+body.rmnl-ready {
+    opacity: 1;
+}
+
+body.rmnl-fadeout {
     opacity: 0;
-    pointer-events: none;
 }
 
-.rmnl-page-loader-spinner {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 3px solid rgba(29, 78, 216, 0.2);
-    border-top-color: #1d4ed8;
-    animation: rmnlSpin 0.8s linear infinite;
-}
-
-.rmnl-page-loader-text {
-    font-size: 13px;
-}
-
-@keyframes rmnlSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+@media (prefers-reduced-motion: reduce) {
+    body {
+        transition: none;
+    }
 }
 
 @media (max-width: 768px) {

@@ -465,6 +465,8 @@ const getMyCenterEnrollments = async (req, res) => {
           review_center_name: row.review_center_name,
           program: metadata.program_enrolled || 'Program not specified',
           program_enrolled: metadata.program_enrolled || 'Program not specified',
+          teacher: metadata.teacher || metadata.teacher_name || metadata.professor || null,
+          teacher_name: metadata.teacher || metadata.teacher_name || metadata.professor || null,
           enrollment_date: metadata.enrollment_date || null,
           submitted_documents: Array.isArray(documents) ? documents : (documents ? [documents] : []),
           paymentStatus: row.payment_status || 'pending',

@@ -663,6 +663,7 @@ const PaymentsAPI = {
             payment_method: normalizedMethod,
             payer_number: payerNumber,
             payer_name: payerName,
+            teacher: String((payload && (payload.teacher || payload.teacher_name || payload.professor || payload.professor_name)) || '').trim(),
             // Backward-compatible fields for deployments expecting GCash keys.
             gcash_number: payerNumber,
             gcash_name: payerName,

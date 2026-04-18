@@ -126,6 +126,13 @@ const createGcashEnrollment = async (req, res) => {
     const programEnrolled = String(req.body.program_enrolled || '').trim();     
     const enrollmentDateRaw = String(req.body.enrollment_date || '').trim();    
     const enrollmentDate = enrollmentDateRaw || new Date().toISOString().slice(0, 10);
+    const teacherName = String(
+      req.body.teacher
+      || req.body.teacher_name
+      || req.body.professor
+      || req.body.professor_name
+      || ''
+    ).trim();
 
     if (methodConfig.requiresReference && !referenceNumber) {
       return res.status(400).json({ message: methodConfig.referenceLabel + ' is required.' });
@@ -164,6 +171,7 @@ const createGcashEnrollment = async (req, res) => {
       amount,
       paymentMethod: methodConfig.label,
       programEnrolled,
+      teacher: teacherName || null,
       enrollmentDate,
       referenceNumber,
       hasPaymentProof: Boolean(paymentProofUrl)
@@ -207,6 +215,7 @@ const createGcashEnrollment = async (req, res) => {
       payment_proof_url: paymentProofUrl || null,
       program_enrolled: programEnrolled,
       enrollment_date: enrollmentDate,
+      teacher: teacherName || null,
       payment_status: 'pending',
       enrollment_status: 'pending',
       manual_verification_required: true,
@@ -285,6 +294,7 @@ const createGcashEnrollment = async (req, res) => {
       transactionStatus: status,
       paymentMethod: methodConfig.label,
       programEnrolled,
+      teacher: teacherName || null,
       referenceNumber: referenceNumber || null,
     });
 
@@ -296,6 +306,7 @@ const createGcashEnrollment = async (req, res) => {
       reviewCenterId: centerId,
       reviewCenterName: center.business_name,
       program: programEnrolled,
+      teacher: teacherName || null,
       paymentStatus: 'pending',
       enrollmentStatus: 'pending',
       createdAt: new Date().toISOString(),
@@ -305,6 +316,7 @@ const createGcashEnrollment = async (req, res) => {
       review_center_name: center.business_name,
       student_name: studentName,
       program_enrolled: programEnrolled,
+      teacher_name: teacherName || null,
       enrollment_status: 'pending',
       payment_status: 'pending',
       payment_proof_url: paymentProofUrl || null,

@@ -374,6 +374,12 @@
                                 </select>
                             </div>
                             <div>
+                                <label class="sch-label">Professor / Teacher <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                                <select id="schTeacher" class="sch-input">
+                                    <option value="">Auto-assign (Any available)</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label class="sch-label">Additional Notes <span style="color:#aaa;font-weight:400;">(optional)</span></label>
                                 <textarea id="schNotes" class="sch-input" rows="3" placeholder="Any questions or special requests..." style="height:150px;min-height:150px;max-height:150px;resize:none;overflow-y:auto;"></textarea>
                             </div>
@@ -398,6 +404,7 @@
                             <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Date</span><span id="summDate" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="summName" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Professor</span><span id="summTeacher" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="summProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="border-top:1px solid #e2e8f5;margin:4px 0;"></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Enrollment Price</span><span id="summEnrollmentPrice" style="font-weight:600;color:#0d1b4b;">₱ 1,550.00</span></div>
@@ -681,6 +688,90 @@
             pricing: { amount: 1550 },
         };
         var _centerEnrollmentPrice = 1550;
+        var _centerTeachers = [];
+
+        function normalizeTeacherName(raw) {
+            return String(raw || '').trim();
+        }
+
+        function normalizeTeacherItem(item) {
+            if (!item) return null;
+            if (typeof item === 'string') {
+                var rawName = normalizeTeacherName(item);
+                return rawName ? { name: rawName, subject: '' } : null;
+            }
+            if (typeof item !== 'object') return null;
+            var name = normalizeTeacherName(item.name || item.full_name || '');
+            if (!name) return null;
+            return {
+                name: name,
+                subject: normalizeTeacherName(item.subject || item.specialty || ''),
+            };
+        }
+
+        function normalizeTeacherList(list) {
+            if (!Array.isArray(list)) return [];
+            var seen = {};
+            return list
+                .map(normalizeTeacherItem)
+                .filter(Boolean)
+                .filter(function(teacher) {
+                    var key = teacher.name.toLowerCase();
+                    if (seen[key]) return false;
+                    seen[key] = true;
+                    return true;
+                });
+        }
+
+        function parseJsonMaybe(raw, fallback) {
+            if (raw == null) return fallback;
+            if (typeof raw === 'object') return raw;
+            if (typeof raw !== 'string') return fallback;
+            var trimmed = raw.trim();
+            if (!trimmed) return fallback;
+            try { return JSON.parse(trimmed); } catch (e) { return fallback; }
+        }
+
+        function resolveCenterTeacherList(center) {
+            var schedule = center ? (center.schedule || center.operating_schedule || center.schedule_json) : null;
+            schedule = parseJsonMaybe(schedule, schedule);
+            var teachers = schedule && schedule.teachers ? schedule.teachers : [];
+            teachers = parseJsonMaybe(teachers, teachers);
+            if (!Array.isArray(teachers)) teachers = [];
+            return normalizeTeacherList(teachers);
+        }
+
+        function setScheduleTeacherOptions(teachers) {
+            var select = document.getElementById('schTeacher');
+            if (!select) return;
+            var items = Array.isArray(teachers) ? teachers : [];
+            _centerTeachers = items.slice();
+            select.innerHTML = '';
+
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Auto-assign (Any available)';
+            select.appendChild(placeholder);
+
+            if (!items.length) {
+                var emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = 'No teachers available';
+                select.appendChild(emptyOption);
+                select.disabled = true;
+                return;
+            }
+
+            items.forEach(function(teacher) {
+                var name = normalizeTeacherName(teacher && teacher.name);
+                if (!name) return;
+                var option = document.createElement('option');
+                option.value = name;
+                option.textContent = teacher.subject ? (name + ' · ' + teacher.subject) : name;
+                select.appendChild(option);
+            });
+            select.disabled = false;
+        }
 
         function canonicalizeCenterPaymentMethod(value) {
             var normalized = String(value || '').trim().toLowerCase();
@@ -988,6 +1079,8 @@
             _schPaymentStatus = 'Pending';
             _schEnrollmentResp = null;
             _schReferenceNumber = '';
+            var teacherSelect = document.getElementById('schTeacher');
+            if (teacherSelect && !teacherSelect.disabled) teacherSelect.value = '';
             var gcashRadio = document.getElementById('schPayGcash');
             var mayaRadio = document.getElementById('schPayMaya');
             var bankRadio = document.getElementById('schPayBank');
@@ -1046,6 +1139,11 @@
             if (n === 3) {
                 document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
                 document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
+                document.getElementById('summTeacher').textContent = (function(){
+                    var el = document.getElementById('schTeacher');
+                    if (!el || el.disabled) return '—';
+                    return (el.value || '').trim() || 'Auto-assign';
+                })();
                 document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
                 updateEnrollmentPriceSummary();
                 updatePaymentMethodUI();
@@ -1570,6 +1668,7 @@
                 updateEnrollmentPriceSummary();
                 applyCenterPaymentInfo(centerName);
                 setScheduleProgramOptions(programs);
+                setScheduleTeacherOptions(resolveCenterTeacherList(center));
 
                 // --- Map Integration ---
                 let cachedLat, cachedLon, cachedAddress;
@@ -1919,6 +2018,7 @@
                     reference_number: validation.referenceNumber,
                     program_enrolled: programEnrolled,
                     enrollment_date: enrollmentDate,
+                    teacher: String(((document.getElementById('schTeacher') || {}).value) || '').trim(),
                     payment_proof: paymentProofFile,
                 };
                 console.log('[Enrollment] Sending enrollment payload', {
@@ -1928,6 +2028,7 @@
                     userId: (getUser() && getUser().id) || null,
                     payment_method: payload.payment_method,
                     program_enrolled: payload.program_enrolled,
+                    teacher: payload.teacher || null,
                     enrollment_date: payload.enrollment_date,
                     amount: payload.amount,
                     hasPaymentProof: Boolean(paymentProofFile),

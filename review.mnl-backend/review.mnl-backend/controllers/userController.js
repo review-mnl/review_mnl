@@ -93,6 +93,8 @@ const getMyEnrollments = async (req, res) => {
         review_center_name: row.review_center_name,
         review_center_logo: row.review_center_logo,
         program_enrolled: metadata.program_enrolled || 'Program not specified',
+        teacher: metadata.teacher || metadata.teacher_name || metadata.professor || null,
+        teacher_name: metadata.teacher || metadata.teacher_name || metadata.professor || null,
         enrollment_date: metadata.enrollment_date || (row.enrollment_created_at ? new Date(row.enrollment_created_at).toISOString().slice(0, 10) : null),
         payment_status: row.payment_status || 'pending',
         payment_method: row.payment_method || 'gcash',

@@ -1762,11 +1762,15 @@ nav img{
     left: auto;
     margin: auto 0;
     align-items: center;
-    gap: 28px;
-    padding: 18px 6%;
+    gap: 56px;
+    padding: 18px 3%;
     display: flex;
     justify-content: space-between;
     width: 100%;
+}
+
+.header-viewcenter .center-header-content > div:first-child {
+    flex: 0 1 560px !important;
 }
 @media (max-width: 900px) {
     .header-viewcenter .center-header-content { flex-direction: column; align-items: flex-start; gap: 12px; margin: auto 0; padding-top: 12px; }
@@ -3846,8 +3850,8 @@ nav img{
 
     /* Final bigger view-center sizing */
     .header-viewcenter .center-header-content {
-        padding: 28px 4% 30px;
-        gap: 40px;
+        padding: 28px 3% 30px;
+        gap: 64px;
     }
 
     .header-viewcenter .center-header-content > div:first-child {

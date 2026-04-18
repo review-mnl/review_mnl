@@ -136,6 +136,7 @@
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:14px;">
                             <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Student Name</p><p id="pvStudentName" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
                             <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Program</p><p id="pvProgram" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
+                            <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Professor</p><p id="pvTeacher" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
                             <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Date Uploaded</p><p id="pvUploadedAt" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
                             <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Payment Status</p><p id="pvPaymentStatus" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
                         </div>
@@ -914,6 +915,7 @@
             _activePaymentEnrollment = enrollment;
             document.getElementById('pvStudentName').textContent = enrollment.student_name || 'Student';
             document.getElementById('pvProgram').textContent = enrollment.program_enrolled || 'Program not specified';
+            document.getElementById('pvTeacher').textContent = enrollment.teacher_name || enrollment.teacher || '—';
             document.getElementById('pvUploadedAt').textContent = enrollment.payment && enrollment.payment.uploaded_at
                 ? new Date(enrollment.payment.uploaded_at).toLocaleString()
                 : '—';
@@ -980,6 +982,9 @@
                     + '<strong style="color:#0d1b4b;font-size:14px;">' + escHtml(item.student_name || 'Student') + '</strong>'
                     + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Email: ' + escHtml(item.student_email || 'N/A') + '</p>'
                     + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Program: ' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
+                    + ((item.teacher_name || item.teacher)
+                        ? '<p style="margin:3px 0 0;color:#666;font-size:12px;">Professor: ' + escHtml(item.teacher_name || item.teacher) + '</p>'
+                        : '')
                     + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Submitted: ' + escHtml(new Date(item.date_submitted).toLocaleString()) + '</p>'
                     + '</div>'
                     + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">'

@@ -252,12 +252,12 @@
                         <h4>Teachers</h4>
                         <p>Add teachers so you can assign them to schedule shifts.</p>
                     </div>
+                    <button type="button" id="ecTeacherToggleBtn" class="ec-teacher-toggle">+ Add</button>
                 </div>
                 <div class="ec-teacher-form">
                     <input id="ecTeacherName" type="text" placeholder="Full name">
                     <input id="ecTeacherSubject" type="text" placeholder="Subject / Specialty">
                     <input id="ecTeacherEmail" type="email" placeholder="Email">
-                    <input id="ecTeacherPhone" type="text" placeholder="Phone">
                     <textarea id="ecTeacherNotes" placeholder="Notes (optional)"></textarea>
                     <button type="button" id="ecTeacherAddBtn">Add Teacher</button>
                 </div>
@@ -675,11 +675,12 @@
 
             .ec-schedule-body {
                 display: grid;
-                grid-template-columns: auto minmax(350px, 500px);
+                grid-template-columns: minmax(140px, 220px) minmax(420px, 560px);
                 gap: 32px;
                 align-items: start;
-                justify-content: center;
-                max-width: 900px;
+                justify-content: space-between;
+                width: 100%;
+                max-width: 1100px;
                 margin: 0 auto;
             }
 
@@ -858,6 +859,9 @@
                 border-radius: 14px;
                 box-shadow: 0 2px 12px rgba(10,76,255,0.07);
                 padding: 18px 20px;
+                max-width: 1100px;
+                margin-left: auto;
+                margin-right: auto;
             }
 
             .ec-teacher-head {
@@ -883,11 +887,15 @@
             }
 
             .ec-teacher-form {
-                display: grid;
+                display: none;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 8px;
                 width: 100%;
                 margin-top: 8px;
+            }
+
+            .ec-teacher-form.active {
+                display: grid;
             }
 
             .ec-teacher-form input,
@@ -918,6 +926,18 @@
                 font-weight: 600;
                 cursor: pointer;
                 justify-self: start;
+            }
+
+            .ec-teacher-toggle {
+                padding: 8px 12px;
+                border: 1.5px solid #cbd5f5;
+                border-radius: 999px;
+                background: #eef2ff;
+                color: #1f3a8a;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                margin-left: auto;
             }
 
             .ec-teacher-list {
@@ -1124,7 +1144,7 @@ function normalizeTeacherItem(item) {
     if (!item) return null;
     if (typeof item === "string") {
         var rawName = normalizeTeacherName(item);
-        return rawName ? { name: rawName, subject: "", email: "", phone: "", notes: "" } : null;
+        return rawName ? { name: rawName, subject: "", email: "", notes: "" } : null;
     }
     if (typeof item !== "object") return null;
     var name = normalizeTeacherName(item.name || item.full_name || "");
@@ -1133,7 +1153,6 @@ function normalizeTeacherItem(item) {
         name: name,
         subject: normalizeTeacherName(item.subject || item.specialty || ""),
         email: normalizeTeacherName(item.email || ""),
-        phone: normalizeTeacherName(item.phone || item.mobile || ""),
         notes: normalizeTeacherName(item.notes || ""),
     };
 }
@@ -1218,7 +1237,6 @@ function renderTeacherList() {
         var metaParts = [];
         if (teacher.subject) metaParts.push(teacher.subject);
         if (teacher.email) metaParts.push(teacher.email);
-        if (teacher.phone) metaParts.push(teacher.phone);
         if (teacher.notes) metaParts.push(teacher.notes);
         var meta = metaParts.join(' · ');
         return ''
@@ -1285,14 +1303,15 @@ function addTeacher(raw) {
     var teacher = normalizeTeacherItem(raw);
     if (!teacher) {
         alert('Teacher name is required.');
-        return;
+        return false;
     }
     var exists = TEACHER_LIST.some(function(item){ return item.name.toLowerCase() === teacher.name.toLowerCase(); });
-    if (exists) return;
+    if (exists) return false;
     TEACHER_LIST.push(teacher);
     TEACHER_LIST = normalizeTeacherList(TEACHER_LIST);
     renderTeacherList();
     persistTeacherList();
+    return true;
 }
 
 function removeTeacher(name) {
@@ -1682,16 +1701,25 @@ window.dSchedSaveBackend = async function() {
     var nameInput = document.getElementById('ecTeacherName');
     var subjectInput = document.getElementById('ecTeacherSubject');
     var emailInput = document.getElementById('ecTeacherEmail');
-    var phoneInput = document.getElementById('ecTeacherPhone');
     var notesInput = document.getElementById('ecTeacherNotes');
     var btn = document.getElementById('ecTeacherAddBtn');
+    var toggleBtn = document.getElementById('ecTeacherToggleBtn');
+    var form = document.querySelector('.ec-teacher-form');
+
+    function setTeacherFormOpen(isOpen) {
+        if (!form) return;
+        form.classList.toggle('active', Boolean(isOpen));
+        if (toggleBtn) toggleBtn.textContent = isOpen ? 'Close' : '+ Add';
+        if (isOpen && nameInput) {
+            try { nameInput.focus(); } catch (e) {}
+        }
+    }
 
     function readTeacherForm() {
         return {
             name: nameInput ? nameInput.value : '',
             subject: subjectInput ? subjectInput.value : '',
             email: emailInput ? emailInput.value : '',
-            phone: phoneInput ? phoneInput.value : '',
             notes: notesInput ? notesInput.value : '',
         };
     }
@@ -1700,14 +1728,23 @@ window.dSchedSaveBackend = async function() {
         if (nameInput) nameInput.value = '';
         if (subjectInput) subjectInput.value = '';
         if (emailInput) emailInput.value = '';
-        if (phoneInput) phoneInput.value = '';
         if (notesInput) notesInput.value = '';
     }
 
     if (btn) {
         btn.addEventListener('click', function() {
-            addTeacher(readTeacherForm());
-            clearTeacherForm();
+            var added = addTeacher(readTeacherForm());
+            if (added) {
+                clearTeacherForm();
+                setTeacherFormOpen(false);
+            }
+        });
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            var isOpen = form && form.classList.contains('active');
+            setTeacherFormOpen(!isOpen);
         });
     }
 
@@ -1715,11 +1752,16 @@ window.dSchedSaveBackend = async function() {
         nameInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                addTeacher(readTeacherForm());
-                clearTeacherForm();
+                var added = addTeacher(readTeacherForm());
+                if (added) {
+                    clearTeacherForm();
+                    setTeacherFormOpen(false);
+                }
             }
         });
     }
+
+    setTeacherFormOpen(false);
 })();
 </script>
         

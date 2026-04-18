@@ -247,22 +247,39 @@
             padding: 32px; max-width: 420px; width: 90%; text-align: center;
         }
         .sa-report-modal-box {
-            max-width: 680px;
-            width: 92%;
+            max-width: 760px;
+            width: 94%;
             padding: 0;
             text-align: left;
+            box-shadow: 0 24px 60px rgba(3, 10, 30, 0.6);
         }
         .sa-report-modal-head {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 24px; border-bottom: 1px solid #1e2d5a;
+            padding: 18px 24px; border-bottom: 1px solid #1e2d5a;
+            background: linear-gradient(90deg, rgba(77,127,255,0.18), rgba(13,21,51,0.95));
         }
-        .sa-report-modal-head h3 { font-size: 0.95rem; font-weight: 600; color: #ccd6f6; }
-        .sa-report-modal-body { padding: 22px 24px; display: flex; flex-direction: column; gap: 12px; }
+        .sa-report-modal-head h3 { font-size: 1.05rem; font-weight: 700; color: #e6eefc; letter-spacing: 0.2px; }
+        .sa-report-modal-body {
+            padding: 22px 24px 26px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
         .sa-report-field {
-            background: #141c38; border: 1px solid #1e2d5a; border-radius: 10px; padding: 12px 14px;
+            background: rgba(20, 28, 56, 0.75); border: 1px solid #1e2d5a; border-radius: 12px; padding: 12px 14px;
         }
-        .sa-report-field label { font-size: 0.7rem; color: #6b7fa8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
-        .sa-report-field p { font-size: 0.85rem; color: #e0e6f0; margin: 0; line-height: 1.5; white-space: pre-wrap; }
+        .sa-report-field.span-2 { grid-column: 1 / -1; }
+        .sa-report-field label { font-size: 0.68rem; color: #91a4cc; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 6px; }
+        .sa-report-field p { font-size: 0.87rem; color: #e0e6f0; margin: 0; line-height: 1.55; white-space: pre-wrap; }
+        .sa-report-attachments { display: flex; flex-wrap: wrap; gap: 10px; }
+        .sa-report-attachment {
+            background: #0f1938; border: 1px solid #1e2d5a; border-radius: 10px; padding: 10px; min-width: 140px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .sa-report-attachment img { width: 140px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid #1f2f5c; }
+        .sa-report-attachment a { color: #9fb0e6; font-size: 0.8rem; text-decoration: none; }
+        .sa-report-attachment a:hover { color: #c9d6ff; }
+        .sa-report-attachment span { font-size: 0.72rem; color: #6b7fa8; }
         .sa-report-actions { padding: 16px 24px; border-top: 1px solid #1e2d5a; display: flex; gap: 10px; justify-content: flex-end; }
         .sa-modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
         .sa-modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
@@ -830,13 +847,13 @@
                 <label>Reason</label>
                 <p id="reportModalReason">—</p>
             </div>
-            <div class="sa-report-field">
+            <div class="sa-report-field span-2">
                 <label>Details</label>
                 <p id="reportModalDetails">—</p>
             </div>
-            <div class="sa-report-field">
-                <label>Evidence</label>
-                <p id="reportModalEvidence">—</p>
+            <div class="sa-report-field span-2">
+                <label>Attachments</label>
+                <div id="reportModalAttachments" class="sa-report-attachments"></div>
             </div>
             <div class="sa-report-field">
                 <label>Date</label>
@@ -1308,6 +1325,48 @@
         });
     }
 
+    function normalizeAttachmentUrl(rawUrl) {
+        if (!rawUrl) return '';
+        var url = String(rawUrl).trim();
+        if (!url) return '';
+        if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
+        if (url.charAt(0) === '/') return API_BASE + url;
+        return API_BASE + '/' + url.replace(/^\/+/, '');
+    }
+
+    function isImageAttachment(mimeType, fileName, url) {
+        var mime = String(mimeType || '').toLowerCase();
+        if (mime.indexOf('image/') === 0) return true;
+        var extSource = String(fileName || url || '').toLowerCase();
+        return /\.(jpg|jpeg|png|gif|webp)(\?|#|$)/.test(extSource);
+    }
+
+    function renderReportAttachments(list) {
+        var wrap = document.getElementById('reportModalAttachments');
+        if (!wrap) return;
+        var items = Array.isArray(list) ? list : [];
+        if (!items.length) {
+            wrap.innerHTML = '<p style="color:#6b7fa8;font-size:0.85rem;margin:0;">No files uploaded.</p>';
+            return;
+        }
+
+        wrap.innerHTML = items.map(function(item) {
+            var url = normalizeAttachmentUrl(item && (item.url || item.file_url));
+            var name = String((item && (item.name || item.file_name)) || 'Attachment');
+            var mime = String((item && (item.mime_type || item.mime)) || '');
+            var isImage = isImageAttachment(mime, name, url);
+            var preview = isImage && url ? '<img src="' + url + '" alt="' + name + '">' : '';
+            var size = Number(item && (item.size || item.file_size) || 0);
+            var sizeLabel = size ? (Math.round(size / 1024) + ' KB') : 'File';
+            return ''
+                + '<div class="sa-report-attachment">'
+                + preview
+                + '<a href="' + (url || '#') + '" target="_blank" rel="noopener">' + name + '</a>'
+                + '<span>' + sizeLabel + '</span>'
+                + '</div>';
+        }).join('');
+    }
+
     function openReportModal(reportId) {
         var report = reportIndex[String(reportId)];
         if (!report) return saToast('Report not found.');
@@ -1317,7 +1376,6 @@
         var type = (report.report_type || '').trim() || '—';
         var reason = (report.reason || '').trim() || '—';
         var details = (report.details || '').trim() || '—';
-        var evidence = report.testimonial_content || report.message_content || '—';
         var date = formatDate(report.created_at);
         var status = String(report.status || 'open').toLowerCase();
 
@@ -1331,9 +1389,9 @@
         setText('reportModalType', type);
         setText('reportModalReason', reason);
         setText('reportModalDetails', details);
-        setText('reportModalEvidence', evidence);
         setText('reportModalDate', date);
         setText('reportModalStatus', status.charAt(0).toUpperCase() + status.slice(1));
+        renderReportAttachments(report.attachments || []);
 
         var modal = document.getElementById('saReportModal');
         if (modal) modal.classList.add('open');

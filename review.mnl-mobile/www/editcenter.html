@@ -110,11 +110,13 @@
                     var baseDetails = String((payload && payload.details) || '').trim();
                     var extra = String(result.details || '').trim();
                     var data = Object.assign({}, payload, { reason: result.reason });
+                    var files = Array.isArray(result.files) ? result.files : [];
                     if (extra) {
                         data.details = baseDetails ? (baseDetails + ' | ' + extra) : extra;
                     } else if (baseDetails) {
                         data.details = baseDetails;
                     }
+                    if (files.length) data.evidence_files = files;
                     ReportsAPI.create(data)
                         .then(function() { alert('Report submitted.'); })
                         .catch(function(err) { alert(err.message || 'Failed to submit report.'); });

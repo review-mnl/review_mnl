@@ -195,6 +195,19 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Report evidence uploads
+CREATE TABLE IF NOT EXISTS report_attachments (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	report_id INT NOT NULL,
+	file_url TEXT NOT NULL,
+	file_name VARCHAR(255) NULL,
+	mime_type VARCHAR(120) NULL,
+	file_size INT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	INDEX idx_report_attachments_report (report_id),
+	FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
+);
+
 -- Allow review edits with cooldown tracking
 ALTER TABLE testimonials ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
 

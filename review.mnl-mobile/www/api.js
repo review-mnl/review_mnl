@@ -312,6 +312,20 @@ async function apiRequest(method, path, body, isFormData) {
 function ensureReportModal() {
     if (document.getElementById('rmnlReportModal')) return;
 
+    if (!document.getElementById('rmnlReportDropStyle')) {
+        var dropStyle = document.createElement('style');
+        dropStyle.id = 'rmnlReportDropStyle';
+        dropStyle.textContent = [
+            '.rmnl-report-drop{border:1px dashed #cbd5f5;background:#f8faff;padding:14px;border-radius:12px;text-align:center;color:#4b5563;font-size:12px;cursor:pointer;transition:border-color 0.2s,background 0.2s,color 0.2s;}',
+            '.rmnl-report-drop.active{border-color:#0a4cff;background:#eef2ff;color:#1e3a8a;}',
+            '.rmnl-report-file-list{margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:140px;overflow:auto;}',
+            '.rmnl-report-file{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:8px;background:#eef2ff;font-size:12px;color:#1f2937;}',
+            '.rmnl-report-file span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+            '.rmnl-report-file button{background:none;border:none;color:#b91c1c;cursor:pointer;font-size:12px;}'
+        ].join('');
+        document.head.appendChild(dropStyle);
+    }
+
     var overlay = document.createElement('div');
     overlay.id = 'rmnlReportModal';
     overlay.className = 'modal-overlay';
@@ -327,6 +341,11 @@ function ensureReportModal() {
         + '    <select id="rmnlReportReason"></select>'
         + '    <label for="rmnlReportDetails" style="margin-top:12px;">Details (optional)</label>'
         + '    <textarea id="rmnlReportDetails" rows="4" placeholder="Add more context..."></textarea>'
+        + '    <label style="margin-top:12px;">Attachments (optional)</label>'
+        + '    <div id="rmnlReportDrop" class="rmnl-report-drop">Drop images or PDFs here, or click to browse</div>'
+        + '    <input id="rmnlReportFiles" type="file" multiple accept="image/*,.pdf" style="display:none;" />'
+        + '    <div id="rmnlReportFileList" class="rmnl-report-file-list"></div>'
+        + '    <p style="margin:6px 0 0;color:#94a3b8;font-size:11px;">Up to 5 files, 5MB each.</p>'
         + '    <p id="rmnlReportError" style="display:none;color:#b91c1c;font-size:12px;margin-top:8px;"></p>'
         + '  </div>'
         + '  <div style="display:flex;justify-content:flex-end;gap:10px;padding:0 24px 20px;">'
@@ -345,6 +364,71 @@ function ensureReportModal() {
     var cancelBtn = overlay.querySelector('[data-report-cancel]');
     if (closeBtn) closeBtn.addEventListener('click', function() { closeReportModal(null); });
     if (cancelBtn) cancelBtn.addEventListener('click', function() { closeReportModal(null); });
+
+    var dropEl = overlay.querySelector('#rmnlReportDrop');
+    var fileInput = overlay.querySelector('#rmnlReportFiles');
+    var fileList = overlay.querySelector('#rmnlReportFileList');
+
+    function renderReportFiles(files) {
+        if (!fileList) return;
+        var list = Array.isArray(files) ? files : [];
+        if (!list.length) {
+            fileList.innerHTML = '';
+            return;
+        }
+        fileList.innerHTML = list.map(function(file, index) {
+            var name = file && file.name ? file.name : ('Attachment ' + (index + 1));
+            return ''
+                + '<div class="rmnl-report-file">'
+                + '  <span>' + name + '</span>'
+                + '  <button type="button" data-report-file-remove="' + index + '">Remove</button>'
+                + '</div>';
+        }).join('');
+
+        fileList.querySelectorAll('[data-report-file-remove]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = Number(btn.getAttribute('data-report-file-remove'));
+                var current = Array.isArray(window.__rmnlReportFiles) ? window.__rmnlReportFiles.slice() : [];
+                if (Number.isFinite(idx)) {
+                    current.splice(idx, 1);
+                    window.__rmnlReportFiles = current;
+                    renderReportFiles(current);
+                }
+            });
+        });
+    }
+
+    function setReportFiles(files) {
+        window.__rmnlReportFiles = Array.isArray(files) ? files : [];
+        renderReportFiles(window.__rmnlReportFiles);
+    }
+
+    function addReportFiles(newFiles) {
+        var existing = Array.isArray(window.__rmnlReportFiles) ? window.__rmnlReportFiles.slice() : [];
+        var incoming = Array.isArray(newFiles) ? newFiles : [];
+        var combined = existing.concat(incoming).slice(0, 5);
+        setReportFiles(combined);
+    }
+
+    if (dropEl && fileInput) {
+        dropEl.addEventListener('click', function() { fileInput.click(); });
+        dropEl.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropEl.classList.add('active');
+        });
+        dropEl.addEventListener('dragleave', function() { dropEl.classList.remove('active'); });
+        dropEl.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropEl.classList.remove('active');
+            var files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+            if (files.length) addReportFiles(files);
+        });
+        fileInput.addEventListener('change', function() {
+            var files = Array.from(fileInput.files || []);
+            if (files.length) addReportFiles(files);
+            fileInput.value = '';
+        });
+    }
 
     var submitBtn = overlay.querySelector('[data-report-submit]');
     if (submitBtn) {
@@ -365,7 +449,8 @@ function ensureReportModal() {
                 errEl.textContent = '';
                 errEl.style.display = 'none';
             }
-            closeReportModal({ reason: reason, details: details });
+            var files = Array.isArray(window.__rmnlReportFiles) ? window.__rmnlReportFiles.slice() : [];
+            closeReportModal({ reason: reason, details: details, files: files });
         });
     }
 }
@@ -373,6 +458,7 @@ function ensureReportModal() {
 function closeReportModal(result) {
     var overlay = document.getElementById('rmnlReportModal');
     if (overlay) overlay.classList.remove('active');
+    window.__rmnlReportFiles = [];
     var resolver = window.__rmnlReportModalResolve;
     window.__rmnlReportModalResolve = null;
     if (typeof resolver === 'function') resolver(result || null);
@@ -395,6 +481,9 @@ function openReportModal(options) {
         errEl.textContent = '';
         errEl.style.display = 'none';
     }
+    window.__rmnlReportFiles = [];
+    var fileList = document.getElementById('rmnlReportFileList');
+    if (fileList) fileList.innerHTML = '';
 
     if (reasonEl) {
         var reasons = Array.isArray(opts.reasons) && opts.reasons.length
@@ -513,8 +602,23 @@ const UserAPI = {
 // Reports API
 // ---------------------------------------------------------------------------
 const ReportsAPI = {
-    create: (payload) =>
-        apiRequest('POST', '/api/reports', payload),
+    create: (payload) => {
+        var body = payload || {};
+        var files = body.evidence_files || body.files || body.attachments || [];
+        var list = Array.isArray(files) ? files.filter(Boolean) : [];
+        if (!list.length) return apiRequest('POST', '/api/reports', body);
+
+        var formData = new FormData();
+        Object.keys(body).forEach(function(key) {
+            if (key === 'evidence_files' || key === 'files' || key === 'attachments') return;
+            if (body[key] == null) return;
+            formData.append(key, String(body[key]));
+        });
+        list.forEach(function(file) {
+            formData.append('evidence_files', file);
+        });
+        return apiRequest('POST', '/api/reports', formData, true);
+    },
 };
 
 // ---------------------------------------------------------------------------
@@ -1156,6 +1260,7 @@ function initStudentMessageSlider(options) {
                         if (!result) return;
                         var details = 'Conversation report';
                         var extra = String(result.details || '').trim();
+                        var files = Array.isArray(result.files) ? result.files : [];
                         if (extra) details = details ? (details + ' | ' + extra) : extra;
                         var payload = {
                             report_type: 'message',
@@ -1164,6 +1269,7 @@ function initStudentMessageSlider(options) {
                             reported_user_id: Number(activeConversation.other_user_id || 0),
                             center_id: Number(activeConversation.center_id || 0)
                         };
+                        if (files.length) payload.evidence_files = files;
                         ReportsAPI.create(payload)
                             .then(function() { alert('Report submitted.'); })
                             .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
@@ -1857,6 +1963,7 @@ function initFullMessagesPage(options) {
                         if (!result) return;
                         var details = 'Conversation report';
                         var extra = String(result.details || '').trim();
+                        var files = Array.isArray(result.files) ? result.files : [];
                         if (extra) details = details ? (details + ' | ' + extra) : extra;
                         var payload = {
                             report_type: 'message',
@@ -1865,6 +1972,7 @@ function initFullMessagesPage(options) {
                             reported_user_id: Number(activeConversation.other_user_id || 0),
                             center_id: Number(activeConversation.center_id || 0)
                         };
+                        if (files.length) payload.evidence_files = files;
                         ReportsAPI.create(payload)
                             .then(function() { alert('Report submitted.'); })
                             .catch(function(err) { alert(err.message || 'Failed to submit report.'); });

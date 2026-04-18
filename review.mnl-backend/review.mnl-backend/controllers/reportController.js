@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const path = require('path');
 const { createUserNotification } = require('./notificationController');
 
 const ALLOWED_TYPES = ['center', 'message', 'testimonial', 'rating'];
@@ -7,6 +8,27 @@ const ALLOWED_STATUSES = ['open', 'resolved', 'dismissed'];
 const normalizeId = (value) => {
   const num = Number(value);
   return Number.isFinite(num) && num > 0 ? Math.trunc(num) : null;
+};
+
+const toStoredUploadPath = (fileObj) => {
+  if (!fileObj) return null;
+  if (fileObj.secure_url) return String(fileObj.secure_url);
+  if (fileObj.url && /^https?:\/\//i.test(String(fileObj.url))) return String(fileObj.url);
+  if (fileObj.path && /^https?:\/\//i.test(String(fileObj.path))) return String(fileObj.path);
+  if (fileObj.filename) return '/uploads/' + String(fileObj.filename);
+  if (fileObj.path) return '/uploads/' + path.basename(String(fileObj.path));
+  return null;
+};
+
+const parseReportAttachment = (fileObj) => {
+  const url = toStoredUploadPath(fileObj);
+  if (!url) return null;
+  return {
+    file_url: url,
+    file_name: String(fileObj.originalname || fileObj.filename || 'attachment').slice(0, 255),
+    mime_type: String(fileObj.mimetype || '').slice(0, 120) || null,
+    file_size: Number(fileObj.size || 0) || null,
+  };
 };
 
 const createReport = async (req, res) => {
@@ -66,9 +88,25 @@ const createReport = async (req, res) => {
       [reporterId, reportedUserId, centerId, testimonialId, messageId, reportType, reason, details || null]
     );
 
+    const reportId = result.insertId;
+    const files = Array.isArray(req.files) ? req.files : [];
+    if (files.length) {
+      const attachments = files
+        .map(parseReportAttachment)
+        .filter(Boolean)
+        .map((att) => [reportId, att.file_url, att.file_name, att.mime_type, att.file_size]);
+
+      if (attachments.length) {
+        await db.query(
+          'INSERT INTO report_attachments (report_id, file_url, file_name, mime_type, file_size) VALUES ?',
+          [attachments]
+        );
+      }
+    }
+
     return res.status(201).json({
       message: 'Report submitted successfully.',
-      report_id: result.insertId,
+      report_id: reportId,
     });
   } catch (err) {
     console.error('Create report error:', err);
@@ -94,6 +132,32 @@ const getReports = async (req, res) => {
             LEFT JOIN chat_messages cm ON cm.id = r.message_id
        ORDER BY r.created_at DESC`
     );
+
+    const reportIds = (rows || []).map((row) => row.id).filter(Boolean);
+    const attachmentMap = {};
+    if (reportIds.length) {
+      const [attachmentRows] = await db.query(
+        `SELECT report_id, file_url, file_name, mime_type, file_size
+         FROM report_attachments
+         WHERE report_id IN (?)
+         ORDER BY id ASC`,
+        [reportIds]
+      );
+
+      (attachmentRows || []).forEach((att) => {
+        if (!attachmentMap[att.report_id]) attachmentMap[att.report_id] = [];
+        attachmentMap[att.report_id].push({
+          url: att.file_url,
+          name: att.file_name,
+          mime_type: att.mime_type,
+          size: att.file_size,
+        });
+      });
+    }
+
+    (rows || []).forEach((row) => {
+      row.attachments = attachmentMap[row.id] || [];
+    });
 
     res.json({ reports: rows || [] });
   } catch (err) {

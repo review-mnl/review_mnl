@@ -2378,12 +2378,28 @@ const AdminAPI = {
         apiRequest('DELETE', '/api/admin/testimonials/' + id),
 };
 
+function initPageLoader() {
+    var loader = document.getElementById('rmnlPageLoader');
+    if (!loader) return;
+    var done = false;
+    function hideLoader() {
+        if (done) return;
+        done = true;
+        loader.classList.add('rmnl-page-loader--hidden');
+        setTimeout(function() {
+            loader.style.display = 'none';
+        }, 220);
+    }
+    window.rmnlMarkPageReady = hideLoader;
+    window.addEventListener('load', hideLoader);
+}
+
 // Auto-initialize the global notification bell on pages that include this script.
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        if (document.body) document.body.classList.remove('rmnl-preload');
+        if (typeof initGlobalNotificationBell === 'function') initGlobalNotificationBell();
     } catch (e) {}
     try {
-        if (typeof initGlobalNotificationBell === 'function') initGlobalNotificationBell();
+        initPageLoader();
     } catch (e) {}
 });

@@ -5,51 +5,45 @@
     box-sizing: border-box;
 }
 
-body > * {
-    transition: opacity 180ms ease;
-}
-
-body.rmnl-preload {
-    overflow: hidden;
-}
-
-body.rmnl-preload > * {
-    opacity: 0;
-}
-
-body.rmnl-preload::before {
-    content: 'Loading...';
+.rmnl-page-loader {
     position: fixed;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
+    gap: 10px;
     background: #f4f6fb;
     color: #1d4ed8;
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.02em;
     z-index: 9999;
+    opacity: 1;
+    transition: opacity 200ms ease;
 }
 
-body.rmnl-preload::after {
-    content: '';
-    position: fixed;
+.rmnl-page-loader--hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rmnl-page-loader-spinner {
     width: 28px;
     height: 28px;
     border-radius: 50%;
     border: 3px solid rgba(29, 78, 216, 0.2);
     border-top-color: #1d4ed8;
-    top: calc(50% - 26px);
-    left: 50%;
-    transform: translate(-50%, -50%);
     animation: rmnlSpin 0.8s linear infinite;
-    z-index: 10000;
+}
+
+.rmnl-page-loader-text {
+    font-size: 13px;
 }
 
 @keyframes rmnlSpin {
-    from { transform: translate(-50%, -50%) rotate(0deg); }
-    to { transform: translate(-50%, -50%) rotate(360deg); }
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {

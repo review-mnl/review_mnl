@@ -24,6 +24,17 @@ const postTestimonial = async (req, res) => {
       [student_id, center_id, String(content).trim(), parsedRating]
     );
 
+    try {
+      await db.query(
+        `INSERT INTO center_ratings (student_id, center_id, rating)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE rating = VALUES(rating), updated_at = CURRENT_TIMESTAMP`,
+        [student_id, center_id, parsedRating]
+      );
+    } catch (e) {
+      // Rating sync is best-effort; do not fail testimonial creation.
+    }
+
     const [rows] = await db.query(
       `SELECT t.id, t.content, t.rating, t.created_at, u.first_name, u.last_name
        FROM testimonials t
@@ -77,6 +88,83 @@ const deleteTestimonial = async (req, res) => {
   }
 };
 
+const updateTestimonial = async (req, res) => {
+  const testimonialId = Number(req.params.testimonialId || req.params.id || 0);
+  const centerId = Number(req.params.id || req.body.center_id || 0);
+  const studentId = req.user.id;
+  const content = String((req.body && req.body.content) || '').trim();
+  const parsedRating = Number(req.body && req.body.rating);
+
+  if (!testimonialId || testimonialId <= 0) {
+    return res.status(400).json({ message: 'Invalid testimonial id.' });
+  }
+  if (!centerId || centerId <= 0) {
+    return res.status(400).json({ message: 'Invalid review center.' });
+  }
+  if (!content) {
+    return res.status(400).json({ message: 'Review content is required.' });
+  }
+  if (!Number.isFinite(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+    return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
+  }
+
+  try {
+    const [rows] = await db.query(
+      `SELECT id, student_id, center_id, created_at, updated_at
+       FROM testimonials
+       WHERE id = ? AND center_id = ?
+       LIMIT 1`,
+      [testimonialId, centerId]
+    );
+    if (!rows.length) return res.status(404).json({ message: 'Review not found.' });
+    const row = rows[0];
+    if (Number(row.student_id) !== Number(studentId)) {
+      return res.status(403).json({ message: 'You can only edit your own review.' });
+    }
+
+    const lastEditAt = row.updated_at || row.created_at;
+    const lastEditTime = lastEditAt ? new Date(lastEditAt).getTime() : 0;
+    const now = Date.now();
+    const cooldownMs = 3 * 24 * 60 * 60 * 1000;
+    if (lastEditTime && now - lastEditTime < cooldownMs) {
+      const remainingMs = cooldownMs - (now - lastEditTime);
+      const remainingHours = Math.max(1, Math.ceil(remainingMs / (60 * 60 * 1000)));
+      return res.status(429).json({ message: 'You can edit your review again in ' + remainingHours + ' hour(s).' });
+    }
+
+    await db.query(
+      `UPDATE testimonials
+       SET content = ?, rating = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [content, parsedRating, testimonialId]
+    );
+
+    try {
+      await db.query(
+        `INSERT INTO center_ratings (student_id, center_id, rating)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE rating = VALUES(rating), updated_at = CURRENT_TIMESTAMP`,
+        [studentId, centerId, parsedRating]
+      );
+    } catch (e) {
+      // Rating sync is best-effort.
+    }
+
+    const [updatedRows] = await db.query(
+      `SELECT id, content, rating, created_at, updated_at
+       FROM testimonials
+       WHERE id = ?
+       LIMIT 1`,
+      [testimonialId]
+    );
+
+    res.json({ message: 'Review updated successfully.', testimonial: updatedRows[0] || null });
+  } catch (err) {
+    console.error('Update testimonial error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 const getMyCenterTestimonials = async (req, res) => {
   const userId = req.user.id;
   const sort = String(req.query.sort || 'latest').toLowerCase();
@@ -93,7 +181,7 @@ const getMyCenterTestimonials = async (req, res) => {
 
     const centerId = centerRows[0].id;
     const [rows] = await db.query(
-      `SELECT t.id, t.center_id, t.content, t.rating, t.created_at,
+      `SELECT t.id, t.center_id, t.student_id, t.content, t.rating, t.created_at, t.updated_at,
               u.first_name, u.last_name,
               CONCAT(COALESCE(u.first_name, ''), CASE WHEN u.last_name IS NULL OR u.last_name = '' THEN '' ELSE ' ' END, COALESCE(u.last_name, '')) AS username
        FROM testimonials t
@@ -109,4 +197,4 @@ const getMyCenterTestimonials = async (req, res) => {
   }
 };
 
-module.exports = { postTestimonial, getPendingTestimonials, approveTestimonial, deleteTestimonial, getMyCenterTestimonials };
+module.exports = { postTestimonial, getPendingTestimonials, approveTestimonial, deleteTestimonial, updateTestimonial, getMyCenterTestimonials };

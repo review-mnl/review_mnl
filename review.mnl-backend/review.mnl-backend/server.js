@@ -72,6 +72,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/enrollments', require('./routes/enrollments'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/reports', require('./routes/reports'));
 
 // Optional debug route to inspect which database the app is connected to.
 // Enable by setting environment variable `ENABLE_DEBUG_ROUTE=1` (temporary).

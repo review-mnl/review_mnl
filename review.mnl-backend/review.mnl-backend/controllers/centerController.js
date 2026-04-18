@@ -168,7 +168,7 @@ const getCenterById = async (req, res) => {
     if (center.length === 0)
       return res.status(404).json({ message: 'Review center not found.' });
     const [testimonials] = await db.query(
-      `SELECT t.id, t.content, t.rating, t.created_at, u.first_name, u.last_name
+      `SELECT t.id, t.student_id, t.content, t.rating, t.created_at, t.updated_at, u.first_name, u.last_name
        FROM testimonials t JOIN users u ON u.id = t.student_id
        WHERE t.center_id = ? AND t.is_approved = 1 ORDER BY t.created_at DESC`, [id]
     );

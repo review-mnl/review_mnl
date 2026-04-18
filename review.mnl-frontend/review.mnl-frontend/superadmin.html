@@ -1065,10 +1065,24 @@
     
     var allCenters = [];
     var allStudents = [];
+    var allReports = [];
 
     function loadDashboardData() {
         loadCenters();
         loadStudents();
+        loadReports();
+    }
+
+    function loadReports() {
+        AdminAPI.getReports().then(function(resp) {
+            var rows = Array.isArray(resp) ? resp : (resp.reports || []);
+            allReports = rows;
+            renderReportsTable(rows);
+            updateStats();
+        }).catch(function(err) {
+            console.error('Failed to load reports:', err);
+            renderReportsTable([]);
+        });
     }
 
     function loadCenters() {
@@ -1110,12 +1124,81 @@
             var elCenters = document.getElementById('statCenters');
             var elPending = document.getElementById('statPending');
             var elStudents = document.getElementById('statStudents');
+            var elReports = document.getElementById('statReports');
             if (elCenters) elCenters.textContent = allCenters.length;
             if (elPending) elPending.textContent = allCenters.filter(c => c.status === 'pending').length;
             if (elStudents) elStudents.textContent = allStudents.length;
+            if (elReports) elReports.textContent = allReports.filter(function(r){ return String(r.status || '').toLowerCase() === 'open'; }).length;
         } catch (e) {
             // suppressed debug: safe-guard prevents uncaught exceptions in older clients
         }
+    }
+
+    function renderReportsTable(reports) {
+        var tbody = document.querySelector('#reportsTable tbody');
+        if (!tbody) return;
+        if (!reports || !reports.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7fa8;">No reports yet</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = reports.map(function(r) {
+            var status = String(r.status || 'open').toLowerCase();
+            var statusClass = status === 'open' ? 'pending' : 'active';
+            var reporter = (r.reporter_name || '').trim() || 'Unknown';
+            var against = (r.center_name || '').trim() || (r.reported_name || '').trim() || 'Unknown';
+            var reason = (r.reason || '').trim() || '—';
+            var date = formatDate(r.created_at);
+            var actions = '';
+            if (status === 'open') {
+                actions = '<button class="sa-action-btn approve" data-action="resolve" data-id="' + r.id + '">Resolve</button>'
+                    + '<button class="sa-action-btn danger" data-action="dismiss" data-id="' + r.id + '">Dismiss</button>';
+            } else {
+                actions = '<button class="sa-action-btn" data-action="view" data-id="' + r.id + '">View</button>';
+            }
+            return '<tr>'
+                + '<td>' + reporter + '</td>'
+                + '<td>' + against + '</td>'
+                + '<td>' + reason + '</td>'
+                + '<td>' + date + '</td>'
+                + '<td><span class="sa-status ' + statusClass + '">' + (status === 'open' ? 'Open' : 'Resolved') + '</span></td>'
+                + '<td>' + actions + '</td>'
+                + '</tr>';
+        }).join('');
+
+        tbody.querySelectorAll('button[data-action="resolve"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = Number(btn.getAttribute('data-id')) || 0;
+                if (!id) return;
+                if (!confirm('Resolve this report?')) return;
+                AdminAPI.updateReportStatus(id, 'resolved').then(function() {
+                    saToast('Report resolved.');
+                    loadReports();
+                }).catch(function(err) {
+                    saToast(err.message || 'Failed to resolve report.');
+                });
+            });
+        });
+
+        tbody.querySelectorAll('button[data-action="dismiss"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = Number(btn.getAttribute('data-id')) || 0;
+                if (!id) return;
+                if (!confirm('Dismiss this report?')) return;
+                AdminAPI.updateReportStatus(id, 'dismissed').then(function() {
+                    saToast('Report dismissed.');
+                    loadReports();
+                }).catch(function(err) {
+                    saToast(err.message || 'Failed to dismiss report.');
+                });
+            });
+        });
+
+        tbody.querySelectorAll('button[data-action="view"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                saToast('Report already resolved.');
+            });
+        });
     }
 
     function formatDate(dateStr) {

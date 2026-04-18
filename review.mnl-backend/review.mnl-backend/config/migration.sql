@@ -171,3 +171,30 @@ CREATE TABLE IF NOT EXISTS center_ratings (
 	UNIQUE KEY uniq_student_center_rating (student_id, center_id),
 	CHECK (rating BETWEEN 1 AND 5)
 );
+
+-- Allow review edits with cooldown tracking
+ALTER TABLE testimonials ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- User-generated reports
+CREATE TABLE IF NOT EXISTS reports (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	reporter_id INT NOT NULL,
+	reported_user_id INT NULL,
+	center_id INT NULL,
+	testimonial_id INT NULL,
+	message_id INT NULL,
+	report_type ENUM('center','message','testimonial','rating') NOT NULL,
+	reason VARCHAR(255) NOT NULL,
+	details TEXT NULL,
+	status ENUM('open','resolved','dismissed') DEFAULT 'open',
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX idx_reports_status_created (status, created_at),
+	INDEX idx_reports_center (center_id),
+	INDEX idx_reports_reporter (reporter_id),
+	FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (reported_user_id) REFERENCES users(id) ON DELETE SET NULL,
+	FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE SET NULL,
+	FOREIGN KEY (testimonial_id) REFERENCES testimonials(id) ON DELETE SET NULL,
+	FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE SET NULL
+);

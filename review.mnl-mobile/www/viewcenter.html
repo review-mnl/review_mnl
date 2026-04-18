@@ -46,6 +46,10 @@
                             <button id="saveCenterBtn" onclick="toggleSaveCenter()" title="Save Center" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;">
                                 <span class="material-symbols-outlined" id="saveIcon" style="font-size:28px;text-shadow:1px 1px 3px rgba(0,0,0,0.4);transition:font-variation-settings 0.2s, color 0.2s, text-shadow 0.2s;">bookmark</span>
                             </button>
+                            <button id="reportCenterBtn" title="Report this center" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:999px;cursor:pointer;padding:4px 10px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">flag</span>
+                                Report
+                            </button>
                             <div id="saveToast" style="display:none;padding:5px 12px;background:rgba(0,0,0,0.65);color:#fff;border-radius:6px;font-size:0.75rem;font-family:Poppins,sans-serif;"></div>
                         </div>
                         <p class="center-description" id="centerShortDescription">Location.....</p>
@@ -1638,6 +1642,21 @@
                 const testimonialsListEl = document.getElementById('testimonialsList');
                 const writeFeedbackBtn = document.getElementById('writeFeedbackBtn');
                 const testimonialFormWrap = document.getElementById('testimonialFormWrap');
+                const reportCenterBtn = document.getElementById('reportCenterBtn');
+                const user = getUser();
+
+                function submitReport(payload, promptLabel) {
+                    if (!ReportsAPI || typeof ReportsAPI.create !== 'function') {
+                        alert('Reporting is not available right now.');
+                        return;
+                    }
+                    var reason = window.prompt(promptLabel || 'Why are you reporting this?');
+                    if (!reason) return;
+                    var data = Object.assign({}, payload, { reason: reason });
+                    ReportsAPI.create(data)
+                        .then(function() { alert('Report submitted.'); })
+                        .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                }
 
                 if (nameEl) nameEl.textContent = centerName;
                 if (shortDescEl) shortDescEl.textContent = centerShort;
@@ -1655,6 +1674,17 @@
                         logoEl.style.backgroundSize = 'cover';
                         logoEl.style.backgroundPosition = 'center';
                     }
+                }
+
+                if (reportCenterBtn) {
+                    reportCenterBtn.style.display = user ? 'inline-flex' : 'none';
+                    reportCenterBtn.onclick = function() {
+                        submitReport({
+                            report_type: 'center',
+                            center_id: Number(centerId || 0),
+                            details: 'Report review center: ' + centerName
+                        }, 'Why are you reporting this review center?');
+                    };
                 }
 
                 if (programTagsEl) {
@@ -1717,7 +1747,25 @@
                             '<span style="font-size:12px;color:#6b7280;">' + escHtml(dateLabel) + '</span>' +
                         '</div>' +
                         '<div style="color:#f59e0b;margin-bottom:8px;">' + '★'.repeat(r) + '☆'.repeat(5 - r) + '</div>' +
-                        '<p style="color:#555;font-size:0.9rem;margin:0;">' + escHtml(t.content || t.feedback || '') + '</p>';
+                        '<p style="color:#555;font-size:0.9rem;margin:0;">' + escHtml(t.content || t.feedback || '') + '</p>' +
+                        '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">'
+                            + '<button type="button" class="rmnl-report-testimonial-btn" style="border:1px solid #f7c9c9;background:#fff;color:#b91c1c;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;">Report</button>'
+                        + '</div>';
+                    var reportBtn = card.querySelector('.rmnl-report-testimonial-btn');
+                    if (reportBtn) {
+                        if (!user) {
+                            reportBtn.style.display = 'none';
+                        }
+                        reportBtn.addEventListener('click', function() {
+                            submitReport({
+                                report_type: 'testimonial',
+                                testimonial_id: Number(t.id || 0),
+                                reported_user_id: Number(t.student_id || 0),
+                                center_id: Number(centerId || 0),
+                                details: 'Report review by ' + studentName
+                            }, 'Why are you reporting this review?');
+                        });
+                    }
                     if (prepend && testimonialsListEl.firstChild) {
                         testimonialsListEl.insertBefore(card, testimonialsListEl.firstChild);
                     } else {
@@ -1732,7 +1780,6 @@
                 }
 
                 // Simple testimonial form for logged-in students (no approval flow)
-                const user = getUser();
                 if (user && user.role === 'student' && writeFeedbackBtn && testimonialFormWrap) {
                     writeFeedbackBtn.style.display = 'inline-block';
                     writeFeedbackBtn.addEventListener('click', function() {

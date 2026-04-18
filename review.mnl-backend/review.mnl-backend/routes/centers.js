@@ -16,7 +16,7 @@ const {
 	verifyEnrollmentPayment,
 	updateEnrollmentReviewStatus,
 } = require('../controllers/centerController');
-const { postTestimonial, getMyCenterTestimonials } = require('../controllers/testimonialController');
+const { postTestimonial, updateTestimonial, getMyCenterTestimonials } = require('../controllers/testimonialController');
 const { createGcashEnrollment } = require('../controllers/paymentsController');
 
 router.get('/',          getApprovedCenters);
@@ -33,6 +33,7 @@ router.put('/me', protect, centerOnly, updateCenterProfile);
 router.put('/me/logo', protect, centerOnly, upload.single('logo'), updateCenterLogo);
 router.post('/me/payment-qr', protect, centerOnly, upload.single('payment_qr'), uploadCenterPaymentQr);
 router.post('/:id/testimonials', protect, postTestimonial);
+router.put('/:id/testimonials/:testimonialId', protect, updateTestimonial);
 // Enrollment: student initiates a GCash payment to enroll in a center
 router.post('/:id/enroll/gcash', protect, studentOnly, upload.single('payment_proof'), createGcashEnrollment);
 

@@ -3,6 +3,7 @@ const router  = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
 const { getPendingCenters, getAllCenters, updateCenterStatus, getAllStudents, deleteUser, deleteCenter, getCenterDocuments } = require('../controllers/adminController');
 const { getPendingTestimonials, approveTestimonial, deleteTestimonial } = require('../controllers/testimonialController');
+const { getReports, updateReportStatus } = require('../controllers/reportController');
 
 router.use(protect, adminOnly);
 
@@ -16,5 +17,7 @@ router.delete('/users/:id',             deleteUser);
 router.get('/testimonials/pending',     getPendingTestimonials);
 router.put('/testimonials/:id/approve', approveTestimonial);
 router.delete('/testimonials/:id',      deleteTestimonial);
+router.get('/reports',                  getReports);
+router.put('/reports/:id/status',       updateReportStatus);
 
 module.exports = router;

@@ -64,8 +64,32 @@ CREATE TABLE IF NOT EXISTS testimonials (
   rating      TINYINT CHECK (rating BETWEEN 1 AND 5),
   is_approved TINYINT(1) DEFAULT 0,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (center_id)  REFERENCES review_centers(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  reporter_id INT NOT NULL,
+  reported_user_id INT NULL,
+  center_id INT NULL,
+  testimonial_id INT NULL,
+  message_id INT NULL,
+  report_type ENUM('center','message','testimonial','rating') NOT NULL,
+  reason VARCHAR(255) NOT NULL,
+  details TEXT NULL,
+  status ENUM('open','resolved','dismissed') DEFAULT 'open',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_reports_status_created (status, created_at),
+  INDEX idx_reports_center (center_id),
+  INDEX idx_reports_reporter (reporter_id),
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (reported_user_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (center_id) REFERENCES review_centers(id) ON DELETE SET NULL,
+  FOREIGN KEY (testimonial_id) REFERENCES testimonials(id) ON DELETE SET NULL,
+  FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS payments (

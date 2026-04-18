@@ -363,6 +363,9 @@ const CentersAPI = {
     postTestimonial: (centerId, content, rating) =>
         apiRequest('POST', '/api/centers/' + centerId + '/testimonials', { content, rating }),
 
+    updateTestimonial: (centerId, testimonialId, content, rating) =>
+        apiRequest('PUT', '/api/centers/' + centerId + '/testimonials/' + testimonialId, { content, rating }),
+
     getMyProfile: () =>
         apiRequest('GET', '/api/centers/me'),
     getMyTestimonials: (sort) =>
@@ -412,6 +415,14 @@ const UserAPI = {
         apiRequest('PUT', '/api/users/me', data),
     uploadProfilePhoto: (formData) =>
         apiRequest('PUT', '/api/users/me/photo', formData, true),
+};
+
+// ---------------------------------------------------------------------------
+// Reports API
+// ---------------------------------------------------------------------------
+const ReportsAPI = {
+    create: (payload) =>
+        apiRequest('POST', '/api/reports', payload),
 };
 
 // ---------------------------------------------------------------------------
@@ -1027,8 +1038,47 @@ function initStudentMessageSlider(options) {
             return btn;
         }
 
+        function ensureReportButton() {
+            if (!convName || !convName.parentNode) return null;
+            var btn = convName.parentNode.querySelector('.rmnl-conv-report-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rmnl-conv-report-btn';
+                btn.textContent = 'Report';
+                btn.style.cssText = 'border:1px solid #f7c9c9;background:#fff;color:#b91c1c;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;';
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!activeConversation || !activeConversation.other_user_id) return;
+                    var reason = window.prompt('Why are you reporting this conversation?');
+                    if (!reason) return;
+                    var payload = {
+                        report_type: 'message',
+                        reason: reason,
+                        details: 'Conversation report',
+                        reported_user_id: Number(activeConversation.other_user_id || 0),
+                        center_id: Number(activeConversation.center_id || 0)
+                    };
+                    ReportsAPI.create(payload)
+                        .then(function() { alert('Report submitted.'); })
+                        .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                });
+                convName.parentNode.appendChild(btn);
+            }
+            return btn;
+        }
+
         function updateDeleteButtonState() {
             var btn = ensureDeleteButton();
+            if (!btn) return;
+            var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
+            btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
+            btn.disabled = !hasActiveConversation;
+        }
+
+        function updateReportButtonState() {
+            var btn = ensureReportButton();
             if (!btn) return;
             var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
             btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
@@ -1415,6 +1465,7 @@ function initStudentMessageSlider(options) {
             convName.textContent = updatedConversation.other_name || conversationFallbackName;
             renderConversationHeaderAvatar(updatedConversation);
             updateDeleteButtonState();
+            updateReportButtonState();
             listPanel.style.display = 'none';
             convPanel.style.display = 'flex';
             openSidebar();
@@ -1432,6 +1483,7 @@ function initStudentMessageSlider(options) {
             clearPendingAttachment();
             convMessages.innerHTML = '';
             updateDeleteButtonState();
+            updateReportButtonState();
         }
 
         async function deleteActiveConversation() {
@@ -1675,8 +1727,86 @@ function initFullMessagesPage(options) {
             return btn;
         }
 
+        function ensureReportButton() {
+            if (!convName || !convName.parentNode) return null;
+            var btn = convName.parentNode.querySelector('.rmnl-msgpage-report-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rmnl-msgpage-report-btn';
+                btn.textContent = 'Report';
+                btn.style.cssText = 'border:1px solid #f7c9c9;background:#fff;color:#b91c1c;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;';
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!activeConversation || !activeConversation.other_user_id) return;
+                    var reason = window.prompt('Why are you reporting this conversation?');
+                    if (!reason) return;
+                    var payload = {
+                        report_type: 'message',
+                        reason: reason,
+                        details: 'Conversation report',
+                        reported_user_id: Number(activeConversation.other_user_id || 0),
+                        center_id: Number(activeConversation.center_id || 0)
+                    };
+                    ReportsAPI.create(payload)
+                        .then(function() { alert('Report submitted.'); })
+                        .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                });
+                convName.parentNode.appendChild(btn);
+            }
+            return btn;
+        }
+
+        function ensureReportButton() {
+            if (!convName || !convName.parentNode) return null;
+            var btn = convName.parentNode.querySelector('.rmnl-msgpage-report-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rmnl-msgpage-report-btn';
+                btn.textContent = 'Report';
+                btn.style.cssText = 'border:1px solid #f7c9c9;background:#fff;color:#b91c1c;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;';
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!activeConversation || !activeConversation.other_user_id) return;
+                    var reason = window.prompt('Why are you reporting this conversation?');
+                    if (!reason) return;
+                    var payload = {
+                        report_type: 'message',
+                        reason: reason,
+                        details: 'Conversation report',
+                        reported_user_id: Number(activeConversation.other_user_id || 0),
+                        center_id: Number(activeConversation.center_id || 0)
+                    };
+                    ReportsAPI.create(payload)
+                        .then(function() { alert('Report submitted.'); })
+                        .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                });
+                convName.parentNode.appendChild(btn);
+            }
+            return btn;
+        }
+
         function updateDeleteButtonState() {
             var btn = ensureDeleteButton();
+            if (!btn) return;
+            var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
+            btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
+            btn.disabled = !hasActiveConversation;
+        }
+
+        function updateReportButtonState() {
+            var btn = ensureReportButton();
+            if (!btn) return;
+            var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
+            btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
+            btn.disabled = !hasActiveConversation;
+        }
+
+        function updateReportButtonState() {
+            var btn = ensureReportButton();
             if (!btn) return;
             var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
             btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
@@ -1932,6 +2062,7 @@ function initFullMessagesPage(options) {
             convMessages.innerHTML = '';
             clearPendingAttachment();
             updateDeleteButtonState();
+            updateReportButtonState();
             if (isCompactView()) {
                 convPanel.style.display = 'none';
                 if (listPanel) listPanel.style.display = 'block';
@@ -2023,6 +2154,7 @@ function initFullMessagesPage(options) {
             convName.textContent = latestConversation.other_name || conversationFallbackName;
             renderConversationHeaderAvatar(latestConversation);
             updateDeleteButtonState();
+            updateReportButtonState();
             openConversationUi();
             await loadActiveThread();
             ensureThreadPolling();
@@ -2393,6 +2525,12 @@ const AdminAPI = {
 
     deleteTestimonial: (id) =>
         apiRequest('DELETE', '/api/admin/testimonials/' + id),
+
+    getReports: () =>
+        apiRequest('GET', '/api/admin/reports'),
+
+    updateReportStatus: (id, status) =>
+        apiRequest('PUT', '/api/admin/reports/' + id + '/status', { status }),
 };
 
 function initPageTransitions() {

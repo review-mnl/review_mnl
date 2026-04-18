@@ -124,7 +124,12 @@ const getMyRatings = async (req, res) => {
          rc.business_name AS center_name,
          rc.logo_url AS center_logo,
          cr.rating,
-         cr.updated_at AS rated_at
+         cr.updated_at AS rated_at,
+         t.id AS testimonial_id,
+         t.content AS testimonial_content,
+         t.rating AS testimonial_rating,
+         t.created_at AS testimonial_created_at,
+         t.updated_at AS testimonial_updated_at
        FROM (
          SELECT DISTINCT e.center_id
          FROM enrollments e
@@ -133,8 +138,19 @@ const getMyRatings = async (req, res) => {
        ) ec
        JOIN review_centers rc ON rc.id = ec.center_id
        LEFT JOIN center_ratings cr ON cr.center_id = ec.center_id AND cr.student_id = ?
+       LEFT JOIN (
+         SELECT t1.id, t1.student_id, t1.center_id, t1.content, t1.rating, t1.created_at, t1.updated_at
+         FROM testimonials t1
+         JOIN (
+           SELECT center_id, MAX(created_at) AS max_created
+           FROM testimonials
+           WHERE student_id = ? AND is_approved = 1
+           GROUP BY center_id
+         ) t2 ON t1.center_id = t2.center_id AND t1.created_at = t2.max_created
+         WHERE t1.student_id = ? AND t1.is_approved = 1
+       ) t ON t.center_id = ec.center_id
        ORDER BY rc.business_name ASC`,
-      [userId, userId]
+      [userId, userId, userId, userId]
     );
 
     const reviews = rows.map((row) => ({
@@ -143,6 +159,11 @@ const getMyRatings = async (req, res) => {
       center_logo: row.center_logo,
       rating: row.rating ? Number(row.rating) : null,
       rated_at: row.rated_at || null,
+      testimonial_id: row.testimonial_id || null,
+      testimonial_content: row.testimonial_content || null,
+      testimonial_rating: row.testimonial_rating ? Number(row.testimonial_rating) : null,
+      testimonial_created_at: row.testimonial_created_at || null,
+      testimonial_updated_at: row.testimonial_updated_at || null,
     }));
 
     console.log('[Ratings] Fetched rating-eligible centers for user', { userId, count: reviews.length });

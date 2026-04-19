@@ -1088,18 +1088,13 @@
 
                 async function deleteEnrollmentById(enrollmentId) {
                     try {
-                        var deleted = false;
-
-                        if (window.UserAPI) {
-                            var methods = ['deleteEnrollment', 'deleteMyEnrollment', 'removeEnrollment', 'cancelEnrollment', 'archiveEnrollment'];
-                            for (var i = 0; i < methods.length; i++) {
-                                var fn = methods[i];
-                                if (typeof UserAPI[fn] === 'function') {
-                                    await UserAPI[fn](enrollmentId);
-                                    deleted = true;
-                                    break;
-                                }
-                            }
+        // Use the shared API helper to send the token automatically
+                     await apiRequest('DELETE', '/api/enrollments/' + enrollmentId);
+                     await loadMyEnrollments();
+                    } catch (e) {
+                     alert((e && e.message) ? e.message : 'Failed to delete enrollment.');
+                    }
+                }
                         }
 
                         if (!deleted) {

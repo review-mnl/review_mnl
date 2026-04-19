@@ -1089,6 +1089,7 @@
                 async function deleteEnrollmentById(enrollmentId) {
                     try {
                         var deleted = false;
+
                         if (window.UserAPI) {
                             var methods = ['deleteEnrollment', 'deleteMyEnrollment', 'removeEnrollment', 'cancelEnrollment', 'archiveEnrollment'];
                             for (var i = 0; i < methods.length; i++) {
@@ -1100,22 +1101,52 @@
                                 }
                             }
                         }
+
                         if (!deleted) {
                             var base = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : (typeof API_BASE !== 'undefined' ? API_BASE : '');
                             if (!base) throw new Error('Missing API base URL.');
+
                             var headers = {};
                             var token = localStorage.getItem('token') || '';
                             if (token) headers['Authorization'] = 'Bearer ' + token;
-                            var resp = await fetch(base + '/api/enrollments/' + enrollmentId, {
-                                method: 'DELETE',
-                                headers: headers
-                            });
-                            if (!resp.ok) throw new Error('Failed to delete enrollment.');
+
+                            var endpoints = [
+                                { url: base + '/api/enrollments/' + enrollmentId, method: 'DELETE' },
+                                { url: base + '/api/enrollments/' + enrollmentId + '/delete', method: 'DELETE' },
+                                { url: base + '/api/enrollments/' + enrollmentId + '/archive', method: 'POST' },
+                                { url: base + '/api/enrollments/' + enrollmentId + '/cancel', method: 'POST' },
+                                { url: base + '/api/enrollments/' + enrollmentId, method: 'PATCH', body: JSON.stringify({ status: 'archived' }) }
+                            ];
+
+                            for (var j = 0; j < endpoints.length; j++) {
+                                var ep = endpoints[j];
+                                var opts = { method: ep.method, headers: headers };
+                                if (ep.body) {
+                                    opts.headers = Object.assign({}, headers, { 'Content-Type': 'application/json' });
+                                    opts.body = ep.body;
+                                }
+                                var result = await attemptDeleteEndpoint(ep.url, opts);
+                                if (result.ok) { deleted = true; break; }
+                            }
                         }
+
+                        if (!deleted) throw new Error('Delete endpoint not found. Check API routes.');
                         await loadMyEnrollments();
                     } catch (e) {
                         alert((e && e.message) ? e.message : 'Failed to delete enrollment.');
                     }
+                }
+
+                async function attemptDeleteEndpoint(url, options) {
+                    var resp = await fetch(url, options);
+                    if (resp.ok) return { ok: true };
+                    if (resp.status === 404 || resp.status === 405) return { ok: false };
+                    var msg = 'Failed to delete enrollment.';
+                    try {
+                        var data = await resp.json();
+                        msg = data.message || data.error || msg;
+                    } catch (e) {}
+                    throw new Error(msg);
                 }
 
                 async function loadMyEnrollments() {

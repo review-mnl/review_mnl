@@ -704,6 +704,8 @@ const PaymentsAPI = {
 const EnrollmentsAPI = {
     getCenterEnrollments: (centerId) =>
         apiRequest('GET', '/api/enrollments/center/' + encodeURIComponent(centerId)),
+    deleteMyEnrollment: (enrollmentId) =>
+        apiRequest('DELETE', '/api/enrollments/' + encodeURIComponent(enrollmentId)),
 };
 
 // ---------------------------------------------------------------------------

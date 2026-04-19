@@ -221,12 +221,29 @@
                 <span id="enrolledSlideArrow" class="material-symbols-outlined enrolled-slide-arrow" role="button" tabindex="0" aria-label="Show more enrolled review centers">arrow_forward_ios</span>
             </div>
             <p id="enrolledEmptyMessage" style="display:none;font-size:0.85rem;color:#6b7280;margin:-4px 0 14px 0;">Review centers you've scheduled a review with will appear here.</p>
+            <p id="enrollmentActionMessage" style="display:none;font-size:0.82rem;margin:-4px 0 12px 0;font-weight:600;"></p>
 
             <div class="recent-grid" id="enrolledCentersGrid"></div>
         </div>
 
     </div>
 </section>
+
+        <div class="modal-overlay" id="deleteEnrollmentModal" style="display:none;">
+            <div class="modal-box" style="max-width:420px;">
+                <div class="modal-header">
+                    <h3>Delete Enrollment</h3>
+                    <button class="modal-close" onclick="closeDeleteEnrollmentModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin:0;color:#334155;line-height:1.5;">Are you sure you want to delete this past enrollment? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeDeleteEnrollmentModal()">Cancel</button>
+                    <button class="modal-save-btn" id="confirmDeleteEnrollmentBtn" onclick="confirmDeleteEnrollment()">Delete</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal: Edit User Profile -->
         <div class="modal-overlay" id="userProfileModal">
@@ -945,6 +962,110 @@
                     });
                 }
 
+                function normalizeReviewStatus(value) {
+                    var normalized = String(value || '').trim().toLowerCase();
+                    if (normalized === 'approved' || normalized === 'rejected' || normalized === 'pending') {
+                        return normalized;
+                    }
+                    return 'pending';
+                }
+
+                function formatReviewStatusLabel(value) {
+                    var normalized = normalizeReviewStatus(value);
+                    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+                }
+
+                function getReviewStatusBadgeColor(value) {
+                    var normalized = normalizeReviewStatus(value);
+                    if (normalized === 'approved') return '#c9f7d8';
+                    if (normalized === 'rejected') return '#ffd4d4';
+                    return '#d7e7ff';
+                }
+
+                function showEnrollmentActionMessage(type, message) {
+                    var el = document.getElementById('enrollmentActionMessage');
+                    if (!el) return;
+                    var isError = type === 'error';
+                    el.style.display = message ? 'block' : 'none';
+                    el.textContent = message || '';
+                    el.style.color = isError ? '#b91c1c' : '#065f46';
+                    if (message) {
+                        window.clearTimeout(window._enrollmentActionMessageTimer);
+                        window._enrollmentActionMessageTimer = window.setTimeout(function() {
+                            el.style.display = 'none';
+                            el.textContent = '';
+                        }, 4200);
+                    }
+                }
+
+                function canDeleteEnrollment(item) {
+                    if (!item) return false;
+                    if (typeof item.can_delete === 'boolean') return item.can_delete;
+
+                    var enrollmentLegacyStatus = String(item.enrollment_status || item.status || '').toLowerCase();
+                    var reviewStatus = normalizeReviewStatus(item.review_status || item.review_status_display || item.status);
+                    if (enrollmentLegacyStatus === 'active' || reviewStatus === 'approved') return false;
+
+                    var phase = String(item.schedule_phase || '').toLowerCase();
+                    if (phase) return phase === 'past';
+
+                    var enrollmentDate = new Date(item.enrollment_date || item.created_at || '');
+                    if (isNaN(enrollmentDate.getTime())) return false;
+                    var now = new Date();
+                    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    var dateOnly = new Date(enrollmentDate.getFullYear(), enrollmentDate.getMonth(), enrollmentDate.getDate());
+                    return dateOnly < today;
+                }
+
+                window._enrollmentMap = {};
+                window._pendingDeleteEnrollmentId = null;
+
+                function openDeleteEnrollmentModal(enrollmentId) {
+                    window._pendingDeleteEnrollmentId = Number(enrollmentId);
+                    var modal = document.getElementById('deleteEnrollmentModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeDeleteEnrollmentModal() {
+                    window._pendingDeleteEnrollmentId = null;
+                    var modal = document.getElementById('deleteEnrollmentModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                window.promptDeleteEnrollment = function(enrollmentId) {
+                    var id = Number(enrollmentId);
+                    var item = window._enrollmentMap[String(id)];
+                    if (!item || !canDeleteEnrollment(item)) {
+                        showEnrollmentActionMessage('error', 'Cannot delete active enrollment.');
+                        return;
+                    }
+                    openDeleteEnrollmentModal(id);
+                };
+
+                async function confirmDeleteEnrollment() {
+                    var enrollmentId = Number(window._pendingDeleteEnrollmentId);
+                    if (!Number.isInteger(enrollmentId) || enrollmentId <= 0) return;
+
+                    var btn = document.getElementById('confirmDeleteEnrollmentBtn');
+                    if (btn) btn.disabled = true;
+                    try {
+                        await EnrollmentsAPI.deleteMyEnrollment(enrollmentId);
+                        closeDeleteEnrollmentModal();
+                        showEnrollmentActionMessage('success', 'Enrollment deleted successfully.');
+                        await loadMyEnrollments();
+                    } catch (err) {
+                        var msg = (err && err.message) ? String(err.message) : 'Failed to delete enrollment. Please try again.';
+                        if (!/cannot delete/i.test(msg) && /network|fetch|failed to fetch/i.test(msg.toLowerCase())) {
+                            msg = 'Network error while deleting enrollment. Please check your connection.';
+                        }
+                        showEnrollmentActionMessage('error', msg);
+                    } finally {
+                        if (btn) btn.disabled = false;
+                    }
+                }
+
+                window.confirmDeleteEnrollment = confirmDeleteEnrollment;
+                window.closeDeleteEnrollmentModal = closeDeleteEnrollmentModal;
 
                 function resolveCenterLogo(rawUrl) {
                     if (!rawUrl) return '';
@@ -978,23 +1099,30 @@
                     if (emptyMsg) emptyMsg.style.display = 'none';
                     if (arrow) arrow.style.visibility = 'visible';
 
+                    window._enrollmentMap = {};
+                    validEnrollments.forEach(function(item) {
+                        window._enrollmentMap[String(Number(item.id || item.enrollment_id || 0))] = item;
+                    });
+
                     grid.innerHTML = validEnrollments.map(function(item) {
                         var logo = resolveCenterLogo(item.review_center_logo);
                         var paymentStatus = String(item.payment_status || 'pending').toLowerCase();
                         var statusColor = paymentStatus === 'paid' ? '#d7ffe6' : (paymentStatus === 'failed' ? '#ffe0e0' : '#e6f0ff');
                         var statusText = paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1);
-                        var reviewStatus = String(item.review_status || 'pending').toLowerCase();
-                        var reviewText = reviewStatus.charAt(0).toUpperCase() + reviewStatus.slice(1);
-                        var reviewColor = reviewStatus === 'approved' ? '#c9f7d8' : (reviewStatus === 'rejected' ? '#ffd4d4' : '#d7e7ff');
-                        var latestNote = item.latest_notification ? ('<p style="font-size:0.72rem;color:rgba(255,255,255,0.95);margin:6px 0 0;line-height:1.35;">' + escHtml(item.latest_notification) + '</p>') : '';
+                        var reviewText = formatReviewStatusLabel(item.review_status || item.review_status_display || item.status);
+                        var reviewColor = getReviewStatusBadgeColor(item.review_status || item.review_status_display || item.status);
+                        var enrollmentId = Number(item.id || item.enrollment_id || 0);
+                        var deleteButton = canDeleteEnrollment(item)
+                            ? ('<button type="button" onclick="promptDeleteEnrollment(' + enrollmentId + ')" style="margin-top:10px;background:#ffe5e5;border:1px solid #ffb4b4;color:#991b1b;font-size:0.74rem;font-weight:700;border-radius:8px;padding:6px 10px;cursor:pointer;">Delete</button>')
+                            : '';
                         return '<div class="recent-card">'
                             + '<div class="recent-img" style="' + (logo ? ('background-image:url(' + logo + ');background-size:cover;background-position:center;') : '') + '"></div>'
                             + '<h4>' + escHtml(item.review_center_name || 'Review Center') + '</h4>'
                             + '<p>' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
                             + '<p style="font-size:0.75rem;color:rgba(255,255,255,0.92);opacity:1;margin:4px 0;">Enrolled: ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
                             + '<span style="font-size:0.77rem;color:' + statusColor + ';font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.28);">Payment: ' + escHtml(statusText) + '</span>'
-                            + '<p style="font-size:0.77rem;color:' + reviewColor + ';font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.28);margin:6px 0 0;">Status: ' + escHtml(reviewText) + '</p>'
-                            + latestNote
+                            + '<p style="font-size:0.7rem;color:#0f172a;font-weight:800;background:' + reviewColor + ';display:inline-block;padding:4px 8px;border-radius:999px;margin:8px 0 0;">Status: ' + escHtml(reviewText) + '</p>'
+                            + deleteButton
                             + '</div>';
                     }).join('');
                 }

@@ -1,5 +1,81 @@
 const db = require('../config/db');
 
+const toSafeDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const parseMetadata = (raw) => {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+};
+
+const toStartOfDay = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const computeEnrollmentPhase = ({ metadata, legacyStatus, reviewStatus, createdAt }) => {
+  const now = new Date();
+  const normalizedLegacyStatus = String(legacyStatus || '').toLowerCase();
+  const normalizedReviewStatus = String(reviewStatus || '').toLowerCase();
+
+  const startCandidate = metadata.schedule_start_date
+    || metadata.start_date
+    || metadata.enrollment_start_date
+    || metadata.enrollment_date
+    || metadata.schedule_date;
+  const endCandidate = metadata.schedule_end_date
+    || metadata.end_date
+    || metadata.enrollment_end_date
+    || metadata.expiry_date
+    || metadata.expires_at;
+
+  const startDate = toSafeDate(startCandidate);
+  const endDate = toSafeDate(endCandidate);
+
+  if (startDate && endDate && endDate < startDate) {
+    if (startDate > now) return 'upcoming';
+    return 'past';
+  }
+
+  if (startDate && endDate) {
+    if (now < startDate) return 'upcoming';
+    if (now > endDate) return 'past';
+    return 'current';
+  }
+
+  if (startDate && !endDate) {
+    const today = toStartOfDay(now);
+    const scheduleDay = toStartOfDay(startDate);
+    if (scheduleDay > today) return 'upcoming';
+    if (scheduleDay < today) return 'past';
+    return 'current';
+  }
+
+  if (normalizedLegacyStatus === 'active' || normalizedReviewStatus === 'approved') {
+    return 'current';
+  }
+
+  if (normalizedLegacyStatus === 'cancelled' || normalizedReviewStatus === 'rejected') {
+    return 'past';
+  }
+
+  const createdDate = toSafeDate(createdAt);
+  if (createdDate && toStartOfDay(createdDate) < toStartOfDay(now)) {
+    return 'past';
+  }
+
+  return 'current';
+};
+
 const getCenterEnrollmentsByCenterId = async (req, res) => {
   try {
     const centerId = Number(req.params.centerId);
@@ -105,90 +181,75 @@ const getCenterEnrollmentsByCenterId = async (req, res) => {
   }
 };
 
-const extractScheduleDate = (metadata) => {
-  if (!metadata || typeof metadata !== 'object') return null;
-  const keys = [
-    'review_schedule_date',
-    'review_date',
-    'schedule_date',
-    'scheduled_date',
-    'session_date',
-    'review_schedule',
-    'review_datetime',
-    'session_start',
-    'session_start_date',
-    'class_start_date',
-    'start_date'
-  ];
-  for (const k of keys) {
-    if (metadata[k]) {
-      const d = new Date(metadata[k]);
-      if (!isNaN(d.getTime())) return d;
-    }
-  }
-  return null;
-};
-
-const deleteEnrollment = async (req, res) => {
+const deleteMyEnrollment = async (req, res) => {
+  let conn;
   try {
     const enrollmentId = Number(req.params.id);
-    const userId = req.user && req.user.id;
+    const userId = req.user.id;
 
     if (!Number.isInteger(enrollmentId) || enrollmentId <= 0) {
       return res.status(400).json({ message: 'Invalid enrollment id.' });
     }
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized.' });
-    }
 
-    const [rows] = await db.query(
-      `SELECT e.id, e.user_id, e.review_status, e.created_at, p.metadata AS payment_metadata
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    const [rows] = await conn.query(
+      `SELECT e.id, e.user_id, e.status, e.review_status, e.created_at,
+              p.metadata
        FROM enrollments e
        LEFT JOIN payments p ON p.id = e.payment_id
        WHERE e.id = ? AND e.user_id = ?
-       LIMIT 1`,
+       FOR UPDATE`,
       [enrollmentId, userId]
     );
 
     if (!rows.length) {
+      await conn.rollback();
       return res.status(404).json({ message: 'Enrollment not found.' });
     }
 
-    let metadata = {};
-    try {
-      metadata = rows[0].payment_metadata && typeof rows[0].payment_metadata === 'string'
-        ? JSON.parse(rows[0].payment_metadata)
-        : (rows[0].payment_metadata || {});
-    } catch (e) {
-      metadata = {};
+    const enrollment = rows[0];
+    const metadata = parseMetadata(enrollment.metadata);
+    const phase = computeEnrollmentPhase({
+      metadata,
+      legacyStatus: enrollment.status,
+      reviewStatus: enrollment.review_status,
+      createdAt: enrollment.created_at,
+    });
+
+    if (String(enrollment.status || '').toLowerCase() === 'active' || phase === 'current' || phase === 'upcoming') {
+      await conn.rollback();
+      return res.status(409).json({
+        message: 'Cannot delete active or upcoming enrollment.',
+        schedule_phase: phase,
+      });
     }
 
-    const scheduleDate = extractScheduleDate(metadata);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    await conn.query('DELETE FROM enrollment_notifications WHERE enrollment_id = ?', [enrollmentId]);
+    await conn.query('DELETE FROM chat_messages WHERE enrollment_id = ?', [enrollmentId]);
+    await conn.query('DELETE FROM enrollments WHERE id = ? AND user_id = ?', [enrollmentId, userId]);
 
-    if (scheduleDate) {
-      const d = new Date(scheduleDate);
-      d.setHours(0, 0, 0, 0);
-      if (d >= today) {
-        return res.status(400).json({ message: 'Cannot delete upcoming or today enrollments.' });
-      }
-    } else {
-      const reviewStatus = String(rows[0].review_status || '').toLowerCase();
-      if (reviewStatus !== 'approved' && reviewStatus !== 'rejected') {
-        return res.status(400).json({ message: 'Cannot delete upcoming or today enrollments.' });
-      }
-    }
-
-    await db.query('DELETE FROM enrollments WHERE id = ? AND user_id = ?', [enrollmentId, userId]);
-    return res.json({ message: 'Enrollment deleted.' });
+    await conn.commit();
+    return res.json({
+      message: 'Enrollment deleted successfully.',
+      enrollment_id: enrollmentId,
+      schedule_phase: phase,
+    });
   } catch (err) {
+    if (conn) {
+      try { await conn.rollback(); } catch (e) {}
+    }
     console.error('Delete enrollment error:', err);
     return res.status(500).json({ message: 'Server error.' });
+  } finally {
+    if (conn) {
+      try { conn.release(); } catch (e) {}
+    }
   }
 };
 
 module.exports = {
   getCenterEnrollmentsByCenterId,
-  deleteEnrollment,
+  deleteMyEnrollment,
 };

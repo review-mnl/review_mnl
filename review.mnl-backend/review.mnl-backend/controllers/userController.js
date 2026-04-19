@@ -19,6 +19,72 @@ const toReviewStatus = (reviewStatus, legacyStatus) => {
   return 'pending';
 };
 
+const toSafeDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const toStartOfDay = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const computeEnrollmentPhase = ({ metadata, legacyStatus, reviewStatus, createdAt }) => {
+  const now = new Date();
+  const normalizedLegacyStatus = String(legacyStatus || '').toLowerCase();
+  const normalizedReviewStatus = String(reviewStatus || '').toLowerCase();
+
+  const startCandidate = metadata.schedule_start_date
+    || metadata.start_date
+    || metadata.enrollment_start_date
+    || metadata.enrollment_date
+    || metadata.schedule_date;
+  const endCandidate = metadata.schedule_end_date
+    || metadata.end_date
+    || metadata.enrollment_end_date
+    || metadata.expiry_date
+    || metadata.expires_at;
+
+  const startDate = toSafeDate(startCandidate);
+  const endDate = toSafeDate(endCandidate);
+
+  if (startDate && endDate && endDate < startDate) {
+    if (startDate > now) return 'upcoming';
+    return 'past';
+  }
+
+  if (startDate && endDate) {
+    if (now < startDate) return 'upcoming';
+    if (now > endDate) return 'past';
+    return 'current';
+  }
+
+  if (startDate && !endDate) {
+    const today = toStartOfDay(now);
+    const scheduleDay = toStartOfDay(startDate);
+    if (scheduleDay > today) return 'upcoming';
+    if (scheduleDay < today) return 'past';
+    return 'current';
+  }
+
+  if (normalizedLegacyStatus === 'active' || normalizedReviewStatus === 'approved') {
+    return 'current';
+  }
+
+  if (normalizedLegacyStatus === 'cancelled' || normalizedReviewStatus === 'rejected') {
+    return 'past';
+  }
+
+  const createdDate = toSafeDate(createdAt);
+  if (createdDate && toStartOfDay(createdDate) < toStartOfDay(now)) {
+    return 'past';
+  }
+
+  return 'current';
+};
+
 const getMyProfile = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -86,7 +152,16 @@ const getMyEnrollments = async (req, res) => {
         metadata = {};
       }
 
+      const normalizedReviewStatus = toReviewStatus(row.review_status, row.enrollment_status);
+      const schedulePhase = computeEnrollmentPhase({
+        metadata,
+        legacyStatus: row.enrollment_status,
+        reviewStatus: row.review_status,
+        createdAt: row.enrollment_created_at,
+      });
+
       return {
+        id: row.enrollment_id,
         enrollment_id: row.enrollment_id,
         user_id: row.user_id,
         review_center_id: row.review_center_id,
@@ -104,7 +179,10 @@ const getMyEnrollments = async (req, res) => {
         payment_method: row.payment_method || 'gcash',
         payment_review_reason: metadata.payment_review_reason || null,
         amount: row.amount || 0,
-        review_status: toReviewStatus(row.review_status, row.enrollment_status),
+        review_status: normalizedReviewStatus,
+        review_status_display: String(normalizedReviewStatus).replace(/^\w/, (c) => c.toUpperCase()),
+        schedule_phase: schedulePhase,
+        can_delete: schedulePhase === 'past' && String(row.enrollment_status || '').toLowerCase() !== 'active',
         payment_verified: Boolean(row.payment_verified),
         latest_notification: row.latest_notification || null,
         latest_notification_at: row.latest_notification_at || null,

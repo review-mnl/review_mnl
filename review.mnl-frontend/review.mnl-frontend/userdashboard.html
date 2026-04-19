@@ -1035,6 +1035,74 @@
                     }
                 }
 
+                // Enrollment Preview + PDF Download (ADD THIS)
+                var currentPreviewItem = null;
+
+                window.openEnrollmentPreview = function(encodedItem) {
+                    var item = JSON.parse(decodeURIComponent(encodedItem));
+                    currentPreviewItem = item;
+
+                    var content = ''
+                        + '<div style="text-align:center;margin-bottom:16px;">'
+                        + '<h2 style="color:#0a4cff;margin:0;">review.mnl</h2>'
+                        + '<p style="font-size:12px;color:#666;margin:4px 0 0;">Enrollment Preview</p>'
+                        + '</div>'
+                        + '<div style="border:1px solid #eee;padding:12px;border-radius:8px;line-height:1.6;">'
+                        + '<p><strong>Review Center:</strong> ' + escHtml(item.review_center_name || 'Review Center') + '</p>'
+                        + '<p><strong>Program:</strong> ' + escHtml(item.program_enrolled || 'N/A') + '</p>'
+                        + '<p><strong>Student:</strong> ' + escHtml(toDisplayName(getUser())) + '</p>'
+                        + '<p><strong>Date:</strong> ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
+                        + '<p><strong>Payment Status:</strong> ' + escHtml((item.payment_status || 'pending').toUpperCase()) + '</p>'
+                        + '<p><strong>Review Status:</strong> ' + escHtml((item.review_status || 'pending').toUpperCase()) + '</p>'
+                        + '</div>';
+
+                    var contentEl = document.getElementById('enrollmentPreviewContent');
+                    if (contentEl) contentEl.innerHTML = content;
+
+                    var modal = document.getElementById('enrollmentPreviewModal');
+                    if (modal) modal.style.display = 'flex';
+                };
+
+                window.closeEnrollmentPreview = function() {
+                    var modal = document.getElementById('enrollmentPreviewModal');
+                    if (modal) modal.style.display = 'none';
+                };
+
+                window.downloadEnrollmentPDF = function() {
+                    if (!currentPreviewItem) return;
+
+                    if (!window.jspdf || !window.jspdf.jsPDF) {
+                        alert('PDF library failed to load. Check your internet connection and try again.');
+                        return;
+                    }
+
+                    try {
+                        var doc = new window.jspdf.jsPDF();
+
+                        doc.setFontSize(18);
+                        doc.setTextColor(10, 76, 255);
+                        doc.text('review.mnl', 105, 18, { align: 'center' });
+
+                        doc.setFontSize(13);
+                        doc.setTextColor(0, 0, 0);
+                        doc.text('Enrollment Summary', 105, 30, { align: 'center' });
+
+                        doc.setFontSize(11);
+                        doc.text('Review Center: ' + (currentPreviewItem.review_center_name || 'Review Center'), 20, 50);
+                        doc.text('Program: ' + (currentPreviewItem.program_enrolled || 'N/A'), 20, 60);
+                        doc.text('Student: ' + (toDisplayName(getUser()) || 'N/A'), 20, 70);
+                        doc.text('Date: ' + formatDate(currentPreviewItem.enrollment_date || currentPreviewItem.created_at), 20, 80);
+                        doc.text('Payment Status: ' + (currentPreviewItem.payment_status || 'pending').toUpperCase(), 20, 90);
+                        doc.text('Review Status: ' + (currentPreviewItem.review_status || 'pending').toUpperCase(), 20, 100);
+
+                        var fileName = 'Enrollment_' + String(currentPreviewItem.review_center_name || 'ReviewCenter').replace(/\s+/g, '_') + '.pdf';
+                        doc.save(fileName);
+                    } catch (err) {
+                        console.error('PDF error:', err);
+                        alert('Could not generate PDF. Please try again.');
+                    }
+                };
+
                 function starButton(centerId, currentRating, starValue) {
                     var active = Number(currentRating || 0) >= starValue;
                     return '<button type="button" onclick="setCenterRating(' + Number(centerId) + ',' + Number(starValue) + ')" '

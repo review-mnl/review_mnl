@@ -77,11 +77,9 @@ function saveSession(data, rememberMe) {
             var sid = 's_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
             var sess = { token: token || null, user: user || null, created: Date.now() };
             try { localStorage.setItem('rmnl_session_' + sid, JSON.stringify(sess)); } catch(e) {}
-            if (rememberMe) {
-                try { localStorage.setItem('rmnl_active_session', sid); } catch(e) {}
-            } else {
-                try { sessionStorage.setItem('rmnl_active_session', sid); } catch(e) {}
-            }
+           // Always store in localStorage for cross-tab/session support
+            try { localStorage.setItem('rmnl_active_session', sid); } catch (e) {}
+            try { sessionStorage.setItem('rmnl_active_session', sid); } catch (e) {}
             if (user && user.role) {
                 // role is available on the session's user object; avoid storing a global rmnl_role key
                 try { /* noop - role stored on session user */ } catch(e) {}

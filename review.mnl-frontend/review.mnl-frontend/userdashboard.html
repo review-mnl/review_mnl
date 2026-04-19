@@ -8,7 +8,6 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     </head>
     <body>
 
@@ -251,23 +250,6 @@
                 <div class="modal-footer">
                     <button class="modal-cancel-btn" onclick="closeUserModal()">Cancel</button>
                     <button class="modal-save-btn" onclick="saveUserProfile()">Save Changes</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Enrollment Preview Modal -->
-        <div id="enrollmentPreviewModal" class="modal-overlay" style="display:none;z-index:2000;">
-            <div class="modal-box" style="max-width:500px;">
-                <div class="modal-header">
-                    <h3>Enrollment Summary</h3>
-                    <button class="modal-close" onclick="closeEnrollmentPreview()">&times;</button>
-                </div>
-                <div id="enrollmentPreviewContent" class="modal-body" style="padding:20px; color:#333; background:#fff;">
-                    <!-- Content injected via JS -->
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-cancel-btn" onclick="closeEnrollmentPreview()">Close</button>
-                    <button class="modal-save-btn" onclick="downloadEnrollmentPDF()">Download PDF</button>
                 </div>
             </div>
         </div>
@@ -998,150 +980,23 @@
 
                     grid.innerHTML = validEnrollments.map(function(item) {
                         var logo = resolveCenterLogo(item.review_center_logo);
-
                         var paymentStatus = String(item.payment_status || 'pending').toLowerCase();
-                        var reviewStatus = String(item.review_status || 'pending').toLowerCase();
-
-                        if ((reviewStatus === 'approved' || reviewStatus === 'rejected') && (paymentStatus === 'pending' || !paymentStatus)) {
-                            paymentStatus = reviewStatus;
-                        }
-
+                        var statusColor = paymentStatus === 'paid' ? '#d7ffe6' : (paymentStatus === 'failed' ? '#ffe0e0' : '#e6f0ff');
                         var statusText = paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1);
-                        var statusColor =
-                            (paymentStatus === 'approved' || paymentStatus === 'paid') ? '#d7ffe6' :
-                            (paymentStatus === 'rejected' || paymentStatus === 'failed') ? '#ffe0e0' :
-                            '#e6f0ff';
-
+                        var reviewStatus = String(item.review_status || 'pending').toLowerCase();
                         var reviewText = reviewStatus.charAt(0).toUpperCase() + reviewStatus.slice(1);
                         var reviewColor = reviewStatus === 'approved' ? '#c9f7d8' : (reviewStatus === 'rejected' ? '#ffd4d4' : '#d7e7ff');
-                        var itemData = encodeURIComponent(JSON.stringify(item));
-                        var canDelete = canDeleteEnrollment(item);
-
-                        var deleteBtn = ''
-                            + '<button type="button" title="' + (canDelete ? 'Delete past enrollment' : 'Cannot delete upcoming/today') + '" '
-                            + 'onclick="attemptDeleteEnrollment(' + Number(item.enrollment_id || item.id || 0) + ', \'' + itemData + '\')" '
-                            + (canDelete ? '' : 'disabled="disabled" ')
-                            + 'style="position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);'
-                            + 'background:rgba(0,0,0,0.2);color:#fff;display:flex;align-items:center;justify-content:center;'
-                            + 'cursor:' + (canDelete ? 'pointer' : 'not-allowed') + ';opacity:' + (canDelete ? '1' : '0.5') + ';">'
-                            + '<span class="material-symbols-outlined" style="font-size:18px;line-height:1;">delete</span>'
-                            + '</button>';
-
-                        return '<div class="recent-card" style="position:relative;">'
-                            + deleteBtn
+                        var latestNote = item.latest_notification ? ('<p style="font-size:0.72rem;color:rgba(255,255,255,0.95);margin:6px 0 0;line-height:1.35;">' + escHtml(item.latest_notification) + '</p>') : '';
+                        return '<div class="recent-card">'
                             + '<div class="recent-img" style="' + (logo ? ('background-image:url(' + logo + ');background-size:cover;background-position:center;') : '') + '"></div>'
                             + '<h4>' + escHtml(item.review_center_name || 'Review Center') + '</h4>'
                             + '<p>' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
                             + '<p style="font-size:0.75rem;color:rgba(255,255,255,0.92);opacity:1;margin:4px 0;">Enrolled: ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
                             + '<span style="font-size:0.77rem;color:' + statusColor + ';font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.28);">Payment: ' + escHtml(statusText) + '</span>'
                             + '<p style="font-size:0.77rem;color:' + reviewColor + ';font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.28);margin:6px 0 0;">Status: ' + escHtml(reviewText) + '</p>'
-                            + '<div style="margin-top:12px;"><button class="btn-view" onclick="openEnrollmentPreview(\'' + itemData + '\')" style="width:100%;cursor:pointer;border-radius:6px;background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:6px;">Preview & Download</button></div>'
+                            + latestNote
                             + '</div>';
                     }).join('');
-                }
-
-                function getScheduleDateFromEnrollment(item) {
-                    if (!item) return null;
-                    var fields = [
-                        'review_schedule_date',
-                        'review_date',
-                        'schedule_date',
-                        'scheduled_date',
-                        'session_date',
-                        'review_schedule',
-                        'review_datetime',
-                        'session_start',
-                        'session_start_date',
-                        'class_start_date',
-                        'start_date'
-                    ];
-                    for (var i = 0; i < fields.length; i++) {
-                        var raw = item[fields[i]];
-                        if (!raw) continue;
-                        var d = new Date(raw);
-                        if (!isNaN(d.getTime())) return d;
-                    }
-                    return null;
-                }
-
-                function canDeleteEnrollment(item) {
-                    var d = getScheduleDateFromEnrollment(item);
-                    if (!d) return true; // no schedule date => allow delete
-                    var today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return d.getTime() < today.getTime(); // only past dates
-                }
-
-                window.attemptDeleteEnrollment = async function(enrollmentId, encodedItem) {
-                    var item = JSON.parse(decodeURIComponent(encodedItem || ''));
-                    if (!canDeleteEnrollment(item)) {
-                        alert('You can only delete past enrollments. Upcoming or today’s scheduled reviews cannot be deleted.');
-                        return;
-                    }
-                    if (!enrollmentId) {
-                        alert('Unable to delete this enrollment.');
-                        return;
-                    }
-                    if (!confirm('Delete this past enrollment? This cannot be undone.')) return;
-                    await deleteEnrollmentById(enrollmentId);
-                };
-
-                async function deleteEnrollmentById(enrollmentId) {
-                    try {
-        // Use the shared API helper to send the token automatically
-                     await apiRequest('DELETE', '/api/enrollments/' + enrollmentId);
-                     await loadMyEnrollments();
-                    } catch (e) {
-                     alert((e && e.message) ? e.message : 'Failed to delete enrollment.');
-                    }
-                }
-                        }
-
-                        if (!deleted) {
-                            var base = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : (typeof API_BASE !== 'undefined' ? API_BASE : '');
-                            if (!base) throw new Error('Missing API base URL.');
-
-                            var headers = {};
-                            var token = localStorage.getItem('token') || '';
-                            if (token) headers['Authorization'] = 'Bearer ' + token;
-
-                            var endpoints = [
-                                { url: base + '/api/enrollments/' + enrollmentId, method: 'DELETE' },
-                                { url: base + '/api/enrollments/' + enrollmentId + '/delete', method: 'DELETE' },
-                                { url: base + '/api/enrollments/' + enrollmentId + '/archive', method: 'POST' },
-                                { url: base + '/api/enrollments/' + enrollmentId + '/cancel', method: 'POST' },
-                                { url: base + '/api/enrollments/' + enrollmentId, method: 'PATCH', body: JSON.stringify({ status: 'archived' }) }
-                            ];
-
-                            for (var j = 0; j < endpoints.length; j++) {
-                                var ep = endpoints[j];
-                                var opts = { method: ep.method, headers: headers };
-                                if (ep.body) {
-                                    opts.headers = Object.assign({}, headers, { 'Content-Type': 'application/json' });
-                                    opts.body = ep.body;
-                                }
-                                var result = await attemptDeleteEndpoint(ep.url, opts);
-                                if (result.ok) { deleted = true; break; }
-                            }
-                        }
-
-                        if (!deleted) throw new Error('Delete endpoint not found. Check API routes.');
-                        await loadMyEnrollments();
-                    } catch (e) {
-                        alert((e && e.message) ? e.message : 'Failed to delete enrollment.');
-                    }
-                }
-
-                async function attemptDeleteEndpoint(url, options) {
-                    var resp = await fetch(url, options);
-                    if (resp.ok) return { ok: true };
-                    if (resp.status === 404 || resp.status === 405) return { ok: false };
-                    var msg = 'Failed to delete enrollment.';
-                    try {
-                        var data = await resp.json();
-                        msg = data.message || data.error || msg;
-                    } catch (e) {}
-                    throw new Error(msg);
                 }
 
                 async function loadMyEnrollments() {
@@ -1158,74 +1013,6 @@
                         renderMyEnrollments([]);
                     }
                 }
-
-                // Enrollment Preview + PDF Download (ADD THIS)
-                var currentPreviewItem = null;
-
-                window.openEnrollmentPreview = function(encodedItem) {
-                    var item = JSON.parse(decodeURIComponent(encodedItem));
-                    currentPreviewItem = item;
-
-                    var content = ''
-                        + '<div style="text-align:center;margin-bottom:16px;">'
-                        + '<h2 style="color:#0a4cff;margin:0;">review.mnl</h2>'
-                        + '<p style="font-size:12px;color:#666;margin:4px 0 0;">Enrollment Preview</p>'
-                        + '</div>'
-                        + '<div style="border:1px solid #eee;padding:12px;border-radius:8px;line-height:1.6;">'
-                        + '<p><strong>Review Center:</strong> ' + escHtml(item.review_center_name || 'Review Center') + '</p>'
-                        + '<p><strong>Program:</strong> ' + escHtml(item.program_enrolled || 'N/A') + '</p>'
-                        + '<p><strong>Student:</strong> ' + escHtml(toDisplayName(getUser())) + '</p>'
-                        + '<p><strong>Date:</strong> ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
-                        + '<p><strong>Payment Status:</strong> ' + escHtml((item.payment_status || 'pending').toUpperCase()) + '</p>'
-                        + '<p><strong>Review Status:</strong> ' + escHtml((item.review_status || 'pending').toUpperCase()) + '</p>'
-                        + '</div>';
-
-                    var contentEl = document.getElementById('enrollmentPreviewContent');
-                    if (contentEl) contentEl.innerHTML = content;
-
-                    var modal = document.getElementById('enrollmentPreviewModal');
-                    if (modal) modal.style.display = 'flex';
-                };
-
-                window.closeEnrollmentPreview = function() {
-                    var modal = document.getElementById('enrollmentPreviewModal');
-                    if (modal) modal.style.display = 'none';
-                };
-
-                window.downloadEnrollmentPDF = function() {
-                    if (!currentPreviewItem) return;
-
-                    if (!window.jspdf || !window.jspdf.jsPDF) {
-                        alert('PDF library failed to load. Check your internet connection and try again.');
-                        return;
-                    }
-
-                    try {
-                        var doc = new window.jspdf.jsPDF();
-
-                        doc.setFontSize(18);
-                        doc.setTextColor(10, 76, 255);
-                        doc.text('review.mnl', 105, 18, { align: 'center' });
-
-                        doc.setFontSize(13);
-                        doc.setTextColor(0, 0, 0);
-                        doc.text('Enrollment Summary', 105, 30, { align: 'center' });
-
-                        doc.setFontSize(11);
-                        doc.text('Review Center: ' + (currentPreviewItem.review_center_name || 'Review Center'), 20, 50);
-                        doc.text('Program: ' + (currentPreviewItem.program_enrolled || 'N/A'), 20, 60);
-                        doc.text('Student: ' + (toDisplayName(getUser()) || 'N/A'), 20, 70);
-                        doc.text('Date: ' + formatDate(currentPreviewItem.enrollment_date || currentPreviewItem.created_at), 20, 80);
-                        doc.text('Payment Status: ' + (currentPreviewItem.payment_status || 'pending').toUpperCase(), 20, 90);
-                        doc.text('Review Status: ' + (currentPreviewItem.review_status || 'pending').toUpperCase(), 20, 100);
-
-                        var fileName = 'Enrollment_' + String(currentPreviewItem.review_center_name || 'ReviewCenter').replace(/\s+/g, '_') + '.pdf';
-                        doc.save(fileName);
-                    } catch (err) {
-                        console.error('PDF error:', err);
-                        alert('Could not generate PDF. Please try again.');
-                    }
-                };
 
                 function starButton(centerId, currentRating, starValue) {
                     var active = Number(currentRating || 0) >= starValue;

@@ -8,6 +8,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     </head>
     <body>
 
@@ -261,7 +262,7 @@
                     <h3>Enrollment Summary</h3>
                     <button class="modal-close" onclick="closeEnrollmentPreview()">&times;</button>
                 </div>
-                <div class="modal-body" id="enrollmentPreviewContent" style="padding:20px;background:#fff;color:#333;">
+                <div id="enrollmentPreviewContent" class="modal-body" style="padding:20px; color:#333; background:#fff;">
                     <!-- Content injected via JS -->
                 </div>
                 <div class="modal-footer">

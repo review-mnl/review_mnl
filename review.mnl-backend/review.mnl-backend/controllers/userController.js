@@ -69,17 +69,21 @@ const computeEnrollmentPhase = ({ metadata, legacyStatus, reviewStatus, createdA
     return 'current';
   }
 
-  if (normalizedLegacyStatus === 'active' || normalizedReviewStatus === 'approved') {
-    return 'current';
+  const createdDate = toSafeDate(createdAt);
+  if (createdDate && toStartOfDay(createdDate) < toStartOfDay(now)) {
+    return 'past';
+  }
+
+  if (createdDate && toStartOfDay(createdDate) > toStartOfDay(now)) {
+    return 'upcoming';
   }
 
   if (normalizedLegacyStatus === 'cancelled' || normalizedReviewStatus === 'rejected') {
     return 'past';
   }
 
-  const createdDate = toSafeDate(createdAt);
-  if (createdDate && toStartOfDay(createdDate) < toStartOfDay(now)) {
-    return 'past';
+  if (normalizedLegacyStatus === 'active' || normalizedReviewStatus === 'approved') {
+    return 'current';
   }
 
   return 'current';
@@ -159,6 +163,18 @@ const getMyEnrollments = async (req, res) => {
         reviewStatus: row.review_status,
         createdAt: row.enrollment_created_at,
       });
+      const enrollmentDate = metadata.enrollment_date || (row.enrollment_created_at ? new Date(row.enrollment_created_at).toISOString().slice(0, 10) : null);
+      const canDelete = schedulePhase === 'past';
+
+      console.log('[Enrollment][Phase] User enrollment phase evaluated', {
+        userId,
+        enrollmentId: row.enrollment_id,
+        enrollmentDate,
+        schedulePhase,
+        reviewStatus: normalizedReviewStatus,
+        legacyStatus: row.enrollment_status,
+        canDelete,
+      });
 
       return {
         id: row.enrollment_id,
@@ -174,15 +190,16 @@ const getMyEnrollments = async (req, res) => {
         teacher_to: metadata.teacher_to || null,
         teacher_program: metadata.teacher_program || null,
         teacher_label: metadata.teacher_label || null,
-        enrollment_date: metadata.enrollment_date || (row.enrollment_created_at ? new Date(row.enrollment_created_at).toISOString().slice(0, 10) : null),
+        enrollment_date: enrollmentDate,
         payment_status: row.payment_status || 'pending',
         payment_method: row.payment_method || 'gcash',
         payment_review_reason: metadata.payment_review_reason || null,
         amount: row.amount || 0,
         review_status: normalizedReviewStatus,
+        status: normalizedReviewStatus,
         review_status_display: String(normalizedReviewStatus).replace(/^\w/, (c) => c.toUpperCase()),
         schedule_phase: schedulePhase,
-        can_delete: schedulePhase === 'past' && String(row.enrollment_status || '').toLowerCase() !== 'active',
+        can_delete: canDelete,
         payment_verified: Boolean(row.payment_verified),
         latest_notification: row.latest_notification || null,
         latest_notification_at: row.latest_notification_at || null,

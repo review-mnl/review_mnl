@@ -1002,10 +1002,6 @@
                     if (!item) return false;
                     if (typeof item.can_delete === 'boolean') return item.can_delete;
 
-                    var enrollmentLegacyStatus = String(item.enrollment_status || item.status || '').toLowerCase();
-                    var reviewStatus = normalizeReviewStatus(item.review_status || item.review_status_display || item.status);
-                    if (enrollmentLegacyStatus === 'active' || reviewStatus === 'approved') return false;
-
                     var phase = String(item.schedule_phase || '').toLowerCase();
                     if (phase) return phase === 'past';
 
@@ -1036,7 +1032,7 @@
                     var id = Number(enrollmentId);
                     var item = window._enrollmentMap[String(id)];
                     if (!item || !canDeleteEnrollment(item)) {
-                        showEnrollmentActionMessage('error', 'Cannot delete active enrollment.');
+                        showEnrollmentActionMessage('error', 'Cannot delete current or upcoming enrollment.');
                         return;
                     }
                     openDeleteEnrollmentModal(id);
@@ -1103,6 +1099,16 @@
                     validEnrollments.forEach(function(item) {
                         window._enrollmentMap[String(Number(item.id || item.enrollment_id || 0))] = item;
                     });
+
+                    console.log('[Enrollment][UI] Rendering enrollment cards', validEnrollments.map(function(item) {
+                        return {
+                            enrollmentId: Number(item.id || item.enrollment_id || 0),
+                            status: normalizeReviewStatus(item.review_status || item.review_status_display || item.status),
+                            schedulePhase: String(item.schedule_phase || '').toLowerCase() || null,
+                            canDelete: canDeleteEnrollment(item),
+                            enrollmentDate: item.enrollment_date || item.created_at || null,
+                        };
+                    }));
 
                     grid.innerHTML = validEnrollments.map(function(item) {
                         var logo = resolveCenterLogo(item.review_center_logo);

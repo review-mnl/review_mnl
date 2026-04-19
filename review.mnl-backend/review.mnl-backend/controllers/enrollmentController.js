@@ -60,17 +60,21 @@ const computeEnrollmentPhase = ({ metadata, legacyStatus, reviewStatus, createdA
     return 'current';
   }
 
-  if (normalizedLegacyStatus === 'active' || normalizedReviewStatus === 'approved') {
-    return 'current';
+  const createdDate = toSafeDate(createdAt);
+  if (createdDate && toStartOfDay(createdDate) < toStartOfDay(now)) {
+    return 'past';
+  }
+
+  if (createdDate && toStartOfDay(createdDate) > toStartOfDay(now)) {
+    return 'upcoming';
   }
 
   if (normalizedLegacyStatus === 'cancelled' || normalizedReviewStatus === 'rejected') {
     return 'past';
   }
 
-  const createdDate = toSafeDate(createdAt);
-  if (createdDate && toStartOfDay(createdDate) < toStartOfDay(now)) {
-    return 'past';
+  if (normalizedLegacyStatus === 'active' || normalizedReviewStatus === 'approved') {
+    return 'current';
   }
 
   return 'current';
@@ -218,10 +222,25 @@ const deleteMyEnrollment = async (req, res) => {
       createdAt: enrollment.created_at,
     });
 
-    if (String(enrollment.status || '').toLowerCase() === 'active' || phase === 'current' || phase === 'upcoming') {
+    console.log('[Enrollment][Delete] Phase check', {
+      enrollmentId,
+      userId,
+      enrollmentDate: metadata.enrollment_date || null,
+      createdAt: enrollment.created_at,
+      reviewStatus: enrollment.review_status,
+      legacyStatus: enrollment.status,
+      phase,
+    });
+
+    if (phase === 'current' || phase === 'upcoming') {
       await conn.rollback();
+      console.warn('[Enrollment][Delete] Blocked by restriction', {
+        enrollmentId,
+        userId,
+        phase,
+      });
       return res.status(409).json({
-        message: 'Cannot delete active or upcoming enrollment.',
+        message: 'Cannot delete current or upcoming enrollment.',
         schedule_phase: phase,
       });
     }
@@ -231,6 +250,11 @@ const deleteMyEnrollment = async (req, res) => {
     await conn.query('DELETE FROM enrollments WHERE id = ? AND user_id = ?', [enrollmentId, userId]);
 
     await conn.commit();
+    console.log('[Enrollment][Delete] Deleted successfully', {
+      enrollmentId,
+      userId,
+      phase,
+    });
     return res.json({
       message: 'Enrollment deleted successfully.',
       enrollment_id: enrollmentId,

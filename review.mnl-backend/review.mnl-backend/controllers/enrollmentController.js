@@ -105,6 +105,90 @@ const getCenterEnrollmentsByCenterId = async (req, res) => {
   }
 };
 
+const extractScheduleDate = (metadata) => {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const keys = [
+    'review_schedule_date',
+    'review_date',
+    'schedule_date',
+    'scheduled_date',
+    'session_date',
+    'review_schedule',
+    'review_datetime',
+    'session_start',
+    'session_start_date',
+    'class_start_date',
+    'start_date'
+  ];
+  for (const k of keys) {
+    if (metadata[k]) {
+      const d = new Date(metadata[k]);
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+  return null;
+};
+
+const deleteEnrollment = async (req, res) => {
+  try {
+    const enrollmentId = Number(req.params.id);
+    const userId = req.user && req.user.id;
+
+    if (!Number.isInteger(enrollmentId) || enrollmentId <= 0) {
+      return res.status(400).json({ message: 'Invalid enrollment id.' });
+    }
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized.' });
+    }
+
+    const [rows] = await db.query(
+      `SELECT e.id, e.user_id, e.review_status, e.created_at, p.metadata AS payment_metadata
+       FROM enrollments e
+       LEFT JOIN payments p ON p.id = e.payment_id
+       WHERE e.id = ? AND e.user_id = ?
+       LIMIT 1`,
+      [enrollmentId, userId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Enrollment not found.' });
+    }
+
+    let metadata = {};
+    try {
+      metadata = rows[0].payment_metadata && typeof rows[0].payment_metadata === 'string'
+        ? JSON.parse(rows[0].payment_metadata)
+        : (rows[0].payment_metadata || {});
+    } catch (e) {
+      metadata = {};
+    }
+
+    const scheduleDate = extractScheduleDate(metadata);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (scheduleDate) {
+      const d = new Date(scheduleDate);
+      d.setHours(0, 0, 0, 0);
+      if (d >= today) {
+        return res.status(400).json({ message: 'Cannot delete upcoming or today enrollments.' });
+      }
+    } else {
+      const reviewStatus = String(rows[0].review_status || '').toLowerCase();
+      if (reviewStatus !== 'approved' && reviewStatus !== 'rejected') {
+        return res.status(400).json({ message: 'Cannot delete upcoming or today enrollments.' });
+      }
+    }
+
+    await db.query('DELETE FROM enrollments WHERE id = ? AND user_id = ?', [enrollmentId, userId]);
+    return res.json({ message: 'Enrollment deleted.' });
+  } catch (err) {
+    console.error('Delete enrollment error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 module.exports = {
   getCenterEnrollmentsByCenterId,
+  deleteEnrollment,
 };

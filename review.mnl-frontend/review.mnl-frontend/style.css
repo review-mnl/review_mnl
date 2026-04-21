@@ -315,9 +315,11 @@
     color: #0a4cff;
 }
 .program-card .program-meta {
-    color: #888;
+    color: #64748b;
     font-size: 14px;
-    margin-left: 10px;
+    margin-left: 0;
+    display: block;
+    margin-top: 6px;
 }
 .program-card label {
     font-weight: 500;
@@ -1394,6 +1396,30 @@ nav img{
     .footer-column a {
         width: 140px;
     }
+}
+
+/* Save toast used by schedule page */ 
+.save-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    background: #0f172a;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(2,6,23,0.35);
+    font-size: 13px;
+    z-index: 2200;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 200ms ease, transform 200ms ease;
+}
+.save-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.save-toast.error {
+    background: #b91c1c;
 }
 
 @media (max-width: 640px) {

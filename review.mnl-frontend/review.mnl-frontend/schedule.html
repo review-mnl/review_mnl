@@ -495,19 +495,73 @@
 
         function persistPrograms() {
             savedPrograms = programs.map(normalizeProgram);
+            var saveBtn = document.getElementById('reviewSaveBtn');
+            var originalText = saveBtn ? String(saveBtn.textContent || 'Save Schedule') : 'Save Schedule';
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+                saveBtn.setAttribute('aria-disabled', 'true');
+            }
             try {
                 localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(savedPrograms));
             } catch (e) {}
+
+            function doneRenderAndReset() {
+                renderSavedPrograms();
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Saved';
+                    saveBtn.removeAttribute('aria-disabled');
+                    setTimeout(function() {
+                        try { saveBtn.textContent = originalText; } catch (e) {}
+                    }, 1200);
+                }
+            }
+
             if (typeof CentersAPI !== 'undefined' && CentersAPI.updateMyProfile) {
-                CentersAPI.updateMyProfile({ review_schedule: savedPrograms })
+                return CentersAPI.updateMyProfile({ review_schedule: savedPrograms })
                     .then(function(resp) {
                         if (resp && resp.review_schedule) {
                             window._reviewSchedule = resp.review_schedule;
                         }
+                        doneRenderAndReset();
+                        showSaveStatus('Schedule saved successfully.');
+                        return resp;
                     })
-                    .catch(function() {});
+                    .catch(function(err) {
+                        doneRenderAndReset();
+                        showSaveStatus('Failed to save to server — saved locally.', 'error');
+                        console.warn('Failed to save review_schedule', err);
+                        throw err;
+                    });
+            } else {
+                doneRenderAndReset();
+                showSaveStatus('Schedule saved locally.');
+                return Promise.resolve({ local: true });
             }
-            renderSavedPrograms();
+        }
+
+        function showSaveStatus(message, type) {
+            try {
+                var id = 'rmnl-save-toast';
+                var el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = id;
+                    el.className = 'save-toast';
+                    document.body.appendChild(el);
+                }
+                el.textContent = message || '';
+                el.classList.remove('error');
+                el.classList.add('show');
+                if (type === 'error') el.classList.add('error');
+                clearTimeout(el._rmTimer);
+                el._rmTimer = setTimeout(function() {
+                    if (!el) return;
+                    el.classList.remove('show');
+                    setTimeout(function() { if (el && el.parentNode) el.parentNode.removeChild(el); }, 300);
+                }, 2200);
+            } catch (e) { /* ignore */ }
         }
 
         function renderSavedPrograms() {
@@ -598,12 +652,11 @@
                 }
                 let calendarHtml = '';
                 div.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;justify-content:flex-start;align-items:flex-start;gap:12px;">
                         <div>
                             <strong>${program.name}</strong>
-                            <span class="program-meta">(${program.track} • ${program.modality || program.mode || 'N/A'})</span>
+                            <div class="program-meta">(${program.track} • ${program.modality || program.mode || 'N/A'})</div>
                         </div>
-                        <button onclick="removeProgram(${idx})" class="remove-btn">Remove</button>
                     </div>
                     ${calendarHtml}
                 `;

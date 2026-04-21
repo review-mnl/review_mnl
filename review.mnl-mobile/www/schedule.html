@@ -179,8 +179,11 @@
                     // that don't render the Programs Offered section.
                     const programs = parseArrayField(center.programs);
                     window._centerPrograms = Array.isArray(programs) ? programs.slice() : [];
+                    window._centerProgramsLoaded = true;
                     if (typeof window.refreshReviewProgramOptions === 'function') {
                         window.refreshReviewProgramOptions();
+                    } else {
+                        window._reviewProgramsPending = true;
                     }
 
                     const programTagsEl = document.getElementById('programTagsDisplay');
@@ -739,7 +742,10 @@
         if (addMainBtn) addMainBtn.onclick = addMainProgram;
         const addRefresherBtn = document.getElementById('addRefresherProgramBtn');
         if (addRefresherBtn) addRefresherBtn.onclick = addRefresherProgram;
-        refreshReviewProgramOptions();
+        if (window._reviewProgramsPending || window._centerProgramsLoaded) {
+            refreshReviewProgramOptions();
+            window._reviewProgramsPending = false;
+        }
         renderPrograms();
         renderReviewSchedule();
         </script>

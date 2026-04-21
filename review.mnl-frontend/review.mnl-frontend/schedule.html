@@ -383,7 +383,7 @@
                     </div>
                 </div>
 
-                <div id="programList" class="program-list"></div>
+                <!-- Inline program previews removed. Saved programs are shown below. -->
                 <div class="review-saved-section">
                     <div class="review-saved-title">Saved Programs</div>
                     <div id="savedProgramList" class="program-ticket-list"></div>
@@ -638,30 +638,7 @@
         }
 
         function renderPrograms() {
-            const list = document.getElementById('programList');
-            if (!list) return;
-            list.innerHTML = '';
-                programs.forEach((program, idx) => {
-                const div = document.createElement('div');
-                div.className = 'program-card';
-                if (!program.schedule) {
-                    program.schedule = cloneDefaultSchedule();
-                }
-                if (!program.schedulePattern) {
-                    program.schedulePattern = 'Custom';
-                }
-                let calendarHtml = '';
-                div.innerHTML = `
-                    <div style="display:flex;justify-content:flex-start;align-items:flex-start;gap:12px;">
-                        <div>
-                            <strong>${program.name}</strong>
-                            <div class="program-meta">(${program.track} • ${program.modality || program.mode || 'N/A'})</div>
-                        </div>
-                    </div>
-                    ${calendarHtml}
-                `;
-                list.appendChild(div);
-            });
+            // Inline program previews removed — update selectors and calendar only
             updateReviewScheduleSelect();
             updateReviewPatternSelect();
             renderReviewSchedule();

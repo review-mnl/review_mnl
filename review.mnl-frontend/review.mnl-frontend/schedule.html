@@ -331,7 +331,7 @@
                 <div class="review-schedule-header ec-schedule-header">
                     <div>
                         <h2>Review Schedule</h2>
-                        <p>Manage schedules for regular review classes, refresher, or other programs. Add topics/lessons for each program and plot their schedules per month.</p>
+                        <p>Manage schedules for regular review classes, refresher, or other programs. Plot their schedules per month.</p>
                     </div>
                 </div>
                 <div class="review-program-form">
@@ -461,7 +461,7 @@
             const list = document.getElementById('programList');
             if (!list) return;
             list.innerHTML = '';
-            programs.forEach((program, idx) => {
+                programs.forEach((program, idx) => {
                 const div = document.createElement('div');
                 div.className = 'program-card';
                 if (!program.schedule) {
@@ -478,14 +478,6 @@
                             <span class="program-meta">(${program.track} • ${program.modality || program.mode || 'N/A'})</span>
                         </div>
                         <button onclick="removeProgram(${idx})" class="remove-btn">Remove</button>
-                    </div>
-                    <div>
-                        <label>Topics/Lessons:</label>
-                        <ul id="topicList${idx}">
-                            ${program.topics.map((t, tIdx) => `<li style='margin-bottom:4px;'>${t} <button onclick=\"removeTopic(${idx},${tIdx})\" class='remove-btn' style='font-size:12px;'>Remove</button></li>`).join('')}
-                        </ul>
-                        <input id="topicInput${idx}" type="text" placeholder="Add topic/lesson">
-                        <button onclick="addTopic(${idx})">Add Topic</button>
                     </div>
                     ${calendarHtml}
                 `;
@@ -676,6 +668,11 @@
             _activeReviewIndex = programs.length - 1;
             if (nameInput) nameInput.value = '';
             renderPrograms();
+            setTimeout(function() {
+                const cal = document.getElementById('reviewCalGrid');
+                if (cal) cal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                showReviewDayDetails(0);
+            }, 80);
         }
 
         function addRefresherProgram() {
@@ -696,6 +693,11 @@
             _activeReviewIndex = programs.length - 1;
             if (nameInput) nameInput.value = '';
             renderPrograms();
+            setTimeout(function() {
+                const cal = document.getElementById('reviewCalGrid');
+                if (cal) cal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                showReviewDayDetails(0);
+            }, 80);
         }
 
         function removeProgram(idx) {
@@ -706,19 +708,7 @@
             }
         }
 
-        function addTopic(idx) {
-            const input = document.getElementById('topicInput' + idx);
-            const topic = input ? input.value.trim() : '';
-            if (!topic) return;
-            programs[idx].topics.push(topic);
-            input.value = '';
-            renderPrograms();
-        }
-
-        function removeTopic(pIdx, tIdx) {
-            programs[pIdx].topics.splice(tIdx, 1);
-            renderPrograms();
-        }
+        
 
         const addMainBtn = document.getElementById('addMainProgramBtn');
         if (addMainBtn) addMainBtn.onclick = addMainProgram;

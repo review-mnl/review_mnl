@@ -572,7 +572,7 @@
                 list.innerHTML = '<div class="review-empty">No saved programs yet.</div>';
                 return;
             }
-            savedPrograms.forEach(function(program, idx) {
+                savedPrograms.forEach(function(program, idx) {
                 const openDays = program.schedule
                     ? program.schedule.filter(function(item) { return item.open; }).map(function(item) { return item.day; }).join(', ')
                     : '';
@@ -591,7 +591,7 @@
                         '<span>Days: ' + escHtml(openDays || 'None') + '</span>' +
                     '</div>' +
                     '<div class="program-ticket-actions">' +
-                        '<button type="button" class="program-ticket-btn" onclick="selectSavedProgram(' + idx + ')">Edit</button>' +
+                        '<button type="button" class="program-ticket-btn" onclick="openEditProgramModal(' + idx + ')">Edit</button>' +
                         '<button type="button" class="program-ticket-btn program-ticket-remove" onclick="removeSavedProgram(' + idx + ')">Remove</button>' +
                     '</div>';
                 list.appendChild(ticket);
@@ -618,6 +618,85 @@
             if (_activeReviewIndex >= programs.length) _activeReviewIndex = 0;
             persistPrograms();
             renderPrograms();
+        }
+
+        // --- Edit Program Modal Logic ---
+        let _editProgramIndex = null;
+        let _editProgramTempSchedule = null;
+
+        function openEditProgramModal(idx) {
+            idx = Number(idx);
+            if (!Array.isArray(savedPrograms) || idx < 0 || idx >= savedPrograms.length) return;
+            _editProgramIndex = idx;
+            var src = (programs && programs[idx]) ? programs[idx] : savedPrograms[idx];
+            var p = JSON.parse(JSON.stringify(src || normalizeProgram(savedPrograms[idx] || {})));
+            if (!Array.isArray(p.schedule)) p.schedule = cloneDefaultSchedule();
+            _editProgramTempSchedule = p.schedule.map(function(item){ return { day: item.day, open: !!item.open }; });
+
+            var nameEl = document.getElementById('editProgramName');
+            var modEl = document.getElementById('editProgramModality');
+            var patEl = document.getElementById('editProgramPattern');
+            if (nameEl) nameEl.value = p.name || '';
+            if (modEl) modEl.value = p.modality || 'Face-to-face';
+            if (patEl) patEl.value = p.schedulePattern || 'Custom';
+
+            renderEditProgramDayPills();
+
+            if (patEl) {
+                patEl.onchange = function() {
+                    var pattern = patEl.value;
+                    if (pattern === 'MWF' || pattern === 'TTH') {
+                        applyPatternToSchedule(_editProgramTempSchedule, pattern);
+                    }
+                    renderEditProgramDayPills();
+                };
+            }
+
+            var modal = document.getElementById('editProgramModal');
+            if (modal) modal.classList.add('active');
+            setTimeout(function(){ try { document.getElementById('editProgramName').focus(); } catch(e){} }, 80);
+        }
+
+        function renderEditProgramDayPills() {
+            var pillsEl = document.getElementById('editProgramDayPills');
+            if (!pillsEl) return;
+            pillsEl.innerHTML = '';
+            var schedule = Array.isArray(_editProgramTempSchedule) ? _editProgramTempSchedule : cloneDefaultSchedule();
+            schedule.forEach(function(s, idx) {
+                var pill = document.createElement('div');
+                pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
+                pill.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
+                pill.style.cursor = 'pointer';
+                pill.onclick = function() {
+                    s.open = !s.open;
+                    var pat = document.getElementById('editProgramPattern');
+                    if (pat) pat.value = 'Custom';
+                    renderEditProgramDayPills();
+                };
+                pillsEl.appendChild(pill);
+            });
+        }
+
+        function saveEditedProgram() {
+            if (_editProgramIndex === null) return;
+            var name = String((document.getElementById('editProgramName')||{}).value || '').trim();
+            var modality = String((document.getElementById('editProgramModality')||{}).value || '').trim();
+            var schedulePattern = String((document.getElementById('editProgramPattern')||{}).value || 'Custom');
+            var schedule = Array.isArray(_editProgramTempSchedule) ? _editProgramTempSchedule.map(function(it){ return { day: it.day, open: !!it.open }; }) : cloneDefaultSchedule();
+            var track = (savedPrograms[_editProgramIndex] && savedPrograms[_editProgramIndex].track) ? savedPrograms[_editProgramIndex].track : ((programs[_editProgramIndex] && programs[_editProgramIndex].track) ? programs[_editProgramIndex].track : 'Regular Review Classes');
+
+            var updated = { name: name, track: track, modality: modality || 'N/A', schedule: schedule, schedulePattern: schedulePattern };
+
+            if (_editProgramIndex < programs.length) {
+                programs[_editProgramIndex] = JSON.parse(JSON.stringify(updated));
+            } else {
+                while (programs.length < _editProgramIndex) programs.push(normalizeProgram({}));
+                programs[_editProgramIndex] = JSON.parse(JSON.stringify(updated));
+            }
+
+            // Persist changes
+            persistPrograms().catch(function(){});
+            closeModal('editProgramModal');
         }
 
         function getActiveProgram() {
@@ -888,6 +967,42 @@
         renderReviewSchedule();
         renderSavedPrograms();
         </script>
+
+        <!-- Edit Program Modal -->
+        <div class="modal-overlay" id="editProgramModal">
+            <div class="modal-box" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3>Edit Program</h3>
+                    <button class="modal-close" onclick="closeModal('editProgramModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <label for="editProgramName">Program Name</label>
+                        <input id="editProgramName" type="text" placeholder="Program name">
+
+                        <label for="editProgramModality">Learning Modality</label>
+                        <select id="editProgramModality">
+                            <option value="Face-to-face">Face-to-face</option>
+                            <option value="Online">Online</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+
+                        <label for="editProgramPattern">Day Pattern</label>
+                        <select id="editProgramPattern">
+                            <option value="MWF">MWF</option>
+                            <option value="TTH">TTH</option>
+                            <option value="Custom">Custom</option>
+                        </select>
+
+                        <div id="editProgramDayPills" class="ec-day-pills" style="margin-top:8px;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('editProgramModal')">Cancel</button>
+                    <button class="modal-save-btn" id="editProgramSaveBtn" onclick="saveEditedProgram()">Save Changes</button>
+                </div>
+            </div>
+        </div>
 
         <section class="footer">
             <div class="footer-container">

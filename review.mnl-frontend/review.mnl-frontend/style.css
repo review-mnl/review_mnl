@@ -1,15 +1,5 @@
 /* --- Review Schedule Section --- */
 .review-schedule-section {
-    background: #f4f6fb;
-    padding: 48px 2% 48px 10%;
-    width: 100%;
-}
-.review-schedule-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 22px;
-    max-width: 980px;
     width: 100%;
 }
 .review-schedule-header {
@@ -71,7 +61,7 @@
     flex-direction: column;
     gap: 18px;
     width: 100%;
-    max-width: 900px;
+    max-width: 100%;
 }
 .program-card strong {
     font-size: 20px;
@@ -163,18 +153,6 @@
 }
 
 @media (max-width: 900px) {
-    .review-schedule-section {
-        padding: 32px 6% 32px;
-    }
-
-    .review-schedule-inner {
-        max-width: 100%;
-    }
-
-    .program-card {
-        max-width: 100%;
-    }
-
     .schedule-section-divider {
         margin: 0 6%;
     }

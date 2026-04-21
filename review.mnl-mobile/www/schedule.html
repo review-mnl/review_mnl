@@ -324,43 +324,44 @@
         <div class="schedule-section-divider" role="presentation" aria-hidden="true"></div>
 
         <!-- Review Schedule Section -->
-        <section class="review-schedule-section">
-            <div class="review-schedule-inner">
-                <div class="review-schedule-header">
-                    <h2>Review Schedule</h2>
-                    <p>Manage schedules for main review, refresher, or other programs. Add topics/lessons for each program. For Main Review, plot schedules using day combinations (MWF, T TH, etc.).</p>
-                </div>
-
-                <div class="review-schedule-body ec-schedule-body">
-                    <!-- Weekly day pills -->
-                    <div class="ec-day-pills review-day-pills" id="reviewDayPills"></div>
-
-                    <!-- Monthly calendar -->
-                    <div class="ec-cal-wrap">
-                        <div class="ec-cal-nav">
-                            <button class="ec-cal-nav-btn" onclick="reviewCalPrev()">
-                                <span class="material-symbols-outlined">chevron_left</span>
-                            </button>
-                            <span id="reviewCalLabel"></span>
-                            <button class="ec-cal-nav-btn" onclick="reviewCalNext()">
-                                <span class="material-symbols-outlined">chevron_right</span>
-                            </button>
-                        </div>
-                        <div class="ec-cal-weekdays">
-                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-                        </div>
-                        <div class="ec-cal-grid" id="reviewCalGrid"></div>
-                        <div class="ec-cal-legend">
-                            <span class="ec-legend-open"></span> Open &nbsp;&nbsp;
-                            <span class="ec-legend-today"></span> Today &nbsp;&nbsp;
-                            <span class="ec-legend-closed"></span> Closed
-                        </div>
+        <section class="review-schedule-section ec-schedule-section">
+            <div class="review-schedule-left ec-schedule-left">
+                <div class="review-schedule-header ec-schedule-header">
+                    <div>
+                        <h2>Review Schedule</h2>
+                        <p>Manage schedules for main review, refresher, or other programs. Add topics/lessons for each program. For Main Review, plot schedules using day combinations (MWF, T TH, etc.).</p>
                     </div>
                 </div>
-
                 <div id="programList" class="program-list"></div>
                 <div class="review-schedule-actions">
                     <button type="button" id="addProgramBtn" class="review-add-btn">+ Add Program</button>
+                </div>
+            </div>
+
+            <div class="review-schedule-body ec-schedule-body">
+                <!-- Weekly day pills -->
+                <div class="ec-day-pills review-day-pills" id="reviewDayPills"></div>
+
+                <!-- Monthly calendar -->
+                <div class="ec-cal-wrap">
+                    <div class="ec-cal-nav">
+                        <button class="ec-cal-nav-btn" onclick="reviewCalPrev()">
+                            <span class="material-symbols-outlined">chevron_left</span>
+                        </button>
+                        <span id="reviewCalLabel"></span>
+                        <button class="ec-cal-nav-btn" onclick="reviewCalNext()">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                    <div class="ec-cal-weekdays">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div class="ec-cal-grid" id="reviewCalGrid"></div>
+                    <div class="ec-cal-legend">
+                        <span class="ec-legend-open"></span> Open &nbsp;&nbsp;
+                        <span class="ec-legend-today"></span> Today &nbsp;&nbsp;
+                        <span class="ec-legend-closed"></span> Closed
+                    </div>
                 </div>
             </div>
         </section>

@@ -338,34 +338,55 @@
                     </div>
                 </div>
                 <div class="review-program-form">
-                    <div class="review-form-row">
-                        <label>Programs Offered</label>
-                        <div id="reviewProgramButtons" class="review-program-buttons"></div>
-                        <input type="hidden" id="reviewProgramValue" value="">
+                    <div class="review-form-section">
+                        <div class="review-form-title">Main Review (Required)</div>
+                        <div class="review-form-row">
+                            <label>Programs Offered</label>
+                            <div id="reviewProgramButtonsMain" class="review-program-buttons"></div>
+                            <input type="hidden" id="reviewProgramValueMain" value="">
+                        </div>
+                        <div class="review-form-row">
+                            <label for="reviewModalitySelectMain">Learning Modality</label>
+                            <select id="reviewModalitySelectMain">
+                                <option value="Face-to-face">Face-to-face</option>
+                                <option value="Online">Online</option>
+                                <option value="Hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        <button type="button" id="addMainProgramBtn" class="review-add-btn">+ Add Main Program</button>
                     </div>
-                    <div class="review-form-row review-toggle-row">
-                        <label class="review-toggle-label">
-                            <input type="checkbox" id="reviewRefresherToggle">
-                            Add Refresher track (optional)
-                        </label>
+
+                    <div class="review-form-section review-form-section--refresher">
+                        <div class="review-form-title">Refresher Track (Optional)</div>
+                        <div class="review-form-row">
+                            <label>Programs Offered</label>
+                            <div id="reviewProgramButtonsRefresher" class="review-program-buttons"></div>
+                            <input type="hidden" id="reviewProgramValueRefresher" value="">
+                        </div>
+                        <div class="review-form-row">
+                            <label for="reviewModalitySelectRefresher">Learning Modality</label>
+                            <select id="reviewModalitySelectRefresher">
+                                <option value="Face-to-face">Face-to-face</option>
+                                <option value="Online">Online</option>
+                                <option value="Hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        <button type="button" id="addRefresherProgramBtn" class="review-add-btn review-add-secondary">+ Add Refresher Program</button>
                     </div>
-                    <div class="review-form-row">
-                        <label for="reviewModeSelect">Delivery Mode</label>
-                        <select id="reviewModeSelect">
-                            <option value="Face-to-face">Face-to-face</option>
-                            <option value="Online">Online</option>
-                            <option value="Hybrid">Hybrid</option>
-                        </select>
-                    </div>
-                    <button type="button" id="addProgramBtn" class="review-add-btn">+ Add Program</button>
                 </div>
 
                 <div id="programList" class="program-list"></div>
             </div>
 
             <div class="review-schedule-body ec-schedule-body">
-                <!-- Weekly day pills -->
-                <div class="ec-day-pills review-day-pills" id="reviewDayPills"></div>
+                <div class="review-schedule-leftcol">
+                    <div class="review-schedule-selector">
+                        <label for="reviewScheduleSelect">Schedule for</label>
+                        <select id="reviewScheduleSelect"></select>
+                    </div>
+                    <!-- Weekly day pills -->
+                    <div class="ec-day-pills review-day-pills" id="reviewDayPills"></div>
+                </div>
 
                 <!-- Monthly calendar -->
                 <div class="ec-cal-wrap">
@@ -395,7 +416,7 @@
         // --- Review Schedule Section Logic ---
         let programs = [];
 
-        const REVIEW_SCHEDULE = [
+        const DEFAULT_REVIEW_SCHEDULE = [
             { day: 'Sun', open: false },
             { day: 'Mon', open: true },
             { day: 'Tue', open: false },
@@ -407,6 +428,19 @@
 
         let _reviewYear = new Date().getFullYear();
         let _reviewMonth = new Date().getMonth();
+        let _activeReviewIndex = 0;
+
+        function cloneDefaultSchedule() {
+            return DEFAULT_REVIEW_SCHEDULE.map(function(item) {
+                return { day: item.day, open: item.open };
+            });
+        }
+
+        function getActiveProgram() {
+            if (programs.length === 0) return null;
+            if (_activeReviewIndex >= programs.length) _activeReviewIndex = 0;
+            return programs[_activeReviewIndex];
+        }
 
         function renderPrograms() {
             const list = document.getElementById('programList');
@@ -415,6 +449,9 @@
             programs.forEach((program, idx) => {
                 const div = document.createElement('div');
                 div.className = 'program-card';
+                if (!program.schedule) {
+                    program.schedule = cloneDefaultSchedule();
+                }
                 let calendarHtml = '';
                 if (String(program.track || '').toLowerCase().includes('main')) {
                     calendarHtml = `
@@ -437,7 +474,7 @@
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div>
                             <strong>${program.name}</strong>
-                            <span class="program-meta">(${program.track} • ${program.mode})</span>
+                            <span class="program-meta">(${program.track} • ${program.modality || program.mode || 'N/A'})</span>
                         </div>
                         <button onclick="removeProgram(${idx})" class="remove-btn">Remove</button>
                     </div>
@@ -452,10 +489,12 @@
                     ${calendarHtml}
                 `;
                 list.appendChild(div);
-                if (program.type.toLowerCase().includes('main')) {
+                if (String(program.track || '').toLowerCase().includes('main')) {
                     setTimeout(() => renderMainReviewCalendar(idx), 0);
                 }
             });
+            updateReviewScheduleSelect();
+            renderReviewSchedule();
         }
 
         // --- Main Review Calendar Logic ---
@@ -504,8 +543,13 @@
         function renderReviewDayPills() {
             const pillsEl = document.getElementById('reviewDayPills');
             if (!pillsEl) return;
+            const active = getActiveProgram();
             pillsEl.innerHTML = '';
-            REVIEW_SCHEDULE.forEach(function(s) {
+            if (!active || !active.schedule) {
+                pillsEl.innerHTML = '<div class="review-empty">Add a program to plot the schedule.</div>';
+                return;
+            }
+            active.schedule.forEach(function(s) {
                 const pill = document.createElement('div');
                 pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
                 pill.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
@@ -525,7 +569,8 @@
                 const labelDate = new Date(_reviewYear, _reviewMonth, 1);
                 lbl.textContent = labelDate.toLocaleString('default', { month: 'long', year: 'numeric' });
             }
-            const openDows = REVIEW_SCHEDULE.map(function(s, i){ return s.open ? i : -1; }).filter(function(i){ return i !== -1; });
+            const active = getActiveProgram();
+            const openDows = active && active.schedule ? active.schedule.map(function(s, i){ return s.open ? i : -1; }).filter(function(i){ return i !== -1; }) : [];
             const firstDow = new Date(_reviewYear, _reviewMonth, 1).getDay();
             const daysInMonth = new Date(_reviewYear, _reviewMonth + 1, 0).getDate();
             const today = new Date();
@@ -565,13 +610,18 @@
         }
 
         function refreshReviewProgramOptions() {
-            const container = document.getElementById('reviewProgramButtons');
-            const hidden = document.getElementById('reviewProgramValue');
-            if (!container || !hidden) return;
             const items = Array.isArray(window._centerPrograms) ? window._centerPrograms : [];
+            renderProgramButtons('reviewProgramButtonsMain', 'reviewProgramValueMain', items);
+            renderProgramButtons('reviewProgramButtonsRefresher', 'reviewProgramValueRefresher', items);
+        }
+
+        function renderProgramButtons(containerId, hiddenId, items) {
+            const container = document.getElementById(containerId);
+            const hidden = document.getElementById(hiddenId);
+            if (!container || !hidden) return;
             container.innerHTML = '';
             hidden.value = '';
-            if (items.length === 0) {
+            if (!items || items.length === 0) {
                 const empty = document.createElement('span');
                 empty.className = 'review-empty';
                 empty.textContent = 'No programs listed';
@@ -596,28 +646,80 @@
             });
         }
 
-        function addProgram() {
-            const hidden = document.getElementById('reviewProgramValue');
-            const refresherToggle = document.getElementById('reviewRefresherToggle');
-            const modeSelect = document.getElementById('reviewModeSelect');
+        function updateReviewScheduleSelect() {
+            const select = document.getElementById('reviewScheduleSelect');
+            if (!select) return;
+            select.innerHTML = '';
+            if (programs.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'Add a program first';
+                select.appendChild(opt);
+                select.disabled = true;
+                return;
+            }
+            select.disabled = false;
+            programs.forEach(function(p, idx) {
+                const opt = document.createElement('option');
+                opt.value = String(idx);
+                opt.textContent = p.name + ' (' + p.track + ')';
+                select.appendChild(opt);
+            });
+            if (_activeReviewIndex >= programs.length) _activeReviewIndex = 0;
+            select.value = String(_activeReviewIndex);
+            select.onchange = function() {
+                _activeReviewIndex = Number(select.value) || 0;
+                renderReviewSchedule();
+            };
+        }
+
+        function addMainProgram() {
+            const hidden = document.getElementById('reviewProgramValueMain');
+            const modalitySelect = document.getElementById('reviewModalitySelectMain');
             const name = hidden ? String(hidden.value || '').trim() : '';
-            const track = refresherToggle && refresherToggle.checked ? 'Refresher' : 'Main Review';
-            const mode = modeSelect ? String(modeSelect.value || '').trim() : '';
+            const modality = modalitySelect ? String(modalitySelect.value || '').trim() : '';
             if (!name) {
                 alert('Please select a program offered.');
                 return;
             }
+            const track = 'Main Review';
             if (programs.some(function(p) { return p.name === name && p.track === track; })) {
                 alert('This program and track already exist.');
                 return;
             }
-            programs.push({ name: name, track: track, mode: mode, topics: [] });
+            programs.push({ name: name, track: track, modality: modality, topics: [], schedule: cloneDefaultSchedule() });
+            _activeReviewIndex = programs.length - 1;
+            renderPrograms();
+        }
+
+        function addRefresherProgram() {
+            const hidden = document.getElementById('reviewProgramValueRefresher');
+            const modalitySelect = document.getElementById('reviewModalitySelectRefresher');
+            const name = hidden ? String(hidden.value || '').trim() : '';
+            const modality = modalitySelect ? String(modalitySelect.value || '').trim() : '';
+            const hasMain = programs.some(function(p) { return String(p.track || '').toLowerCase().includes('main'); });
+            if (!hasMain) {
+                alert('Please add a main review program first.');
+                return;
+            }
+            if (!name) {
+                alert('Please select a program offered.');
+                return;
+            }
+            const track = 'Refresher';
+            if (programs.some(function(p) { return p.name === name && p.track === track; })) {
+                alert('This program and track already exist.');
+                return;
+            }
+            programs.push({ name: name, track: track, modality: modality, topics: [], schedule: cloneDefaultSchedule() });
+            _activeReviewIndex = programs.length - 1;
             renderPrograms();
         }
 
         function removeProgram(idx) {
             if (confirm('Remove this program?')) {
                 programs.splice(idx, 1);
+                if (_activeReviewIndex >= programs.length) _activeReviewIndex = 0;
                 renderPrograms();
             }
         }
@@ -637,8 +739,10 @@
         }
 
         window.refreshReviewProgramOptions = refreshReviewProgramOptions;
-        const addBtn = document.getElementById('addProgramBtn');
-        if (addBtn) addBtn.onclick = addProgram;
+        const addMainBtn = document.getElementById('addMainProgramBtn');
+        if (addMainBtn) addMainBtn.onclick = addMainProgram;
+        const addRefresherBtn = document.getElementById('addRefresherProgramBtn');
+        if (addRefresherBtn) addRefresherBtn.onclick = addRefresherProgram;
         refreshReviewProgramOptions();
         renderPrograms();
         renderReviewSchedule();

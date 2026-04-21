@@ -27,6 +27,53 @@
     gap: 12px;
     width: 100%;
 }
+.review-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 4px;
+}
+.review-form-section--refresher {
+    border-top: 1px solid #eef1f7;
+    padding-top: 14px;
+    margin-top: 6px;
+}
+.review-form-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0d1b4b;
+}
+.review-add-secondary {
+    background: #eef2ff;
+    color: #1f3a8a;
+    border: 1px solid #cbd5f5;
+}
+.review-add-secondary:hover {
+    background: #e0e7ff;
+}
+.review-schedule-leftcol {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.review-schedule-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.review-schedule-selector label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0d1b4b;
+}
+.review-schedule-selector select {
+    padding: 6px 10px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #f8fbff;
+    color: #0d1b4b;
+}
 .review-form-row {
     display: flex;
     flex-direction: column;

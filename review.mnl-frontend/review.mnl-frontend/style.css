@@ -1,3 +1,119 @@
+/* --- Review Schedule Section --- */
+.review-schedule-section {
+    margin: 32px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+}
+.review-schedule-header {
+    margin-bottom: 8px;
+}
+.program-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.program-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px #0001;
+    padding: 24px 28px 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+    max-width: 700px;
+}
+.program-card strong {
+    font-size: 20px;
+    color: #0a4cff;
+}
+.program-card .program-meta {
+    color: #888;
+    font-size: 14px;
+    margin-left: 10px;
+}
+.program-card label {
+    font-weight: 500;
+    margin-bottom: 4px;
+    display: block;
+}
+.program-card ul {
+    margin: 8px 0 0 16px;
+    padding: 0;
+    list-style: disc;
+}
+.program-card input[type="text"] {
+    padding: 6px 10px;
+    border: 1px solid #dbeafe;
+    border-radius: 6px;
+    margin-top: 6px;
+    font-size: 14px;
+}
+.program-card button {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: none;
+    background: #0a4cff;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 6px;
+    transition: background 0.2s;
+}
+.program-card button:hover {
+    background: #0836cc;
+}
+.program-card .remove-btn {
+    background: none;
+    color: #f33;
+    font-size: 15px;
+    margin-left: 0;
+    padding: 0;
+}
+.main-review-calendar {
+    margin-top: 12px;
+    background: #f3f6fd;
+    border-radius: 12px;
+    padding: 18px 18px 12px 18px;
+    box-shadow: 0 1px 4px #0001;
+    max-width: 420px;
+}
+.main-review-calendar .calendar-header {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #0a4cff;
+}
+.main-review-calendar .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 36px);
+    gap: 4px;
+    margin-bottom: 6px;
+}
+.main-review-calendar .calendar-dayname {
+    font-size: 13px;
+    color: #888;
+    text-align: center;
+}
+.main-review-calendar .calendar-cell {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    text-align: center;
+    border-radius: 8px;
+    background: #f3f6fd;
+    color: #222;
+    font-size: 14px;
+    margin-bottom: 2px;
+    transition: background 0.2s, color 0.2s;
+}
+.main-review-calendar .calendar-cell.selected {
+    background: #0a4cff;
+    color: #fff;
+}
 *{
     margin: 0;
     padding: 0;

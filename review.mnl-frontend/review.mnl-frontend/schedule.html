@@ -60,14 +60,13 @@
             programs.forEach((program, idx) => {
                 const div = document.createElement('div');
                 div.className = 'program-card';
-                div.style = 'background:#fff;padding:16px;margin-bottom:16px;border-radius:8px;box-shadow:0 2px 8px #0001;';
                 let calendarHtml = '';
                 if (program.type.toLowerCase().includes('main')) {
                     calendarHtml = `
-                        <div style='margin-top:18px;'>
-                            <label style='font-weight:500;'>Schedule Calendar:</label>
-                            <div style='margin:8px 0;'>
-                                <select id='dayCombo${idx}' onchange='setDayCombo(${idx})' style='padding:4px 8px;'>
+                        <div class="main-review-calendar">
+                            <div class="calendar-header">Main Review Calendar</div>
+                            <div style='margin-bottom:10px;'>
+                                <select id='dayCombo${idx}' onchange='setDayCombo(${idx})' style='padding:6px 12px;border-radius:6px;border:1px solid #dbeafe;font-size:14px;'>
                                     <option value=''>Select Day Combination</option>
                                     <option value='MWF'>MWF (Mon/Wed/Fri)</option>
                                     <option value='TTH'>T TH (Tue/Thu)</option>
@@ -82,18 +81,18 @@
                 div.innerHTML = `
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div>
-                            <strong style="font-size:18px;">${program.name}</strong>
-                            <span style="margin-left:12px;color:#888;font-size:13px;">(${program.type})</span>
+                            <strong>${program.name}</strong>
+                            <span class="program-meta">(${program.type})</span>
                         </div>
-                        <button onclick="removeProgram(${idx})" style="color:#f33;background:none;border:none;font-size:15px;cursor:pointer;">Remove</button>
+                        <button onclick="removeProgram(${idx})" class="remove-btn">Remove</button>
                     </div>
-                    <div style="margin-top:10px;">
-                        <label style="font-weight:500;">Topics/Lessons:</label>
-                        <ul id="topicList${idx}" style="margin:8px 0 0 16px;padding:0;list-style:disc;">
-                            ${program.topics.map((t, tIdx) => `<li style='margin-bottom:4px;'>${t} <button onclick=\"removeTopic(${idx},${tIdx})\" style='color:#f33;background:none;border:none;font-size:12px;cursor:pointer;'>Remove</button></li>`).join('')}
+                    <div>
+                        <label>Topics/Lessons:</label>
+                        <ul id="topicList${idx}">
+                            ${program.topics.map((t, tIdx) => `<li style='margin-bottom:4px;'>${t} <button onclick=\"removeTopic(${idx},${tIdx})\" class='remove-btn' style='font-size:12px;'>Remove</button></li>`).join('')}
                         </ul>
-                        <input id="topicInput${idx}" type="text" placeholder="Add topic/lesson" style="margin-top:6px;padding:4px 8px;">
-                        <button onclick="addTopic(${idx})" style="margin-left:6px;padding:4px 10px;">Add Topic</button>
+                        <input id="topicInput${idx}" type="text" placeholder="Add topic/lesson">
+                        <button onclick="addTopic(${idx})">Add Topic</button>
                     </div>
                     ${calendarHtml}
                 `;
@@ -121,10 +120,10 @@
             const year = today.getFullYear();
             const month = today.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            let html = `<div style='display:flex;gap:4px;margin-bottom:4px;'><strong>${today.toLocaleString('default', { month: 'long' })} ${year}</strong></div>`;
-            html += `<div style='display:grid;grid-template-columns:repeat(7,32px);gap:2px;'>`;
+            let html = `<div style='display:flex;gap:8px;margin-bottom:8px;align-items:center;'><span style='font-size:15px;font-weight:600;color:#0a4cff;'>${today.toLocaleString('default', { month: 'long' })} ${year}</span></div>`;
+            html += `<div class='calendar-grid'>`;
             const dayNames = ['S','M','T','W','T','F','S'];
-            for (let d = 0; d < 7; d++) html += `<div style='font-size:12px;text-align:center;color:#888;'>${dayNames[d]}</div>`;
+            for (let d = 0; d < 7; d++) html += `<div class='calendar-dayname'>${dayNames[d]}</div>`;
             let firstDay = new Date(year, month, 1).getDay();
             let combo = programs[idx].dayCombo || '';
             let highlightDays = [];
@@ -133,13 +132,13 @@
             else if (combo === 'SatSun') highlightDays = [6,0];
             // Custom: let user click days (future enhancement)
             let dayCells = 0;
-            for (let i = 0; i < firstDay; i++) { html += `<div></div>`; dayCells++; }
+            for (let i = 0; i < firstDay; i++) { html += `<div class='calendar-cell'></div>`; dayCells++; }
             for (let d = 1; d <= daysInMonth; d++) {
                 const date = new Date(year, month, d);
                 const day = date.getDay();
-                let bg = highlightDays.includes(day) ? '#0a4cff' : '#f3f6fd';
-                let color = highlightDays.includes(day) ? '#fff' : '#222';
-                html += `<div style='width:32px;height:32px;line-height:32px;text-align:center;border-radius:6px;background:${bg};color:${color};margin-bottom:2px;'>${d}</div>`;
+                let cellClass = 'calendar-cell';
+                if (highlightDays.includes(day)) cellClass += ' selected';
+                html += `<div class='${cellClass}'>${d}</div>`;
                 dayCells++;
             }
             html += `</div>`;

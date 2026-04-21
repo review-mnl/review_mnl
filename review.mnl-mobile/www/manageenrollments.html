@@ -969,10 +969,10 @@
                 var displayedRef = studentRef || ref || null;
                 var refHtmlParts = [];
                 if (displayedRef) {
-                    refHtmlParts.push('<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Ref No: ' + escHtml(displayedRef) + '</p>');
+                    refHtmlParts.push('<p style="margin:2px 0 0;color:#0d1b4b;font-size:12px;font-weight:600;background:#eef4ff;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;word-break:break-all;">Ref No: ' + escHtml(displayedRef) + '</p>');
                 }
                 if (siteRef) {
-                    refHtmlParts.push('<p style="margin:2px 0 0;color:#475569;font-size:11px;background:#f1f5f9;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;">Site Ref: ' + escHtml(siteRef) + '</p>');
+                    refHtmlParts.push('<p style="margin:2px 0 0;color:#475569;font-size:11px;background:#f1f5f9;display:inline-block;padding:2px 6px;border-radius:4px;margin-top:4px;word-break:break-all;">Site Ref: ' + escHtml(siteRef) + '</p>');
                 }
                 var combinedRefs = refHtmlParts.join(' ');
 
@@ -992,7 +992,7 @@
                     + formatPaymentBadge(item.payment && item.payment.status, item.payment && item.payment.verified, item.status)
                     + '</div>'
                     + '</div>'
-                    + '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #d9e2f2;display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+                    + '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #d9e2f2;display:flex;flex-direction:column;gap:15px;">'
                     + '<div>'
                     + '<p style="margin:0 0 6px;color:#0d1b4b;font-size:12px;font-weight:700;">Payment Details</p>'
                     + '<p style="margin:0;color:#555;font-size:12px;">Amount: Php ' + escHtml(item.payment && item.payment.amount || 0) + '</p>'

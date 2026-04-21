@@ -17,6 +17,76 @@
     color: #888;
     margin: 0;
 }
+.review-program-form {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px #0001;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+.review-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.review-form-row label {
+    font-size: 13px;
+    color: #0d1b4b;
+    font-weight: 600;
+}
+.review-form-row select {
+    padding: 8px 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #f8fbff;
+    color: #0d1b4b;
+}
+.review-program-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.review-program-btn {
+    border: 1px solid #cfe0ff;
+    background: #f3f7ff;
+    color: #0a4cff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.review-program-btn.active {
+    background: #0a4cff;
+    color: #fff;
+    border-color: #0a4cff;
+}
+.review-empty {
+    font-size: 13px;
+    color: #888;
+}
+.review-toggle-row {
+    margin-top: 2px;
+}
+.review-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #0d1b4b;
+}
+.review-toggle-label input {
+    width: 15px;
+    height: 15px;
+}
+.review-program-form .review-add-btn {
+    align-self: flex-start;
+    margin-top: 4px;
+}
 .review-schedule-actions {
     margin-top: 4px;
 }

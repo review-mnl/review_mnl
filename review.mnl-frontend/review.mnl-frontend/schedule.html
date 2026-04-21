@@ -181,6 +181,9 @@
                     // that don't render the Programs Offered section.
                     const programs = parseArrayField(center.programs);
                     window._centerPrograms = Array.isArray(programs) ? programs.slice() : [];
+                    if (typeof window.refreshReviewProgramOptions === 'function') {
+                        window.refreshReviewProgramOptions();
+                    }
 
                     const programTagsEl = document.getElementById('programTagsDisplay');
                     if (programTagsEl) {
@@ -334,10 +337,30 @@
                         <p>Manage schedules for main review, refresher, or other programs. Add topics/lessons for each program. For Main Review, plot schedules using day combinations (MWF, T TH, etc.).</p>
                     </div>
                 </div>
-                <div id="programList" class="program-list"></div>
-                <div class="review-schedule-actions">
+                <div class="review-program-form">
+                    <div class="review-form-row">
+                        <label>Programs Offered</label>
+                        <div id="reviewProgramButtons" class="review-program-buttons"></div>
+                        <input type="hidden" id="reviewProgramValue" value="">
+                    </div>
+                    <div class="review-form-row review-toggle-row">
+                        <label class="review-toggle-label">
+                            <input type="checkbox" id="reviewRefresherToggle">
+                            Add Refresher track (optional)
+                        </label>
+                    </div>
+                    <div class="review-form-row">
+                        <label for="reviewModeSelect">Delivery Mode</label>
+                        <select id="reviewModeSelect">
+                            <option value="Face-to-face">Face-to-face</option>
+                            <option value="Online">Online</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+                    </div>
                     <button type="button" id="addProgramBtn" class="review-add-btn">+ Add Program</button>
                 </div>
+
+                <div id="programList" class="program-list"></div>
             </div>
 
             <div class="review-schedule-body ec-schedule-body">
@@ -393,7 +416,7 @@
                 const div = document.createElement('div');
                 div.className = 'program-card';
                 let calendarHtml = '';
-                if (program.type.toLowerCase().includes('main')) {
+                if (String(program.track || '').toLowerCase().includes('main')) {
                     calendarHtml = `
                         <div class="main-review-calendar">
                             <div class="calendar-header">Main Review Calendar</div>
@@ -414,7 +437,7 @@
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div>
                             <strong>${program.name}</strong>
-                            <span class="program-meta">(${program.type})</span>
+                            <span class="program-meta">(${program.track} • ${program.mode})</span>
                         </div>
                         <button onclick="removeProgram(${idx})" class="remove-btn">Remove</button>
                     </div>
@@ -541,12 +564,54 @@
             renderReviewSchedule();
         }
 
+        function refreshReviewProgramOptions() {
+            const container = document.getElementById('reviewProgramButtons');
+            const hidden = document.getElementById('reviewProgramValue');
+            if (!container || !hidden) return;
+            const items = Array.isArray(window._centerPrograms) ? window._centerPrograms : [];
+            container.innerHTML = '';
+            hidden.value = '';
+            if (items.length === 0) {
+                const empty = document.createElement('span');
+                empty.className = 'review-empty';
+                empty.textContent = 'No programs listed';
+                container.appendChild(empty);
+                return;
+            }
+            items.forEach(function(name, idx) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'review-program-btn';
+                btn.textContent = String(name).trim();
+                btn.onclick = function() {
+                    hidden.value = btn.textContent;
+                    const all = container.querySelectorAll('.review-program-btn');
+                    all.forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                };
+                container.appendChild(btn);
+                if (idx === 0) {
+                    btn.click();
+                }
+            });
+        }
+
         function addProgram() {
-            const name = prompt('Enter program name (e.g., Main Review, Refresher)');
-            if (!name) return;
-            const type = prompt('Enter program type (e.g., Main, Refresher, Other)');
-            if (!type) return;
-            programs.push({ name, type, topics: [] });
+            const hidden = document.getElementById('reviewProgramValue');
+            const refresherToggle = document.getElementById('reviewRefresherToggle');
+            const modeSelect = document.getElementById('reviewModeSelect');
+            const name = hidden ? String(hidden.value || '').trim() : '';
+            const track = refresherToggle && refresherToggle.checked ? 'Refresher' : 'Main Review';
+            const mode = modeSelect ? String(modeSelect.value || '').trim() : '';
+            if (!name) {
+                alert('Please select a program offered.');
+                return;
+            }
+            if (programs.some(function(p) { return p.name === name && p.track === track; })) {
+                alert('This program and track already exist.');
+                return;
+            }
+            programs.push({ name: name, track: track, mode: mode, topics: [] });
             renderPrograms();
         }
 
@@ -571,8 +636,10 @@
             renderPrograms();
         }
 
+        window.refreshReviewProgramOptions = refreshReviewProgramOptions;
         const addBtn = document.getElementById('addProgramBtn');
         if (addBtn) addBtn.onclick = addProgram;
+        refreshReviewProgramOptions();
         renderPrograms();
         renderReviewSchedule();
         </script>

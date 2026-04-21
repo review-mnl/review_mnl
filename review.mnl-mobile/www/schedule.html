@@ -121,6 +121,7 @@
                     if (!raw) return [];
                     if (Array.isArray(raw)) return raw;
                     if (typeof raw === 'object') {
+                        // Defensive: handle rare cases where JSON arrays are returned as objects.
                         try {
                             var values = Object.values(raw);
                             if (Array.isArray(values) && values.length) {
@@ -132,6 +133,7 @@
                     if (typeof raw === 'string') {
                         var trimmed = raw.trim();
                         if (!trimmed) return [];
+                        // Handle nested/double-encoded JSON like "[\"A\",\"B\"]".
                         for (var i = 0; i < 3; i++) {
                             try {
                                 var parsed = JSON.parse(trimmed);
@@ -944,7 +946,7 @@
 
             .ec-teacher-form {
                 display: none;
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 8px;
                 width: 100%;
                 margin-top: 8px;
@@ -1081,9 +1083,9 @@
                 font-size: 13px;
             }
 
-            @media (min-width: 520px) {
+            @media (max-width: 700px) {
                 .ec-teacher-form {
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    grid-template-columns: 1fr;
                 }
             }
 
@@ -1882,6 +1884,7 @@ window.dSchedSaveBackend = async function() {
         }
     }
 
+    // Allow program pills to refresh after async center load.
     window._refreshTeacherProgramPills = function() {
         if (!programPillsEl) return;
         renderTeacherProgramPills();

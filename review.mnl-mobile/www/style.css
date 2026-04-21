@@ -32,10 +32,6 @@ body.rmnl-fadeout {
         gap: 16px;
     }
 
-    .center-right.flex-column {
-        grid-template-columns: 1fr !important;
-    }
-
     .center-left {
         width: 100%;
     }
@@ -57,7 +53,7 @@ body.rmnl-fadeout {
     }
 
     .welcome-heading {
-        font-size: 22px;
+        font-size: 24px;
     }
 
     .about-section h2,
@@ -148,7 +144,7 @@ body.rmnl-fadeout {
     }
 
     .welcome-heading {
-        font-size: 18px;
+        font-size: 20px;
     }
 
     .about-section h2,
@@ -207,7 +203,7 @@ body.rmnl-fadeout {
     .center-details {
         flex-direction: column;
         align-items: stretch;
-        padding: 18px 14px;
+        padding: 18px 14px 22px;
         gap: 16px;
     }
 
@@ -292,6 +288,8 @@ body.rmnl-fadeout {
 
     .about-section p {
         font-size: 13px;
+        line-height: 1.6;
+        margin-bottom: 26px;
     }
 
     .program-tag {
@@ -407,13 +405,6 @@ nav{
     gap: 14px 18px;
     flex-wrap: wrap;
     background: linear-gradient(rgba(0,0,0,0.3), transparent);
-
-    /* App/webview safe areas (iOS notch, Android cutouts). */
-    padding: 2% 6%;
-    padding: calc(2% + env(safe-area-inset-top))
-             calc(6% + env(safe-area-inset-right))
-             2%
-             calc(6% + env(safe-area-inset-left));
 }
 
 /* Center nav links for logged-in header */
@@ -431,23 +422,6 @@ nav{
     left: 50%;
     transform: translateX(-50%);
     width: auto;
-}
-
-/* Prevent nav overlap on small screens: let links wrap in-flow. */
-@media (max-width: 768px) {
-    .header-loggedin nav .nav-links,
-    .header-search nav .nav-links {
-        position: static;
-        left: auto;
-        transform: none;
-        width: 100%;
-        order: 3;
-        flex: 1 1 100%;
-    }
-
-    .nav-links ul {
-        justify-content: flex-start;
-    }
 }
 
 nav img{
@@ -500,8 +474,48 @@ nav img{
 .nav-links ul li a{
     color: #fff;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13.5px;
     display: block;
+    padding: 6px 13px;
+    border-radius: 12px;
+    transition: 
+        background 0.32s cubic-bezier(.4,0,.2,1),
+        color 0.32s cubic-bezier(.4,0,.2,1),
+        box-shadow 0.32s cubic-bezier(.4,0,.2,1),
+        transform 0.32s cubic-bezier(.4,0,.2,1),
+        letter-spacing 0.22s;
+    will-change: transform, box-shadow, background, color;
+    position: relative;
+    z-index: 1;
+}
+
+.nav-links ul li a:hover, .nav-links ul li a:focus-visible {
+    background: rgba(255,255,255,0.13);
+    color: #e6f0ff;
+    transform: scale(1.08) translateY(-1px);
+    box-shadow: 0 4px 16px rgba(10,76,255,0.10);
+    letter-spacing: 0.3px;
+    outline: none;
+}
+
+.nav-links ul li a.active-nav {
+    color: #0a4cff !important;
+    background: #fff;
+    border-radius: 18px;
+    font-weight: 700;
+    box-shadow: none;
+    padding: 6px 17px;
+    position: relative;
+    z-index: 2;
+    letter-spacing: 0.2px;
+    outline: none;
+    border: none;
+    transform: none;
+    transition: background 0.25s, color 0.25s;
+}
+
+.nav-links ul li a.active-nav::after {
+    display: none;
 }
 
 .textbox{
@@ -1100,8 +1114,8 @@ nav img{
 .filter-container {
     padding: 40px;
     background-color: #ffffff;
-    max-width: 2400px;
-    margin-top: 0px;
+    max-width: none;
+    margin: 0;
     position: relative;
     z-index: 5;
     box-shadow: none;
@@ -1240,8 +1254,7 @@ nav img{
     background: #fff;
     border-radius: 16px;
     padding: 36px 44px;
-    min-width: 0;
-    width: min(92vw, 500px);
+    min-width: 340px;
     max-width: 500px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.18);
 }
@@ -1678,7 +1691,7 @@ nav img{
     position: absolute;
     bottom: 20px;
     left: 40px;
-    gap: 16px;
+    gap: 10px;
     width: calc(100% - 80px);
     box-sizing: border-box;
 }
@@ -1687,8 +1700,8 @@ nav img{
 /* back button removed for admin header; default .top-logo positioning will apply */
 
 .center-logo {
-    width: 108px;
-    height: 108px;
+    width: 88px;
+    height: 88px;
     background: #e0e0e0;
     border-radius: 50%;
     flex-shrink: 0;
@@ -1704,7 +1717,7 @@ nav img{
 }
 
 .center-info h1 {
-    font-size: 20px;
+    font-size: 18px;
     color: #fff;
     font-weight: 700;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
@@ -1715,7 +1728,7 @@ nav img{
 
 /* Large welcome heading styling (admin profile) */
 .welcome-heading {
-    font-size: 32px;
+    font-size: 26px;
     color: #fff;
     font-weight: 800;
     margin-bottom: 8px;
@@ -1728,7 +1741,7 @@ nav img{
 }
 
 .center-description {
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1.4;
     color: rgba(255, 255, 255, 0.95);
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
@@ -1746,17 +1759,17 @@ nav img{
 .center-rating {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 8px;
 }
 
 .center-rating .stars {
     color: #FFD700;
-    font-size: 19px;
+    font-size: 17px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .center-rating .rating-count {
-    font-size: 14px;
+    font-size: 12px;
     color: #fff;
     font-weight: 600;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.12);
@@ -1766,9 +1779,9 @@ nav img{
 /* CENTER DETAILS SECTION */
 .center-details {
     background-color: #0a4cff;
-    padding: 32px 48px;
+    padding: 24px 36px;
     display: flex;
-    gap: 28px;
+    gap: 18px;
     min-height: auto;
 }
 
@@ -1815,7 +1828,7 @@ nav img{
 .about-section h2,
 .programs-section h2,
 .ratings-section h2 {
-    font-size: 26px;
+    font-size: 22px;
     color: #fff;
     font-weight: 600;
     margin-bottom: 16px;
@@ -1833,44 +1846,44 @@ nav img{
 }
 
 .ratings-value {
-    font-size: 26px;
+    font-size: 22px;
     color: #fff;
     font-weight: 700;
 }
 
 .ratings-stars {
     color: #ffd700;
-    font-size: 19px;
+    font-size: 17px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .ratings-meta {
     color: #dbe6ff;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
 }
 
 .about-section p {
     color: #fff;
-    font-size: 15px;
-    line-height: 1.72;
-    margin-bottom: 34px;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 26px;
 }
 
 .program-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 28px;
+    gap: 7px;
+    margin-bottom: 20px;
 }
 
 .program-tag {
     background: transparent;
     border: 2px solid #fff;
     color: #fff;
-    padding: 9px 22px;
+    padding: 7px 16px;
     border-radius: 50px;
-    font-size: 14px;
+    font-size: 12px;
     font-family: 'Poppins', sans-serif;
     cursor: pointer;
 }
@@ -1884,9 +1897,9 @@ nav img{
     background: #fff;
     color: #0a4cff;
     border: none;
-    padding: 12px 26px;
+    padding: 10px 20px;
     border-radius: 50px;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     font-family: 'Poppins', sans-serif;
@@ -1899,16 +1912,16 @@ nav img{
 .achievements-card {
     background: #fff;
     border-radius: 20px;
-    padding: 24px;
-    width: 320px;
+    padding: 18px;
+    width: 280px;
     flex-shrink: 0;
 }
 
 .achievements-card h2 {
-    font-size: 26px;
+    font-size: 22px;
     color: #0a4cff;
     font-weight: 600;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
 }
 
 /* Edit section header with inline Edit button */
@@ -1924,7 +1937,7 @@ nav img{
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 4px 8px;
     background: transparent;
     color: #0a4cff;
     font-family: 'Poppins', sans-serif;
@@ -1976,11 +1989,11 @@ nav img{
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 14px;
+    padding: 4px 10px;
     background: rgba(255,255,255,0.15);
     color: #fff;
     font-family: 'Poppins', sans-serif;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     border: 2px solid rgba(255,255,255,0.7);
     border-radius: 24px;
@@ -2626,18 +2639,18 @@ nav img{
 .user-profile-card {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 14px;
     background: rgba(252, 253, 255, 0.98);
     border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: 16px;
-    padding: 22px 24px;
-    margin-bottom: 24px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
     box-shadow: 0 14px 30px rgba(6, 22, 82, 0.24);
 }
 
 .user-profile-avatar {
-    width: 68px;
-    height: 68px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     background: #d0d8f0;
     flex-shrink: 0;
@@ -2657,14 +2670,14 @@ nav img{
 }
 
 .user-profile-name-row h2 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: #0a4cff;
     margin: 0;
 }
 
 .user-profile-info p {
-    font-size: 12px;
+    font-size: 10px;
     color: #425788;
     margin: 0;
 }
@@ -2996,10 +3009,6 @@ nav img{
     background: #f4f4f4;
     border-radius: 0 25px 25px 0;
     padding: 30px 20px;
-    padding-top: calc(30px + env(safe-area-inset-top));
-    padding-right: calc(20px + env(safe-area-inset-right));
-    padding-bottom: calc(30px + env(safe-area-inset-bottom));
-    padding-left: calc(20px + env(safe-area-inset-left));
     box-shadow: 5px 0 20px rgba(0,0,0,0.2);
     transform: translateX(-100%);
     transition: transform 0.3s;
@@ -3230,7 +3239,7 @@ nav img{
     }
 
     .result-rating {
-        font-size: 20px;
+        font-size: 18px;
     }
 
     .center-info h1 {
@@ -3270,6 +3279,7 @@ nav img{
 
     .nav-links ul li a {
         font-size: 12px;
+        padding: 4px 0;
     }
 
     .register-btn {
@@ -3285,7 +3295,7 @@ nav img{
 
     .dashboard-toggle {
         top: auto;
-        bottom: calc(16px + env(safe-area-inset-bottom));
+        bottom: 16px;
         left: 50%;
         transform: translateX(-50%);
         writing-mode: horizontal-tb;
@@ -3622,6 +3632,14 @@ nav img{
         gap: 12px;
     }
 
+    .center-right.flex-column {
+        gap: 12px;
+    }
+
+    #headerMapContainer {
+        height: 190px !important;
+    }
+
     .achievements-card {
         padding: 14px;
     }
@@ -3680,6 +3698,7 @@ nav img{
 
 .center-right.flex-column > .testimonials-section {
     padding: 14px 14px 10px !important;
+    box-shadow: 0 6px 16px rgba(6, 22, 82, 0.10);
 }
 
 .center-right.flex-column > .achievements-card h2,
@@ -3741,7 +3760,8 @@ nav img{
     }
 
     .center-right.flex-column .achievement-item {
-        padding: 8px 10px;
+        gap: 8px;
+        padding: 9px 10px;
     }
 
     .center-right.flex-column .trophy-icon {

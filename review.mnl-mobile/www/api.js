@@ -1,8 +1,23 @@
+(function highlightActiveNav() {
+    try {
+        var path = window.location.pathname.split('/').pop() || 'index.html';
+        var navs = document.querySelectorAll('.nav-links ul li a');
+        navs.forEach(function(link) {
+            var href = link.getAttribute('href');
+            if (!href) return;
+            // Only compare filename (ignore query/hash)
+            var hrefFile = href.split('?')[0].split('#')[0];
+            if (hrefFile === path) {
+                link.classList.add('active-nav');
+            }
+        });
+    } catch(e) {}
+})();
 // review.mnl — shared API helper
 // All fetch calls go through here so only one place needs updating for the base URL.
 
 // Production-only API routing: all requests go to Railway unless explicitly overridden.
-const API_BASE = window.BACKEND_URL || 'https://reviewmnl-production-67eb.up.railway.app';
+const API_BASE = window.API_BASE || 'https://reviewmnl-production-67eb.up.railway.app';
 
 // Redirect any duplicated consecutive path segments (e.g. "/review.mnl-frontend/review.mnl-frontend/..." )
 // to the site root to avoid exposing duplicated copies of the site.
@@ -779,6 +794,8 @@ function clearMessageSyncState() {
 
 // ---------------------------------------------------------------------------
 // Conversation caching helpers
+// Save the latest conversations so other pages (full messages view) can
+// render immediately while the live API request finishes.
 function setConversationsCache(conversations) {
     try {
         var key = 'rmnl_conversations_cache_' + (getMessageSyncStorageKey() || 'global');
@@ -1986,8 +2003,61 @@ function initFullMessagesPage(options) {
             return btn;
         }
 
+        function ensureReportButton() {
+            if (!convName || !convName.parentNode) return null;
+            var btn = convName.parentNode.querySelector('.rmnl-msgpage-report-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rmnl-msgpage-report-btn';
+                btn.textContent = 'Report';
+                btn.style.cssText = 'border:1px solid #f7c9c9;background:#fff;color:#b91c1c;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;';
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!activeConversation || !activeConversation.other_user_id) return;
+                    if (typeof openReportModal !== 'function') {
+                        alert('Reporting is not available right now.');
+                        return;
+                    }
+                    var targetName = activeConversation.other_name || 'Conversation';
+                    openReportModal({
+                        title: 'Report Conversation',
+                        target: targetName
+                    }).then(function(result) {
+                        if (!result) return;
+                        var details = 'Conversation report';
+                        var extra = String(result.details || '').trim();
+                        var files = Array.isArray(result.files) ? result.files : [];
+                        if (extra) details = details ? (details + ' | ' + extra) : extra;
+                        var payload = {
+                            report_type: 'message',
+                            reason: result.reason,
+                            details: details,
+                            reported_user_id: Number(activeConversation.other_user_id || 0),
+                            center_id: Number(activeConversation.center_id || 0)
+                        };
+                        if (files.length) payload.evidence_files = files;
+                        ReportsAPI.create(payload)
+                            .then(function() { alert('Report submitted.'); })
+                            .catch(function(err) { alert(err.message || 'Failed to submit report.'); });
+                    });
+                });
+                convName.parentNode.appendChild(btn);
+            }
+            return btn;
+        }
+
         function updateDeleteButtonState() {
             var btn = ensureDeleteButton();
+            if (!btn) return;
+            var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
+            btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';
+            btn.disabled = !hasActiveConversation;
+        }
+
+        function updateReportButtonState() {
+            var btn = ensureReportButton();
             if (!btn) return;
             var hasActiveConversation = Boolean(activeConversation && activeConversation.other_user_id);
             btn.style.display = hasActiveConversation ? 'inline-flex' : 'none';

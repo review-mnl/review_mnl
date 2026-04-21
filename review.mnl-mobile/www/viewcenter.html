@@ -935,6 +935,8 @@
             var selectedKey = selected.toLowerCase();
             return list.filter(function(t) {
                 var teacherProgram = normalizeTeacherName(t && t.program);
+                // Back-compat: older teachers may not have a program set.
+                // If blank, keep them available for any program.
                 if (!teacherProgram) return true;
                 return teacherProgram.toLowerCase() === selectedKey;
             });

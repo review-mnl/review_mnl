@@ -38,151 +38,6 @@
 
         </section>
 
-        <!-- Review Schedule Section -->
-        <section class="review-schedule-section">
-            <div class="review-schedule-inner">
-                <div class="review-schedule-header">
-                    <h2>Review Schedule</h2>
-                    <p>Manage schedules for main review, refresher, or other programs. Add topics/lessons for each program. For Main Review, plot schedules using day combinations (MWF, T TH, etc.).</p>
-                </div>
-                <div id="programList" class="program-list"></div>
-                <div class="review-schedule-actions">
-                    <button type="button" id="addProgramBtn" class="review-add-btn">+ Add Program</button>
-                </div>
-            </div>
-        </section>
-
-        <div class="schedule-section-divider" role="presentation" aria-hidden="true"></div>
-
-        <script>
-        // --- Review Schedule Section Logic ---
-        let programs = [];
-
-        function renderPrograms() {
-            const list = document.getElementById('programList');
-            list.innerHTML = '';
-            programs.forEach((program, idx) => {
-                const div = document.createElement('div');
-                div.className = 'program-card';
-                let calendarHtml = '';
-                if (program.type.toLowerCase().includes('main')) {
-                    calendarHtml = `
-                        <div class="main-review-calendar">
-                            <div class="calendar-header">Main Review Calendar</div>
-                            <div style='margin-bottom:10px;'>
-                                <select id='dayCombo${idx}' onchange='setDayCombo(${idx})' style='padding:6px 12px;border-radius:6px;border:1px solid #dbeafe;font-size:14px;'>
-                                    <option value=''>Select Day Combination</option>
-                                    <option value='MWF'>MWF (Mon/Wed/Fri)</option>
-                                    <option value='TTH'>T TH (Tue/Thu)</option>
-                                    <option value='SatSun'>Sat/Sun</option>
-                                    <option value='Custom'>Custom</option>
-                                </select>
-                            </div>
-                            <div id='mainReviewCal${idx}'></div>
-                        </div>
-                    `;
-                }
-                div.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div>
-                            <strong>${program.name}</strong>
-                            <span class="program-meta">(${program.type})</span>
-                        </div>
-                        <button onclick="removeProgram(${idx})" class="remove-btn">Remove</button>
-                    </div>
-                    <div>
-                        <label>Topics/Lessons:</label>
-                        <ul id="topicList${idx}">
-                            ${program.topics.map((t, tIdx) => `<li style='margin-bottom:4px;'>${t} <button onclick=\"removeTopic(${idx},${tIdx})\" class='remove-btn' style='font-size:12px;'>Remove</button></li>`).join('')}
-                        </ul>
-                        <input id="topicInput${idx}" type="text" placeholder="Add topic/lesson">
-                        <button onclick="addTopic(${idx})">Add Topic</button>
-                    </div>
-                    ${calendarHtml}
-                `;
-                list.appendChild(div);
-                // Render calendar if main review
-                if (program.type.toLowerCase().includes('main')) {
-                    setTimeout(() => renderMainReviewCalendar(idx), 0);
-                }
-            });
-        }
-
-        // --- Main Review Calendar Logic ---
-        function setDayCombo(idx) {
-            const sel = document.getElementById('dayCombo' + idx);
-            const val = sel.value;
-            programs[idx].dayCombo = val;
-            renderMainReviewCalendar(idx);
-        }
-
-        function renderMainReviewCalendar(idx) {
-            const container = document.getElementById('mainReviewCal' + idx);
-            if (!container) return;
-            // Simple calendar for current month
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = today.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            let html = `<div style='display:flex;gap:8px;margin-bottom:8px;align-items:center;'><span style='font-size:15px;font-weight:600;color:#0a4cff;'>${today.toLocaleString('default', { month: 'long' })} ${year}</span></div>`;
-            html += `<div class='calendar-grid'>`;
-            const dayNames = ['S','M','T','W','T','F','S'];
-            for (let d = 0; d < 7; d++) html += `<div class='calendar-dayname'>${dayNames[d]}</div>`;
-            let firstDay = new Date(year, month, 1).getDay();
-            let combo = programs[idx].dayCombo || '';
-            let highlightDays = [];
-            if (combo === 'MWF') highlightDays = [1,3,5];
-            else if (combo === 'TTH') highlightDays = [2,4];
-            else if (combo === 'SatSun') highlightDays = [6,0];
-            // Custom: let user click days (future enhancement)
-            let dayCells = 0;
-            for (let i = 0; i < firstDay; i++) { html += `<div class='calendar-cell'></div>`; dayCells++; }
-            for (let d = 1; d <= daysInMonth; d++) {
-                const date = new Date(year, month, d);
-                const day = date.getDay();
-                let cellClass = 'calendar-cell';
-                if (highlightDays.includes(day)) cellClass += ' selected';
-                html += `<div class='${cellClass}'>${d}</div>`;
-                dayCells++;
-            }
-            html += `</div>`;
-            container.innerHTML = html;
-        }
-
-        function addProgram() {
-            const name = prompt('Enter program name (e.g., Main Review, Refresher)');
-            if (!name) return;
-            const type = prompt('Enter program type (e.g., Main, Refresher, Other)');
-            if (!type) return;
-            programs.push({ name, type, topics: [] });
-            renderPrograms();
-        }
-
-        function removeProgram(idx) {
-            if (confirm('Remove this program?')) {
-                programs.splice(idx, 1);
-                renderPrograms();
-            }
-        }
-
-        function addTopic(idx) {
-            const input = document.getElementById('topicInput' + idx);
-            const topic = input.value.trim();
-            if (!topic) return;
-            programs[idx].topics.push(topic);
-            input.value = '';
-            renderPrograms();
-        }
-
-        function removeTopic(pIdx, tIdx) {
-            programs[pIdx].topics.splice(tIdx, 1);
-            renderPrograms();
-        }
-
-        document.getElementById('addProgramBtn').onclick = addProgram;
-        // Initial render
-        renderPrograms();
-        </script>
         <script src="api.js"></script>
         <script>
             if (!isAuthenticated()) { window.location.href = 'login.html'; }
@@ -467,6 +322,259 @@
                 </div>
             </div>
         </div>
+
+        <div class="schedule-section-divider" role="presentation" aria-hidden="true"></div>
+
+        <!-- Review Schedule Section -->
+        <section class="review-schedule-section">
+            <div class="review-schedule-inner">
+                <div class="review-schedule-header">
+                    <h2>Review Schedule</h2>
+                    <p>Manage schedules for main review, refresher, or other programs. Add topics/lessons for each program. For Main Review, plot schedules using day combinations (MWF, T TH, etc.).</p>
+                </div>
+
+                <div class="review-schedule-body ec-schedule-body">
+                    <!-- Weekly day pills -->
+                    <div class="ec-day-pills review-day-pills" id="reviewDayPills"></div>
+
+                    <!-- Monthly calendar -->
+                    <div class="ec-cal-wrap">
+                        <div class="ec-cal-nav">
+                            <button class="ec-cal-nav-btn" onclick="reviewCalPrev()">
+                                <span class="material-symbols-outlined">chevron_left</span>
+                            </button>
+                            <span id="reviewCalLabel"></span>
+                            <button class="ec-cal-nav-btn" onclick="reviewCalNext()">
+                                <span class="material-symbols-outlined">chevron_right</span>
+                            </button>
+                        </div>
+                        <div class="ec-cal-weekdays">
+                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                        </div>
+                        <div class="ec-cal-grid" id="reviewCalGrid"></div>
+                        <div class="ec-cal-legend">
+                            <span class="ec-legend-open"></span> Open &nbsp;&nbsp;
+                            <span class="ec-legend-today"></span> Today &nbsp;&nbsp;
+                            <span class="ec-legend-closed"></span> Closed
+                        </div>
+                    </div>
+                </div>
+
+                <div id="programList" class="program-list"></div>
+                <div class="review-schedule-actions">
+                    <button type="button" id="addProgramBtn" class="review-add-btn">+ Add Program</button>
+                </div>
+            </div>
+        </section>
+
+        <script>
+        // --- Review Schedule Section Logic ---
+        let programs = [];
+
+        const REVIEW_SCHEDULE = [
+            { day: 'Sun', open: false },
+            { day: 'Mon', open: true },
+            { day: 'Tue', open: false },
+            { day: 'Wed', open: true },
+            { day: 'Thu', open: false },
+            { day: 'Fri', open: true },
+            { day: 'Sat', open: false }
+        ];
+
+        let _reviewYear = new Date().getFullYear();
+        let _reviewMonth = new Date().getMonth();
+
+        function renderPrograms() {
+            const list = document.getElementById('programList');
+            if (!list) return;
+            list.innerHTML = '';
+            programs.forEach((program, idx) => {
+                const div = document.createElement('div');
+                div.className = 'program-card';
+                let calendarHtml = '';
+                if (program.type.toLowerCase().includes('main')) {
+                    calendarHtml = `
+                        <div class="main-review-calendar">
+                            <div class="calendar-header">Main Review Calendar</div>
+                            <div style='margin-bottom:10px;'>
+                                <select id='dayCombo${idx}' onchange='setDayCombo(${idx})' style='padding:6px 12px;border-radius:6px;border:1px solid #dbeafe;font-size:14px;'>
+                                    <option value=''>Select Day Combination</option>
+                                    <option value='MWF'>MWF (Mon/Wed/Fri)</option>
+                                    <option value='TTH'>T TH (Tue/Thu)</option>
+                                    <option value='SatSun'>Sat/Sun</option>
+                                    <option value='Custom'>Custom</option>
+                                </select>
+                            </div>
+                            <div id='mainReviewCal${idx}'></div>
+                        </div>
+                    `;
+                }
+                div.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <strong>${program.name}</strong>
+                            <span class="program-meta">(${program.type})</span>
+                        </div>
+                        <button onclick="removeProgram(${idx})" class="remove-btn">Remove</button>
+                    </div>
+                    <div>
+                        <label>Topics/Lessons:</label>
+                        <ul id="topicList${idx}">
+                            ${program.topics.map((t, tIdx) => `<li style='margin-bottom:4px;'>${t} <button onclick=\"removeTopic(${idx},${tIdx})\" class='remove-btn' style='font-size:12px;'>Remove</button></li>`).join('')}
+                        </ul>
+                        <input id="topicInput${idx}" type="text" placeholder="Add topic/lesson">
+                        <button onclick="addTopic(${idx})">Add Topic</button>
+                    </div>
+                    ${calendarHtml}
+                `;
+                list.appendChild(div);
+                if (program.type.toLowerCase().includes('main')) {
+                    setTimeout(() => renderMainReviewCalendar(idx), 0);
+                }
+            });
+        }
+
+        // --- Main Review Calendar Logic ---
+        function setDayCombo(idx) {
+            const sel = document.getElementById('dayCombo' + idx);
+            const val = sel ? sel.value : '';
+            programs[idx].dayCombo = val;
+            renderMainReviewCalendar(idx);
+        }
+
+        function renderMainReviewCalendar(idx) {
+            const container = document.getElementById('mainReviewCal' + idx);
+            if (!container) return;
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            let html = `<div style='display:flex;gap:8px;margin-bottom:8px;align-items:center;'><span style='font-size:15px;font-weight:600;color:#0a4cff;'>${today.toLocaleString('default', { month: 'long' })} ${year}</span></div>`;
+            html += `<div class='calendar-grid'>`;
+            const dayNames = ['S','M','T','W','T','F','S'];
+            for (let d = 0; d < 7; d++) html += `<div class='calendar-dayname'>${dayNames[d]}</div>`;
+            let firstDay = new Date(year, month, 1).getDay();
+            let combo = programs[idx].dayCombo || '';
+            let highlightDays = [];
+            if (combo === 'MWF') highlightDays = [1,3,5];
+            else if (combo === 'TTH') highlightDays = [2,4];
+            else if (combo === 'SatSun') highlightDays = [6,0];
+            for (let i = 0; i < firstDay; i++) { html += `<div class='calendar-cell'></div>`; }
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(year, month, d);
+                const day = date.getDay();
+                let cellClass = 'calendar-cell';
+                if (highlightDays.includes(day)) cellClass += ' selected';
+                html += `<div class='${cellClass}'>${d}</div>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // --- Review Day Pills + Calendar Logic ---
+        function renderReviewSchedule() {
+            renderReviewDayPills();
+            renderReviewCalendar();
+        }
+
+        function renderReviewDayPills() {
+            const pillsEl = document.getElementById('reviewDayPills');
+            if (!pillsEl) return;
+            pillsEl.innerHTML = '';
+            REVIEW_SCHEDULE.forEach(function(s) {
+                const pill = document.createElement('div');
+                pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
+                pill.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
+                pill.title = 'Click to toggle review day';
+                pill.style.cursor = 'pointer';
+                pill.onclick = function() {
+                    s.open = !s.open;
+                    renderReviewSchedule();
+                };
+                pillsEl.appendChild(pill);
+            });
+        }
+
+        function renderReviewCalendar() {
+            const lbl = document.getElementById('reviewCalLabel');
+            if (lbl) {
+                const labelDate = new Date(_reviewYear, _reviewMonth, 1);
+                lbl.textContent = labelDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            }
+            const openDows = REVIEW_SCHEDULE.map(function(s, i){ return s.open ? i : -1; }).filter(function(i){ return i !== -1; });
+            const firstDow = new Date(_reviewYear, _reviewMonth, 1).getDay();
+            const daysInMonth = new Date(_reviewYear, _reviewMonth + 1, 0).getDate();
+            const today = new Date();
+            const grid = document.getElementById('reviewCalGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let e = 0; e < firstDow; e++) {
+                const blank = document.createElement('div');
+                blank.className = 'ec-cal-cell';
+                grid.appendChild(blank);
+            }
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cell = document.createElement('div');
+                const dow = new Date(_reviewYear, _reviewMonth, d).getDay();
+                const isOpen = openDows.indexOf(dow) !== -1;
+                const isToday = today.getFullYear() === _reviewYear && today.getMonth() === _reviewMonth && today.getDate() === d;
+                let cls = 'ec-cal-cell';
+                if (isOpen) cls += ' ec-open';
+                else cls += ' ec-closed';
+                if (isToday) cls += ' ec-today';
+                cell.className = cls;
+                cell.innerHTML = '<span>' + d + '</span>';
+                grid.appendChild(cell);
+            }
+        }
+
+        function reviewCalPrev() {
+            _reviewMonth--;
+            if (_reviewMonth < 0) { _reviewMonth = 11; _reviewYear--; }
+            renderReviewSchedule();
+        }
+
+        function reviewCalNext() {
+            _reviewMonth++;
+            if (_reviewMonth > 11) { _reviewMonth = 0; _reviewYear++; }
+            renderReviewSchedule();
+        }
+
+        function addProgram() {
+            const name = prompt('Enter program name (e.g., Main Review, Refresher)');
+            if (!name) return;
+            const type = prompt('Enter program type (e.g., Main, Refresher, Other)');
+            if (!type) return;
+            programs.push({ name, type, topics: [] });
+            renderPrograms();
+        }
+
+        function removeProgram(idx) {
+            if (confirm('Remove this program?')) {
+                programs.splice(idx, 1);
+                renderPrograms();
+            }
+        }
+
+        function addTopic(idx) {
+            const input = document.getElementById('topicInput' + idx);
+            const topic = input ? input.value.trim() : '';
+            if (!topic) return;
+            programs[idx].topics.push(topic);
+            input.value = '';
+            renderPrograms();
+        }
+
+        function removeTopic(pIdx, tIdx) {
+            programs[pIdx].topics.splice(tIdx, 1);
+            renderPrograms();
+        }
+
+        const addBtn = document.getElementById('addProgramBtn');
+        if (addBtn) addBtn.onclick = addProgram;
+        renderPrograms();
+        renderReviewSchedule();
+        </script>
 
         <section class="footer">
             <div class="footer-container">

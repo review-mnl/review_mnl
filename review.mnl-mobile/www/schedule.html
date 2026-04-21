@@ -240,6 +240,89 @@
             });
         </script>
 
+        <!-- Operating Schedule Section -->
+        <section class="ec-schedule-section">
+            <div class="ec-schedule-left">
+                <div class="ec-schedule-header">
+                    <div>
+                        <h2>Operating Schedule</h2>
+                        <p>Days and hours the review center is open</p>
+                    </div>
+                </div>
+
+                <div class="ec-teacher-card">
+                    <div class="ec-teacher-head">
+                        <div>
+                            <h4>Teachers</h4>
+                            <p>Add teachers so you can assign them to schedule shifts.</p>
+                        </div>
+                        <button type="button" id="ecTeacherToggleBtn" class="ec-teacher-toggle">+ Add</button>
+                    </div>
+                    <div class="ec-teacher-form">
+                        <input id="ecTeacherName" type="text" placeholder="Full name">
+                        <input id="ecTeacherProgram" type="hidden" value="">
+                        <div class="ec-teacher-program">
+                            <div class="ec-teacher-program-label">Program</div>
+                            <div id="ecTeacherProgramPills" class="ec-teacher-program-pills"></div>
+                        </div>
+                        <input id="ecTeacherSubject" type="text" placeholder="Subject / Specialty">
+                        <input id="ecTeacherEmail" type="email" placeholder="Email">
+                        <textarea id="ecTeacherNotes" placeholder="Notes (optional)"></textarea>
+                        <button type="button" id="ecTeacherAddBtn">Add Teacher</button>
+                    </div>
+                    <div id="ecTeacherList" class="ec-teacher-list"></div>
+                </div>
+            </div>
+
+            <div class="ec-schedule-body">
+                <!-- Weekly day pills -->
+                <div class="ec-day-pills" id="ecDayPills"></div>
+
+                <!-- Monthly calendar -->
+                <div class="ec-cal-wrap">
+                    <div class="ec-cal-nav">
+                        <button class="ec-cal-nav-btn" onclick="ecCalPrev()">
+                            <span class="material-symbols-outlined">chevron_left</span>
+                        </button>
+                        <span id="ecCalLabel"></span>
+                        <button class="ec-cal-nav-btn" onclick="ecCalNext()">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                    <div class="ec-cal-weekdays">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div class="ec-cal-grid" id="ecCalGrid"></div>
+                    <div class="ec-cal-legend">
+                        <span class="ec-legend-open"></span> Open &nbsp;&nbsp;
+                        <span class="ec-legend-today"></span> Today &nbsp;&nbsp;
+                        <span class="ec-legend-closed"></span> Closed
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Modal: Edit Schedule -->
+        <div class="modal-overlay" id="scheduleModal">
+            <div class="modal-box" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3>Edit Operating Schedule</h3>
+                    <button class="modal-close" onclick="closeModal('scheduleModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:13px;color:#666;margin-bottom:16px;">Toggle days open and set operating hours for each.</p>
+                    <div id="scheduleInputRows" style="display:flex;flex-direction:column;gap:12px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('scheduleModal')">Cancel</button>
+                    <button class="modal-save-btn" onclick="saveSchedule()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="schedule-section-divider" role="presentation" aria-hidden="true"></div>
+
         <!-- Review Schedule Section -->
         <section class="review-schedule-section">
             <div class="review-schedule-inner">
@@ -247,6 +330,34 @@
                     <h2>Review Schedule</h2>
                     <p>Manage schedules for main review, refresher, or other programs. Add topics/lessons for each program. For Main Review, plot schedules using day combinations (MWF, T TH, etc.).</p>
                 </div>
+
+                <div class="review-schedule-body ec-schedule-body">
+                    <!-- Weekly day pills -->
+                    <div class="ec-day-pills review-day-pills" id="reviewDayPills"></div>
+
+                    <!-- Monthly calendar -->
+                    <div class="ec-cal-wrap">
+                        <div class="ec-cal-nav">
+                            <button class="ec-cal-nav-btn" onclick="reviewCalPrev()">
+                                <span class="material-symbols-outlined">chevron_left</span>
+                            </button>
+                            <span id="reviewCalLabel"></span>
+                            <button class="ec-cal-nav-btn" onclick="reviewCalNext()">
+                                <span class="material-symbols-outlined">chevron_right</span>
+                            </button>
+                        </div>
+                        <div class="ec-cal-weekdays">
+                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                        </div>
+                        <div class="ec-cal-grid" id="reviewCalGrid"></div>
+                        <div class="ec-cal-legend">
+                            <span class="ec-legend-open"></span> Open &nbsp;&nbsp;
+                            <span class="ec-legend-today"></span> Today &nbsp;&nbsp;
+                            <span class="ec-legend-closed"></span> Closed
+                        </div>
+                    </div>
+                </div>
+
                 <div id="programList" class="program-list"></div>
                 <div class="review-schedule-actions">
                     <button type="button" id="addProgramBtn" class="review-add-btn">+ Add Program</button>
@@ -254,11 +365,22 @@
             </div>
         </section>
 
-        <div class="schedule-section-divider" role="presentation" aria-hidden="true"></div>
-
         <script>
         // --- Review Schedule Section Logic ---
         let programs = [];
+
+        const REVIEW_SCHEDULE = [
+            { day: 'Sun', open: false },
+            { day: 'Mon', open: true },
+            { day: 'Tue', open: false },
+            { day: 'Wed', open: true },
+            { day: 'Thu', open: false },
+            { day: 'Fri', open: true },
+            { day: 'Sat', open: false }
+        ];
+
+        let _reviewYear = new Date().getFullYear();
+        let _reviewMonth = new Date().getMonth();
 
         function renderPrograms() {
             const list = document.getElementById('programList');
@@ -346,6 +468,74 @@
             container.innerHTML = html;
         }
 
+        function renderReviewSchedule() {
+            renderReviewDayPills();
+            renderReviewCalendar();
+        }
+
+        function renderReviewDayPills() {
+            const pillsEl = document.getElementById('reviewDayPills');
+            if (!pillsEl) return;
+            pillsEl.innerHTML = '';
+            REVIEW_SCHEDULE.forEach(function(s) {
+                const pill = document.createElement('div');
+                pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
+                pill.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
+                pill.title = 'Click to toggle review day';
+                pill.style.cursor = 'pointer';
+                pill.onclick = function() {
+                    s.open = !s.open;
+                    renderReviewSchedule();
+                };
+                pillsEl.appendChild(pill);
+            });
+        }
+
+        function renderReviewCalendar() {
+            const lbl = document.getElementById('reviewCalLabel');
+            if (lbl) {
+                const labelDate = new Date(_reviewYear, _reviewMonth, 1);
+                lbl.textContent = labelDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            }
+            const openDows = REVIEW_SCHEDULE.map(function(s, i){ return s.open ? i : -1; }).filter(function(i){ return i !== -1; });
+            const firstDow = new Date(_reviewYear, _reviewMonth, 1).getDay();
+            const daysInMonth = new Date(_reviewYear, _reviewMonth + 1, 0).getDate();
+            const today = new Date();
+            const grid = document.getElementById('reviewCalGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let e = 0; e < firstDow; e++) {
+                const blank = document.createElement('div');
+                blank.className = 'ec-cal-cell';
+                grid.appendChild(blank);
+            }
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cell = document.createElement('div');
+                const dow = new Date(_reviewYear, _reviewMonth, d).getDay();
+                const isOpen = openDows.indexOf(dow) !== -1;
+                const isToday = today.getFullYear() === _reviewYear && today.getMonth() === _reviewMonth && today.getDate() === d;
+                let cls = 'ec-cal-cell';
+                if (isOpen) cls += ' ec-open';
+                else cls += ' ec-closed';
+                if (isToday) cls += ' ec-today';
+                cell.className = cls;
+                cell.innerHTML = '<span>' + d + '</span>';
+                grid.appendChild(cell);
+            }
+        }
+
+        function reviewCalPrev() {
+            _reviewMonth--;
+            if (_reviewMonth < 0) { _reviewMonth = 11; _reviewYear--; }
+            renderReviewSchedule();
+        }
+
+        function reviewCalNext() {
+            _reviewMonth++;
+            if (_reviewMonth > 11) { _reviewMonth = 0; _reviewYear++; }
+            renderReviewSchedule();
+        }
+
         function addProgram() {
             const name = prompt('Enter program name (e.g., Main Review, Refresher)');
             if (!name) return;
@@ -364,8 +554,7 @@
 
         function addTopic(idx) {
             const input = document.getElementById('topicInput' + idx);
-            if (!input) return;
-            const topic = input.value.trim();
+            const topic = input ? input.value.trim() : '';
             if (!topic) return;
             programs[idx].topics.push(topic);
             input.value = '';
@@ -380,88 +569,8 @@
         const addBtn = document.getElementById('addProgramBtn');
         if (addBtn) addBtn.onclick = addProgram;
         renderPrograms();
+        renderReviewSchedule();
         </script>
-
-        <!-- Operating Schedule Section -->
-        <section class="ec-schedule-section">
-            <div class="ec-schedule-left">
-                <div class="ec-schedule-header">
-                    <div>
-                        <h2>Operating Schedule</h2>
-                        <p>Days and hours the review center is open</p>
-                    </div>
-                </div>
-
-                <div class="ec-teacher-card">
-                    <div class="ec-teacher-head">
-                        <div>
-                            <h4>Teachers</h4>
-                            <p>Add teachers so you can assign them to schedule shifts.</p>
-                        </div>
-                        <button type="button" id="ecTeacherToggleBtn" class="ec-teacher-toggle">+ Add</button>
-                    </div>
-                    <div class="ec-teacher-form">
-                        <input id="ecTeacherName" type="text" placeholder="Full name">
-                        <input id="ecTeacherProgram" type="hidden" value="">
-                        <div class="ec-teacher-program">
-                            <div class="ec-teacher-program-label">Program</div>
-                            <div id="ecTeacherProgramPills" class="ec-teacher-program-pills"></div>
-                        </div>
-                        <input id="ecTeacherSubject" type="text" placeholder="Subject / Specialty">
-                        <input id="ecTeacherEmail" type="email" placeholder="Email">
-                        <textarea id="ecTeacherNotes" placeholder="Notes (optional)"></textarea>
-                        <button type="button" id="ecTeacherAddBtn">Add Teacher</button>
-                    </div>
-                    <div id="ecTeacherList" class="ec-teacher-list"></div>
-                </div>
-            </div>
-
-            <div class="ec-schedule-body">
-                <!-- Weekly day pills -->
-                <div class="ec-day-pills" id="ecDayPills"></div>
-
-                <!-- Monthly calendar -->
-                <div class="ec-cal-wrap">
-                    <div class="ec-cal-nav">
-                        <button class="ec-cal-nav-btn" onclick="ecCalPrev()">
-                            <span class="material-symbols-outlined">chevron_left</span>
-                        </button>
-                        <span id="ecCalLabel"></span>
-                        <button class="ec-cal-nav-btn" onclick="ecCalNext()">
-                            <span class="material-symbols-outlined">chevron_right</span>
-                        </button>
-                    </div>
-                    <div class="ec-cal-weekdays">
-                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-                    </div>
-                    <div class="ec-cal-grid" id="ecCalGrid"></div>
-                    <div class="ec-cal-legend">
-                        <span class="ec-legend-open"></span> Open &nbsp;&nbsp;
-                        <span class="ec-legend-today"></span> Today &nbsp;&nbsp;
-                        <span class="ec-legend-closed"></span> Closed
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-        <!-- Modal: Edit Schedule -->
-        <div class="modal-overlay" id="scheduleModal">
-            <div class="modal-box" style="max-width:520px;">
-                <div class="modal-header">
-                    <h3>Edit Operating Schedule</h3>
-                    <button class="modal-close" onclick="closeModal('scheduleModal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p style="font-size:13px;color:#666;margin-bottom:16px;">Toggle days open and set operating hours for each.</p>
-                    <div id="scheduleInputRows" style="display:flex;flex-direction:column;gap:12px;"></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-cancel-btn" onclick="closeModal('scheduleModal')">Cancel</button>
-                    <button class="modal-save-btn" onclick="saveSchedule()">Save Changes</button>
-                </div>
-            </div>
-        </div>
 
         <section class="footer">
             <div class="footer-container">

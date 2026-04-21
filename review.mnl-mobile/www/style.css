@@ -30,6 +30,13 @@
 .review-schedule-actions {
     margin-top: 4px;
 }
+.review-schedule-body {
+    margin-top: 8px;
+    width: 100%;
+}
+.review-day-pills .ec-day-pill {
+    cursor: pointer;
+}
 .review-add-btn {
     padding: 10px 18px;
     background: #0a4cff;

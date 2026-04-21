@@ -84,6 +84,14 @@
     color: #0d1b4b;
     font-weight: 600;
 }
+.review-form-row input[type="text"] {
+    padding: 8px 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #f8fbff;
+    color: #0d1b4b;
+}
 .review-form-row select {
     padding: 8px 12px;
     border: 1px solid #dbeafe;

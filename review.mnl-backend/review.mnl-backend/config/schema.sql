@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS review_centers (
   programs        JSON,
   achievements    JSON,
   schedule        JSON,
+  review_schedule JSON,
   payment_methods JSON,
   payment_details JSON,
   last_login      TIMESTAMP NULL,

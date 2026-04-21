@@ -150,6 +150,120 @@
     align-self: flex-start;
     margin-top: 4px;
 }
+.review-saved-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+.review-saved-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0d1b4b;
+}
+.program-ticket-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.program-ticket {
+    position: relative;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: #f8fbff;
+    border: 1px dashed #cbd5f5;
+    box-shadow: 0 6px 14px rgba(13, 27, 75, 0.08);
+}
+.program-ticket::before,
+.program-ticket::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #f5f7fb;
+    border: 1px dashed #cbd5f5;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.program-ticket::before {
+    left: -9px;
+}
+.program-ticket::after {
+    right: -9px;
+}
+.program-ticket-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+.program-ticket-top strong {
+    font-size: 16px;
+    color: #0a4cff;
+}
+.program-ticket-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+.program-ticket-modality {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1f3a8a;
+    background: #eef2ff;
+    border: 1px solid #cbd5f5;
+    padding: 4px 8px;
+    border-radius: 999px;
+}
+.program-ticket-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #475569;
+}
+.program-ticket-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+.program-ticket-btn {
+    border: 1px solid #cbd5f5;
+    background: #ffffff;
+    color: #1f3a8a;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.program-ticket-btn:hover {
+    background: #eef2ff;
+}
+.program-ticket-remove {
+    border-color: #fecaca;
+    color: #b91c1c;
+    background: #fff;
+}
+.program-ticket-remove:hover {
+    background: #fee2e2;
+}
+.review-save-btn {
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid #cbd5f5;
+    background: #eef2ff;
+    color: #1f3a8a;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.review-save-btn:hover {
+    background: #e0e7ff;
+}
 .review-schedule-actions {
     margin-top: 4px;
 }

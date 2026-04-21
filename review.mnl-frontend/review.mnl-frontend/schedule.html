@@ -182,6 +182,19 @@
                     const programs = parseArrayField(center.programs);
                     window._centerPrograms = Array.isArray(programs) ? programs.slice() : [];
 
+                    if (center.review_schedule) {
+                        try {
+                            window._reviewSchedule = typeof center.review_schedule === 'string'
+                                ? JSON.parse(center.review_schedule)
+                                : center.review_schedule;
+                        } catch (e) {
+                            window._reviewSchedule = [];
+                        }
+                        if (typeof window._refreshReviewSchedule === 'function') {
+                            window._refreshReviewSchedule();
+                        }
+                    }
+
                     const programTagsEl = document.getElementById('programTagsDisplay');
                     if (programTagsEl) {
                         programTagsEl.innerHTML = '';
@@ -371,6 +384,10 @@
                 </div>
 
                 <div id="programList" class="program-list"></div>
+                <div class="review-saved-section">
+                    <div class="review-saved-title">Saved Programs</div>
+                    <div id="savedProgramList" class="program-ticket-list"></div>
+                </div>
             </div>
 
             <div class="review-schedule-body ec-schedule-body">
@@ -390,6 +407,7 @@
                     <!-- Weekly day pills -->
                     <div class="ec-day-pills review-day-pills" id="reviewDayPills"></div>
                     <div class="review-day-details" id="reviewDayDetails">Click a day to see details.</div>
+                    <button type="button" id="reviewSaveBtn" class="review-save-btn">Save Schedule</button>
                 </div>
 
                 <!-- Monthly calendar -->
@@ -419,6 +437,9 @@
         <script>
         // --- Review Schedule Section Logic ---
         let programs = [];
+        let savedPrograms = [];
+
+        const REVIEW_STORAGE_KEY = 'reviewmnl_review_schedule_v1';
 
         const DEFAULT_REVIEW_SCHEDULE = [
             { day: 'Sun', open: false },
@@ -438,6 +459,111 @@
             return DEFAULT_REVIEW_SCHEDULE.map(function(item) {
                 return { day: item.day, open: item.open };
             });
+        }
+
+        function normalizeProgram(raw) {
+            const name = String(raw && raw.name ? raw.name : '').trim();
+            const track = String(raw && raw.track ? raw.track : 'Regular Review Classes').trim();
+            const modality = String(raw && (raw.modality || raw.mode) ? (raw.modality || raw.mode) : 'N/A').trim();
+            const schedule = Array.isArray(raw && raw.schedule) ? raw.schedule.map(function(item, idx) {
+                const label = item && item.day ? String(item.day) : (DEFAULT_REVIEW_SCHEDULE[idx] ? DEFAULT_REVIEW_SCHEDULE[idx].day : '');
+                return { day: label, open: !!(item && item.open) };
+            }) : cloneDefaultSchedule();
+            const schedulePattern = String(raw && raw.schedulePattern ? raw.schedulePattern : 'Custom');
+            return { name: name, track: track, modality: modality, schedule: schedule, schedulePattern: schedulePattern };
+        }
+
+        function loadSavedPrograms() {
+            try {
+                const serverSchedule = window._reviewSchedule;
+                if (Array.isArray(serverSchedule) && serverSchedule.length) {
+                    savedPrograms = serverSchedule.map(normalizeProgram);
+                } else {
+                    const raw = localStorage.getItem(REVIEW_STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) savedPrograms = parsed.map(normalizeProgram);
+                    }
+                }
+                programs = savedPrograms.map(function(p) {
+                    return JSON.parse(JSON.stringify(p));
+                });
+            } catch (e) {
+                savedPrograms = [];
+            }
+        }
+
+        function persistPrograms() {
+            savedPrograms = programs.map(normalizeProgram);
+            try {
+                localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(savedPrograms));
+            } catch (e) {}
+            if (typeof CentersAPI !== 'undefined' && CentersAPI.updateMyProfile) {
+                CentersAPI.updateMyProfile({ review_schedule: savedPrograms })
+                    .then(function(resp) {
+                        if (resp && resp.review_schedule) {
+                            window._reviewSchedule = resp.review_schedule;
+                        }
+                    })
+                    .catch(function() {});
+            }
+            renderSavedPrograms();
+        }
+
+        function renderSavedPrograms() {
+            const list = document.getElementById('savedProgramList');
+            if (!list) return;
+            list.innerHTML = '';
+            if (!savedPrograms.length) {
+                list.innerHTML = '<div class="review-empty">No saved programs yet.</div>';
+                return;
+            }
+            savedPrograms.forEach(function(program, idx) {
+                const openDays = program.schedule
+                    ? program.schedule.filter(function(item) { return item.open; }).map(function(item) { return item.day; }).join(', ')
+                    : '';
+                const ticket = document.createElement('div');
+                ticket.className = 'program-ticket';
+                ticket.innerHTML =
+                    '<div class="program-ticket-top">' +
+                        '<div>' +
+                            '<strong>' + escHtml(program.name || 'Program') + '</strong>' +
+                            '<div class="program-ticket-sub">' + escHtml(program.track || 'Review') + '</div>' +
+                        '</div>' +
+                        '<span class="program-ticket-modality">' + escHtml(program.modality || 'N/A') + '</span>' +
+                    '</div>' +
+                    '<div class="program-ticket-meta">' +
+                        '<span>Pattern: ' + escHtml(program.schedulePattern || 'Custom') + '</span>' +
+                        '<span>Days: ' + escHtml(openDays || 'None') + '</span>' +
+                    '</div>' +
+                    '<div class="program-ticket-actions">' +
+                        '<button type="button" class="program-ticket-btn" onclick="selectSavedProgram(' + idx + ')">Edit</button>' +
+                        '<button type="button" class="program-ticket-btn program-ticket-remove" onclick="removeSavedProgram(' + idx + ')">Remove</button>' +
+                    '</div>';
+                list.appendChild(ticket);
+            });
+        }
+
+        function selectSavedProgram(idx) {
+            if (idx < 0 || idx >= programs.length) return;
+            _activeReviewIndex = idx;
+            updateReviewScheduleSelect();
+            updateReviewPatternSelect();
+            renderReviewSchedule();
+            setTimeout(function() {
+                const cal = document.getElementById('reviewCalGrid');
+                if (cal) cal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+        }
+
+        function removeSavedProgram(idx) {
+            if (idx < 0 || idx >= programs.length) return;
+            if (!confirm('Remove this saved program?')) return;
+            programs.splice(idx, 1);
+            savedPrograms.splice(idx, 1);
+            if (_activeReviewIndex >= programs.length) _activeReviewIndex = 0;
+            persistPrograms();
+            renderPrograms();
         }
 
         function getActiveProgram() {
@@ -518,6 +644,7 @@
                     active.schedulePattern = 'Custom';
                     updateReviewPatternSelect();
                     showReviewDayDetails(dayIndex);
+                    persistPrograms();
                     renderReviewSchedule();
                 };
                 pillsEl.appendChild(pill);
@@ -646,6 +773,7 @@
                     applyPatternToSchedule(active.schedule, pattern);
                 }
                 showReviewDayDetails(0);
+                persistPrograms();
                 renderReviewSchedule();
             };
         }
@@ -667,6 +795,7 @@
             programs.push({ name: name, track: track, modality: modality, topics: [], schedule: cloneDefaultSchedule(), schedulePattern: 'Custom' });
             _activeReviewIndex = programs.length - 1;
             if (nameInput) nameInput.value = '';
+            persistPrograms();
             renderPrograms();
             setTimeout(function() {
                 const cal = document.getElementById('reviewCalGrid');
@@ -692,6 +821,7 @@
             programs.push({ name: name, track: track, modality: modality, topics: [], schedule: cloneDefaultSchedule(), schedulePattern: 'Custom' });
             _activeReviewIndex = programs.length - 1;
             if (nameInput) nameInput.value = '';
+            persistPrograms();
             renderPrograms();
             setTimeout(function() {
                 const cal = document.getElementById('reviewCalGrid');
@@ -704,6 +834,7 @@
             if (confirm('Remove this program?')) {
                 programs.splice(idx, 1);
                 if (_activeReviewIndex >= programs.length) _activeReviewIndex = 0;
+                persistPrograms();
                 renderPrograms();
             }
         }
@@ -714,8 +845,18 @@
         if (addMainBtn) addMainBtn.onclick = addMainProgram;
         const addRefresherBtn = document.getElementById('addRefresherProgramBtn');
         if (addRefresherBtn) addRefresherBtn.onclick = addRefresherProgram;
+        const saveBtn = document.getElementById('reviewSaveBtn');
+        if (saveBtn) saveBtn.onclick = persistPrograms;
+        window._refreshReviewSchedule = function() {
+            loadSavedPrograms();
+            renderPrograms();
+            renderReviewSchedule();
+            renderSavedPrograms();
+        };
+        loadSavedPrograms();
         renderPrograms();
         renderReviewSchedule();
+        renderSavedPrograms();
         </script>
 
         <section class="footer">

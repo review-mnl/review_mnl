@@ -163,6 +163,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 );
 
 ALTER TABLE review_centers ADD COLUMN schedule JSON;
+ALTER TABLE review_centers ADD COLUMN review_schedule JSON;
 ALTER TABLE review_centers ADD COLUMN payment_methods JSON;
 ALTER TABLE review_centers ADD COLUMN payment_details JSON;
 

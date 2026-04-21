@@ -39,16 +39,20 @@
         </section>
 
         <!-- Review Schedule Section -->
-        <section class="review-schedule-section" style="margin-top: 32px;">
-            <div class="review-schedule-header">
-                <h2>Review Schedule</h2>
-                <p>Manage schedules for main review, refresher, or other programs. Add topics/lessons for each program. For Main Review, plot schedules using day combinations (MWF, T TH, etc.).</p>
-            </div>
-            <div id="programList" class="program-list"></div>
-            <div style="margin-top: 16px;">
-                <button type="button" id="addProgramBtn" style="padding: 8px 16px; background: #0a4cff; color: #fff; border: none; border-radius: 4px; cursor: pointer;">+ Add Program</button>
+        <section class="review-schedule-section">
+            <div class="review-schedule-inner">
+                <div class="review-schedule-header">
+                    <h2>Review Schedule</h2>
+                    <p>Manage schedules for main review, refresher, or other programs. Add topics/lessons for each program. For Main Review, plot schedules using day combinations (MWF, T TH, etc.).</p>
+                </div>
+                <div id="programList" class="program-list"></div>
+                <div class="review-schedule-actions">
+                    <button type="button" id="addProgramBtn" class="review-add-btn">+ Add Program</button>
+                </div>
             </div>
         </section>
+
+        <div class="schedule-section-divider" role="presentation" aria-hidden="true"></div>
 
         <script>
         // --- Review Schedule Section Logic ---

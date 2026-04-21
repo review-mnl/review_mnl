@@ -74,6 +74,14 @@
     background: #f8fbff;
     color: #0d1b4b;
 }
+.review-day-details {
+    font-size: 12px;
+    color: #475569;
+    background: #f8fbff;
+    border: 1px solid #e2e8f5;
+    border-radius: 10px;
+    padding: 8px 10px;
+}
 .review-form-row {
     display: flex;
     flex-direction: column;

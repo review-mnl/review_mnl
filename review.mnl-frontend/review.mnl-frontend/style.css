@@ -250,6 +250,11 @@
     border: 1px solid #cbd5f5;
     padding: 4px 8px;
     border-radius: 999px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: 64px;
 }
 .program-ticket-meta {
     display: flex;

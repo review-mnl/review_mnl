@@ -829,9 +829,17 @@
         }
 
         function getCenterScheduleContainer(center) {
-            var schedule = center ? (center.schedule || center.operating_schedule || center.schedule_json) : null;
+            if (!center) return null;
+            // Prefer review_schedule for booking flows. If present, mark source as 'review'.
+            if (center.review_schedule) {
+                var parsed = parseJsonMaybe(center.review_schedule, center.review_schedule);
+                if (parsed && typeof parsed === 'object') { parsed.__source = 'review'; return parsed; }
+            }
+            // Fallback to operating schedule, but mark source so callers can disable booking.
+            var schedule = center.schedule || center.operating_schedule || center.schedule_json;
             schedule = parseJsonMaybe(schedule, schedule);
             if (!schedule || typeof schedule !== 'object') return null;
+            try { schedule.__source = 'operating'; } catch (e) {}
             return schedule;
         }
 
@@ -1391,6 +1399,12 @@
                 bankRadio.checked = selectedMethod === 'bank';
                 otcRadio.checked = selectedMethod === 'over_the_counter';
             }
+            // Disable booking when the schedule source is the Operating Schedule.
+            if (_centerScheduleData && _centerScheduleData.__source === 'operating') {
+                alert('Booking via the Operating Schedule is disabled for this center. Please contact the center or select a program with a review schedule.');
+                return;
+            }
+
             renderSchCal();
             schSetStep(1);
             var ov = document.getElementById('scheduleOverlay');

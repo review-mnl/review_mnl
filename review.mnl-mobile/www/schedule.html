@@ -121,50 +121,50 @@
                     if (!raw) return [];
                     if (Array.isArray(raw)) return raw;
                     if (typeof raw === 'object') {
-                        // Defensive: handle rare cases where JSON arrays are returned as objects.
-                        try {
-                            var values = Object.values(raw);
-                            if (Array.isArray(values) && values.length) {
-                                return values.map(function(v) { return String(v || '').trim(); }).filter(Boolean);
-                            }
-                        } catch (e) {}
-                        return [];
+                    // Use the working `programs` list so newly-created (unsaved) programs are visible immediately
+                    if (!programs || !programs.length) {
+                        list.innerHTML = '<div class="review-empty">No saved programs yet.</div>';
+                        return;
                     }
-                    if (typeof raw === 'string') {
-                        var trimmed = raw.trim();
-                        if (!trimmed) return [];
-                        // Handle nested/double-encoded JSON like "[\"A\",\"B\"]".
-                        for (var i = 0; i < 3; i++) {
-                            try {
-                                var parsed = JSON.parse(trimmed);
-                                if (Array.isArray(parsed)) return parsed;
-                                if (typeof parsed === 'string') {
-                                    trimmed = parsed.trim();
-                                    if (!trimmed) return [];
-                                    continue;
-                                }
-                                break;
-                            } catch (e) {
-                                break;
-                            }
-                        }
-                        return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
-                    }
-                    return [];
-                }
 
-                try {
-                    const center = await CentersAPI.getMyProfile();
-                    if (center.business_name) {
-                        document.getElementById('centerNameDisplay').textContent = center.business_name;
-                        // Use center business name for welcome if present
-                        try { if (document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = center.business_name; } catch(e){}
-                    }
-                    if (center.address) {
-                        document.getElementById('centerDescDisplay').textContent = center.address;
-                    }
-                    if (center.logo_url) {
-                        const logo = document.getElementById('centerLogoPreview');
+                    const regRow = document.createElement('div');
+                    regRow.className = 'program-ticket-row program-ticket-row-regular';
+                    const refRow = document.createElement('div');
+                    refRow.className = 'program-ticket-row program-ticket-row-refresher';
+
+                    programs.forEach(function(program, idx) {
+                        const openDays = program.schedule
+                            ? program.schedule.filter(function(item) { return item.open; }).map(function(item) { return item.day; }).join(', ')
+                            : '';
+                        const ticket = document.createElement('div');
+                        ticket.className = 'program-ticket';
+                        ticket.innerHTML =
+                            '<div class="program-ticket-top">' +
+                                '<div>' +
+                                    '<strong>' + escHtml(program.name || 'Program') + '</strong>' +
+                                    '<div class="program-ticket-sub">' + escHtml(program.track || 'Review') + '</div>' +
+                                '</div>' +
+                                '<span class="program-ticket-modality">' + escHtml(program.modality || 'N/A') + '</span>' +
+                            '</div>' +
+                            '<div class="program-ticket-meta">' +
+                                '<span>Pattern: ' + escHtml(program.schedulePattern || 'Custom') + '</span>' +
+                                '<span>Days: ' + escHtml(openDays || 'None') + '</span>' +
+                            '</div>' +
+                            '<div class="program-ticket-actions">' +
+                                '<button type="button" class="program-ticket-btn" onclick="openEditProgramModal(' + idx + ')">Edit</button>' +
+                                '<button type="button" class="program-ticket-btn program-ticket-remove" onclick="removeSavedProgram(' + idx + ')">Remove</button>' +
+                            '</div>';
+
+                        const isRefresher = String(program.track || '').toLowerCase().indexOf('refresher') !== -1;
+                        if (isRefresher) {
+                            refRow.appendChild(ticket);
+                        } else {
+                            regRow.appendChild(ticket);
+                        }
+                    });
+
+                    list.appendChild(regRow);
+                    if (refRow.children && refRow.children.length) list.appendChild(refRow);
                         if (logo) {
                             logo.style.backgroundImage = 'url(' + center.logo_url + ')';
                             logo.style.backgroundSize = 'cover';
@@ -339,7 +339,7 @@
                                 <option value="Hybrid">Hybrid</option>
                             </select>
                         </div>
-                        <button type="button" id="addMainProgramBtn" class="review-add-btn">+ Add Regular Program</button>
+                        <button type="button" id="addMainProgramBtn" class="review-add-btn">+ Add Program</button>
                     </div>
 
                     <div class="review-form-section review-form-section--refresher">
@@ -630,8 +630,9 @@
                     active.schedulePattern = 'Custom';
                     updateReviewPatternSelect();
                     showReviewDayDetails(dayIndex);
-                    persistPrograms();
+                    // Don't auto-persist; require explicit Save
                     renderReviewSchedule();
+                    updateReviewSaveButton();
                 };
                 pillsEl.appendChild(pill);
             });
@@ -759,7 +760,8 @@
                     applyPatternToSchedule(active.schedule, pattern);
                 }
                 showReviewDayDetails(0);
-                persistPrograms();
+                // Don't auto-persist here; require explicit Save. Update Save button state.
+                updateReviewSaveButton();
                 renderReviewSchedule();
             };
         }
@@ -778,11 +780,14 @@
                 alert('This program and track already exist.');
                 return;
             }
-            programs.push({ name: name, track: track, modality: modality, topics: [], schedule: cloneDefaultSchedule(), schedulePattern: 'Custom' });
+            var newSchedule = cloneDefaultSchedule().map(function(it){ return { day: it.day, open: false }; });
+            programs.push({ name: name, track: track, modality: modality, topics: [], schedule: newSchedule, schedulePattern: 'Custom' });
             _activeReviewIndex = programs.length - 1;
             if (nameInput) nameInput.value = '';
-            persistPrograms();
+            // Don't persist immediately; require the user to choose days then click Save
             renderPrograms();
+            renderSavedPrograms();
+            updateReviewSaveButton();
             setTimeout(function() {
                 const cal = document.getElementById('reviewCalGrid');
                 if (cal) cal.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -804,11 +809,14 @@
                 alert('This program and track already exist.');
                 return;
             }
-            programs.push({ name: name, track: track, modality: modality, topics: [], schedule: cloneDefaultSchedule(), schedulePattern: 'Custom' });
+            var newSchedule = cloneDefaultSchedule().map(function(it){ return { day: it.day, open: false }; });
+            programs.push({ name: name, track: track, modality: modality, topics: [], schedule: newSchedule, schedulePattern: 'Custom' });
             _activeReviewIndex = programs.length - 1;
             if (nameInput) nameInput.value = '';
-            persistPrograms();
+            // Don't persist immediately; require the user to choose days then click Save
             renderPrograms();
+            renderSavedPrograms();
+            updateReviewSaveButton();
             setTimeout(function() {
                 const cal = document.getElementById('reviewCalGrid');
                 if (cal) cal.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -827,6 +835,28 @@
 
         
 
+        // Helper: return true if active program has at least one open day
+        function hasActiveProgramOpenDays() {
+            var active = getActiveProgram();
+            if (!active || !Array.isArray(active.schedule)) return false;
+            return active.schedule.some(function(s){ return !!s.open; });
+        }
+
+        // Enable or disable the review Save button depending on selected days
+        function updateReviewSaveButton() {
+            var btn = document.getElementById('reviewSaveBtn');
+            if (!btn) return;
+            var ok = hasActiveProgramOpenDays();
+            btn.disabled = !ok;
+            if (btn.disabled) {
+                btn.setAttribute('aria-disabled', 'true');
+                btn.classList.add('disabled');
+            } else {
+                btn.removeAttribute('aria-disabled');
+                btn.classList.remove('disabled');
+            }
+        }
+
         const addMainBtn = document.getElementById('addMainProgramBtn');
         if (addMainBtn) addMainBtn.onclick = addMainProgram;
         const addRefresherBtn = document.getElementById('addRefresherProgramBtn');
@@ -843,6 +873,7 @@
         renderPrograms();
         renderReviewSchedule();
         renderSavedPrograms();
+        try { updateReviewSaveButton(); } catch(e) {}
         </script>
 
         <section class="footer">

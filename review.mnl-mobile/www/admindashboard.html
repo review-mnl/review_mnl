@@ -90,6 +90,12 @@
                                 <h3 id="centerCalendarMonthLabel" style="margin:0;font-size:16px;color:#0d1b4b;font-weight:700;">Month Year</h3>
                                 <button type="button" class="arrow-circle-btn" onclick="changeCenterCalendarMonth(1)" style="width:30px;height:30px;">&#10095;</button>
                             </div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                <label for="centerProgramSelect" style="font-size:13px;color:#475569;font-weight:600;">View Program:</label>
+                                <select id="centerProgramSelect" style="padding:6px 8px;border-radius:8px;border:1px solid #dbeafe;background:#fff;font-size:13px;min-width:160px;">
+                                    <option value="-1">All programs</option>
+                                </select>
+                            </div>
                             <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px;font-size:11px;color:#64748b;font-weight:700;text-align:center;">
                                 <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
                             </div>
@@ -181,6 +187,88 @@
             enrollmentsByDate: {},
         };
 
+        // Review-schedule program list and active selection for dashboard
+        var _centerReviewPrograms = [];
+        var _centerActiveProgramIndex = -1; // -1 = all
+        var CENTER_DEFAULT_REVIEW_SCHEDULE = [
+            { day: 'Sun', open: false },
+            { day: 'Mon', open: true },
+            { day: 'Tue', open: false },
+            { day: 'Wed', open: true },
+            { day: 'Thu', open: false },
+            { day: 'Fri', open: true },
+            { day: 'Sat', open: false }
+        ];
+
+        function normalizeCenterProgram(raw) {
+            var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            var name = String((raw && (raw.name || raw.program)) || '').trim();
+            var track = String((raw && raw.track) || 'Regular Review Classes');
+            var modality = String((raw && (raw.modality || raw.mode)) || 'N/A');
+            var schedule = [];
+            if (Array.isArray(raw && raw.schedule)) {
+                schedule = raw.schedule.map(function(item, idx) {
+                    var label = item && item.day ? String(item.day) : (days[idx] || '');
+                    return { day: label, open: !!(item && item.open) };
+                });
+            } else {
+                schedule = CENTER_DEFAULT_REVIEW_SCHEDULE.map(function(s){ return { day: s.day, open: s.open }; });
+            }
+            var schedulePattern = String((raw && raw.schedulePattern) || 'Custom');
+            return { name: name, track: track, modality: modality, schedule: schedule, schedulePattern: schedulePattern };
+        }
+
+        function populateCenterProgramSelect() {
+            var sel = document.getElementById('centerProgramSelect');
+            if (!sel) return;
+            sel.innerHTML = '<option value="-1">All programs</option>';
+            _centerReviewPrograms.forEach(function(p, idx) {
+                var opt = document.createElement('option');
+                opt.value = String(idx);
+                opt.textContent = p.name || (p.track || 'Program');
+                sel.appendChild(opt);
+            });
+            if (_centerReviewPrograms.length) {
+                _centerActiveProgramIndex = 0;
+                sel.value = String(_centerActiveProgramIndex);
+            } else {
+                _centerActiveProgramIndex = -1;
+                sel.value = '-1';
+            }
+            sel.onchange = function() {
+                _centerActiveProgramIndex = Number(sel.value);
+                var todayKey = toDateKey(new Date());
+                if (_centerActiveProgramIndex >= 0) {
+                    var keys = Object.keys(_centerCalendarState.enrollmentsByDate).filter(function(k){ return (getEnrollmentsForDateAndProgram(k) || []).length > 0; }).sort();
+                    _centerCalendarState.selectedDateKey = keys.length ? keys[0] : todayKey;
+                } else {
+                    var allKeys = Object.keys(_centerCalendarState.enrollmentsByDate).sort();
+                    _centerCalendarState.selectedDateKey = allKeys.length ? allKeys[0] : todayKey;
+                }
+                renderCenterCalendar();
+                renderCenterDailyEnrolledList();
+            };
+        }
+
+        function getEnrollmentsForDateAndProgram(dateKey) {
+            var list = (_centerCalendarState.enrollmentsByDate && _centerCalendarState.enrollmentsByDate[dateKey]) || [];
+            if (_centerActiveProgramIndex < 0) return list;
+            var progName = (_centerReviewPrograms[_centerActiveProgramIndex] && _centerReviewPrograms[_centerActiveProgramIndex].name) || '';
+            if (!progName) return [];
+            var lk = progName.trim().toLowerCase();
+            return list.filter(function(item) {
+                var p = String((item.program_enrolled || item.program || '')).trim().toLowerCase();
+                return p === lk || (p && p.indexOf(lk) !== -1);
+            });
+        }
+
+        function getOpenDows(program) {
+            if (!program || !Array.isArray(program.schedule)) return [];
+            var idxs = [];
+            program.schedule.forEach(function(s, idx) { if (s && s.open) idxs.push(idx); });
+            return idxs;
+        }
+
         function toDateKey(value) {
             if (!value) return '';
             if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -224,7 +312,7 @@
             var key = _centerCalendarState.selectedDateKey;
             labelEl.textContent = formatDateKeyLabel(key);
 
-            var data = (_centerCalendarState.enrollmentsByDate && _centerCalendarState.enrollmentsByDate[key]) || [];
+            var data = getEnrollmentsForDateAndProgram(key) || [];
             if (!data.length) {
                 listEl.innerHTML = '<p style="margin:0;color:#64748b;font-size:13px;">No students enrolled on this date.</p>';
                 return;
@@ -268,25 +356,36 @@
             for (var day = 1; day <= daysInMonth; day++) {
                 var date = new Date(year, month, day);
                 var dateKey = toDateKey(date);
-                var count = ((_centerCalendarState.enrollmentsByDate || {})[dateKey] || []).length;
+                var enrollmentsForDate = getEnrollmentsForDateAndProgram(dateKey) || [];
+                var count = enrollmentsForDate.length;
                 var isSelected = dateKey === _centerCalendarState.selectedDateKey;
                 var isToday = dateKey === todayKey;
+                var dow = date.getDay();
+                var activeProgram = (_centerActiveProgramIndex >= 0 && _centerReviewPrograms[_centerActiveProgramIndex]) ? _centerReviewPrograms[_centerActiveProgramIndex] : null;
+                var openDows = getOpenDows(activeProgram);
+                var isOpen = activeProgram ? (openDows.indexOf(dow) !== -1) : true;
 
                 var btn = document.createElement('button');
                 btn.type = 'button';
                 btn.style.cssText = 'border:1px solid #dbe7ff;border-radius:10px;background:#fff;height:40px;position:relative;cursor:pointer;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;color:#1e3a8a;';
-                if (count > 0) {
-                    btn.style.background = '#edf4ff';
-                    btn.style.borderColor = '#9fbafc';
-                }
-                if (isToday) {
-                    btn.style.boxShadow = 'inset 0 0 0 1px #0a4cff';
-                }
+
                 if (isSelected) {
                     btn.style.background = '#0a4cff';
                     btn.style.borderColor = '#0a4cff';
                     btn.style.color = '#fff';
+                } else if (count > 0) {
+                    btn.style.background = '#edf4ff';
+                    btn.style.borderColor = '#9fbafc';
+                } else if (!isOpen) {
+                    btn.style.background = '#f8fafc';
+                    btn.style.borderColor = '#e6eefc';
+                    btn.style.color = '#94a3b8';
                 }
+
+                if (isToday) {
+                    btn.style.boxShadow = 'inset 0 0 0 1px #0a4cff';
+                }
+
                 btn.textContent = String(day);
 
                 if (count > 0) {

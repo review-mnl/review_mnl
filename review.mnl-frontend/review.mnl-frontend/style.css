@@ -166,6 +166,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    align-items: stretch;
 }
 .program-ticket {
     position: relative;
@@ -174,29 +175,33 @@
     background: #f8fbff;
     border: 1px dashed #cbd5f5;
     box-shadow: 0 6px 14px rgba(13, 27, 75, 0.08);
+    overflow: hidden;
+    word-break: break-word;
+    white-space: normal;
+    min-width: 0;
 }
 
 .review-schedule-left .program-ticket {
     width: 100%;
     box-sizing: border-box;
 }
-.program-ticket::before,
-.program-ticket::after {
+.review-schedule-left .program-ticket::before,
+.review-schedule-left .program-ticket::after {
     content: "";
     position: absolute;
-    width: 16px;
-    height: 16px;
+    width: 10px;
+    height: 10px;
     background: #f5f7fb;
     border: 1px dashed #cbd5f5;
     border-radius: 50%;
     top: 50%;
     transform: translateY(-50%);
 }
-.program-ticket::before {
-    left: -9px;
+.review-schedule-left .program-ticket::before {
+    left: 8px;
 }
-.program-ticket::after {
-    right: -9px;
+.review-schedule-left .program-ticket::after {
+    right: 8px;
 }
 .program-ticket-top {
     display: flex;
@@ -213,6 +218,9 @@
     color: #64748b;
     margin-top: 2px;
 }
+
+.program-ticket-top strong { display:block; line-height:1.1; }
+.program-ticket-meta span { display:block; }
 .program-ticket-modality {
     font-size: 12px;
     font-weight: 600;

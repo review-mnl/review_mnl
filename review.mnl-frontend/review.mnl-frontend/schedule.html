@@ -272,6 +272,7 @@
         let _reviewMonth = new Date().getMonth();
         let _activeReviewIndex = 0;
         let _activeSessionIndex = 0;
+        let _lastShownReviewDayIndex = null;
 
         function cloneDefaultSchedule() {
             return DEFAULT_REVIEW_SCHEDULE.map(function(item) {
@@ -878,6 +879,7 @@
                 return;
             }
             const day = active.schedule[dayIndex];
+            _lastShownReviewDayIndex = dayIndex;
             if (!day) {
                 details.textContent = 'Click a day to see details.';
                 return;
@@ -939,18 +941,27 @@
             row.style.gap = '8px';
             row.style.alignItems = 'center';
 
-            var existingFrom = (day && day.session && day.session.from) ? day.session.from : '';
-            var existingTo = (day && day.session && day.session.to) ? day.session.to : '';
+            // Prefill inputs from the currently selected program session (Session selector)
+            var selectedSess = null;
+            try {
+                if (active && Array.isArray(active.session_templates) && typeof _activeSessionIndex === 'number') selectedSess = active.session_templates[_activeSessionIndex] || null;
+            } catch (e) { selectedSess = null; }
+            var selectedFrom = (selectedSess && selectedSess.from) ? selectedSess.from : ((day && day.session && day.session.from) ? day.session.from : '');
+            var selectedTo = (selectedSess && selectedSess.to) ? selectedSess.to : ((day && day.session && day.session.to) ? day.session.to : '');
 
             var fromInput = document.createElement('input');
             fromInput.type = 'time';
-            fromInput.value = existingFrom || '';
+            fromInput.value = selectedFrom || '';
             fromInput.style.width = '120px';
+            fromInput.disabled = true;
+            fromInput.title = 'Set session from the Session dropdown above';
 
             var toInput = document.createElement('input');
             toInput.type = 'time';
-            toInput.value = existingTo || '';
+            toInput.value = selectedTo || '';
             toInput.style.width = '120px';
+            toInput.disabled = true;
+            toInput.title = 'Set session from the Session dropdown above';
 
             row.appendChild(fromInput);
             row.appendChild(toInput);
@@ -964,9 +975,12 @@
             saveSessBtn.className = 'program-ticket-btn';
             saveSessBtn.textContent = 'Save Session';
             saveSessBtn.onclick = function() {
-                var f = String(fromInput.value || '').trim();
-                var t = String(toInput.value || '').trim();
-                if (!f || !t) { alert('Please set both From and To times.'); return; }
+                // Use the session selected in the Session selector (preferred)
+                var sel = null;
+                try { if (active && Array.isArray(active.session_templates) && typeof _activeSessionIndex === 'number') sel = active.session_templates[_activeSessionIndex] || null; } catch (e) { sel = null; }
+                var f = sel && sel.from ? String(sel.from).trim() : String(fromInput.value || '').trim();
+                var t = sel && sel.to ? String(sel.to).trim() : String(toInput.value || '').trim();
+                if (!f || !t) { alert('Please choose a session from the Session dropdown first.'); return; }
                 // Save to the active program schedule (per-day) and sync with pattern
                 try {
                     if (!Array.isArray(active.schedule)) active.schedule = cloneDefaultSchedule();
@@ -980,8 +994,8 @@
                     if (patternDays && patternDays.length) {
                         patternDays.forEach(function(i){ if (active.schedule[i] && active.schedule[i].open) active.schedule[i].session = { from: f, to: t }; });
                     }
-                    // Make this the program's primary session template
-                    active.session_templates = [{ from: f, to: t }];
+                    // Keep program session templates intact — don't overwrite unless the selected session came from nowhere
+                    if (!sel) active.session_templates = [{ from: f, to: t }];
                 } catch (e) { console.warn('Failed to save session', e); }
                 // Re-render UI and persist
                 try { renderReviewDayPills(); renderReviewCalendar(); updateReviewSaveButton(); } catch (e){}
@@ -1032,32 +1046,7 @@
                 if (isOpen && active && active.modality === 'Hybrid' && active.schedule && active.schedule[scheduleIdx] && active.schedule[scheduleIdx].type) {
                     inner += '<div style="font-size:10px;color:#0d1b4b;">' + active.schedule[scheduleIdx].type + '</div>';
                 }
-                // Session label: prefer per-day session, fallback to program session template
-                try {
-                    var sessionLabel = '';
-                    if (active && active.schedule && active.schedule[scheduleIdx] && active.schedule[scheduleIdx].session && active.schedule[scheduleIdx].session.from && active.schedule[scheduleIdx].session.to) {
-                        var ds2 = active.schedule[scheduleIdx].session;
-                        sessionLabel = escHtml(ds2.from) + '–' + escHtml(ds2.to);
-                    } else {
-                        var sp2 = active;
-                        if (Array.isArray(savedPrograms) && savedPrograms.length && active) {
-                            var found2 = savedPrograms.find(function(spp) { return spp && active && spp.name === active.name && spp.track === active.track && spp.modality === active.modality; });
-                            if (found2) sp2 = found2;
-                        }
-                        var sessions2 = Array.isArray(sp2 && sp2.session_templates) ? sp2.session_templates : [];
-                        if (sessions2 && sessions2.length && typeof _activeSessionIndex === 'number' && sessions2[_activeSessionIndex]) {
-                            var s2 = sessions2[_activeSessionIndex];
-                            if (s2 && s2.from && s2.to) {
-                                sessionLabel = escHtml(s2.from) + '–' + escHtml(s2.to);
-                            } else {
-                                var t2 = String(s2 && s2.type ? s2.type : '').toLowerCase();
-                                var typeLabel2 = t2 === 'ftof' ? 'Face-to-face' : (t2 === 'online' ? 'Online' : escHtml(t2 || 'Session'));
-                                sessionLabel = typeLabel2 + (s2 && (s2.from || s2.to) ? ' ' + escHtml((s2.from || '') + '–' + (s2.to || '')) : '');
-                            }
-                        }
-                    }
-                    if (sessionLabel) inner += '<div style="font-size:11px;color:#0d1b4b;margin-top:4px;">' + sessionLabel + '</div>';
-                } catch (e) { /* ignore */ }
+                // Only show day number and (if Hybrid) type; session times are controlled by the Session selector
                 cell.innerHTML = inner;
                 cell.style.cursor = 'pointer';
                 cell.title = 'Click to view day details';
@@ -1154,7 +1143,8 @@
             select.value = String(_activeSessionIndex);
             select.onchange = function() {
                 _activeSessionIndex = Number(select.value) || 0;
-                showReviewDayDetails(0);
+                // Refresh currently shown day details (if any)
+                showReviewDayDetails((typeof _lastShownReviewDayIndex === 'number' && _lastShownReviewDayIndex !== null) ? _lastShownReviewDayIndex : 0);
             };
         }
 

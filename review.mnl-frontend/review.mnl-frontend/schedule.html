@@ -212,10 +212,13 @@
                     <div class="review-schedule-selector">
                         <label for="reviewSessionSelect">Session</label>
                         <select id="reviewSessionSelect" aria-label="Select session for program"></select>
-                        <div id="reviewSessionEditor" style="margin-top:8px;display:flex;gap:8px;align-items:center;">
-                            <input id="reviewSessionFrom" type="time" style="width:120px;" />
-                            <input id="reviewSessionTo" type="time" style="width:120px;" />
-                            <button id="reviewSessionSaveBtn" type="button" class="program-ticket-btn">Save Session</button>
+                        <div id="reviewSessionEditor" class="review-session-editor">
+                            <div class="rse-inputs">
+                                <input id="reviewSessionFrom" type="time" />
+                                <span class="rse-sep">to</span>
+                                <input id="reviewSessionTo" type="time" />
+                            </div>
+                            <button id="reviewSessionSaveBtn" type="button" class="program-ticket-btn rse-save">Save</button>
                         </div>
                     </div>
                     <div class="review-schedule-selector">
@@ -293,6 +296,20 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }
+
+        /* Session editor styles (local override to modernize look and avoid overlap) */
+        (function(){
+            try {
+                var css = '\n.review-session-editor{display:flex;flex-direction:row;align-items:center;gap:8px;margin-top:8px;padding:8px;border-radius:10px;background:#fff;border:1px solid rgba(13,27,75,0.06);box-shadow:0 1px 0 rgba(13,27,75,0.03);}\n'
+                        + '.review-session-editor .rse-inputs{display:flex;align-items:center;gap:8px;}\n'
+                        + '.review-session-editor input[type=time]{border:1px solid #d6dbe8;background:#fbfdff;padding:8px 10px;border-radius:8px;color:#0d1b4b;font-size:14px;box-sizing:border-box;}\n'
+                        + '.review-session-editor .rse-sep{font-size:13px;color:#5b6b8a;padding:0 4px;}\n'
+                        + '.review-schedule-selector{display:flex;flex-direction:column;gap:6px;}\n'
+                        + '#reviewSessionEditor{z-index:1;}\n'
+                        + '.rse-save{padding:8px 14px;border-radius:999px;}\n';
+                var s = document.createElement('style'); s.type = 'text/css'; s.appendChild(document.createTextNode(css)); document.head.appendChild(s);
+            } catch(e) { /* ignore */ }
+        })();
 
         function normalizeProgram(raw) {
             const name = String(raw && raw.name ? raw.name : '').trim();

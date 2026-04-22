@@ -577,9 +577,11 @@
             schedule.forEach(function(s, idx) {
                 var pill = document.createElement('div');
                 pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
-                pill.style.cursor = 'pointer';
+                pill.style.display = 'flex';
+                pill.style.alignItems = 'center';
+                pill.style.gap = '8px';
 
-                // Label span for toggling
+                // Label span for toggling (only this toggles open/close)
                 var labelSpan = document.createElement('span');
                 labelSpan.className = 'ec-day-pill-label';
                 labelSpan.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
@@ -588,20 +590,18 @@
                     s.open = !s.open;
                     var pat = document.getElementById('editProgramPattern');
                     if (pat) pat.value = 'Custom';
-                    // Only re-render if not interacting with a select
                     renderEditProgramDayPills();
                     e.stopPropagation();
                 };
                 pill.appendChild(labelSpan);
 
-                // If Hybrid and open, show type selector
+                // If Hybrid and open, show type selector (NOT inside label, not clickable for toggle)
                 if (modality === 'Hybrid' && s.open) {
                     var typeSel = document.createElement('select');
-                    typeSel.style.marginLeft = '8px';
+                    typeSel.style.marginLeft = '0px';
                     typeSel.style.fontSize = '12px';
                     typeSel.innerHTML = '<option value="Face-to-face">Face-to-face</option><option value="Online">Online</option>';
                     typeSel.value = s.type || 'Face-to-face';
-                    // Only update data, do not re-render
                     typeSel.onchange = function(e) {
                         s.type = typeSel.value;
                     };

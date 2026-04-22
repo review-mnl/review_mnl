@@ -518,6 +518,7 @@
                     s.open = !s.open;
                     var pat = document.getElementById('editProgramPattern');
                     if (pat) pat.value = 'Custom';
+                    // Only re-render if not interacting with a select
                     renderEditProgramDayPills();
                     e.stopPropagation();
                 };
@@ -530,6 +531,7 @@
                     typeSel.style.fontSize = '12px';
                     typeSel.innerHTML = '<option value="Face-to-face">Face-to-face</option><option value="Online">Online</option>';
                     typeSel.value = s.type || 'Face-to-face';
+                    // Only update data, do not re-render
                     typeSel.onchange = function(e) {
                         s.type = typeSel.value;
                     };

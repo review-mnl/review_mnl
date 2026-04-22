@@ -300,13 +300,14 @@
         /* Session editor styles (local override to modernize look and avoid overlap) */
         (function(){
             try {
-                var css = '\n.review-session-editor{display:flex;flex-direction:row;align-items:center;gap:8px;margin-top:8px;padding:8px;border-radius:10px;background:#fff;border:1px solid rgba(13,27,75,0.06);box-shadow:0 1px 0 rgba(13,27,75,0.03);}\n'
-                        + '.review-session-editor .rse-inputs{display:flex;align-items:center;gap:8px;}\n'
-                        + '.review-session-editor input[type=time]{border:1px solid #d6dbe8;background:#fbfdff;padding:8px 10px;border-radius:8px;color:#0d1b4b;font-size:14px;box-sizing:border-box;}\n'
-                        + '.review-session-editor .rse-sep{font-size:13px;color:#5b6b8a;padding:0 4px;}\n'
-                        + '.review-schedule-selector{display:flex;flex-direction:column;gap:6px;}\n'
-                        + '#reviewSessionEditor{z-index:1;}\n'
-                        + '.rse-save{padding:8px 14px;border-radius:999px;}\n';
+                var css = '\n.review-session-editor{display:flex;flex-direction:row;align-items:center;gap:10px;margin-top:8px;padding:8px;border-radius:10px;background:#fff;border:1px solid rgba(13,27,75,0.06);box-shadow:0 1px 0 rgba(13,27,75,0.03);width:100%;box-sizing:border-box;flex-wrap:wrap;}\n'
+                    + '.review-session-editor .rse-inputs{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}\n'
+                    + '.review-session-editor input[type=time]{border:1px solid #d6dbe8;background:#fbfdff;padding:8px 10px;border-radius:8px;color:#0d1b4b;font-size:14px;box-sizing:border-box;min-width:0;width:120px;}\n'
+                    + '.review-session-editor .rse-sep{font-size:13px;color:#5b6b8a;padding:0 6px;}\n'
+                    + '.review-schedule-selector{display:flex;flex-direction:column;gap:6px;}\n'
+                    + '#reviewSessionEditor{z-index:1;}\n'
+                    + '.rse-save{padding:8px 14px;border-radius:999px;white-space:nowrap;}\n'
+                    + '@media (max-width:900px){ .review-session-editor{flex-direction:column;align-items:stretch;} .review-session-editor .rse-inputs{width:100%;} .review-session-editor input[type=time]{width:100%;} .rse-save{align-self:flex-end;} }\n';
                 var s = document.createElement('style'); s.type = 'text/css'; s.appendChild(document.createTextNode(css)); document.head.appendChild(s);
             } catch(e) { /* ignore */ }
         })();
@@ -1805,12 +1806,12 @@
 
             .ec-schedule-body {
                 display: grid;
-                grid-template-columns: minmax(120px, 170px) minmax(420px, 560px);
+                grid-template-columns: minmax(180px, 320px) minmax(420px, 1fr);
                 gap: 16px;
                 align-items: start;
                 justify-content: start;
                 width: 100%;
-                max-width: calc(170px + 560px + 12px);
+                max-width: none;
                 margin-left: 0;
                 margin-right: 0;
                 justify-self: start;

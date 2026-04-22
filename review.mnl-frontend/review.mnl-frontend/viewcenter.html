@@ -2269,7 +2269,20 @@
                         ]
                     });
                 }).filter(function(program) { return !!program.name; });
+                // Prefer locally-saved review schedule programs if available (admin-created in Schedule UI)
                 var effectiveReviewPrograms = reviewPrograms.length ? reviewPrograms : fallbackReviewPrograms;
+                try {
+                    var localRaw = localStorage.getItem('reviewmnl_review_schedule_v1');
+                    if (localRaw) {
+                        var parsedLocal = JSON.parse(localRaw || '[]');
+                        if (Array.isArray(parsedLocal) && parsedLocal.length) {
+                            var localPrograms = parsedLocal.map(normalizeReviewProgram).filter(function(p){ return !!(p && p.name); });
+                            if (localPrograms.length) {
+                                effectiveReviewPrograms = localPrograms;
+                            }
+                        }
+                    }
+                } catch (e) { /* ignore local parse errors */ }
 
                 _centerPaymentMethods = normalizeCenterPaymentMethods(center.payment_methods);
                 _centerPaymentDetails = normalizeCenterPaymentDetails(center.payment_details);

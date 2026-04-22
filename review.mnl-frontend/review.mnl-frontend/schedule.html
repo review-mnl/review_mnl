@@ -509,13 +509,6 @@
                 pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
                 pill.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
                 pill.style.cursor = 'pointer';
-                pill.onclick = function() {
-                    s.open = !s.open;
-                    var pat = document.getElementById('editProgramPattern');
-                    if (pat) pat.value = 'Custom';
-                    renderEditProgramDayPills();
-                };
-                pillsEl.appendChild(pill);
 
                 // If Hybrid and open, show type selector
                 if (modality === 'Hybrid' && s.open) {
@@ -527,10 +520,23 @@
                     typeSel.onchange = function(e) {
                         s.type = typeSel.value;
                     };
+                    // Prevent pill click when interacting with select
+                    typeSel.addEventListener('click', function(e) { e.stopPropagation(); });
+                    typeSel.addEventListener('mousedown', function(e) { e.stopPropagation(); });
                     pill.appendChild(typeSel);
                 } else {
                     s.type = undefined;
                 }
+
+                pill.onclick = function(e) {
+                    // Only toggle if not clicking the select
+                    if (e.target.tagName.toLowerCase() === 'select') return;
+                    s.open = !s.open;
+                    var pat = document.getElementById('editProgramPattern');
+                    if (pat) pat.value = 'Custom';
+                    renderEditProgramDayPills();
+                };
+                pillsEl.appendChild(pill);
             });
         }
 

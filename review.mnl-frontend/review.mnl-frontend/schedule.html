@@ -503,6 +503,7 @@
             if (!pillsEl) return;
             pillsEl.innerHTML = '';
             var schedule = Array.isArray(_editProgramTempSchedule) ? _editProgramTempSchedule : cloneDefaultSchedule();
+            var modality = (document.getElementById('editProgramModality')||{}).value || '';
             schedule.forEach(function(s, idx) {
                 var pill = document.createElement('div');
                 pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
@@ -515,6 +516,21 @@
                     renderEditProgramDayPills();
                 };
                 pillsEl.appendChild(pill);
+
+                // If Hybrid and open, show type selector
+                if (modality === 'Hybrid' && s.open) {
+                    var typeSel = document.createElement('select');
+                    typeSel.style.marginLeft = '8px';
+                    typeSel.style.fontSize = '12px';
+                    typeSel.innerHTML = '<option value="Face-to-face">Face-to-face</option><option value="Online">Online</option>';
+                    typeSel.value = s.type || 'Face-to-face';
+                    typeSel.onchange = function(e) {
+                        s.type = typeSel.value;
+                    };
+                    pill.appendChild(typeSel);
+                } else {
+                    s.type = undefined;
+                }
             });
         }
 
@@ -523,7 +539,13 @@
             var name = String((document.getElementById('editProgramName')||{}).value || '').trim();
             var modality = String((document.getElementById('editProgramModality')||{}).value || '').trim();
             var schedulePattern = String((document.getElementById('editProgramPattern')||{}).value || 'Custom');
-            var schedule = Array.isArray(_editProgramTempSchedule) ? _editProgramTempSchedule.map(function(it){ return { day: it.day, open: !!it.open }; }) : cloneDefaultSchedule();
+            var schedule = Array.isArray(_editProgramTempSchedule)
+                ? _editProgramTempSchedule.map(function(it){
+                    var obj = { day: it.day, open: !!it.open };
+                    if (modality === 'Hybrid' && obj.open) obj.type = it.type || 'Face-to-face';
+                    return obj;
+                })
+                : cloneDefaultSchedule();
             var track = (savedPrograms[_editProgramIndex] && savedPrograms[_editProgramIndex].track) ? savedPrograms[_editProgramIndex].track : ((programs[_editProgramIndex] && programs[_editProgramIndex].track) ? programs[_editProgramIndex].track : 'Regular Review Classes');
 
             var updated = { name: name, track: track, modality: modality || 'N/A', schedule: schedule, schedulePattern: schedulePattern };
@@ -595,11 +617,22 @@
                     active.schedulePattern = 'Custom';
                     updateReviewPatternSelect();
                     showReviewDayDetails(dayIndex);
-                    // Don't auto-persist here; enable Save so user can confirm changes
                     renderReviewSchedule();
                     updateReviewSaveButton();
                 };
                 pillsEl.appendChild(pill);
+                // If Hybrid and open, show type
+                if (active.modality === 'Hybrid' && s.open) {
+                    var typeSel = document.createElement('select');
+                    typeSel.style.marginLeft = '8px';
+                    typeSel.style.fontSize = '12px';
+                    typeSel.innerHTML = '<option value="Face-to-face">Face-to-face</option><option value="Online">Online</option>';
+                    typeSel.value = s.type || 'Face-to-face';
+                    typeSel.onchange = function(e) {
+                        s.type = typeSel.value;
+                    };
+                    pill.appendChild(typeSel);
+                }
             });
             updateReviewSaveButton();
         }
@@ -621,7 +654,11 @@
             const programText = active.name + ' (' + active.track + ' • ' + (active.modality || 'N/A') + ')';
             const pattern = active.schedulePattern || 'Custom';
             const prefix = dateText ? (dateText + ' — ') : '';
-            details.textContent = prefix + day.day + ': ' + status + ' • ' + programText + ' • Pattern: ' + pattern;
+            let typeText = '';
+            if (active.modality === 'Hybrid' && day.open) {
+                typeText = ' • ' + (day.type || 'Face-to-face');
+            }
+            details.textContent = prefix + day.day + ': ' + status + typeText + ' • ' + programText + ' • Pattern: ' + pattern;
         }
 
         function renderReviewCalendar() {
@@ -631,7 +668,7 @@
                 lbl.textContent = labelDate.toLocaleString('default', { month: 'long', year: 'numeric' });
             }
             const active = getActiveProgram();
-            const openDows = active && active.schedule ? active.schedule.map(function(s, i){ return s.open ? i : -1; }).filter(function(i){ return i !== -1; }) : [];
+            const openDows = active && active.schedule ? active.schedule.map(function(s, i){ return s.open ? i : -1; }) : [];
             const firstDow = new Date(_reviewYear, _reviewMonth, 1).getDay();
             const daysInMonth = new Date(_reviewYear, _reviewMonth + 1, 0).getDate();
             const today = new Date();
@@ -646,14 +683,20 @@
             for (let d = 1; d <= daysInMonth; d++) {
                 const cell = document.createElement('div');
                 const dow = new Date(_reviewYear, _reviewMonth, d).getDay();
-                const isOpen = openDows.indexOf(dow) !== -1;
+                const scheduleIdx = dow;
+                const isOpen = openDows[scheduleIdx] === scheduleIdx;
                 const isToday = today.getFullYear() === _reviewYear && today.getMonth() === _reviewMonth && today.getDate() === d;
                 let cls = 'ec-cal-cell';
                 if (isOpen) cls += ' ec-open';
                 else cls += ' ec-closed';
                 if (isToday) cls += ' ec-today';
                 cell.className = cls;
-                cell.innerHTML = '<span>' + d + '</span>';
+                let inner = '<span>' + d + '</span>';
+                // Show type if Hybrid
+                if (isOpen && active && active.modality === 'Hybrid' && active.schedule && active.schedule[scheduleIdx] && active.schedule[scheduleIdx].type) {
+                    inner += '<div style="font-size:10px;color:#0d1b4b;">' + active.schedule[scheduleIdx].type + '</div>';
+                }
+                cell.innerHTML = inner;
                 cell.style.cursor = 'pointer';
                 cell.title = 'Click to view day details';
                 cell.onclick = function() {

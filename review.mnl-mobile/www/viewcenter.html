@@ -41,17 +41,15 @@
                 <div style="display:flex;align-items:center;gap:18px;flex:1 1 560px;min-width:0;">
                     <div class="center-logo" id="centerLogo"></div>
                     <div class="center-info">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:nowrap;width:100%;">
-                            <h1 id="centerName" style="margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Name of Review Center</h1>
-                            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                                <button id="saveCenterBtn" onclick="toggleSaveCenter()" title="Save Center" style="background:none;border:none;color:#fff;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;">
-                                    <span class="material-symbols-outlined" id="saveIcon" style="font-size:24px;text-shadow:1px 1px 3px rgba(0,0,0,0.4);transition:font-variation-settings 0.2s, color 0.2s, text-shadow 0.2s;">bookmark</span>
-                                </button>
-                                <button id="reportCenterBtn" title="Report this center" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:999px;cursor:pointer;padding:4px 10px;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;white-space:nowrap;">
-                                    <span class="material-symbols-outlined" style="font-size:16px;">flag</span>
-                                    Report
-                                </button>
-                            </div>
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+                            <h1 id="centerName" style="margin:0;">Name of Review Center</h1>
+                            <button id="saveCenterBtn" onclick="toggleSaveCenter()" title="Save Center" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;">
+                                <span class="material-symbols-outlined" id="saveIcon" style="font-size:28px;text-shadow:1px 1px 3px rgba(0,0,0,0.4);transition:font-variation-settings 0.2s, color 0.2s, text-shadow 0.2s;">bookmark</span>
+                            </button>
+                            <button id="reportCenterBtn" title="Report this center" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:999px;cursor:pointer;padding:4px 10px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">flag</span>
+                                Report
+                            </button>
                             <div id="saveToast" style="display:none;padding:5px 12px;background:rgba(0,0,0,0.65);color:#fff;border-radius:6px;font-size:0.75rem;font-family:Poppins,sans-serif;"></div>
                         </div>
                         <p class="center-description" id="centerShortDescription">Location.....</p>
@@ -61,7 +59,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="headerMapContainer" style="width: clamp(280px, 36vw, 460px); max-width: 90vw; height: clamp(210px, 24vw, 300px); border-radius: 12px; background: #e8eaed; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; flex-shrink: 0; align-self: center; display: none; position: relative;">
+                <div id="headerMapContainer" style="width: clamp(320px, 36vw, 460px); height: clamp(210px, 24vw, 300px); border-radius: 12px; background: #e8eaed; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; flex-shrink: 0; align-self: center; display: none; position: relative;">
                     <div id="viewMap" style="width: 100%; height: 100%; z-index: 1;"></div>
                     <div id="mapClickOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer;" title="Click to view large map" onclick="openLargeMap()"></div>
                 </div>
@@ -333,6 +331,21 @@
 
                     <!-- STEP 1: Pick date -->
                     <div id="schStep1">
+                        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
+                            <div>
+                                <label class="sch-label">Program</label>
+                                <select id="schProgramPicker" class="sch-input">
+                                    <option value="">Select a program...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="sch-label">Session</label>
+                                <select id="schSessionPicker" class="sch-input" disabled>
+                                    <option value="">Pick a date first</option>
+                                </select>
+                                <p id="schSessionDetails" style="margin:8px 0 0;font-size:12px;color:#475569;"></p>
+                            </div>
+                        </div>
                         <p style="font-size:13px;color:#555;margin-bottom:16px;">Select an available date. Greyed-out days are closed.</p>
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                             <button onclick="schCalPrev()" class="sch-nav-btn"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>
@@ -371,7 +384,7 @@
                             </div>
                             <div>
                                 <label class="sch-label">Program / Course of Interest</label>
-                                <select id="schProgram" class="sch-input">
+                                <select id="schProgram" class="sch-input" disabled>
                                     <option value="">Select a program...</option>
                                 </select>
                             </div>
@@ -404,13 +417,13 @@
                         <div style="background:#f8f9fc;border-radius:10px;padding:16px 18px;margin-bottom:18px;">
                             <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Booking Summary</h4>
                             <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
-                                <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#888;flex-shrink:0;">Date</span><span id="summDate" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;"></span></div>
-                                <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#888;flex-shrink:0;">Name</span><span id="summName" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;"></span></div>
-                                <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#888;flex-shrink:0;">Professor</span><span id="summTeacher" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;"></span></div>
-                                <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#888;flex-shrink:0;">Program</span><span id="summProgram" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Date</span><span id="summDate" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="summName" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Professor</span><span id="summTeacher" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="summProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="border-top:1px solid #e2e8f5;margin:4px 0;"></div>
-                                <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#888;flex-shrink:0;">Enrollment Price</span><span id="summEnrollmentPrice" style="font-weight:600;color:#0d1b4b;text-align:right;">₱ 1,550.00</span></div>
-                                <div style="display:flex;justify-content:space-between;border-top:1.5px solid #0a4cff;padding-top:8px;margin-top:4px;gap:10px;"><span style="font-weight:700;color:#0d1b4b;flex-shrink:0;">Total</span><span id="summTotalPrice" style="font-weight:800;color:#0a4cff;font-size:15px;text-align:right;">₱ 1,550.00</span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Enrollment Price</span><span id="summEnrollmentPrice" style="font-weight:600;color:#0d1b4b;">₱ 1,550.00</span></div>
+                                <div style="display:flex;justify-content:space-between;border-top:1.5px solid #0a4cff;padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#0d1b4b;">Total</span><span id="summTotalPrice" style="font-weight:800;color:#0a4cff;font-size:15px;">₱ 1,550.00</span></div>
                             </div>
                         </div>
 
@@ -448,9 +461,9 @@
 
                         <div id="schGcashDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
                             <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0d1b4b;">Pay via GCash</h4>
-                            <p style="margin:0 0 6px;font-size:12px;color:#334155;word-break:break-word;overflow-wrap:anywhere;"><strong>Account Name:</strong> <span id="schGcashDisplayName">Review Center test1</span></p>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Account Name:</strong> <span id="schGcashDisplayName">Review Center test1</span></p>
                             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                                <p style="margin:0;font-size:12px;color:#334155;word-break:break-word;overflow-wrap:anywhere;"><strong>GCash Number:</strong> <span id="schGcashDisplayNumber">091234567899</span></p>
+                                <p style="margin:0;font-size:12px;color:#334155;"><strong>GCash Number:</strong> <span id="schGcashDisplayNumber">091234567899</span></p>
                                 <button type="button" onclick="copyGcashNumber()" style="padding:4px 10px;border:1px solid #c7d6ff;background:#fff;color:#1d4ed8;border-radius:999px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">Copy Number</button>
                             </div>
                             <div style="display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;">
@@ -464,9 +477,9 @@
 
                         <div id="schMayaDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
                             <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0d1b4b;">Pay via Maya</h4>
-                            <p style="margin:0 0 6px;font-size:12px;color:#334155;word-break:break-word;overflow-wrap:anywhere;"><strong>Account Name:</strong> <span id="schMayaDisplayName">Not provided</span></p>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Account Name:</strong> <span id="schMayaDisplayName">Not provided</span></p>
                             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                                <p style="margin:0;font-size:12px;color:#334155;word-break:break-word;overflow-wrap:anywhere;"><strong>Maya Number:</strong> <span id="schMayaDisplayNumber">Not provided</span></p>
+                                <p style="margin:0;font-size:12px;color:#334155;"><strong>Maya Number:</strong> <span id="schMayaDisplayNumber">Not provided</span></p>
                                 <button type="button" onclick="copyMayaNumber()" style="padding:4px 10px;border:1px solid #c7d6ff;background:#fff;color:#1d4ed8;border-radius:999px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">Copy Number</button>
                             </div>
                             <div style="display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;">
@@ -480,9 +493,9 @@
 
                         <div id="schBankDetailsCard" style="display:none;background:#f8fbff;border:1.5px solid #dbe7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
                             <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0d1b4b;">Pay via Bank Transfer</h4>
-                            <p style="margin:0 0 6px;font-size:12px;color:#334155;word-break:break-word;overflow-wrap:anywhere;"><strong>Bank:</strong> <span id="schBankDisplayName">Not provided</span></p>
-                            <p style="margin:0 0 6px;font-size:12px;color:#334155;word-break:break-word;overflow-wrap:anywhere;"><strong>Account Name:</strong> <span id="schBankDisplayAccountName">Not provided</span></p>
-                            <p style="margin:0 0 8px;font-size:12px;color:#334155;word-break:break-word;overflow-wrap:anywhere;"><strong>Account Number:</strong> <span id="schBankDisplayAccountNumber">Not provided</span></p>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Bank:</strong> <span id="schBankDisplayName">Not provided</span></p>
+                            <p style="margin:0 0 6px;font-size:12px;color:#334155;"><strong>Account Name:</strong> <span id="schBankDisplayAccountName">Not provided</span></p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;"><strong>Account Number:</strong> <span id="schBankDisplayAccountNumber">Not provided</span></p>
                             <div style="display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;">
                                 <div style="width:160px;height:160px;border-radius:10px;border:1px solid #dbe7ff;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
                                     <img id="schBankQrImage" alt="Bank QR" style="width:100%;height:100%;object-fit:contain;border-radius:8px;display:none;" />
@@ -547,20 +560,20 @@
 
                             <div id="schReceipt" style="background:#fff;border:1px solid #e2e8f5;border-radius:12px;overflow:hidden;">
                                 <div style="padding:14px 16px;border-bottom:1px dashed #e2e8f5;background:#f8f9fc;">
-                                    <div id="confCenterName" style="font-size:14px;font-weight:800;color:#0d1b4b;word-break:break-word;overflow-wrap:anywhere;">Review Center</div>
+                                    <div id="confCenterName" style="font-size:14px;font-weight:800;color:#0d1b4b;">Review Center</div>
                                     <div style="font-size:11px;color:#64748b;margin-top:2px;">Issued: <span id="confIssuedAt">—</span></div>
                                 </div>
 
                                 <div style="padding:14px 16px;">
                                     <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;flex-shrink:0;">Student</span><span id="confStudentName" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;">—</span></div>
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;flex-shrink:0;">Schedule Date</span><span id="confScheduleDate" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;">—</span></div>
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;flex-shrink:0;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;">—</span></div>
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;flex-shrink:0;">Professor</span><span id="confTeacher" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;">—</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Student</span><span id="confStudentName" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Schedule Date</span><span id="confScheduleDate" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Professor</span><span id="confTeacher" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                         <div style="border-top:1px solid #e2e8f5;margin:4px 0;"></div>
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;flex-shrink:0;">Payment Method</span><span id="confPaymentMethod" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;">GCash</span></div>
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;flex-shrink:0;">Reference No</span><span id="confReferenceNumber" style="font-weight:600;color:#0d1b4b;text-align:right;word-break:break-word;overflow-wrap:anywhere;">—</span></div>
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="font-weight:700;color:#0d1b4b;flex-shrink:0;">Total</span><span id="confAmount" style="font-weight:800;color:#0a4cff;text-align:right;">₱ 0.00</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Payment Method</span><span id="confPaymentMethod" style="font-weight:600;color:#0d1b4b;text-align:right;">GCash</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Reference No</span><span id="confReferenceNumber" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="font-weight:700;color:#0d1b4b;">Total</span><span id="confAmount" style="font-weight:800;color:#0a4cff;text-align:right;">₱ 0.00</span></div>
                                     </div>
 
                                     <div style="display:flex;justify-content:flex-end;margin-top:12px;">
@@ -733,6 +746,185 @@
         var _centerEnrollmentPrice = 1550;
         var _centerTeachersAll = [];
         var _centerScheduleData = null;
+        var _centerReviewPrograms = [];
+        var _selectedProgramKey = '';
+
+        function parseJsonArray(raw) {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw;
+            if (typeof raw === 'string') {
+                try {
+                    var parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        function normalizeSessionType(raw) {
+            var value = String(raw || '').trim().toLowerCase();
+            if (!value) return '';
+            if (value === 'ftof' || value === 'face-to-face' || value === 'face to face' || value === 'face_to_face') return 'ftof';
+            if (value === 'online') return 'online';
+            return '';
+        }
+
+        function normalizeSessionTemplate(raw) {
+            var type = normalizeSessionType(raw && raw.type);
+            if (!type) return null;
+            return {
+                type: type,
+                from: String(raw && raw.from ? raw.from : '').trim(),
+                to: String(raw && raw.to ? raw.to : '').trim(),
+                location: String(raw && raw.location ? raw.location : '').trim(),
+                meeting_link: String(raw && raw.meeting_link ? raw.meeting_link : '').trim(),
+            };
+        }
+
+        function buildDefaultSessionTemplates(modality, ftfLocation, onlineLink) {
+            var m = String(modality || '').trim().toLowerCase();
+            if (m === 'hybrid') {
+                return [
+                    { type: 'ftof', from: '08:00', to: '12:00', location: String(ftfLocation || '').trim(), meeting_link: '' },
+                    { type: 'online', from: '13:00', to: '17:00', location: '', meeting_link: String(onlineLink || '').trim() },
+                ];
+            }
+            if (m === 'online') {
+                return [{ type: 'online', from: '08:00', to: '12:00', location: '', meeting_link: String(onlineLink || '').trim() }];
+            }
+            return [{ type: 'ftof', from: '08:00', to: '12:00', location: String(ftfLocation || '').trim(), meeting_link: '' }];
+        }
+
+        function normalizeReviewProgram(raw) {
+            var name = String(raw && raw.name ? raw.name : '').trim();
+            var track = String(raw && raw.track ? raw.track : 'Regular Review Classes').trim();
+            var modality = String(raw && (raw.modality || raw.mode) ? (raw.modality || raw.mode) : 'Face-to-face').trim();
+            var schedule = parseJsonArray(raw && raw.schedule).map(function(item, idx) {
+                var day = String(item && item.day ? item.day : '').trim() || ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][idx] || '';
+                return { day: day, open: !!(item && item.open) };
+            });
+            if (!schedule.length) {
+                schedule = [
+                    { day: 'Sun', open: false }, { day: 'Mon', open: true }, { day: 'Tue', open: true },
+                    { day: 'Wed', open: true }, { day: 'Thu', open: true }, { day: 'Fri', open: true }, { day: 'Sat', open: false }
+                ];
+            }
+            var templates = parseJsonArray(raw && raw.session_templates)
+                .map(normalizeSessionTemplate)
+                .filter(Boolean);
+            if (!templates.length) {
+                templates = buildDefaultSessionTemplates(modality, raw && raw.ftf_location, raw && raw.online_link);
+            }
+            var hasOpen = schedule.some(function(item) { return !!item.open; });
+            return {
+                name: name,
+                track: track,
+                modality: modality,
+                schedule: schedule,
+                session_templates: templates,
+                has_open_days: hasOpen,
+                key: (name + '|' + track).toLowerCase(),
+            };
+        }
+
+        function getActiveReviewProgram() {
+            if (!_selectedProgramKey) return null;
+            return _centerReviewPrograms.find(function(program) { return program.key === _selectedProgramKey; }) || null;
+        }
+
+        function rebuildScheduleFromProgram(program) {
+            var source = Array.isArray(program && program.schedule) ? program.schedule : [];
+            if (!source.length) return;
+            SCH_SCHEDULE = source.map(function(item, idx) {
+                return { dow: idx, open: !!(item && item.open) };
+            });
+        }
+
+        function getSelectedSession() {
+            var picker = document.getElementById('schSessionPicker');
+            if (!picker || picker.disabled) return null;
+            var raw = String(picker.value || '').trim();
+            if (!raw) return null;
+            try {
+                var parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function getSessionDisplayLine(session) {
+            if (!session) return 'No session selected yet.';
+            var typeLabel = session.type === 'online' ? 'Online' : 'FTF';
+            var timeLabel = (session.from && session.to) ? (fmt12(session.from) + ' - ' + fmt12(session.to)) : 'Time not set';
+            var venue = session.type === 'online'
+                ? (session.meeting_link ? ('Link: ' + session.meeting_link) : 'Link not set')
+                : (session.location ? ('Location: ' + session.location) : 'Location not set');
+            return typeLabel + ' · ' + timeLabel + ' · ' + venue;
+        }
+
+        function refreshSessionPickerForDate() {
+            var picker = document.getElementById('schSessionPicker');
+            var details = document.getElementById('schSessionDetails');
+            var activeProgram = getActiveReviewProgram();
+            if (!picker) return;
+
+            picker.innerHTML = '';
+            if (!activeProgram) {
+                picker.disabled = true;
+                picker.innerHTML = '<option value="">Select a program first</option>';
+                if (details) details.textContent = '';
+                return;
+            }
+
+            if (!_schSelectedDate) {
+                picker.disabled = true;
+                picker.innerHTML = '<option value="">Pick a date first</option>';
+                if (details) details.textContent = '';
+                return;
+            }
+
+            var dow = _schSelectedDate.getDay();
+            var dayItem = activeProgram.schedule[dow];
+            if (!(dayItem && dayItem.open)) {
+                picker.disabled = true;
+                picker.innerHTML = '<option value="">No sessions on selected date</option>';
+                if (details) details.textContent = '';
+                return;
+            }
+
+            var templates = Array.isArray(activeProgram.session_templates) ? activeProgram.session_templates : [];
+            if (!templates.length) {
+                picker.disabled = true;
+                picker.innerHTML = '<option value="">No configured sessions</option>';
+                if (details) details.textContent = '';
+                return;
+            }
+
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select a session...';
+            picker.appendChild(placeholder);
+
+            templates.forEach(function(session) {
+                var option = document.createElement('option');
+                option.value = JSON.stringify(session);
+                option.textContent = getSessionDisplayLine(session);
+                picker.appendChild(option);
+            });
+            picker.disabled = false;
+            picker.onchange = function() {
+                var selected = getSelectedSession();
+                if (details) details.textContent = getSessionDisplayLine(selected);
+                var canProceed = !!(_schSelectedDate && selected && getActiveReviewProgram());
+                var nextBtn = document.getElementById('schStep1Next');
+                if (nextBtn) nextBtn.disabled = !canProceed;
+            };
+
+            if (details) details.textContent = 'Select the specific session for this date.';
+        }
 
         function normalizeTeacherName(raw) {
             return String(raw || '').trim();
@@ -934,8 +1126,8 @@
         }
 
         function getSelectedProgramValue() {
-            var el = document.getElementById('schProgram');
-            return el ? String(el.value || '').trim() : '';
+            var active = getActiveReviewProgram();
+            return active && active.name ? String(active.name).trim() : '';
         }
 
         function filterTeachersByProgram(teachers, program) {
@@ -1187,41 +1379,74 @@
         }
 
         function setScheduleProgramOptions(programs) {
-            var select = document.getElementById('schProgram');
-            if (!select) return;
-            var items = Array.isArray(programs) ? programs : [];
-            select.innerHTML = '';
+            var selectStep2 = document.getElementById('schProgram');
+            var pickerStep1 = document.getElementById('schProgramPicker');
+            var items = Array.isArray(programs) ? programs.filter(function(program) {
+                return !!(program && program.name && program.has_open_days);
+            }) : [];
+
+            _centerReviewPrograms = items.slice();
+
+            function hydrateSelect(selectEl) {
+                if (!selectEl) return;
+                selectEl.innerHTML = '';
+                if (!items.length) {
+                    selectEl.innerHTML = '<option value="">No available programs yet</option>';
+                    selectEl.disabled = true;
+                    return;
+                }
+                var placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Select a program...';
+                selectEl.appendChild(placeholder);
+                items.forEach(function(program) {
+                    var option = document.createElement('option');
+                    option.value = program.key;
+                    option.textContent = program.name + ' (' + program.track + ' - ' + program.modality + ')';
+                    selectEl.appendChild(option);
+                });
+                selectEl.disabled = false;
+            }
+
+            hydrateSelect(pickerStep1);
+            hydrateSelect(selectStep2);
 
             if (!items.length) {
-                var emptyOption = document.createElement('option');
-                emptyOption.value = '';
-                emptyOption.textContent = 'No available programs yet';
-                select.appendChild(emptyOption);
-                select.disabled = true;
+                _selectedProgramKey = '';
+                refreshSessionPickerForDate();
                 return;
             }
 
-            var placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = 'Select a program...';
-            select.appendChild(placeholder);
-
-            items.forEach(function(program) {
-                var label = String(program || '').trim();
-                if (!label) return;
-                var option = document.createElement('option');
-                option.value = label;
-                option.textContent = label;
-                select.appendChild(option);
-            });
-            select.disabled = false;
-
-            if (!select.dataset.teacherFilterBound) {
-                select.addEventListener('change', function() {
-                    updateScheduleTeacherOptions();
-                });
-                select.dataset.teacherFilterBound = '1';
+            function selectProgramByKey(key) {
+                _selectedProgramKey = String(key || '').trim();
+                if (pickerStep1) pickerStep1.value = _selectedProgramKey;
+                if (selectStep2) selectStep2.value = _selectedProgramKey;
+                rebuildScheduleFromProgram(getActiveReviewProgram());
+                renderSchCal();
+                refreshSessionPickerForDate();
+                updateScheduleTeacherOptions();
             }
+
+            if (pickerStep1 && !pickerStep1.dataset.boundProgramPicker) {
+                pickerStep1.addEventListener('change', function() {
+                    _schSelectedDate = null;
+                    var lbl = document.getElementById('schSelectedDateLabel');
+                    if (lbl) lbl.style.display = 'none';
+                    var nextBtn = document.getElementById('schStep1Next');
+                    if (nextBtn) nextBtn.disabled = true;
+                    selectProgramByKey(pickerStep1.value);
+                });
+                pickerStep1.dataset.boundProgramPicker = '1';
+            }
+
+            if (selectStep2 && !selectStep2.dataset.teacherFilterBound) {
+                selectStep2.addEventListener('change', function() {
+                    selectProgramByKey(selectStep2.value);
+                });
+                selectStep2.dataset.teacherFilterBound = '1';
+            }
+
+            selectProgramByKey(items[0].key);
         }
 
         function setPaymentQrDisplay(imageId, emptyId, hintId, qrUrl, loadedHint, fallbackHint, errorHint) {
@@ -1408,6 +1633,9 @@
             }
 
             renderSchCal();
+            refreshSessionPickerForDate();
+            var nextBtn = document.getElementById('schStep1Next');
+            if (nextBtn) nextBtn.disabled = true;
             schSetStep(1);
             var ov = document.getElementById('scheduleOverlay');
             ov.style.display = 'flex';
@@ -1443,10 +1671,13 @@
 
         function schGoStep(n) {
             if (n === 3) {
+                var selectedSession = getSelectedSession();
                 document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
                 document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
                 document.getElementById('summTeacher').textContent = getSelectedTeacherSelection().display;
-                document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
+                document.getElementById('summProgram').textContent = getSelectedProgramValue() || '—';
+                var details = document.getElementById('schSessionDetails');
+                if (details && selectedSession) details.textContent = getSessionDisplayLine(selectedSession);
                 updateEnrollmentPriceSummary();
                 updatePaymentMethodUI();
             }
@@ -1463,7 +1694,7 @@
                 var confTeacher = document.getElementById('confTeacher');
 
                 var programValue = (_schEnrollmentResp && _schEnrollmentResp.program_enrolled)
-                    || document.getElementById('schProgram').value
+                    || getSelectedProgramValue()
                     || '—';
                 var paymentMethodValue = (_schEnrollmentResp && _schEnrollmentResp.payment_method)
                     || _schPaymentMethod
@@ -1865,10 +2096,16 @@
             var name    = document.getElementById('schName').value.trim();
             var email   = document.getElementById('schEmail').value.trim();
             var contact = document.getElementById('schContact').value.trim();
+            var program = getSelectedProgramValue();
             var programEl = document.getElementById('schProgram');
-            var program = programEl ? programEl.value : '';
+            var selectedSession = getSelectedSession();
             if (programEl && programEl.disabled) {
                 alert('This review center has no available programs yet. Please contact the center first.');
+                return;
+            }
+            if (!_schSelectedDate || !selectedSession) {
+                alert('Please select a date and session first.');
+                schSetStep(1);
                 return;
             }
             if (!name || !email || !contact || !program) {
@@ -1919,7 +2156,8 @@
                         var lbl = document.getElementById('schSelectedDateLabel');
                         lbl.textContent = '📅 ' + schFmtDate(dt);
                         lbl.style.display = 'block';
-                        document.getElementById('schStep1Next').disabled = false;
+                        refreshSessionPickerForDate();
+                        document.getElementById('schStep1Next').disabled = true;
                         updateScheduleTeacherOptions();
                         renderSchCal();
                     }); })(date);
@@ -2001,6 +2239,26 @@
                 const centerShort = center.address || 'Location unavailable';
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
                 const programs = parseArrayField(center.programs);
+                const reviewProgramsRaw = parseJsonArray(center.review_schedule);
+                const reviewPrograms = reviewProgramsRaw.map(normalizeReviewProgram).filter(function(program) {
+                    return !!(program && program.name);
+                });
+                const fallbackReviewPrograms = programs.map(function(name) {
+                    return normalizeReviewProgram({
+                        name: String(name || '').trim(),
+                        modality: 'Face-to-face',
+                        schedule: [
+                            { day: 'Sun', open: false },
+                            { day: 'Mon', open: true },
+                            { day: 'Tue', open: true },
+                            { day: 'Wed', open: true },
+                            { day: 'Thu', open: true },
+                            { day: 'Fri', open: true },
+                            { day: 'Sat', open: false }
+                        ]
+                    });
+                }).filter(function(program) { return !!program.name; });
+                var effectiveReviewPrograms = reviewPrograms.length ? reviewPrograms : fallbackReviewPrograms;
 
                 _centerPaymentMethods = normalizeCenterPaymentMethods(center.payment_methods);
                 _centerPaymentDetails = normalizeCenterPaymentDetails(center.payment_details);
@@ -2009,7 +2267,7 @@
                 applyCenterPaymentInfo(centerName);
 
                 _centerScheduleData = getCenterScheduleContainer(center);
-                setScheduleProgramOptions(programs);
+                setScheduleProgramOptions(effectiveReviewPrograms);
                 setScheduleTeacherOptions(resolveCenterTeacherList(center));
 
                 // --- Map Integration ---
@@ -2030,12 +2288,6 @@
                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                     attribution: ''
                                 }).addTo(map);
-
-                                if (window.ResizeObserver) {
-                                    new ResizeObserver(() => {
-                                        map.invalidateSize();
-                                    }).observe(mapContainer);
-                                }
                                 L.marker([cachedLat, cachedLon]).addTo(map).bindPopup(`<div style="font-family:'Poppins',sans-serif;font-size:12px;"><b>${escHtml(centerName)}</b><br><span style="color:#555;font-size:11px;">${escHtml(center.address)}</span></div>`);
                             } else {
                                 mapContainer.style.display = 'block';
@@ -2345,10 +2597,14 @@
                     return;
                 }
                 const amount = _centerEnrollmentPrice;
-                const programEnrolled = (document.getElementById('schProgram').value || '').trim();
+                const programEnrolled = getSelectedProgramValue();
                 const enrollmentDate = _schSelectedDate
                     ? _schSelectedDate.toISOString().slice(0, 10)
                     : new Date().toISOString().slice(0, 10);
+                const selectedSession = getSelectedSession();
+                if (!_schSelectedDate || !selectedSession) {
+                    throw new Error('Please select an available date and session before submitting payment.');
+                }
                 var teacherSel = getSelectedTeacherSelection();
                 if (payBtn) {
                     payBtn.disabled = true;
@@ -2367,6 +2623,11 @@
                     reference_number: validation.referenceNumber,
                     program_enrolled: programEnrolled,
                     enrollment_date: enrollmentDate,
+                    schedule_type: selectedSession.type || '',
+                    schedule_time_from: selectedSession.from || '',
+                    schedule_time_to: selectedSession.to || '',
+                    schedule_location: selectedSession.location || '',
+                    schedule_meeting_link: selectedSession.meeting_link || '',
                     teacher: teacherSel.mode === 'manual' ? String(teacherSel.teacher_name || '').trim() : '',
                     teacher_name: teacherSel.mode === 'manual' ? String(teacherSel.teacher_name || '').trim() : '',
                     teacher_program: teacherSel.mode === 'manual' ? (teacherSel.teacher_program || '') : '',

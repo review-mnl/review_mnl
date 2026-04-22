@@ -35,7 +35,9 @@
             <div class="textbox">
                 <h1 class="welcome-heading">Schedule Settings</h1>
             </div>
+
         </section>
+
         <script src="api.js"></script>
         <script>
             if (!isAuthenticated()) { window.location.href = 'login.html'; }
@@ -56,186 +58,6 @@
                 });
                 document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
             })();
-
-            initReviewCenterMessageSlider();
-
-            function escHtml(str) {
-                return String(str || '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;');
-            }
-
-            function starText(rating) {
-                const r = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
-                return '★'.repeat(r) + '☆'.repeat(5 - r);
-            }
-
-            function renderCenterTestimonials(items) {
-                const listEl = document.getElementById('centerTestimonialsList');
-                if (!listEl) return;
-                if (!items || items.length === 0) {
-                    listEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">No feedback yet for your review center.</p>';
-                    return;
-                }
-
-                listEl.innerHTML = '';
-                items.forEach(function(t) {
-                    const fallbackName = [t.first_name || '', t.last_name || ''].join(' ').trim();
-                    const name = (t.username || fallbackName || 'Anonymous').trim();
-                    const date = t.created_at ? new Date(t.created_at) : new Date();
-                    const dateText = date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-                    const card = document.createElement('div');
-                    card.className = 'testimonial-card';
-                    card.style.marginBottom = '10px';
-                    card.innerHTML =
-                        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;">' +
-                            '<strong style="color:#0d1b4b;">' + escHtml(name) + '</strong>' +
-                            '<span style="font-size:12px;color:#6b7280;">' + escHtml(dateText) + '</span>' +
-                        '</div>' +
-                        '<div style="color:#f59e0b;margin-bottom:8px;">' + starText(t.rating) + '</div>' +
-                        '<p style="color:#555;font-size:0.92rem;margin:0;">' + escHtml(t.content || '') + '</p>';
-                    listEl.appendChild(card);
-                });
-            }
-
-            async function loadCenterTestimonials() {
-                const listEl = document.getElementById('centerTestimonialsList');
-                const sortEl = document.getElementById('centerFeedbackSort');
-                if (!listEl) return;
-                listEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">Loading feedback...</p>';
-                try {
-                    const sort = sortEl ? sortEl.value : 'latest';
-                    const resp = await CentersAPI.getMyTestimonials(sort);
-                    const items = Array.isArray(resp) ? resp : (resp.testimonials || []);
-                    renderCenterTestimonials(items);
-                } catch (e) {
-                    listEl.innerHTML = '<p style="color:#d32f2f;font-size:0.95rem;">Failed to load feedback.</p>';
-                }
-            }
-
-            // Load center profile from API
-            (async function(){
-                function parseArrayField(raw) {
-                    if (!raw) return [];
-                    if (Array.isArray(raw)) return raw;
-                    if (typeof raw === 'object') {
-                    // Use the working `programs` list so newly-created (unsaved) programs are visible immediately
-                    if (!programs || !programs.length) {
-                        list.innerHTML = '<div class="review-empty">No saved programs yet.</div>';
-                        return;
-                    }
-
-                    const regRow = document.createElement('div');
-                    regRow.className = 'program-ticket-row program-ticket-row-regular';
-                    const refRow = document.createElement('div');
-                    refRow.className = 'program-ticket-row program-ticket-row-refresher';
-
-                    programs.forEach(function(program, idx) {
-                        const openDays = program.schedule
-                            ? program.schedule.filter(function(item) { return item.open; }).map(function(item) { return item.day; }).join(', ')
-                            : '';
-                        const ticket = document.createElement('div');
-                        ticket.className = 'program-ticket';
-                        ticket.innerHTML =
-                            '<div class="program-ticket-top">' +
-                                '<div>' +
-                                    '<strong>' + escHtml(program.name || 'Program') + '</strong>' +
-                                    '<div class="program-ticket-sub">' + escHtml(program.track || 'Review') + '</div>' +
-                                '</div>' +
-                                '<span class="program-ticket-modality">' + escHtml(program.modality || 'N/A') + '</span>' +
-                            '</div>' +
-                            '<div class="program-ticket-meta">' +
-                                '<span>Pattern: ' + escHtml(program.schedulePattern || 'Custom') + '</span>' +
-                                '<span>Days: ' + escHtml(openDays || 'None') + '</span>' +
-                            '</div>' +
-                            '<div class="program-ticket-actions">' +
-                                '<button type="button" class="program-ticket-btn" onclick="openEditProgramModal(' + idx + ')">Edit</button>' +
-                                '<button type="button" class="program-ticket-btn program-ticket-remove" onclick="removeSavedProgram(' + idx + ')">Remove</button>' +
-                            '</div>';
-
-                        const isRefresher = String(program.track || '').toLowerCase().indexOf('refresher') !== -1;
-                        if (isRefresher) {
-                            refRow.appendChild(ticket);
-                        } else {
-                            regRow.appendChild(ticket);
-                        }
-                    });
-
-                    list.appendChild(regRow);
-                    if (refRow.children && refRow.children.length) list.appendChild(refRow);
-                        if (logo) {
-                            logo.style.backgroundImage = 'url(' + center.logo_url + ')';
-                            logo.style.backgroundSize = 'cover';
-                            logo.style.backgroundPosition = 'center';
-                        }
-                    }
-                    if (center.description) {
-                        document.getElementById('aboutDisplay').textContent = center.description;
-                    }
-
-                    // Cache programs for teacher role picker even on pages
-                    // that don't render the Programs Offered section.
-                    const programs = parseArrayField(center.programs);
-                    window._centerPrograms = Array.isArray(programs) ? programs.slice() : [];
-
-                    if (center.review_schedule) {
-                        try {
-                            window._reviewSchedule = typeof center.review_schedule === 'string'
-                                ? JSON.parse(center.review_schedule)
-                                : center.review_schedule;
-                        } catch (e) {
-                            window._reviewSchedule = [];
-                        }
-                        if (typeof window._refreshReviewSchedule === 'function') {
-                            window._refreshReviewSchedule();
-                        }
-                    }
-
-                    const programTagsEl = document.getElementById('programTagsDisplay');
-                    if (programTagsEl) {
-                        programTagsEl.innerHTML = '';
-                        if (programs.length > 0) {
-                            programs.forEach(function(program) {
-                                const btn = document.createElement('button');
-                                btn.className = 'program-tag';
-                                btn.textContent = String(program).trim();
-                                programTagsEl.appendChild(btn);
-                            });
-                        } else {
-                            programTagsEl.innerHTML = '<button class="program-tag">No programs listed yet</button>';
-                        }
-                    }
-
-                    if (typeof window._refreshTeacherProgramPills === 'function') {
-                        window._refreshTeacherProgramPills();
-                    }
-
-                    const achievementsEl = document.getElementById('achievementListDisplay');
-                    if (achievementsEl) {
-                        const achievements = parseArrayField(center.achievements);
-                        if (achievements.length > 0) {
-                            achievementsEl.innerHTML = '';
-                            achievements.forEach(function(itemText) {
-                                const item = document.createElement('div');
-                                item.className = 'achievement-item';
-                                item.innerHTML = '<span class="trophy-icon">🏆</span><p></p>';
-                                item.querySelector('p').textContent = String(itemText).trim();
-                                achievementsEl.appendChild(item);
-                            });
-                        }
-                    }
-
-                    var rating = Math.round(center.avg_rating || 0);
-                    var starsEl = document.querySelector('.center-rating .stars');
-                    if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-                    var ratingCount = document.querySelector('.center-rating .rating-count');
-                    if (ratingCount) ratingCount.textContent = (center.avg_rating || 0).toFixed(1) + ' (' + (center.review_count || 0) + ')';
-                } catch(e) {
-                    // Not yet approved or no internet — display defaults are fine
-                }
-            })();
                 // set welcome name from session (like student profile)
                 (function(){
                     try{
@@ -248,8 +70,12 @@
 
             window.addEventListener('load', function() {
                 const sortEl = document.getElementById('centerFeedbackSort');
-                if (sortEl) sortEl.addEventListener('change', loadCenterTestimonials);
-                loadCenterTestimonials();
+                if (sortEl && typeof loadCenterTestimonials === 'function') {
+                    sortEl.addEventListener('change', loadCenterTestimonials);
+                }
+                if (typeof loadCenterTestimonials === 'function') {
+                    loadCenterTestimonials();
+                }
             });
         </script>
 
@@ -263,7 +89,7 @@
                     </div>
                 </div>
 
-                <!-- Teachers removed -->
+                        <!-- Teachers removed per request -->
             </div>
 
             <div class="ec-schedule-body">
@@ -339,6 +165,14 @@
                                 <option value="Hybrid">Hybrid</option>
                             </select>
                         </div>
+                        <div class="review-form-row">
+                            <label for="reviewFtfLocationMain">FTF Location</label>
+                            <input id="reviewFtfLocationMain" type="text" placeholder="e.g., Room 201, Main Branch">
+                        </div>
+                        <div class="review-form-row">
+                            <label for="reviewOnlineLinkMain">Online Meeting Link</label>
+                            <input id="reviewOnlineLinkMain" type="url" placeholder="https://meet.example.com/session-link">
+                        </div>
                         <button type="button" id="addMainProgramBtn" class="review-add-btn">+ Add Program</button>
                     </div>
 
@@ -356,11 +190,19 @@
                                 <option value="Hybrid">Hybrid</option>
                             </select>
                         </div>
+                        <div class="review-form-row">
+                            <label for="reviewFtfLocationRefresher">FTF Location</label>
+                            <input id="reviewFtfLocationRefresher" type="text" placeholder="e.g., Room 101, Annex">
+                        </div>
+                        <div class="review-form-row">
+                            <label for="reviewOnlineLinkRefresher">Online Meeting Link</label>
+                            <input id="reviewOnlineLinkRefresher" type="url" placeholder="https://meet.example.com/refresher-link">
+                        </div>
                         <button type="button" id="addRefresherProgramBtn" class="review-add-btn review-add-secondary">+ Add Refresher Program</button>
                     </div>
                 </div>
 
-                <div id="programList" class="program-list"></div>
+                <!-- Inline program previews removed. Saved programs are shown below. -->
                 <div class="review-saved-section">
                     <div class="review-saved-title">Saved Programs</div>
                     <div id="savedProgramList" class="program-ticket-list"></div>
@@ -438,16 +280,65 @@
             });
         }
 
+        function escHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function normalizeProgram(raw) {
             const name = String(raw && raw.name ? raw.name : '').trim();
             const track = String(raw && raw.track ? raw.track : 'Regular Review Classes').trim();
             const modality = String(raw && (raw.modality || raw.mode) ? (raw.modality || raw.mode) : 'N/A').trim();
+            const ftfLocation = String(raw && raw.ftf_location ? raw.ftf_location : '').trim();
+            const onlineLink = String(raw && raw.online_link ? raw.online_link : '').trim();
             const schedule = Array.isArray(raw && raw.schedule) ? raw.schedule.map(function(item, idx) {
                 const label = item && item.day ? String(item.day) : (DEFAULT_REVIEW_SCHEDULE[idx] ? DEFAULT_REVIEW_SCHEDULE[idx].day : '');
                 return { day: label, open: !!(item && item.open) };
             }) : cloneDefaultSchedule();
             const schedulePattern = String(raw && raw.schedulePattern ? raw.schedulePattern : 'Custom');
-            return { name: name, track: track, modality: modality, schedule: schedule, schedulePattern: schedulePattern };
+            const sessionTemplates = Array.isArray(raw && raw.session_templates)
+                ? raw.session_templates.map(function(item) {
+                    return {
+                        type: String(item && item.type ? item.type : '').trim().toLowerCase(),
+                        from: String(item && item.from ? item.from : '').trim(),
+                        to: String(item && item.to ? item.to : '').trim(),
+                        location: String(item && item.location ? item.location : '').trim(),
+                        meeting_link: String(item && item.meeting_link ? item.meeting_link : '').trim(),
+                    };
+                }).filter(function(item) { return item.type === 'ftof' || item.type === 'online'; })
+                : [];
+            return {
+                name: name,
+                track: track,
+                modality: modality,
+                ftf_location: ftfLocation,
+                online_link: onlineLink,
+                schedule: schedule,
+                schedulePattern: schedulePattern,
+                session_templates: sessionTemplates.length ? sessionTemplates : buildSessionTemplates(modality, ftfLocation, onlineLink)
+            };
+        }
+
+        function buildSessionTemplates(modality, ftfLocation, onlineLink) {
+            var m = String(modality || '').trim().toLowerCase();
+            if (m === 'hybrid') {
+                return [
+                    { type: 'ftof', from: '08:00', to: '12:00', location: String(ftfLocation || '').trim(), meeting_link: '' },
+                    { type: 'online', from: '13:00', to: '17:00', location: '', meeting_link: String(onlineLink || '').trim() }
+                ];
+            }
+            if (m === 'online') {
+                return [
+                    { type: 'online', from: '08:00', to: '12:00', location: '', meeting_link: String(onlineLink || '').trim() }
+                ];
+            }
+            return [
+                { type: 'ftof', from: '08:00', to: '12:00', location: String(ftfLocation || '').trim(), meeting_link: '' }
+            ];
         }
 
         function loadSavedPrograms() {
@@ -495,10 +386,10 @@
                 }
             }
 
-            // Immediately update UI/local state so Save never gets stuck
+            // Immediately update UI/local state so Save never gets stuck.
             try { doneRenderAndReset(); } catch (e) {}
 
-            // Background sync to backend with timeout; don't block UI
+            // Fire-and-forget backend sync with timeout; UI is already reset above.
             if (typeof CentersAPI !== 'undefined' && CentersAPI.updateMyProfile) {
                 try {
                     var backendPromise = Promise.resolve(CentersAPI.updateMyProfile({ review_schedule: savedPrograms }));
@@ -528,7 +419,6 @@
                 }
             } else {
                 showSaveStatus('Schedule saved locally.');
-                return Promise.resolve({ local: true });
             }
         }
 
@@ -559,7 +449,8 @@
             const list = document.getElementById('savedProgramList');
             if (!list) return;
             list.innerHTML = '';
-            if (!savedPrograms.length) {
+            // Use the working `programs` list so newly-created (unsaved) programs are visible immediately
+            if (!programs || !programs.length) {
                 list.innerHTML = '<div class="review-empty">No saved programs yet.</div>';
                 return;
             }
@@ -569,12 +460,19 @@
             const refRow = document.createElement('div');
             refRow.className = 'program-ticket-row program-ticket-row-refresher';
 
-            savedPrograms.forEach(function(program, idx) {
+            programs.forEach(function(program, idx) {
                 const openDays = program.schedule
                     ? program.schedule.filter(function(item) { return item.open; }).map(function(item) { return item.day; }).join(', ')
                     : '';
                 const ticket = document.createElement('div');
                 ticket.className = 'program-ticket';
+                const sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
+                const sessionSummary = sessions.map(function(session) {
+                    if (session.type === 'online') {
+                        return 'Online: ' + (session.meeting_link || 'Link not set');
+                    }
+                    return 'FTF: ' + (session.location || 'Location not set');
+                }).join(' | ');
                 ticket.innerHTML =
                     '<div class="program-ticket-top">' +
                         '<div>' +
@@ -587,14 +485,20 @@
                         '<span>Pattern: ' + escHtml(program.schedulePattern || 'Custom') + '</span>' +
                         '<span>Days: ' + escHtml(openDays || 'None') + '</span>' +
                     '</div>' +
+                    '<div class="program-ticket-meta" style="margin-top:6px;">' +
+                        '<span>Sessions: ' + escHtml(sessionSummary || 'Not set') + '</span>' +
+                    '</div>' +
                     '<div class="program-ticket-actions">' +
-                        '<button type="button" class="program-ticket-btn" onclick="selectSavedProgram(' + idx + ')">Edit</button>' +
+                        '<button type="button" class="program-ticket-btn" onclick="openEditProgramModal(' + idx + ')">Edit</button>' +
                         '<button type="button" class="program-ticket-btn program-ticket-remove" onclick="removeSavedProgram(' + idx + ')">Remove</button>' +
                     '</div>';
 
                 const isRefresher = String(program.track || '').toLowerCase().indexOf('refresher') !== -1;
-                if (isRefresher) refRow.appendChild(ticket);
-                else regRow.appendChild(ticket);
+                if (isRefresher) {
+                    refRow.appendChild(ticket);
+                } else {
+                    regRow.appendChild(ticket);
+                }
             });
 
             list.appendChild(regRow);
@@ -623,6 +527,100 @@
             renderPrograms();
         }
 
+        // --- Edit Program Modal Logic ---
+        let _editProgramIndex = null;
+        let _editProgramTempSchedule = null;
+
+        function openEditProgramModal(idx) {
+            idx = Number(idx);
+            if (!Array.isArray(savedPrograms) || idx < 0 || idx >= savedPrograms.length) return;
+            _editProgramIndex = idx;
+            var src = (programs && programs[idx]) ? programs[idx] : savedPrograms[idx];
+            var p = JSON.parse(JSON.stringify(src || normalizeProgram(savedPrograms[idx] || {})));
+            if (!Array.isArray(p.schedule)) p.schedule = cloneDefaultSchedule();
+            _editProgramTempSchedule = p.schedule.map(function(item){ return { day: item.day, open: !!item.open }; });
+
+            var nameEl = document.getElementById('editProgramName');
+            var modEl = document.getElementById('editProgramModality');
+            var ftfEl = document.getElementById('editProgramFtfLocation');
+            var onlineEl = document.getElementById('editProgramOnlineLink');
+            var patEl = document.getElementById('editProgramPattern');
+            if (nameEl) nameEl.value = p.name || '';
+            if (modEl) modEl.value = p.modality || 'Face-to-face';
+            if (ftfEl) ftfEl.value = p.ftf_location || '';
+            if (onlineEl) onlineEl.value = p.online_link || '';
+            if (patEl) patEl.value = p.schedulePattern || 'Custom';
+
+            renderEditProgramDayPills();
+
+            if (patEl) {
+                patEl.onchange = function() {
+                    var pattern = patEl.value;
+                    if (pattern === 'MWF' || pattern === 'TTH') {
+                        applyPatternToSchedule(_editProgramTempSchedule, pattern);
+                    }
+                    renderEditProgramDayPills();
+                };
+            }
+
+            var modal = document.getElementById('editProgramModal');
+            if (modal) modal.classList.add('active');
+            setTimeout(function(){ try { document.getElementById('editProgramName').focus(); } catch(e){} }, 80);
+        }
+
+        function renderEditProgramDayPills() {
+            var pillsEl = document.getElementById('editProgramDayPills');
+            if (!pillsEl) return;
+            pillsEl.innerHTML = '';
+            var schedule = Array.isArray(_editProgramTempSchedule) ? _editProgramTempSchedule : cloneDefaultSchedule();
+            schedule.forEach(function(s, idx) {
+                var pill = document.createElement('div');
+                pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
+                pill.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
+                pill.style.cursor = 'pointer';
+                pill.onclick = function() {
+                    s.open = !s.open;
+                    var pat = document.getElementById('editProgramPattern');
+                    if (pat) pat.value = 'Custom';
+                    renderEditProgramDayPills();
+                };
+                pillsEl.appendChild(pill);
+            });
+        }
+
+        function saveEditedProgram() {
+            if (_editProgramIndex === null) return;
+            var name = String((document.getElementById('editProgramName')||{}).value || '').trim();
+            var modality = String((document.getElementById('editProgramModality')||{}).value || '').trim();
+            var ftfLocation = String((document.getElementById('editProgramFtfLocation')||{}).value || '').trim();
+            var onlineLink = String((document.getElementById('editProgramOnlineLink')||{}).value || '').trim();
+            var schedulePattern = String((document.getElementById('editProgramPattern')||{}).value || 'Custom');
+            var schedule = Array.isArray(_editProgramTempSchedule) ? _editProgramTempSchedule.map(function(it){ return { day: it.day, open: !!it.open }; }) : cloneDefaultSchedule();
+            var track = (savedPrograms[_editProgramIndex] && savedPrograms[_editProgramIndex].track) ? savedPrograms[_editProgramIndex].track : ((programs[_editProgramIndex] && programs[_editProgramIndex].track) ? programs[_editProgramIndex].track : 'Regular Review Classes');
+
+            var updated = {
+                name: name,
+                track: track,
+                modality: modality || 'N/A',
+                ftf_location: ftfLocation,
+                online_link: onlineLink,
+                schedule: schedule,
+                schedulePattern: schedulePattern,
+                session_templates: buildSessionTemplates(modality, ftfLocation, onlineLink)
+            };
+
+            if (_editProgramIndex < programs.length) {
+                programs[_editProgramIndex] = JSON.parse(JSON.stringify(updated));
+            } else {
+                while (programs.length < _editProgramIndex) programs.push(normalizeProgram({}));
+                programs[_editProgramIndex] = JSON.parse(JSON.stringify(updated));
+            }
+
+            // Persist changes
+            try { persistPrograms(); } catch (e) {}
+            closeModal('editProgramModal');
+        }
+
         function getActiveProgram() {
             if (programs.length === 0) return null;
             if (_activeReviewIndex >= programs.length) _activeReviewIndex = 0;
@@ -641,36 +639,15 @@
         }
 
         function renderPrograms() {
-            const list = document.getElementById('programList');
-            if (!list) return;
-            list.innerHTML = '';
-                programs.forEach((program, idx) => {
-                const div = document.createElement('div');
-                div.className = 'program-card';
-                if (!program.schedule) {
-                    program.schedule = cloneDefaultSchedule();
-                }
-                if (!program.schedulePattern) {
-                    program.schedulePattern = 'Custom';
-                }
-                let calendarHtml = '';
-                div.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div>
-                            <strong>${program.name}</strong>
-                            <span class="program-meta">(${program.track} • ${program.modality || program.mode || 'N/A'})</span>
-                        </div>
-                        <button onclick="removeProgram(${idx})" class="remove-btn">Remove</button>
-                    </div>
-                    ${calendarHtml}
-                `;
-                list.appendChild(div);
-            });
+            // Inline program previews removed — update selectors and calendar only
             updateReviewScheduleSelect();
             updateReviewPatternSelect();
             renderReviewSchedule();
         }
 
+        // --- Review Schedule Logic ---
+
+        // --- Review Day Pills + Calendar Logic ---
         function renderReviewSchedule() {
             renderReviewDayPills();
             renderReviewCalendar();
@@ -684,6 +661,7 @@
             if (!active || !active.schedule) {
                 pillsEl.innerHTML = '<div class="review-empty">Add a program to plot the schedule.</div>';
                 showReviewDayDetails();
+                updateReviewSaveButton();
                 return;
             }
             active.schedule.forEach(function(s) {
@@ -698,12 +676,13 @@
                     active.schedulePattern = 'Custom';
                     updateReviewPatternSelect();
                     showReviewDayDetails(dayIndex);
-                    // Don't auto-persist; require explicit Save
+                    // Don't auto-persist here; enable Save so user can confirm changes
                     renderReviewSchedule();
                     updateReviewSaveButton();
                 };
                 pillsEl.appendChild(pill);
             });
+            updateReviewSaveButton();
         }
 
         function showReviewDayDetails(dayIndex, dateText) {
@@ -837,8 +816,12 @@
         function addMainProgram() {
             const nameInput = document.getElementById('reviewProgramNameMain');
             const modalitySelect = document.getElementById('reviewModalitySelectMain');
+            const ftfLocationInput = document.getElementById('reviewFtfLocationMain');
+            const onlineLinkInput = document.getElementById('reviewOnlineLinkMain');
             const name = nameInput ? String(nameInput.value || '').trim() : '';
             const modality = modalitySelect ? String(modalitySelect.value || '').trim() : '';
+            const ftfLocation = ftfLocationInput ? String(ftfLocationInput.value || '').trim() : '';
+            const onlineLink = onlineLinkInput ? String(onlineLinkInput.value || '').trim() : '';
             if (!name) {
                 alert('Please enter a program name.');
                 return;
@@ -849,9 +832,21 @@
                 return;
             }
             var newSchedule = cloneDefaultSchedule().map(function(it){ return { day: it.day, open: false }; });
-            programs.push({ name: name, track: track, modality: modality, topics: [], schedule: newSchedule, schedulePattern: 'Custom' });
+            programs.push({
+                name: name,
+                track: track,
+                modality: modality,
+                ftf_location: ftfLocation,
+                online_link: onlineLink,
+                topics: [],
+                schedule: newSchedule,
+                schedulePattern: 'Custom',
+                session_templates: buildSessionTemplates(modality, ftfLocation, onlineLink)
+            });
             _activeReviewIndex = programs.length - 1;
             if (nameInput) nameInput.value = '';
+            if (ftfLocationInput) ftfLocationInput.value = '';
+            if (onlineLinkInput) onlineLinkInput.value = '';
             // Don't persist immediately; require the user to choose days then click Save
             renderPrograms();
             renderSavedPrograms();
@@ -866,8 +861,12 @@
         function addRefresherProgram() {
             const nameInput = document.getElementById('reviewProgramNameRefresher');
             const modalitySelect = document.getElementById('reviewModalitySelectRefresher');
+            const ftfLocationInput = document.getElementById('reviewFtfLocationRefresher');
+            const onlineLinkInput = document.getElementById('reviewOnlineLinkRefresher');
             const name = nameInput ? String(nameInput.value || '').trim() : '';
             const modality = modalitySelect ? String(modalitySelect.value || '').trim() : '';
+            const ftfLocation = ftfLocationInput ? String(ftfLocationInput.value || '').trim() : '';
+            const onlineLink = onlineLinkInput ? String(onlineLinkInput.value || '').trim() : '';
             if (!name) {
                 alert('Please enter a program name.');
                 return;
@@ -878,9 +877,21 @@
                 return;
             }
             var newSchedule = cloneDefaultSchedule().map(function(it){ return { day: it.day, open: false }; });
-            programs.push({ name: name, track: track, modality: modality, topics: [], schedule: newSchedule, schedulePattern: 'Custom' });
+            programs.push({
+                name: name,
+                track: track,
+                modality: modality,
+                ftf_location: ftfLocation,
+                online_link: onlineLink,
+                topics: [],
+                schedule: newSchedule,
+                schedulePattern: 'Custom',
+                session_templates: buildSessionTemplates(modality, ftfLocation, onlineLink)
+            });
             _activeReviewIndex = programs.length - 1;
             if (nameInput) nameInput.value = '';
+            if (ftfLocationInput) ftfLocationInput.value = '';
+            if (onlineLinkInput) onlineLinkInput.value = '';
             // Don't persist immediately; require the user to choose days then click Save
             renderPrograms();
             renderSavedPrograms();
@@ -941,8 +952,51 @@
         renderPrograms();
         renderReviewSchedule();
         renderSavedPrograms();
+        // Ensure Save button state reflects current active program
         try { updateReviewSaveButton(); } catch(e) {}
         </script>
+
+        <!-- Edit Program Modal -->
+        <div class="modal-overlay" id="editProgramModal">
+            <div class="modal-box" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3>Edit Program</h3>
+                    <button class="modal-close" onclick="closeModal('editProgramModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <label for="editProgramName">Program Name</label>
+                        <input id="editProgramName" type="text" placeholder="Program name">
+
+                        <label for="editProgramModality">Learning Modality</label>
+                        <select id="editProgramModality">
+                            <option value="Face-to-face">Face-to-face</option>
+                            <option value="Online">Online</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+
+                        <label for="editProgramFtfLocation">FTF Location</label>
+                        <input id="editProgramFtfLocation" type="text" placeholder="Room / branch">
+
+                        <label for="editProgramOnlineLink">Online Meeting Link</label>
+                        <input id="editProgramOnlineLink" type="url" placeholder="https://...">
+
+                        <label for="editProgramPattern">Day Pattern</label>
+                        <select id="editProgramPattern">
+                            <option value="MWF">MWF</option>
+                            <option value="TTH">TTH</option>
+                            <option value="Custom">Custom</option>
+                        </select>
+
+                        <div id="editProgramDayPills" class="ec-day-pills" style="margin-top:8px;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-cancel-btn" onclick="closeModal('editProgramModal')">Cancel</button>
+                    <button class="modal-save-btn" id="editProgramSaveBtn" onclick="saveEditedProgram()">Save Changes</button>
+                </div>
+            </div>
+        </div>
 
         <section class="footer">
             <div class="footer-container">
@@ -1057,18 +1111,21 @@
                 });
             });
             // Live image preview inside modal
-            document.getElementById('centerImageInput').addEventListener('change', function() {
-                const file = this.files[0];
-                const preview = document.getElementById('modalImgPreview');
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.style.backgroundImage = 'url(' + e.target.result + ')';
-                        preview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
+            var centerImageInput = document.getElementById('centerImageInput');
+            if (centerImageInput) {
+                centerImageInput.addEventListener('change', function() {
+                    const file = this.files[0];
+                    const preview = document.getElementById('modalImgPreview');
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.style.backgroundImage = 'url(' + e.target.result + ')';
+                            preview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
             async function saveProfile() {
                 const saveBtn = document.querySelector('#profileModal .modal-save-btn');
                 const originalBtnText = saveBtn ? saveBtn.textContent : 'Save Changes';
@@ -1691,15 +1748,11 @@
                 font-size: 13px;
                 font-weight: 700;
                 color: #0d1b4b;
-                overflow-wrap: anywhere;
-                word-break: break-word;
             }
 
             .ec-teacher-meta {
                 font-size: 11px;
                 color: #6b7280;
-                overflow-wrap: anywhere;
-                word-break: break-word;
             }
 
             .ec-teacher-remove {
@@ -1902,8 +1955,7 @@ function normalizeScheduleContainer(container) {
     }
 }
 
-// Teacher-related helpers removed for Operating Schedule
-function updateTeacherSelects() { /* noop - teachers removed */ }
+// Teacher-related helpers removed
 
 function updateScheduleView() {
     var key = _ecYear + "-" + _ecMonth;
@@ -2275,6 +2327,7 @@ window.dSchedSaveBackend = async function() {
     normalizeScheduleContainer(FULL_SCHEDULE);
     updateScheduleView();
 })();
+// Teacher controls removed
 </script>
         
         

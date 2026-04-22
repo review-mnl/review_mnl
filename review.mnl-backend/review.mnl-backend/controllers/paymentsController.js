@@ -25,6 +25,87 @@ const extractConfiguredEnrollmentAmount = (rawPaymentDetails) => {
   return Math.round(parsed * 100) / 100;
 };
 
+const parseJsonArray = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  return [];
+};
+
+const normalizeSessionType = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '';
+  if (normalized === 'ftf' || normalized === 'face-to-face' || normalized === 'face to face' || normalized === 'face_to_face') return 'ftof';
+  if (normalized === 'online') return 'online';
+  return '';
+};
+
+const normalizeProgramForScheduleValidation = (raw) => {
+  const name = String(raw && raw.name ? raw.name : '').trim();
+  const modalityRaw = String(raw && (raw.modality || raw.mode) ? (raw.modality || raw.mode) : '').trim().toLowerCase();
+  const modality = (modalityRaw === 'hybrid' || modalityRaw === 'online' || modalityRaw === 'face-to-face' || modalityRaw === 'face to face')
+    ? modalityRaw
+    : '';
+
+  const schedule = parseJsonArray(raw && raw.schedule)
+    .map((item, idx) => ({
+      day: String(item && item.day ? item.day : '').trim() || ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][idx] || '',
+      open: !!(item && item.open),
+    }));
+
+  let templates = parseJsonArray(raw && raw.session_templates).map((item) => {
+    const type = normalizeSessionType(item && item.type);
+    if (!type) return null;
+    return {
+      type,
+      from: String(item && item.from ? item.from : '').trim(),
+      to: String(item && item.to ? item.to : '').trim(),
+      location: String(item && item.location ? item.location : '').trim(),
+      meeting_link: String(item && item.meeting_link ? item.meeting_link : '').trim(),
+    };
+  }).filter(Boolean);
+
+  if (!templates.length) {
+    if (modality === 'hybrid') {
+      templates = [
+        { type: 'ftof', from: '', to: '', location: String(raw && raw.ftf_location ? raw.ftf_location : '').trim(), meeting_link: '' },
+        { type: 'online', from: '', to: '', location: '', meeting_link: String(raw && raw.online_link ? raw.online_link : '').trim() },
+      ];
+    } else if (modality === 'online') {
+      templates = [{ type: 'online', from: '', to: '', location: '', meeting_link: String(raw && raw.online_link ? raw.online_link : '').trim() }];
+    } else {
+      templates = [{ type: 'ftof', from: '', to: '', location: String(raw && raw.ftf_location ? raw.ftf_location : '').trim(), meeting_link: '' }];
+    }
+  }
+
+  return {
+    name,
+    schedule,
+    session_templates: templates,
+  };
+};
+
+const findProgramByName = (programs, targetName) => {
+  const key = String(targetName || '').trim().toLowerCase();
+  if (!key) return null;
+  return programs.find((program) => String(program && program.name ? program.name : '').trim().toLowerCase() === key) || null;
+};
+
+const isProgramOpenOnDate = (program, dateIso) => {
+  const date = new Date(String(dateIso || '').trim() + 'T00:00:00');
+  if (Number.isNaN(date.getTime())) return false;
+  const dow = date.getDay();
+  const item = (Array.isArray(program && program.schedule) ? program.schedule : [])[dow];
+  return !!(item && item.open);
+};
+
 // Manual payment enrollment flow for GCash, Maya, Bank Transfer, and Over-the-Counter.
 // It stores payment details and marks the transaction as pending for admin verification.
 const createGcashEnrollment = async (req, res) => {
@@ -162,13 +243,47 @@ const createGcashEnrollment = async (req, res) => {
       return res.status(400).json({ message: 'Please enter a valid account name.' });
     }
     // Ensure center exists
-    const [centerRows] = await db.query('SELECT id, user_id, business_name, payment_details FROM review_centers WHERE id = ?', [centerId]);
+    const [centerRows] = await db.query('SELECT id, user_id, business_name, payment_details, review_schedule FROM review_centers WHERE id = ?', [centerId]);
     if (!centerRows || centerRows.length === 0) return res.status(404).json({ message: 'Center not found.' });
     const center = centerRows[0];
     const configuredAmount = extractConfiguredEnrollmentAmount(center.payment_details);
     if (Number.isFinite(configuredAmount) && configuredAmount > 0) {
       amount = configuredAmount;
     }
+
+    const requestedScheduleType = normalizeSessionType(req.body.schedule_type);
+    const requestedScheduleFrom = String(req.body.schedule_time_from || '').trim();
+    const requestedScheduleTo = String(req.body.schedule_time_to || '').trim();
+    const requestedScheduleLocation = String(req.body.schedule_location || '').trim();
+    const requestedScheduleMeetingLink = String(req.body.schedule_meeting_link || '').trim();
+
+    const normalizedPrograms = parseJsonArray(center.review_schedule).map(normalizeProgramForScheduleValidation);
+    const selectedProgram = findProgramByName(normalizedPrograms, programEnrolled);
+    if (programEnrolled && normalizedPrograms.length && !selectedProgram) {
+      return res.status(400).json({ message: 'Selected program does not exist for this review center schedule.' });
+    }
+    if (selectedProgram && !isProgramOpenOnDate(selectedProgram, enrollmentDate)) {
+      return res.status(400).json({ message: 'Selected enrollment date is not available for the chosen program schedule.' });
+    }
+
+    const programTemplates = Array.isArray(selectedProgram && selectedProgram.session_templates) ? selectedProgram.session_templates : [];
+    let selectedTemplate = null;
+    if (requestedScheduleType) {
+      selectedTemplate = programTemplates.find((template) => template.type === requestedScheduleType) || null;
+      if (selectedProgram && !selectedTemplate) {
+        return res.status(400).json({ message: 'Selected schedule type is not available for the chosen program.' });
+      }
+    } else if (programTemplates.length) {
+      selectedTemplate = programTemplates[0];
+    }
+
+    const resolvedSchedule = {
+      type: (selectedTemplate && selectedTemplate.type) || requestedScheduleType || '',
+      from: requestedScheduleFrom || (selectedTemplate && selectedTemplate.from) || '',
+      to: requestedScheduleTo || (selectedTemplate && selectedTemplate.to) || '',
+      location: requestedScheduleLocation || (selectedTemplate && selectedTemplate.location) || '',
+      meeting_link: requestedScheduleMeetingLink || (selectedTemplate && selectedTemplate.meeting_link) || '',
+    };
 
     console.log('[Enrollment] Request received', {
       userId,
@@ -225,6 +340,12 @@ const createGcashEnrollment = async (req, res) => {
       teacher_to: teacherTo || null,
       teacher_program: teacherProgram || null,
       teacher_label: teacherLabel || null,
+      schedule_type: resolvedSchedule.type || null,
+      schedule_time_from: resolvedSchedule.from || null,
+      schedule_time_to: resolvedSchedule.to || null,
+      schedule_location: resolvedSchedule.location || null,
+      schedule_meeting_link: resolvedSchedule.meeting_link || null,
+      selected_schedule: resolvedSchedule,
       payment_status: 'pending',
       enrollment_status: 'pending',
       manual_verification_required: true,
@@ -325,6 +446,11 @@ const createGcashEnrollment = async (req, res) => {
       review_center_name: center.business_name,
       student_name: studentName,
       program_enrolled: programEnrolled,
+      schedule_type: resolvedSchedule.type || null,
+      schedule_time_from: resolvedSchedule.from || null,
+      schedule_time_to: resolvedSchedule.to || null,
+      schedule_location: resolvedSchedule.location || null,
+      schedule_meeting_link: resolvedSchedule.meeting_link || null,
       teacher_name: teacherName || null,
       enrollment_status: 'pending',
       payment_status: 'pending',

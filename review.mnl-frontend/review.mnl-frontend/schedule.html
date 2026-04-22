@@ -578,7 +578,7 @@
                 var addBtnOnce = document.getElementById('addEditProgramSessionBtn');
                 if (addBtnOnce) addBtnOnce.onclick = function(){
                     _editProgramTempSessions = Array.isArray(_editProgramTempSessions) ? _editProgramTempSessions : [];
-                    _editProgramTempSessions.push({ from: '08:00', to: '12:00', applyToAll: false });
+                    _editProgramTempSessions.push({ from: '08:00', to: '12:00' });
                     renderEditProgramSessions();
                 };
             } catch (e) { /* ignore */ }
@@ -678,18 +678,6 @@
                 to.value = sess.to || '';
                 to.onchange = function() { _editProgramTempSessions[idx].to = String(to.value || '').trim(); };
 
-                var applyLbl = document.createElement('label');
-                applyLbl.style.display = 'flex';
-                applyLbl.style.alignItems = 'center';
-                applyLbl.style.gap = '6px';
-                applyLbl.style.fontSize = '13px';
-                var applyChk = document.createElement('input');
-                applyChk.type = 'checkbox';
-                applyChk.checked = !!sess.applyToAll;
-                applyChk.onchange = function() { _editProgramTempSessions[idx].applyToAll = !!applyChk.checked; };
-                applyLbl.appendChild(applyChk);
-                applyLbl.appendChild(document.createTextNode('Apply to all days'));
-
                 var rem = document.createElement('button');
                 rem.type = 'button';
                 rem.className = 'program-ticket-btn';
@@ -698,7 +686,6 @@
 
                 row.appendChild(from);
                 row.appendChild(to);
-                row.appendChild(applyLbl);
                 row.appendChild(rem);
                 container.appendChild(row);
             });
@@ -709,7 +696,7 @@
             var addBtn = document.getElementById('addEditProgramSessionBtn');
             if (addBtn) addBtn.onclick = function(){
                 _editProgramTempSessions = Array.isArray(_editProgramTempSessions) ? _editProgramTempSessions : [];
-                _editProgramTempSessions.push({ from: '08:00', to: '12:00', applyToAll: false });
+                _editProgramTempSessions.push({ from: '08:00', to: '12:00' });
                 renderEditProgramSessions();
             };
         })();
@@ -745,12 +732,12 @@
             try {
                 if (Array.isArray(_editProgramTempSessions)) {
                     updated.session_templates = _editProgramTempSessions.map(function(s){
-                        return { from: String(s.from || '').trim(), to: String(s.to || '').trim(), applyToAll: !!s.applyToAll };
-                    });
-                    // If any session has applyToAll, apply the first matched timeframe to all days in schedule
-                    var applyAll = _editProgramTempSessions.find(function(s){ return s && s.applyToAll; });
-                    if (applyAll && applyAll.from && applyAll.to && Array.isArray(updated.schedule)) {
-                        updated.schedule = updated.schedule.map(function(d){ var dd = { day: d.day, open: !!d.open }; dd.session = { from: applyAll.from, to: applyAll.to }; if (d.type) dd.type = d.type; return dd; });
+                        return { from: String(s.from || '').trim(), to: String(s.to || '').trim() };
+                    }).filter(function(s){ return s.from && s.to; });
+                    // If exactly one timeframe is defined, make that the default session for all open days
+                    if (updated.session_templates.length === 1 && updated.session_templates[0].from && updated.session_templates[0].to && Array.isArray(updated.schedule)) {
+                        var base = updated.session_templates[0];
+                        updated.schedule = updated.schedule.map(function(d){ var dd = { day: d.day, open: !!d.open }; if (dd.open) dd.session = { from: base.from, to: base.to }; if (d.type) dd.type = d.type; return dd; });
                     }
                 }
             } catch (e) { /* ignore */ }
@@ -882,7 +869,7 @@
             // Include currently selected session: prefer per-day session, otherwise program-level session_templates
             var sessionText = '';
             try {
-                // Prefer day-level session (set by Apply to all)
+                // Prefer day-level session (explicitly set on schedule)
                 if (active && Array.isArray(active.schedule) && active.schedule[dayIndex] && active.schedule[dayIndex].session && active.schedule[dayIndex].session.from && active.schedule[dayIndex].session.to) {
                     var ds = active.schedule[dayIndex].session;
                     sessionText = ' • Session: ' + escHtml(ds.from) + '–' + escHtml(ds.to);
@@ -914,7 +901,7 @@
 
             var hdr = document.createElement('div');
             hdr.style.marginBottom = '8px';
-            hdr.textContent = prefix + day.day + ': ' + status + typeText + ' • ' + programText + ' • Pattern: ' + pattern + (sessionText || '');
+            hdr.textContent = prefix + day.day + ': ' + status + typeText + ' • ' + programText + ' • Pattern: ' + pattern;
             details.appendChild(hdr);
 
             // Session editor (timeframe-only)
@@ -944,21 +931,6 @@
             row.appendChild(fromInput);
             row.appendChild(toInput);
 
-            var applyRow = document.createElement('div');
-            applyRow.style.display = 'flex';
-            applyRow.style.alignItems = 'center';
-            applyRow.style.gap = '8px';
-
-            var applyChk = document.createElement('input');
-            applyChk.type = 'checkbox';
-            applyChk.id = 'reviewDayApplyAll';
-            var applyLbl = document.createElement('label');
-            applyLbl.htmlFor = 'reviewDayApplyAll';
-            applyLbl.style.fontSize = '13px';
-            applyLbl.textContent = 'Apply to all selected days';
-            applyRow.appendChild(applyChk);
-            applyRow.appendChild(applyLbl);
-
             var btnRow = document.createElement('div');
             btnRow.style.display = 'flex';
             btnRow.style.gap = '8px';
@@ -971,15 +943,21 @@
                 var f = String(fromInput.value || '').trim();
                 var t = String(toInput.value || '').trim();
                 if (!f || !t) { alert('Please set both From and To times.'); return; }
-                // Save to the active program schedule (per-day)
+                // Save to the active program schedule (per-day) and sync with pattern
                 try {
                     if (!Array.isArray(active.schedule)) active.schedule = cloneDefaultSchedule();
                     active.schedule[dayIndex] = active.schedule[dayIndex] || { day: (DEFAULT_REVIEW_SCHEDULE[dayIndex]||{}).day || '' };
                     active.schedule[dayIndex].session = { from: f, to: t };
-                    // If apply to all, set for every open day
-                    if (applyChk.checked) {
-                        active.schedule.forEach(function(d, i){ if (d.open) d.session = { from: f, to: t }; });
+                    // Apply same timeframe to the program's pattern days (MWF / TTH)
+                    var pat = active.schedulePattern || 'Custom';
+                    var patternDays = [];
+                    if (pat === 'MWF') patternDays = [1,3,5];
+                    if (pat === 'TTH') patternDays = [2,4];
+                    if (patternDays && patternDays.length) {
+                        patternDays.forEach(function(i){ if (active.schedule[i] && active.schedule[i].open) active.schedule[i].session = { from: f, to: t }; });
                     }
+                    // Make this the program's primary session template
+                    active.session_templates = [{ from: f, to: t }];
                 } catch (e) { console.warn('Failed to save session', e); }
                 // Re-render UI and persist
                 try { renderReviewDayPills(); renderReviewCalendar(); updateReviewSaveButton(); } catch (e){}
@@ -991,7 +969,6 @@
             btnRow.appendChild(saveSessBtn);
 
             sessWrap.appendChild(row);
-            sessWrap.appendChild(applyRow);
             sessWrap.appendChild(btnRow);
             details.appendChild(sessWrap);
         }
@@ -1031,6 +1008,32 @@
                 if (isOpen && active && active.modality === 'Hybrid' && active.schedule && active.schedule[scheduleIdx] && active.schedule[scheduleIdx].type) {
                     inner += '<div style="font-size:10px;color:#0d1b4b;">' + active.schedule[scheduleIdx].type + '</div>';
                 }
+                // Session label: prefer per-day session, fallback to program session template
+                try {
+                    var sessionLabel = '';
+                    if (active && active.schedule && active.schedule[scheduleIdx] && active.schedule[scheduleIdx].session && active.schedule[scheduleIdx].session.from && active.schedule[scheduleIdx].session.to) {
+                        var ds2 = active.schedule[scheduleIdx].session;
+                        sessionLabel = escHtml(ds2.from) + '–' + escHtml(ds2.to);
+                    } else {
+                        var sp2 = active;
+                        if (Array.isArray(savedPrograms) && savedPrograms.length && active) {
+                            var found2 = savedPrograms.find(function(spp) { return spp && active && spp.name === active.name && spp.track === active.track && spp.modality === active.modality; });
+                            if (found2) sp2 = found2;
+                        }
+                        var sessions2 = Array.isArray(sp2 && sp2.session_templates) ? sp2.session_templates : [];
+                        if (sessions2 && sessions2.length && typeof _activeSessionIndex === 'number' && sessions2[_activeSessionIndex]) {
+                            var s2 = sessions2[_activeSessionIndex];
+                            if (s2 && s2.from && s2.to) {
+                                sessionLabel = escHtml(s2.from) + '–' + escHtml(s2.to);
+                            } else {
+                                var t2 = String(s2 && s2.type ? s2.type : '').toLowerCase();
+                                var typeLabel2 = t2 === 'ftof' ? 'Face-to-face' : (t2 === 'online' ? 'Online' : escHtml(t2 || 'Session'));
+                                sessionLabel = typeLabel2 + (s2 && (s2.from || s2.to) ? ' ' + escHtml((s2.from || '') + '–' + (s2.to || '')) : '');
+                            }
+                        }
+                    }
+                    if (sessionLabel) inner += '<div style="font-size:11px;color:#0d1b4b;margin-top:4px;">' + sessionLabel + '</div>';
+                } catch (e) { /* ignore */ }
                 cell.innerHTML = inner;
                 cell.style.cursor = 'pointer';
                 cell.title = 'Click to view day details';

@@ -212,6 +212,11 @@
                     <div class="review-schedule-selector">
                         <label for="reviewSessionSelect">Session</label>
                         <select id="reviewSessionSelect" aria-label="Select session for program"></select>
+                        <div id="reviewSessionEditor" style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                            <input id="reviewSessionFrom" type="time" style="width:120px;" />
+                            <input id="reviewSessionTo" type="time" style="width:120px;" />
+                            <button id="reviewSessionSaveBtn" type="button" class="program-ticket-btn">Save Session</button>
+                        </div>
                     </div>
                     <div class="review-schedule-selector">
                         <label for="reviewPatternSelect">Day Pattern</label>
@@ -930,85 +935,19 @@
             hdr.textContent = prefix + day.day + ': ' + status + typeText + ' • ' + programText + ' • Pattern: ' + pattern;
             details.appendChild(hdr);
 
-            // Session editor (timeframe-only)
-            var sessWrap = document.createElement('div');
-            sessWrap.style.display = 'flex';
-            sessWrap.style.flexDirection = 'column';
-            sessWrap.style.gap = '8px';
-
-            var row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.gap = '8px';
-            row.style.alignItems = 'center';
-
-            // Prefill inputs from the currently selected program session (Session selector)
-            var selectedSess = null;
-            try {
-                if (active && Array.isArray(active.session_templates) && typeof _activeSessionIndex === 'number') selectedSess = active.session_templates[_activeSessionIndex] || null;
-            } catch (e) { selectedSess = null; }
-            var selectedFrom = (selectedSess && selectedSess.from) ? selectedSess.from : ((day && day.session && day.session.from) ? day.session.from : '');
-            var selectedTo = (selectedSess && selectedSess.to) ? selectedSess.to : ((day && day.session && day.session.to) ? day.session.to : '');
-
-            var fromInput = document.createElement('input');
-            fromInput.type = 'time';
-            fromInput.value = selectedFrom || '';
-            fromInput.style.width = '120px';
-            fromInput.disabled = true;
-            fromInput.title = 'Set session from the Session dropdown above';
-
-            var toInput = document.createElement('input');
-            toInput.type = 'time';
-            toInput.value = selectedTo || '';
-            toInput.style.width = '120px';
-            toInput.disabled = true;
-            toInput.title = 'Set session from the Session dropdown above';
-
-            row.appendChild(fromInput);
-            row.appendChild(toInput);
-
-            var btnRow = document.createElement('div');
-            btnRow.style.display = 'flex';
-            btnRow.style.gap = '8px';
-
-            var saveSessBtn = document.createElement('button');
-            saveSessBtn.type = 'button';
-            saveSessBtn.className = 'program-ticket-btn';
-            saveSessBtn.textContent = 'Save Session';
-            saveSessBtn.onclick = function() {
-                // Use the session selected in the Session selector (preferred)
-                var sel = null;
-                try { if (active && Array.isArray(active.session_templates) && typeof _activeSessionIndex === 'number') sel = active.session_templates[_activeSessionIndex] || null; } catch (e) { sel = null; }
-                var f = sel && sel.from ? String(sel.from).trim() : String(fromInput.value || '').trim();
-                var t = sel && sel.to ? String(sel.to).trim() : String(toInput.value || '').trim();
-                if (!f || !t) { alert('Please choose a session from the Session dropdown first.'); return; }
-                // Save to the active program schedule (per-day) and sync with pattern
-                try {
-                    if (!Array.isArray(active.schedule)) active.schedule = cloneDefaultSchedule();
-                    active.schedule[dayIndex] = active.schedule[dayIndex] || { day: (DEFAULT_REVIEW_SCHEDULE[dayIndex]||{}).day || '' };
-                    active.schedule[dayIndex].session = { from: f, to: t };
-                    // Apply same timeframe to the program's pattern days (MWF / TTH)
-                    var pat = active.schedulePattern || 'Custom';
-                    var patternDays = [];
-                    if (pat === 'MWF') patternDays = [1,3,5];
-                    if (pat === 'TTH') patternDays = [2,4];
-                    if (patternDays && patternDays.length) {
-                        patternDays.forEach(function(i){ if (active.schedule[i] && active.schedule[i].open) active.schedule[i].session = { from: f, to: t }; });
-                    }
-                    // Keep program session templates intact — don't overwrite unless the selected session came from nowhere
-                    if (!sel) active.session_templates = [{ from: f, to: t }];
-                } catch (e) { console.warn('Failed to save session', e); }
-                // Re-render UI and persist
-                try { renderReviewDayPills(); renderReviewCalendar(); updateReviewSaveButton(); } catch (e){}
-                try { persistPrograms(); } catch (e) { console.warn('Persist failed', e); }
-                // Refresh details
-                setTimeout(function(){ showReviewDayDetails(dayIndex); }, 80);
-            };
-
-            btnRow.appendChild(saveSessBtn);
-
-            sessWrap.appendChild(row);
-            sessWrap.appendChild(btnRow);
-            details.appendChild(sessWrap);
+            // Show current session info for this day; editing is done in the Session selector above
+            var sessInfo = document.createElement('div');
+            sessInfo.style.marginTop = '8px';
+            sessInfo.style.fontSize = '13px';
+            sessInfo.style.color = '#0d1b4b';
+            sessInfo.textContent = sessionText ? sessionText.replace(/^\s*\u2022?\s*/,'') : 'Session: Not set.';
+            details.appendChild(sessInfo);
+            var hint = document.createElement('div');
+            hint.style.marginTop = '10px';
+            hint.style.fontSize = '12px';
+            hint.style.color = '#5b6b8a';
+            hint.textContent = 'Edit session from the Session selector above.';
+            details.appendChild(hint);
         }
 
         function renderReviewCalendar() {
@@ -1143,8 +1082,70 @@
             select.value = String(_activeSessionIndex);
             select.onchange = function() {
                 _activeSessionIndex = Number(select.value) || 0;
+                updateSessionEditor();
                 // Refresh currently shown day details (if any)
                 showReviewDayDetails((typeof _lastShownReviewDayIndex === 'number' && _lastShownReviewDayIndex !== null) ? _lastShownReviewDayIndex : 0);
+            };
+            // Initialize editor state
+            updateSessionEditor();
+        }
+
+        function applySessionToPatternDays(program, session) {
+            try {
+                if (!program || !program.schedule) return;
+                var pat = program.schedulePattern || 'Custom';
+                var patternDays = [];
+                if (pat === 'MWF') patternDays = [1,3,5];
+                if (pat === 'TTH') patternDays = [2,4];
+                if (!patternDays.length) return;
+                patternDays.forEach(function(i) {
+                    if (program.schedule[i] && program.schedule[i].open) program.schedule[i].session = { from: String(session.from || '').trim(), to: String(session.to || '').trim() };
+                });
+            } catch (e) { /* ignore */ }
+        }
+
+        function updateSessionEditor() {
+            var fromEl = document.getElementById('reviewSessionFrom');
+            var toEl = document.getElementById('reviewSessionTo');
+            var saveBtn = document.getElementById('reviewSessionSaveBtn');
+            var select = document.getElementById('reviewSessionSelect');
+            var active = getActiveProgram();
+            if (!fromEl || !toEl || !saveBtn || !select) return;
+            if (!active) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; return; }
+            var sessions = Array.isArray(active.session_templates) ? active.session_templates : [];
+            if (!sessions.length) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; return; }
+            var idx = Number(select.value) || 0;
+            var sess = sessions[idx] || sessions[0];
+            fromEl.value = sess && sess.from ? sess.from : '';
+            toEl.value = sess && sess.to ? sess.to : '';
+            saveBtn.disabled = false;
+            saveBtn.onclick = function() {
+                var f = String(fromEl.value || '').trim();
+                var t = String(toEl.value || '').trim();
+                if (!f || !t) { alert('Please fill both From and To times.'); return; }
+                try {
+                    // update template
+                    if (!Array.isArray(active.session_templates)) active.session_templates = [];
+                    var sidx = Number(select.value) || 0;
+                    if (active.session_templates[sidx]) {
+                        active.session_templates[sidx].from = f;
+                        active.session_templates[sidx].to = t;
+                    } else {
+                        active.session_templates.push({ from: f, to: t });
+                        sidx = active.session_templates.length - 1;
+                        _activeSessionIndex = sidx;
+                        select.value = String(sidx);
+                    }
+                    // apply to pattern days and to last shown day
+                    applySessionToPatternDays(active, { from: f, to: t });
+                    if (typeof _lastShownReviewDayIndex === 'number' && active.schedule && active.schedule[_lastShownReviewDayIndex]) {
+                        active.schedule[_lastShownReviewDayIndex].session = { from: f, to: t };
+                    }
+                } catch (e) { console.warn('Failed to save session template', e); }
+                try { renderReviewDayPills(); renderReviewCalendar(); updateReviewSaveButton(); } catch (e) {}
+                try { persistPrograms(); } catch (e) { console.warn('Persist failed', e); }
+                // refresh editor and details
+                setTimeout(function(){ updateSessionEditor(); showReviewDayDetails(_lastShownReviewDayIndex); }, 60);
             };
         }
 

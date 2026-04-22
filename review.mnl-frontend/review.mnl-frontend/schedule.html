@@ -165,11 +165,8 @@
                                 <option value="Hybrid">Hybrid</option>
                             </select>
                         </div>
-                        <div class="review-form-row">
-                            <label for="reviewFtfLocationMain">FTF Location</label>
-                            <input id="reviewFtfLocationMain" type="text" placeholder="e.g., Room 201, Main Branch">
-                        </div>
-                        <div class="review-form-row">
+                        <!-- FTF location removed per request. Show online link only when modality is Online/Hybrid -->
+                        <div class="review-form-row" id="reviewOnlineRowMain" style="display:none;">
                             <label for="reviewOnlineLinkMain">Online Meeting Link</label>
                             <input id="reviewOnlineLinkMain" type="url" placeholder="https://meet.example.com/session-link">
                         </div>
@@ -190,11 +187,8 @@
                                 <option value="Hybrid">Hybrid</option>
                             </select>
                         </div>
-                        <div class="review-form-row">
-                            <label for="reviewFtfLocationRefresher">FTF Location</label>
-                            <input id="reviewFtfLocationRefresher" type="text" placeholder="e.g., Room 101, Annex">
-                        </div>
-                        <div class="review-form-row">
+                        <!-- FTF location removed per request. Show online link only when modality is Online/Hybrid -->
+                        <div class="review-form-row" id="reviewOnlineRowRefresher" style="display:none;">
                             <label for="reviewOnlineLinkRefresher">Online Meeting Link</label>
                             <input id="reviewOnlineLinkRefresher" type="url" placeholder="https://meet.example.com/refresher-link">
                         </div>
@@ -467,12 +461,13 @@
                 const ticket = document.createElement('div');
                 ticket.className = 'program-ticket';
                 const sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
-                const sessionSummary = sessions.map(function(session) {
-                    if (session.type === 'online') {
-                        return 'Online: ' + (session.meeting_link || 'Link not set');
-                    }
-                    return 'FTF: ' + (session.location || 'Location not set');
-                }).join(' | ');
+                // Only show online meeting info. FTF location removed from saved cards per request.
+                var onlineFromSessions = (sessions.find(function(s){ return s && s.type === 'online'; }) || {}).meeting_link || '';
+                var onlineLink = String(program.online_link || onlineFromSessions || '').trim();
+                var sessionSummary = '';
+                if (String(program.modality || '').toLowerCase() === 'online' || String(program.modality || '').toLowerCase() === 'hybrid') {
+                    sessionSummary = 'Online: ' + (onlineLink ? onlineLink : 'Link not set');
+                }
                 ticket.innerHTML =
                     '<div class="program-ticket-top">' +
                         '<div>' +
@@ -486,7 +481,7 @@
                         '<span>Days: ' + escHtml(openDays || 'None') + '</span>' +
                     '</div>' +
                     '<div class="program-ticket-meta" style="margin-top:6px;">' +
-                        '<span>Sessions: ' + escHtml(sessionSummary || 'Not set') + '</span>' +
+                        '<span>Sessions: ' + escHtml((sessionSummary && sessionSummary.length) ? sessionSummary : 'Not set') + '</span>' +
                     '</div>' +
                     '<div class="program-ticket-actions">' +
                         '<button type="button" class="program-ticket-btn" onclick="openEditProgramModal(' + idx + ')">Edit</button>' +
@@ -542,16 +537,16 @@
 
             var nameEl = document.getElementById('editProgramName');
             var modEl = document.getElementById('editProgramModality');
-            var ftfEl = document.getElementById('editProgramFtfLocation');
             var onlineEl = document.getElementById('editProgramOnlineLink');
             var patEl = document.getElementById('editProgramPattern');
             if (nameEl) nameEl.value = p.name || '';
             if (modEl) modEl.value = p.modality || 'Face-to-face';
-            if (ftfEl) ftfEl.value = p.ftf_location || '';
             if (onlineEl) onlineEl.value = p.online_link || '';
             if (patEl) patEl.value = p.schedulePattern || 'Custom';
 
             renderEditProgramDayPills();
+            // ensure online-link input visibility reflects current modality
+            try { updateOnlineVisibilityFor('editProgramModality','editProgramOnlineRow'); } catch(e) {}
 
             if (patEl) {
                 patEl.onchange = function() {
@@ -598,14 +593,11 @@
                 // If Hybrid and open, show type selector (NOT inside label)
                 if (modality === 'Hybrid' && s.open) {
                     var typeSel = document.createElement('select');
-                    typeSel.style.marginLeft = '0px';
-                    typeSel.style.fontSize = '12px';
+                    typeSel.className = 'modern-select';
                     typeSel.innerHTML = '<option value="Face-to-face">Face-to-face</option><option value="Online">Online</option>';
                     typeSel.value = s.type || 'Face-to-face';
                     // Update data on change only
-                    typeSel.onchange = function(e) {
-                        s.type = typeSel.value;
-                    };
+                    typeSel.onchange = function(e) { s.type = typeSel.value; };
                     // Prevent clicks on the select from bubbling to label/pill
                     ['pointerdown','mousedown','click','focus','touchstart'].forEach(function(ev){
                         typeSel.addEventListener(ev, function(ev2){ ev2.stopPropagation(); });
@@ -728,8 +720,7 @@
                 // If Hybrid and open, show type selector (prevent bubbling)
                 if (active.modality === 'Hybrid' && s.open) {
                     var typeSel = document.createElement('select');
-                    typeSel.style.marginLeft = '8px';
-                    typeSel.style.fontSize = '12px';
+                    typeSel.className = 'modern-select';
                     typeSel.innerHTML = '<option value="Face-to-face">Face-to-face</option><option value="Online">Online</option>';
                     typeSel.value = s.type || 'Face-to-face';
                     typeSel.onchange = function(e) { s.type = typeSel.value; };
@@ -1023,6 +1014,25 @@
         renderSavedPrograms();
         // Ensure Save button state reflects current active program
         try { updateReviewSaveButton(); } catch(e) {}
+
+        // Toggle showing of Online Meeting Link rows depending on modality
+        function updateOnlineVisibilityFor(selectId, rowId) {
+            try {
+                var sel = document.getElementById(selectId);
+                var row = document.getElementById(rowId);
+                if (!sel || !row) return;
+                var v = String(sel.value || '').toLowerCase();
+                if (v === 'online' || v === 'hybrid') row.style.display = 'flex';
+                else row.style.display = 'none';
+            } catch (e) { /* ignore */ }
+        }
+
+        var _m1 = document.getElementById('reviewModalitySelectMain');
+        if (_m1) { _m1.addEventListener('change', function(){ updateOnlineVisibilityFor('reviewModalitySelectMain','reviewOnlineRowMain'); }); updateOnlineVisibilityFor('reviewModalitySelectMain','reviewOnlineRowMain'); }
+        var _m2 = document.getElementById('reviewModalitySelectRefresher');
+        if (_m2) { _m2.addEventListener('change', function(){ updateOnlineVisibilityFor('reviewModalitySelectRefresher','reviewOnlineRowRefresher'); }); updateOnlineVisibilityFor('reviewModalitySelectRefresher','reviewOnlineRowRefresher'); }
+        var _em = document.getElementById('editProgramModality');
+        if (_em) { _em.addEventListener('change', function(){ updateOnlineVisibilityFor('editProgramModality','editProgramOnlineRow'); }); updateOnlineVisibilityFor('editProgramModality','editProgramOnlineRow'); }
         </script>
 
         <!-- Edit Program Modal -->
@@ -1044,11 +1054,11 @@
                             <option value="Hybrid">Hybrid</option>
                         </select>
 
-                        <label for="editProgramFtfLocation">FTF Location</label>
-                        <input id="editProgramFtfLocation" type="text" placeholder="Room / branch">
-
-                        <label for="editProgramOnlineLink">Online Meeting Link</label>
-                        <input id="editProgramOnlineLink" type="url" placeholder="https://...">
+                        <!-- FTF location removed in edit modal; show online link only when modality requires it -->
+                        <div class="review-form-row" id="editProgramOnlineRow" style="display:none;">
+                            <label for="editProgramOnlineLink">Online Meeting Link</label>
+                            <input id="editProgramOnlineLink" type="url" placeholder="https://...">
+                        </div>
 
                         <label for="editProgramPattern">Day Pattern</label>
                         <select id="editProgramPattern">

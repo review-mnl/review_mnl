@@ -331,6 +331,21 @@
 
                     <!-- STEP 1: Pick date -->
                     <div id="schStep1">
+                        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
+                            <div>
+                                <label class="sch-label">Program</label>
+                                <select id="schProgramPicker" class="sch-input">
+                                    <option value="">Select a program...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="sch-label">Session</label>
+                                <select id="schSessionPicker" class="sch-input" disabled>
+                                    <option value="">Pick a date first</option>
+                                </select>
+                                <p id="schSessionDetails" style="margin:8px 0 0;font-size:12px;color:#475569;"></p>
+                            </div>
+                        </div>
                         <p style="font-size:13px;color:#555;margin-bottom:16px;">Select an available date. Greyed-out days are closed.</p>
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                             <button onclick="schCalPrev()" class="sch-nav-btn"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>
@@ -369,7 +384,7 @@
                             </div>
                             <div>
                                 <label class="sch-label">Program / Course of Interest</label>
-                                <select id="schProgram" class="sch-input">
+                                <select id="schProgram" class="sch-input" disabled>
                                     <option value="">Select a program...</option>
                                 </select>
                             </div>
@@ -731,6 +746,185 @@
         var _centerEnrollmentPrice = 1550;
         var _centerTeachersAll = [];
         var _centerScheduleData = null;
+        var _centerReviewPrograms = [];
+        var _selectedProgramKey = '';
+
+        function parseJsonArray(raw) {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw;
+            if (typeof raw === 'string') {
+                try {
+                    var parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        function normalizeSessionType(raw) {
+            var value = String(raw || '').trim().toLowerCase();
+            if (!value) return '';
+            if (value === 'ftof' || value === 'face-to-face' || value === 'face to face' || value === 'face_to_face') return 'ftof';
+            if (value === 'online') return 'online';
+            return '';
+        }
+
+        function normalizeSessionTemplate(raw) {
+            var type = normalizeSessionType(raw && raw.type);
+            if (!type) return null;
+            return {
+                type: type,
+                from: String(raw && raw.from ? raw.from : '').trim(),
+                to: String(raw && raw.to ? raw.to : '').trim(),
+                location: String(raw && raw.location ? raw.location : '').trim(),
+                meeting_link: String(raw && raw.meeting_link ? raw.meeting_link : '').trim(),
+            };
+        }
+
+        function buildDefaultSessionTemplates(modality, ftfLocation, onlineLink) {
+            var m = String(modality || '').trim().toLowerCase();
+            if (m === 'hybrid') {
+                return [
+                    { type: 'ftof', from: '08:00', to: '12:00', location: String(ftfLocation || '').trim(), meeting_link: '' },
+                    { type: 'online', from: '13:00', to: '17:00', location: '', meeting_link: String(onlineLink || '').trim() },
+                ];
+            }
+            if (m === 'online') {
+                return [{ type: 'online', from: '08:00', to: '12:00', location: '', meeting_link: String(onlineLink || '').trim() }];
+            }
+            return [{ type: 'ftof', from: '08:00', to: '12:00', location: String(ftfLocation || '').trim(), meeting_link: '' }];
+        }
+
+        function normalizeReviewProgram(raw) {
+            var name = String(raw && raw.name ? raw.name : '').trim();
+            var track = String(raw && raw.track ? raw.track : 'Regular Review Classes').trim();
+            var modality = String(raw && (raw.modality || raw.mode) ? (raw.modality || raw.mode) : 'Face-to-face').trim();
+            var schedule = parseJsonArray(raw && raw.schedule).map(function(item, idx) {
+                var day = String(item && item.day ? item.day : '').trim() || ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][idx] || '';
+                return { day: day, open: !!(item && item.open) };
+            });
+            if (!schedule.length) {
+                schedule = [
+                    { day: 'Sun', open: false }, { day: 'Mon', open: true }, { day: 'Tue', open: true },
+                    { day: 'Wed', open: true }, { day: 'Thu', open: true }, { day: 'Fri', open: true }, { day: 'Sat', open: false }
+                ];
+            }
+            var templates = parseJsonArray(raw && raw.session_templates)
+                .map(normalizeSessionTemplate)
+                .filter(Boolean);
+            if (!templates.length) {
+                templates = buildDefaultSessionTemplates(modality, raw && raw.ftf_location, raw && raw.online_link);
+            }
+            var hasOpen = schedule.some(function(item) { return !!item.open; });
+            return {
+                name: name,
+                track: track,
+                modality: modality,
+                schedule: schedule,
+                session_templates: templates,
+                has_open_days: hasOpen,
+                key: (name + '|' + track).toLowerCase(),
+            };
+        }
+
+        function getActiveReviewProgram() {
+            if (!_selectedProgramKey) return null;
+            return _centerReviewPrograms.find(function(program) { return program.key === _selectedProgramKey; }) || null;
+        }
+
+        function rebuildScheduleFromProgram(program) {
+            var source = Array.isArray(program && program.schedule) ? program.schedule : [];
+            if (!source.length) return;
+            SCH_SCHEDULE = source.map(function(item, idx) {
+                return { dow: idx, open: !!(item && item.open) };
+            });
+        }
+
+        function getSelectedSession() {
+            var picker = document.getElementById('schSessionPicker');
+            if (!picker || picker.disabled) return null;
+            var raw = String(picker.value || '').trim();
+            if (!raw) return null;
+            try {
+                var parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function getSessionDisplayLine(session) {
+            if (!session) return 'No session selected yet.';
+            var typeLabel = session.type === 'online' ? 'Online' : 'FTF';
+            var timeLabel = (session.from && session.to) ? (fmt12(session.from) + ' - ' + fmt12(session.to)) : 'Time not set';
+            var venue = session.type === 'online'
+                ? (session.meeting_link ? ('Link: ' + session.meeting_link) : 'Link not set')
+                : (session.location ? ('Location: ' + session.location) : 'Location not set');
+            return typeLabel + ' · ' + timeLabel + ' · ' + venue;
+        }
+
+        function refreshSessionPickerForDate() {
+            var picker = document.getElementById('schSessionPicker');
+            var details = document.getElementById('schSessionDetails');
+            var activeProgram = getActiveReviewProgram();
+            if (!picker) return;
+
+            picker.innerHTML = '';
+            if (!activeProgram) {
+                picker.disabled = true;
+                picker.innerHTML = '<option value="">Select a program first</option>';
+                if (details) details.textContent = '';
+                return;
+            }
+
+            if (!_schSelectedDate) {
+                picker.disabled = true;
+                picker.innerHTML = '<option value="">Pick a date first</option>';
+                if (details) details.textContent = '';
+                return;
+            }
+
+            var dow = _schSelectedDate.getDay();
+            var dayItem = activeProgram.schedule[dow];
+            if (!(dayItem && dayItem.open)) {
+                picker.disabled = true;
+                picker.innerHTML = '<option value="">No sessions on selected date</option>';
+                if (details) details.textContent = '';
+                return;
+            }
+
+            var templates = Array.isArray(activeProgram.session_templates) ? activeProgram.session_templates : [];
+            if (!templates.length) {
+                picker.disabled = true;
+                picker.innerHTML = '<option value="">No configured sessions</option>';
+                if (details) details.textContent = '';
+                return;
+            }
+
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select a session...';
+            picker.appendChild(placeholder);
+
+            templates.forEach(function(session) {
+                var option = document.createElement('option');
+                option.value = JSON.stringify(session);
+                option.textContent = getSessionDisplayLine(session);
+                picker.appendChild(option);
+            });
+            picker.disabled = false;
+            picker.onchange = function() {
+                var selected = getSelectedSession();
+                if (details) details.textContent = getSessionDisplayLine(selected);
+                var canProceed = !!(_schSelectedDate && selected && getActiveReviewProgram());
+                var nextBtn = document.getElementById('schStep1Next');
+                if (nextBtn) nextBtn.disabled = !canProceed;
+            };
+
+            if (details) details.textContent = 'Select the specific session for this date.';
+        }
 
         function normalizeTeacherName(raw) {
             return String(raw || '').trim();
@@ -932,8 +1126,8 @@
         }
 
         function getSelectedProgramValue() {
-            var el = document.getElementById('schProgram');
-            return el ? String(el.value || '').trim() : '';
+            var active = getActiveReviewProgram();
+            return active && active.name ? String(active.name).trim() : '';
         }
 
         function filterTeachersByProgram(teachers, program) {
@@ -1185,41 +1379,74 @@
         }
 
         function setScheduleProgramOptions(programs) {
-            var select = document.getElementById('schProgram');
-            if (!select) return;
-            var items = Array.isArray(programs) ? programs : [];
-            select.innerHTML = '';
+            var selectStep2 = document.getElementById('schProgram');
+            var pickerStep1 = document.getElementById('schProgramPicker');
+            var items = Array.isArray(programs) ? programs.filter(function(program) {
+                return !!(program && program.name && program.has_open_days);
+            }) : [];
+
+            _centerReviewPrograms = items.slice();
+
+            function hydrateSelect(selectEl) {
+                if (!selectEl) return;
+                selectEl.innerHTML = '';
+                if (!items.length) {
+                    selectEl.innerHTML = '<option value="">No available programs yet</option>';
+                    selectEl.disabled = true;
+                    return;
+                }
+                var placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Select a program...';
+                selectEl.appendChild(placeholder);
+                items.forEach(function(program) {
+                    var option = document.createElement('option');
+                    option.value = program.key;
+                    option.textContent = program.name + ' (' + program.track + ' - ' + program.modality + ')';
+                    selectEl.appendChild(option);
+                });
+                selectEl.disabled = false;
+            }
+
+            hydrateSelect(pickerStep1);
+            hydrateSelect(selectStep2);
 
             if (!items.length) {
-                var emptyOption = document.createElement('option');
-                emptyOption.value = '';
-                emptyOption.textContent = 'No available programs yet';
-                select.appendChild(emptyOption);
-                select.disabled = true;
+                _selectedProgramKey = '';
+                refreshSessionPickerForDate();
                 return;
             }
 
-            var placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = 'Select a program...';
-            select.appendChild(placeholder);
-
-            items.forEach(function(program) {
-                var label = String(program || '').trim();
-                if (!label) return;
-                var option = document.createElement('option');
-                option.value = label;
-                option.textContent = label;
-                select.appendChild(option);
-            });
-            select.disabled = false;
-
-            if (!select.dataset.teacherFilterBound) {
-                select.addEventListener('change', function() {
-                    updateScheduleTeacherOptions();
-                });
-                select.dataset.teacherFilterBound = '1';
+            function selectProgramByKey(key) {
+                _selectedProgramKey = String(key || '').trim();
+                if (pickerStep1) pickerStep1.value = _selectedProgramKey;
+                if (selectStep2) selectStep2.value = _selectedProgramKey;
+                rebuildScheduleFromProgram(getActiveReviewProgram());
+                renderSchCal();
+                refreshSessionPickerForDate();
+                updateScheduleTeacherOptions();
             }
+
+            if (pickerStep1 && !pickerStep1.dataset.boundProgramPicker) {
+                pickerStep1.addEventListener('change', function() {
+                    _schSelectedDate = null;
+                    var lbl = document.getElementById('schSelectedDateLabel');
+                    if (lbl) lbl.style.display = 'none';
+                    var nextBtn = document.getElementById('schStep1Next');
+                    if (nextBtn) nextBtn.disabled = true;
+                    selectProgramByKey(pickerStep1.value);
+                });
+                pickerStep1.dataset.boundProgramPicker = '1';
+            }
+
+            if (selectStep2 && !selectStep2.dataset.teacherFilterBound) {
+                selectStep2.addEventListener('change', function() {
+                    selectProgramByKey(selectStep2.value);
+                });
+                selectStep2.dataset.teacherFilterBound = '1';
+            }
+
+            selectProgramByKey(items[0].key);
         }
 
         function setPaymentQrDisplay(imageId, emptyId, hintId, qrUrl, loadedHint, fallbackHint, errorHint) {
@@ -1406,6 +1633,9 @@
             }
 
             renderSchCal();
+            refreshSessionPickerForDate();
+            var nextBtn = document.getElementById('schStep1Next');
+            if (nextBtn) nextBtn.disabled = true;
             schSetStep(1);
             var ov = document.getElementById('scheduleOverlay');
             ov.style.display = 'flex';
@@ -1441,10 +1671,13 @@
 
         function schGoStep(n) {
             if (n === 3) {
+                var selectedSession = getSelectedSession();
                 document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
                 document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
                 document.getElementById('summTeacher').textContent = getSelectedTeacherSelection().display;
-                document.getElementById('summProgram').textContent = document.getElementById('schProgram').value || '—';
+                document.getElementById('summProgram').textContent = getSelectedProgramValue() || '—';
+                var details = document.getElementById('schSessionDetails');
+                if (details && selectedSession) details.textContent = getSessionDisplayLine(selectedSession);
                 updateEnrollmentPriceSummary();
                 updatePaymentMethodUI();
             }
@@ -1461,7 +1694,7 @@
                 var confTeacher = document.getElementById('confTeacher');
 
                 var programValue = (_schEnrollmentResp && _schEnrollmentResp.program_enrolled)
-                    || document.getElementById('schProgram').value
+                    || getSelectedProgramValue()
                     || '—';
                 var paymentMethodValue = (_schEnrollmentResp && _schEnrollmentResp.payment_method)
                     || _schPaymentMethod
@@ -1863,10 +2096,16 @@
             var name    = document.getElementById('schName').value.trim();
             var email   = document.getElementById('schEmail').value.trim();
             var contact = document.getElementById('schContact').value.trim();
+            var program = getSelectedProgramValue();
             var programEl = document.getElementById('schProgram');
-            var program = programEl ? programEl.value : '';
+            var selectedSession = getSelectedSession();
             if (programEl && programEl.disabled) {
                 alert('This review center has no available programs yet. Please contact the center first.');
+                return;
+            }
+            if (!_schSelectedDate || !selectedSession) {
+                alert('Please select a date and session first.');
+                schSetStep(1);
                 return;
             }
             if (!name || !email || !contact || !program) {
@@ -1917,7 +2156,8 @@
                         var lbl = document.getElementById('schSelectedDateLabel');
                         lbl.textContent = '📅 ' + schFmtDate(dt);
                         lbl.style.display = 'block';
-                        document.getElementById('schStep1Next').disabled = false;
+                        refreshSessionPickerForDate();
+                        document.getElementById('schStep1Next').disabled = true;
                         updateScheduleTeacherOptions();
                         renderSchCal();
                     }); })(date);
@@ -1999,6 +2239,26 @@
                 const centerShort = center.address || 'Location unavailable';
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
                 const programs = parseArrayField(center.programs);
+                const reviewProgramsRaw = parseJsonArray(center.review_schedule);
+                const reviewPrograms = reviewProgramsRaw.map(normalizeReviewProgram).filter(function(program) {
+                    return !!(program && program.name);
+                });
+                const fallbackReviewPrograms = programs.map(function(name) {
+                    return normalizeReviewProgram({
+                        name: String(name || '').trim(),
+                        modality: 'Face-to-face',
+                        schedule: [
+                            { day: 'Sun', open: false },
+                            { day: 'Mon', open: true },
+                            { day: 'Tue', open: true },
+                            { day: 'Wed', open: true },
+                            { day: 'Thu', open: true },
+                            { day: 'Fri', open: true },
+                            { day: 'Sat', open: false }
+                        ]
+                    });
+                }).filter(function(program) { return !!program.name; });
+                var effectiveReviewPrograms = reviewPrograms.length ? reviewPrograms : fallbackReviewPrograms;
 
                 _centerPaymentMethods = normalizeCenterPaymentMethods(center.payment_methods);
                 _centerPaymentDetails = normalizeCenterPaymentDetails(center.payment_details);
@@ -2007,7 +2267,7 @@
                 applyCenterPaymentInfo(centerName);
 
                 _centerScheduleData = getCenterScheduleContainer(center);
-                setScheduleProgramOptions(programs);
+                setScheduleProgramOptions(effectiveReviewPrograms);
                 setScheduleTeacherOptions(resolveCenterTeacherList(center));
 
                 // --- Map Integration ---
@@ -2337,10 +2597,14 @@
                     return;
                 }
                 const amount = _centerEnrollmentPrice;
-                const programEnrolled = (document.getElementById('schProgram').value || '').trim();
+                const programEnrolled = getSelectedProgramValue();
                 const enrollmentDate = _schSelectedDate
                     ? _schSelectedDate.toISOString().slice(0, 10)
                     : new Date().toISOString().slice(0, 10);
+                const selectedSession = getSelectedSession();
+                if (!_schSelectedDate || !selectedSession) {
+                    throw new Error('Please select an available date and session before submitting payment.');
+                }
                 var teacherSel = getSelectedTeacherSelection();
                 if (payBtn) {
                     payBtn.disabled = true;
@@ -2359,6 +2623,11 @@
                     reference_number: validation.referenceNumber,
                     program_enrolled: programEnrolled,
                     enrollment_date: enrollmentDate,
+                    schedule_type: selectedSession.type || '',
+                    schedule_time_from: selectedSession.from || '',
+                    schedule_time_to: selectedSession.to || '',
+                    schedule_location: selectedSession.location || '',
+                    schedule_meeting_link: selectedSession.meeting_link || '',
                     teacher: teacherSel.mode === 'manual' ? String(teacherSel.teacher_name || '').trim() : '',
                     teacher_name: teacherSel.mode === 'manual' ? String(teacherSel.teacher_name || '').trim() : '',
                     teacher_program: teacherSel.mode === 'manual' ? (teacherSel.teacher_program || '') : '',

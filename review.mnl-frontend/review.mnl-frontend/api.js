@@ -670,6 +670,11 @@ const PaymentsAPI = {
             reference_number: String((payload && payload.reference_number) || '').trim(),
             program_enrolled: String((payload && payload.program_enrolled) || '').trim(),
             enrollment_date: String((payload && payload.enrollment_date) || '').trim(),
+            schedule_type: String((payload && payload.schedule_type) || '').trim(),
+            schedule_time_from: String((payload && payload.schedule_time_from) || '').trim(),
+            schedule_time_to: String((payload && payload.schedule_time_to) || '').trim(),
+            schedule_location: String((payload && payload.schedule_location) || '').trim(),
+            schedule_meeting_link: String((payload && payload.schedule_meeting_link) || '').trim(),
         };
 
         var proofFile = (payload && payload.payment_proof) ? payload.payment_proof : null;

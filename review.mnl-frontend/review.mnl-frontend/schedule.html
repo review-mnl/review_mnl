@@ -472,8 +472,7 @@
                 const ticket = document.createElement('div');
                 ticket.className = 'program-ticket';
                 const sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
-                // Only show online meeting info. FTF location removed from saved cards per request.
-                var sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
+                // Only show session timeframe/meeting info. FTF location removed from saved cards per request.
                 var sessionSummary = '';
                 if (sessions && sessions.length) {
                     sessionSummary = sessions.map(function(s){

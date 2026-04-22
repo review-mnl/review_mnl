@@ -70,8 +70,12 @@
 
             window.addEventListener('load', function() {
                 const sortEl = document.getElementById('centerFeedbackSort');
-                if (sortEl) sortEl.addEventListener('change', loadCenterTestimonials);
-                loadCenterTestimonials();
+                if (sortEl && typeof loadCenterTestimonials === 'function') {
+                    sortEl.addEventListener('change', loadCenterTestimonials);
+                }
+                if (typeof loadCenterTestimonials === 'function') {
+                    loadCenterTestimonials();
+                }
             });
         </script>
 
@@ -258,6 +262,15 @@
             return DEFAULT_REVIEW_SCHEDULE.map(function(item) {
                 return { day: item.day, open: item.open };
             });
+        }
+
+        function escHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function normalizeProgram(raw) {
@@ -523,7 +536,7 @@
             }
 
             // Persist changes
-            persistPrograms().catch(function(){});
+            try { persistPrograms(); } catch (e) {}
             closeModal('editProgramModal');
         }
 
@@ -979,18 +992,21 @@
                 });
             });
             // Live image preview inside modal
-            document.getElementById('centerImageInput').addEventListener('change', function() {
-                const file = this.files[0];
-                const preview = document.getElementById('modalImgPreview');
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.style.backgroundImage = 'url(' + e.target.result + ')';
-                        preview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
+            var centerImageInput = document.getElementById('centerImageInput');
+            if (centerImageInput) {
+                centerImageInput.addEventListener('change', function() {
+                    const file = this.files[0];
+                    const preview = document.getElementById('modalImgPreview');
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.style.backgroundImage = 'url(' + e.target.result + ')';
+                            preview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
             async function saveProfile() {
                 const saveBtn = document.querySelector('#profileModal .modal-save-btn');
                 const originalBtnText = saveBtn ? saveBtn.textContent : 'Save Changes';

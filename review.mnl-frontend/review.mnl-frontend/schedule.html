@@ -307,8 +307,9 @@
                         to: String(item && item.to ? item.to : '').trim(),
                         location: String(item && item.location ? item.location : '').trim(),
                         meeting_link: String(item && item.meeting_link ? item.meeting_link : '').trim(),
+                        applyToAll: !!(item && item.applyToAll)
                     };
-                }).filter(function(item) { return item.type === 'ftof' || item.type === 'online'; })
+                }).filter(function(item) { return (item.from && item.to) || item.type === 'ftof' || item.type === 'online'; })
                 : [];
             return {
                 name: name,
@@ -467,11 +468,16 @@
                 ticket.className = 'program-ticket';
                 const sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
                 // Only show online meeting info. FTF location removed from saved cards per request.
-                var onlineFromSessions = (sessions.find(function(s){ return s && s.type === 'online'; }) || {}).meeting_link || '';
-                var onlineLink = String(program.online_link || onlineFromSessions || '').trim();
+                var sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
                 var sessionSummary = '';
-                if (String(program.modality || '').toLowerCase() === 'online' || String(program.modality || '').toLowerCase() === 'hybrid') {
-                    sessionSummary = 'Online: ' + (onlineLink ? onlineLink : 'Link not set');
+                if (sessions && sessions.length) {
+                    sessionSummary = sessions.map(function(s){
+                        if (s && s.from && s.to) return escHtml(s.from + '–' + s.to);
+                        var t = String(s && s.type ? s.type : '').toLowerCase();
+                        if (t === 'ftof') return 'FTF ' + escHtml((s.from || '') + '–' + (s.to || ''));
+                        if (t === 'online') return 'Online ' + escHtml((s.meeting_link || s.from || '') + (s.to ? '–'+s.to : ''));
+                        return '';
+                    }).filter(Boolean).join(', ');
                 }
                 ticket.innerHTML =
                     '<div class="program-ticket-top">' +
@@ -530,6 +536,7 @@
         // --- Edit Program Modal Logic ---
         let _editProgramIndex = null;
         let _editProgramTempSchedule = null;
+        let _editProgramTempSessions = null;
 
         function openEditProgramModal(idx) {
             idx = Number(idx);
@@ -549,7 +556,19 @@
             if (onlineEl) onlineEl.value = p.online_link || '';
             if (patEl) patEl.value = p.schedulePattern || 'Custom';
 
+            // prepare editable sessions (timeframe-only rows)
+            _editProgramTempSessions = Array.isArray(p.session_templates) ? JSON.parse(JSON.stringify(p.session_templates)) : [];
             renderEditProgramDayPills();
+            renderEditProgramSessions();
+            // ensure Add Session button is wired (modal elements exist now)
+            try {
+                var addBtnOnce = document.getElementById('addEditProgramSessionBtn');
+                if (addBtnOnce) addBtnOnce.onclick = function(){
+                    _editProgramTempSessions = Array.isArray(_editProgramTempSessions) ? _editProgramTempSessions : [];
+                    _editProgramTempSessions.push({ from: '08:00', to: '12:00', applyToAll: false });
+                    renderEditProgramSessions();
+                };
+            } catch (e) { /* ignore */ }
             // ensure online-link input visibility reflects current modality
             try { updateOnlineVisibilityFor('editProgramModality','editProgramOnlineRow'); } catch(e) {}
 
@@ -616,6 +635,72 @@
             });
         }
 
+        // --- Edit Program Sessions UI (timeframe-only) ---
+        function renderEditProgramSessions() {
+            var container = document.getElementById('editProgramSessions');
+            if (!container) return;
+            container.innerHTML = '';
+            var sessions = Array.isArray(_editProgramTempSessions) ? _editProgramTempSessions : [];
+            if (!sessions.length) {
+                var empty = document.createElement('div');
+                empty.className = 'review-empty';
+                empty.textContent = 'No sessions yet.';
+                container.appendChild(empty);
+                return;
+            }
+            sessions.forEach(function(sess, idx) {
+                var row = document.createElement('div');
+                row.className = 'edit-session-row';
+                row.style.display = 'flex';
+                row.style.gap = '8px';
+                row.style.alignItems = 'center';
+
+                var from = document.createElement('input');
+                from.type = 'time';
+                from.value = sess.from || '';
+                from.onchange = function() { _editProgramTempSessions[idx].from = String(from.value || '').trim(); };
+
+                var to = document.createElement('input');
+                to.type = 'time';
+                to.value = sess.to || '';
+                to.onchange = function() { _editProgramTempSessions[idx].to = String(to.value || '').trim(); };
+
+                var applyLbl = document.createElement('label');
+                applyLbl.style.display = 'flex';
+                applyLbl.style.alignItems = 'center';
+                applyLbl.style.gap = '6px';
+                applyLbl.style.fontSize = '13px';
+                var applyChk = document.createElement('input');
+                applyChk.type = 'checkbox';
+                applyChk.checked = !!sess.applyToAll;
+                applyChk.onchange = function() { _editProgramTempSessions[idx].applyToAll = !!applyChk.checked; };
+                applyLbl.appendChild(applyChk);
+                applyLbl.appendChild(document.createTextNode('Apply to all days'));
+
+                var rem = document.createElement('button');
+                rem.type = 'button';
+                rem.className = 'program-ticket-btn';
+                rem.textContent = 'Remove';
+                rem.onclick = function() { _editProgramTempSessions.splice(idx, 1); renderEditProgramSessions(); };
+
+                row.appendChild(from);
+                row.appendChild(to);
+                row.appendChild(applyLbl);
+                row.appendChild(rem);
+                container.appendChild(row);
+            });
+        }
+
+        // Add session button wiring
+        (function(){
+            var addBtn = document.getElementById('addEditProgramSessionBtn');
+            if (addBtn) addBtn.onclick = function(){
+                _editProgramTempSessions = Array.isArray(_editProgramTempSessions) ? _editProgramTempSessions : [];
+                _editProgramTempSessions.push({ from: '08:00', to: '12:00', applyToAll: false });
+                renderEditProgramSessions();
+            };
+        })();
+
         function saveEditedProgram() {
             if (_editProgramIndex === null) return;
             var name = String((document.getElementById('editProgramName')||{}).value || '').trim();
@@ -642,6 +727,20 @@
                 schedulePattern: schedulePattern,
                 session_templates: buildSessionTemplates(modality, ftfLocation, onlineLink)
             };
+
+            // If sessions were edited in the modal, include them (timeframe-only entries)
+            try {
+                if (Array.isArray(_editProgramTempSessions)) {
+                    updated.session_templates = _editProgramTempSessions.map(function(s){
+                        return { from: String(s.from || '').trim(), to: String(s.to || '').trim(), applyToAll: !!s.applyToAll };
+                    });
+                    // If any session has applyToAll, apply the first matched timeframe to all days in schedule
+                    var applyAll = _editProgramTempSessions.find(function(s){ return s && s.applyToAll; });
+                    if (applyAll && applyAll.from && applyAll.to && Array.isArray(updated.schedule)) {
+                        updated.schedule = updated.schedule.map(function(d){ var dd = { day: d.day, open: !!d.open }; dd.session = { from: applyAll.from, to: applyAll.to }; if (d.type) dd.type = d.type; return dd; });
+                    }
+                }
+            } catch (e) { /* ignore */ }
 
             if (_editProgramIndex < programs.length) {
                 programs[_editProgramIndex] = JSON.parse(JSON.stringify(updated));
@@ -761,18 +860,29 @@
             if (active.modality === 'Hybrid' && day.open) {
                 typeText = ' • ' + (day.type || 'Face-to-face');
             }
-            // Include currently selected session (from savedPrograms when available)
+            // Include currently selected session: prefer per-day session, otherwise program-level session_templates
             var sessionText = '';
             try {
-                var sp = (Array.isArray(savedPrograms) ? savedPrograms.find(function(s) {
-                    return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
-                }) : null) || active;
-                var sessions = Array.isArray(sp && sp.session_templates) ? sp.session_templates : [];
-                if (sessions && sessions.length && typeof _activeSessionIndex === 'number' && sessions[_activeSessionIndex]) {
-                    var s = sessions[_activeSessionIndex];
-                    var t = String(s.type || '').toLowerCase();
-                    var typeLabel = t === 'ftof' ? 'Face-to-face' : (t === 'online' ? 'Online' : escHtml(t));
-                    sessionText = ' • Session: ' + typeLabel + ' ' + (s.from || '') + '–' + (s.to || '');
+                // Prefer day-level session (set by Apply to all)
+                if (active && Array.isArray(active.schedule) && active.schedule[dayIndex] && active.schedule[dayIndex].session && active.schedule[dayIndex].session.from && active.schedule[dayIndex].session.to) {
+                    var ds = active.schedule[dayIndex].session;
+                    sessionText = ' • Session: ' + escHtml(ds.from) + '–' + escHtml(ds.to);
+                } else {
+                    // Prefer saved program entry if available, then fallback to active
+                    var sp = (Array.isArray(savedPrograms) && savedPrograms[_activeReviewIndex]) ? savedPrograms[_activeReviewIndex] : ((Array.isArray(savedPrograms) ? savedPrograms.find(function(s) {
+                        return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
+                    }) : null) || active);
+                    var sessions = Array.isArray(sp && sp.session_templates) ? sp.session_templates : [];
+                    if (sessions && sessions.length && typeof _activeSessionIndex === 'number' && sessions[_activeSessionIndex]) {
+                        var s = sessions[_activeSessionIndex];
+                        if (s && s.from && s.to) {
+                            sessionText = ' • Session: ' + escHtml(s.from) + '–' + escHtml(s.to);
+                        } else {
+                            var t = String(s && s.type ? s.type : '').toLowerCase();
+                            var typeLabel = t === 'ftof' ? 'Face-to-face' : (t === 'online' ? 'Online' : escHtml(t || 'Session'));
+                            sessionText = ' • Session: ' + typeLabel + (s && (s.from || s.to) ? ' ' + escHtml((s.from || '') + '–' + (s.to || '')) : '');
+                        }
+                    }
                 }
             } catch (e) { /* ignore */ }
 
@@ -856,25 +966,16 @@
                 return;
             }
             select.disabled = false;
-            savedPrograms.forEach(function(sp) {
-                // map saved program to working programs index when possible
-                var pIndex = programs.findIndex(function(p) {
-                    return p && p.name === sp.name && p.track === sp.track && p.modality === sp.modality;
-                });
-                if (pIndex < 0) pIndex = 0;
+            savedPrograms.forEach(function(sp, i) {
                 const opt = document.createElement('option');
-                opt.value = String(pIndex);
+                opt.value = String(i);
                 opt.textContent = (sp.name || 'Program') + ' (' + (sp.track || 'Review') + ' - ' + (sp.modality || 'N/A') + ')';
                 select.appendChild(opt);
             });
 
-            // select option matching current active program when possible
-            var matched = false;
-            for (var i = 0; i < select.options.length; i++) {
-                if (select.options[i].value === String(_activeReviewIndex)) { select.selectedIndex = i; matched = true; break; }
-            }
-            if (!matched) select.selectedIndex = 0;
-            _activeReviewIndex = Number(select.options[select.selectedIndex].value) || 0;
+            // ensure active index is within range and select it
+            if (_activeReviewIndex < 0 || _activeReviewIndex >= savedPrograms.length) _activeReviewIndex = 0;
+            select.value = String(_activeReviewIndex);
             _activeSessionIndex = 0;
             select.onchange = function() {
                 _activeReviewIndex = Number(select.value) || 0;
@@ -894,10 +995,15 @@
             if (!active) {
                 const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No sessions'; select.appendChild(opt); select.disabled = true; return;
             }
-            // Prefer sessions from savedPrograms when available
-            var sp = (Array.isArray(savedPrograms) ? savedPrograms.find(function(s) {
-                return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
-            }) : null) || active;
+            // Prefer sessions from savedPrograms by index when available, fallback to active
+            var sp = null;
+            if (Array.isArray(savedPrograms) && typeof _activeReviewIndex === 'number' && savedPrograms[_activeReviewIndex]) {
+                sp = savedPrograms[_activeReviewIndex];
+            } else {
+                sp = (Array.isArray(savedPrograms) ? savedPrograms.find(function(s) {
+                    return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
+                }) : null) || active;
+            }
             var sessions = Array.isArray(sp && sp.session_templates) ? sp.session_templates : [];
             if (!sessions.length) {
                 const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No sessions'; select.appendChild(opt); select.disabled = true; return;
@@ -906,9 +1012,10 @@
             sessions.forEach(function(sess, idx) {
                 const opt = document.createElement('option');
                 var t = String(sess.type || '').toLowerCase();
-                var typeLabel = t === 'ftof' ? 'Face-to-face' : (t === 'online' ? 'Online' : escHtml(t));
+                var typeLabel = t === 'ftof' ? 'Face-to-face' : (t === 'online' ? 'Online' : '');
+                var timeframe = (sess.from || '') + (sess.to ? ' to ' + sess.to : '');
                 opt.value = String(idx);
-                opt.textContent = typeLabel + ' — ' + (sess.from || '') + ' to ' + (sess.to || '');
+                opt.textContent = (typeLabel ? (typeLabel + ' — ') : '') + timeframe;
                 select.appendChild(opt);
             });
             if (_activeSessionIndex >= sessions.length) _activeSessionIndex = 0;
@@ -1138,6 +1245,10 @@
                         </select>
 
                         <div id="editProgramDayPills" class="ec-day-pills" style="margin-top:8px;"></div>
+
+                        <label style="margin-top:6px;">Sessions (timeframe)</label>
+                        <div id="editProgramSessions" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;"></div>
+                        <button type="button" id="addEditProgramSessionBtn" class="review-add-btn" style="width:fit-content">+ Add Session</button>
                     </div>
                 </div>
                 <div class="modal-footer">

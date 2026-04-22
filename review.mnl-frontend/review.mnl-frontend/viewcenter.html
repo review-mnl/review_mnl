@@ -1371,6 +1371,11 @@
         }
 
         function openScheduleModal() {
+            // ENHANCED: Only allow scheduling if there are programs with schedule
+            if (!window._centerReviewPrograms || !window._centerReviewPrograms.length) {
+                alert('This review center has no available programs yet. Please contact the center first.');
+                return;
+            }
             var now = new Date();
             _schYear = now.getFullYear(); _schMonth = now.getMonth();
             _schSelectedDate = null; _schStep = 1;
@@ -1404,6 +1409,11 @@
                 alert('Booking via the Operating Schedule is disabled for this center. Please contact the center or select a program with a review schedule.');
                 return;
             }
+
+            // ENHANCED: Show calendar for selected program
+            setTimeout(function(){
+                if (typeof updateScheduleCalendarForProgram === 'function') updateScheduleCalendarForProgram();
+            }, 100);
 
             renderSchCal();
             schSetStep(1);

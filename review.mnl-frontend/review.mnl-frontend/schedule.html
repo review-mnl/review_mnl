@@ -210,6 +210,10 @@
                         <select id="reviewScheduleSelect"></select>
                     </div>
                     <div class="review-schedule-selector">
+                        <label for="reviewSessionSelect">Session</label>
+                        <select id="reviewSessionSelect" aria-label="Select session for program"></select>
+                    </div>
+                    <div class="review-schedule-selector">
                         <label for="reviewPatternSelect">Day Pattern</label>
                         <select id="reviewPatternSelect">
                             <option value="MWF">MWF</option>
@@ -267,6 +271,7 @@
         let _reviewYear = new Date().getFullYear();
         let _reviewMonth = new Date().getMonth();
         let _activeReviewIndex = 0;
+        let _activeSessionIndex = 0;
 
         function cloneDefaultSchedule() {
             return DEFAULT_REVIEW_SCHEDULE.map(function(item) {
@@ -756,7 +761,22 @@
             if (active.modality === 'Hybrid' && day.open) {
                 typeText = ' • ' + (day.type || 'Face-to-face');
             }
-            details.textContent = prefix + day.day + ': ' + status + typeText + ' • ' + programText + ' • Pattern: ' + pattern;
+            // Include currently selected session (from savedPrograms when available)
+            var sessionText = '';
+            try {
+                var sp = (Array.isArray(savedPrograms) ? savedPrograms.find(function(s) {
+                    return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
+                }) : null) || active;
+                var sessions = Array.isArray(sp && sp.session_templates) ? sp.session_templates : [];
+                if (sessions && sessions.length && typeof _activeSessionIndex === 'number' && sessions[_activeSessionIndex]) {
+                    var s = sessions[_activeSessionIndex];
+                    var t = String(s.type || '').toLowerCase();
+                    var typeLabel = t === 'ftof' ? 'Face-to-face' : (t === 'online' ? 'Online' : escHtml(t));
+                    sessionText = ' • Session: ' + typeLabel + ' ' + (s.from || '') + '–' + (s.to || '');
+                }
+            } catch (e) { /* ignore */ }
+
+            details.textContent = prefix + day.day + ': ' + status + typeText + ' • ' + programText + ' • Pattern: ' + pattern + (sessionText || '');
         }
 
         function renderReviewCalendar() {
@@ -825,27 +845,77 @@
             const select = document.getElementById('reviewScheduleSelect');
             if (!select) return;
             select.innerHTML = '';
-            if (programs.length === 0) {
+            // Populate the Program dropdown from savedPrograms (persisted programs)
+            if (!Array.isArray(savedPrograms) || savedPrograms.length === 0) {
                 const opt = document.createElement('option');
                 opt.value = '';
-                opt.textContent = 'Add a program first';
+                opt.textContent = 'No saved programs';
                 select.appendChild(opt);
                 select.disabled = true;
+                updateReviewSessionSelect();
                 return;
             }
             select.disabled = false;
-            programs.forEach(function(p, idx) {
+            savedPrograms.forEach(function(sp) {
+                // map saved program to working programs index when possible
+                var pIndex = programs.findIndex(function(p) {
+                    return p && p.name === sp.name && p.track === sp.track && p.modality === sp.modality;
+                });
+                if (pIndex < 0) pIndex = 0;
                 const opt = document.createElement('option');
-                opt.value = String(idx);
-                opt.textContent = p.name + ' (' + p.track + ')';
+                opt.value = String(pIndex);
+                opt.textContent = (sp.name || 'Program') + ' (' + (sp.track || 'Review') + ' - ' + (sp.modality || 'N/A') + ')';
                 select.appendChild(opt);
             });
-            if (_activeReviewIndex >= programs.length) _activeReviewIndex = 0;
-            select.value = String(_activeReviewIndex);
+
+            // select option matching current active program when possible
+            var matched = false;
+            for (var i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === String(_activeReviewIndex)) { select.selectedIndex = i; matched = true; break; }
+            }
+            if (!matched) select.selectedIndex = 0;
+            _activeReviewIndex = Number(select.options[select.selectedIndex].value) || 0;
+            _activeSessionIndex = 0;
             select.onchange = function() {
                 _activeReviewIndex = Number(select.value) || 0;
+                _activeSessionIndex = 0;
                 updateReviewPatternSelect();
+                updateReviewSessionSelect();
                 renderReviewSchedule();
+            };
+            updateReviewSessionSelect();
+        }
+
+        function updateReviewSessionSelect() {
+            const select = document.getElementById('reviewSessionSelect');
+            if (!select) return;
+            select.innerHTML = '';
+            const active = getActiveProgram();
+            if (!active) {
+                const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No sessions'; select.appendChild(opt); select.disabled = true; return;
+            }
+            // Prefer sessions from savedPrograms when available
+            var sp = (Array.isArray(savedPrograms) ? savedPrograms.find(function(s) {
+                return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
+            }) : null) || active;
+            var sessions = Array.isArray(sp && sp.session_templates) ? sp.session_templates : [];
+            if (!sessions.length) {
+                const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No sessions'; select.appendChild(opt); select.disabled = true; return;
+            }
+            select.disabled = false;
+            sessions.forEach(function(sess, idx) {
+                const opt = document.createElement('option');
+                var t = String(sess.type || '').toLowerCase();
+                var typeLabel = t === 'ftof' ? 'Face-to-face' : (t === 'online' ? 'Online' : escHtml(t));
+                opt.value = String(idx);
+                opt.textContent = typeLabel + ' — ' + (sess.from || '') + ' to ' + (sess.to || '');
+                select.appendChild(opt);
+            });
+            if (_activeSessionIndex >= sessions.length) _activeSessionIndex = 0;
+            select.value = String(_activeSessionIndex);
+            select.onchange = function() {
+                _activeSessionIndex = Number(select.value) || 0;
+                showReviewDayDetails(0);
             };
         }
 

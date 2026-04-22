@@ -190,6 +190,7 @@
         // Review-schedule program list and active selection for dashboard
         var _centerReviewPrograms = [];
         var _centerActiveProgramIndex = -1; // -1 = all
+        var _centerAllEnrollments = [];
         var CENTER_DEFAULT_REVIEW_SCHEDULE = [
             { day: 'Sun', open: false },
             { day: 'Mon', open: true },
@@ -239,8 +240,16 @@
                 _centerActiveProgramIndex = Number(sel.value);
                 var todayKey = toDateKey(new Date());
                 if (_centerActiveProgramIndex >= 0) {
-                    var keys = Object.keys(_centerCalendarState.enrollmentsByDate).filter(function(k){ return (getEnrollmentsForDateAndProgram(k) || []).length > 0; }).sort();
-                    _centerCalendarState.selectedDateKey = keys.length ? keys[0] : todayKey;
+                    var mDate = _centerCalendarState.monthDate || new Date();
+                    var year = mDate.getFullYear();
+                    var month = mDate.getMonth();
+                    var daysInMonth = new Date(year, month + 1, 0).getDate();
+                    var firstKey = null;
+                    for (var d = 1; d <= daysInMonth; d++) {
+                        var k = toDateKey(new Date(year, month, d));
+                        if ((getEnrollmentsForDateAndProgram(k) || []).length > 0) { firstKey = k; break; }
+                    }
+                    _centerCalendarState.selectedDateKey = firstKey || todayKey;
                 } else {
                     var allKeys = Object.keys(_centerCalendarState.enrollmentsByDate).sort();
                     _centerCalendarState.selectedDateKey = allKeys.length ? allKeys[0] : todayKey;
@@ -251,14 +260,20 @@
         }
 
         function getEnrollmentsForDateAndProgram(dateKey) {
-            var list = (_centerCalendarState.enrollmentsByDate && _centerCalendarState.enrollmentsByDate[dateKey]) || [];
-            if (_centerActiveProgramIndex < 0) return list;
-            var progName = (_centerReviewPrograms[_centerActiveProgramIndex] && _centerReviewPrograms[_centerActiveProgramIndex].name) || '';
+            var listByDate = (_centerCalendarState.enrollmentsByDate && _centerCalendarState.enrollmentsByDate[dateKey]) || [];
+            if (_centerActiveProgramIndex < 0) return listByDate;
+            var activeProgram = (_centerReviewPrograms[_centerActiveProgramIndex] || null);
+            if (!activeProgram) return [];
+            var d = new Date(dateKey + 'T00:00:00');
+            if (isNaN(d.getTime())) return [];
+            var dow = d.getDay();
+            var openDows = getOpenDows(activeProgram);
+            if (openDows.indexOf(dow) === -1) return [];
+            var progName = String(activeProgram.name || '').trim().toLowerCase();
             if (!progName) return [];
-            var lk = progName.trim().toLowerCase();
-            return list.filter(function(item) {
+            return (_centerAllEnrollments || []).filter(function(item) {
                 var p = String((item.program_enrolled || item.program || '')).trim().toLowerCase();
-                return p === lk || (p && p.indexOf(lk) !== -1);
+                return p === progName || (p && p.indexOf(progName) !== -1);
             });
         }
 
@@ -420,6 +435,7 @@
             try {
                 var res = await CentersAPI.getMyEnrollments('all', 'latest');
                 var enrollments = (res && res.enrollments) ? res.enrollments : [];
+                _centerAllEnrollments = Array.isArray(enrollments) ? enrollments.slice() : [];
                 _centerCalendarState.enrollmentsByDate = buildCenterEnrollmentsByDate(enrollments);
 
                 var todayKey = toDateKey(new Date());

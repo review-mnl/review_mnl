@@ -516,6 +516,12 @@
                 list.innerHTML = '<div class="review-empty">No saved programs yet.</div>';
                 return;
             }
+
+            const regRow = document.createElement('div');
+            regRow.className = 'program-ticket-row program-ticket-row-regular';
+            const refRow = document.createElement('div');
+            refRow.className = 'program-ticket-row program-ticket-row-refresher';
+
             savedPrograms.forEach(function(program, idx) {
                 const openDays = program.schedule
                     ? program.schedule.filter(function(item) { return item.open; }).map(function(item) { return item.day; }).join(', ')
@@ -538,8 +544,14 @@
                         '<button type="button" class="program-ticket-btn" onclick="selectSavedProgram(' + idx + ')">Edit</button>' +
                         '<button type="button" class="program-ticket-btn program-ticket-remove" onclick="removeSavedProgram(' + idx + ')">Remove</button>' +
                     '</div>';
-                list.appendChild(ticket);
+
+                const isRefresher = String(program.track || '').toLowerCase().indexOf('refresher') !== -1;
+                if (isRefresher) refRow.appendChild(ticket);
+                else regRow.appendChild(ticket);
             });
+
+            list.appendChild(regRow);
+            if (refRow.children && refRow.children.length) list.appendChild(refRow);
         }
 
         function selectSavedProgram(idx) {

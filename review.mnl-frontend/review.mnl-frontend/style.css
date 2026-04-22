@@ -168,6 +168,15 @@
     gap: 12px;
     align-items: stretch;
 }
+.program-ticket-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+.program-ticket-row + .program-ticket-row {
+    margin-top: 6px;
+}
 .program-ticket {
     position: relative;
     padding: 14px 16px;
@@ -179,6 +188,18 @@
     word-break: break-word;
     white-space: normal;
     min-width: 0;
+    box-sizing: border-box;
+    flex: 1 1 48%;
+    max-width: 48%;
+    min-width: 240px;
+    display: flex;
+    flex-direction: column;
+    min-height: 110px;
+}
+
+@media (max-width: 900px) {
+    .program-ticket { flex-basis: 100% !important; max-width: 100% !important; }
+    .program-ticket-row { align-items: stretch; }
 }
 
 .review-schedule-left .program-ticket {

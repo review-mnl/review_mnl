@@ -296,7 +296,12 @@
             const onlineLink = String(raw && raw.online_link ? raw.online_link : '').trim();
             const schedule = Array.isArray(raw && raw.schedule) ? raw.schedule.map(function(item, idx) {
                 const label = item && item.day ? String(item.day) : (DEFAULT_REVIEW_SCHEDULE[idx] ? DEFAULT_REVIEW_SCHEDULE[idx].day : '');
-                return { day: label, open: !!(item && item.open) };
+                var sched = { day: label, open: !!(item && item.open) };
+                if (item && item.session && (item.session.from || item.session.to)) {
+                    sched.session = { from: String(item.session.from || ''), to: String(item.session.to || '') };
+                }
+                if (item && item.type) sched.type = String(item.type);
+                return sched;
             }) : cloneDefaultSchedule();
             const schedulePattern = String(raw && raw.schedulePattern ? raw.schedulePattern : 'Custom');
             const sessionTemplates = Array.isArray(raw && raw.session_templates)
@@ -540,9 +545,18 @@
 
         function openEditProgramModal(idx) {
             idx = Number(idx);
-            if (!Array.isArray(savedPrograms) || idx < 0 || idx >= savedPrograms.length) return;
+            if (isNaN(idx) || idx < 0) return;
+            // Ensure a working `programs[idx]` exists; if not, try to hydrate it from savedPrograms
+            if (!Array.isArray(programs) || idx >= programs.length) {
+                if (Array.isArray(savedPrograms) && savedPrograms[idx]) {
+                    programs = programs || [];
+                    programs[idx] = JSON.parse(JSON.stringify(savedPrograms[idx]));
+                } else {
+                    return;
+                }
+            }
             _editProgramIndex = idx;
-            var src = (programs && programs[idx]) ? programs[idx] : savedPrograms[idx];
+            var src = programs[idx] || (Array.isArray(savedPrograms) ? savedPrograms[idx] : null) || {};
             var p = JSON.parse(JSON.stringify(src || normalizeProgram(savedPrograms[idx] || {})));
             if (!Array.isArray(p.schedule)) p.schedule = cloneDefaultSchedule();
             _editProgramTempSchedule = p.schedule.map(function(item){ return { day: item.day, open: !!item.open }; });
@@ -869,9 +883,13 @@
                     sessionText = ' • Session: ' + escHtml(ds.from) + '–' + escHtml(ds.to);
                 } else {
                     // Prefer saved program entry if available, then fallback to active
-                    var sp = (Array.isArray(savedPrograms) && savedPrograms[_activeReviewIndex]) ? savedPrograms[_activeReviewIndex] : ((Array.isArray(savedPrograms) ? savedPrograms.find(function(s) {
-                        return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
-                    }) : null) || active);
+                    var sp = active;
+                    if (Array.isArray(savedPrograms) && savedPrograms.length) {
+                        var found = savedPrograms.find(function(s) {
+                            return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
+                        });
+                        if (found) sp = found;
+                    }
                     var sessions = Array.isArray(sp && sp.session_templates) ? sp.session_templates : [];
                     if (sessions && sessions.length && typeof _activeSessionIndex === 'number' && sessions[_activeSessionIndex]) {
                         var s = sessions[_activeSessionIndex];
@@ -955,26 +973,26 @@
             const select = document.getElementById('reviewScheduleSelect');
             if (!select) return;
             select.innerHTML = '';
-            // Populate the Program dropdown from savedPrograms (persisted programs)
-            if (!Array.isArray(savedPrograms) || savedPrograms.length === 0) {
+            // Populate the Program dropdown from the working `programs` list
+            if (!Array.isArray(programs) || programs.length === 0) {
                 const opt = document.createElement('option');
                 opt.value = '';
-                opt.textContent = 'No saved programs';
+                opt.textContent = 'Add a program first';
                 select.appendChild(opt);
                 select.disabled = true;
                 updateReviewSessionSelect();
                 return;
             }
             select.disabled = false;
-            savedPrograms.forEach(function(sp, i) {
+            // Populate from working `programs` so unsaved programs are selectable immediately
+            programs.forEach(function(p, i) {
                 const opt = document.createElement('option');
                 opt.value = String(i);
-                opt.textContent = (sp.name || 'Program') + ' (' + (sp.track || 'Review') + ' - ' + (sp.modality || 'N/A') + ')';
+                opt.textContent = (p.name || 'Program') + ' (' + (p.track || 'Review') + ' - ' + (p.modality || 'N/A') + ')';
                 select.appendChild(opt);
             });
 
-            // ensure active index is within range and select it
-            if (_activeReviewIndex < 0 || _activeReviewIndex >= savedPrograms.length) _activeReviewIndex = 0;
+            if (_activeReviewIndex < 0 || _activeReviewIndex >= programs.length) _activeReviewIndex = 0;
             select.value = String(_activeReviewIndex);
             _activeSessionIndex = 0;
             select.onchange = function() {
@@ -995,14 +1013,13 @@
             if (!active) {
                 const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No sessions'; select.appendChild(opt); select.disabled = true; return;
             }
-            // Prefer sessions from savedPrograms by index when available, fallback to active
-            var sp = null;
-            if (Array.isArray(savedPrograms) && typeof _activeReviewIndex === 'number' && savedPrograms[_activeReviewIndex]) {
-                sp = savedPrograms[_activeReviewIndex];
-            } else {
-                sp = (Array.isArray(savedPrograms) ? savedPrograms.find(function(s) {
+            // Prefer sessions from a matching savedPrograms entry when available, fallback to active
+            var sp = active;
+            if (Array.isArray(savedPrograms) && savedPrograms.length) {
+                var found = savedPrograms.find(function(s) {
                     return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
-                }) : null) || active;
+                });
+                if (found) sp = found;
             }
             var sessions = Array.isArray(sp && sp.session_templates) ? sp.session_templates : [];
             if (!sessions.length) {

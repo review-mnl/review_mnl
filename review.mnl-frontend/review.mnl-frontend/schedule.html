@@ -46,35 +46,17 @@
                 const dd = document.getElementById('profileDropdown');
                 const logout = document.getElementById('logoutBtn');
                 if(!btn || !dd) return;
-                // Teachers removed: related functions and data handling removed.
-                function updateTeacherSelects() { /* noop - teachers removed */ }
-                    if (typeof window._refreshTeacherProgramPills === 'function') {
-                        window._refreshTeacherProgramPills();
-                    }
-
-                    const achievementsEl = document.getElementById('achievementListDisplay');
-                    if (achievementsEl) {
-                        const achievements = parseArrayField(center.achievements);
-                        if (achievements.length > 0) {
-                            achievementsEl.innerHTML = '';
-                            achievements.forEach(function(itemText) {
-                                const item = document.createElement('div');
-                                item.className = 'achievement-item';
-                                item.innerHTML = '<span class="trophy-icon">🏆</span><p></p>';
-                                item.querySelector('p').textContent = String(itemText).trim();
-                                achievementsEl.appendChild(item);
-                            });
-                        }
-                    }
-
-                    var rating = Math.round(center.avg_rating || 0);
-                    var starsEl = document.querySelector('.center-rating .stars');
-                    if (starsEl) starsEl.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-                    var ratingCount = document.querySelector('.center-rating .rating-count');
-                    if (ratingCount) ratingCount.textContent = (center.avg_rating || 0).toFixed(1) + ' (' + (center.review_count || 0) + ')';
-                } catch(e) {
-                    // Not yet approved or no internet — display defaults are fine
-                }
+                btn.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    const isOpen = dd.style.display === 'block';
+                    dd.style.display = isOpen ? 'none' : 'block';
+                    btn.setAttribute('aria-expanded', String(!isOpen));
+                });
+                logout.addEventListener('click', function(){
+                    clearSession();
+                    window.location.href = 'index.html';
+                });
+                document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
             })();
                 // set welcome name from session (like student profile)
                 (function(){

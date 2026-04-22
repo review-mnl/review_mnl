@@ -2248,6 +2248,11 @@
                 const centerAbout = clampAboutWords(center.description || 'No description provided yet.', 150);
                 const centerShort = center.address || 'Location unavailable';
                 const ratingValue = Number(center.avg_rating || center.average_rating || 0);
+
+                // --- Force _centerScheduleData to use review_schedule if available ---
+                if (center.review_schedule) {
+                    _centerScheduleData = getCenterScheduleContainer(center);
+                }
                 const programs = parseArrayField(center.programs);
                 const reviewProgramsRaw = parseJsonArray(center.review_schedule);
                 const reviewPrograms = reviewProgramsRaw.map(normalizeReviewProgram).filter(function(program) {

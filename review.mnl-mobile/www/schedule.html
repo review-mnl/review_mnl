@@ -472,6 +472,7 @@
 
         function persistPrograms() {
             savedPrograms = programs.map(normalizeProgram);
+            try { console.log('[persistPrograms] start', { count: savedPrograms.length, sample: savedPrograms.slice(0,2) }); } catch(e) {}
             var saveBtn = document.getElementById('reviewSaveBtn');
             var originalText = saveBtn ? String(saveBtn.textContent || 'Save Schedule') : 'Save Schedule';
             if (saveBtn) {
@@ -482,7 +483,6 @@
             try {
                 localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(savedPrograms));
             } catch (e) {}
-
             function doneRenderAndReset() {
                 renderSavedPrograms();
                 if (saveBtn) {
@@ -495,40 +495,38 @@
                 }
             }
 
+            // Immediately update UI/local state so Save never gets stuck
+            try { doneRenderAndReset(); } catch (e) {}
+
+            // Background sync to backend with timeout; don't block UI
             if (typeof CentersAPI !== 'undefined' && CentersAPI.updateMyProfile) {
                 try {
-                    var backendPromise = CentersAPI.updateMyProfile({ review_schedule: savedPrograms });
+                    var backendPromise = Promise.resolve(CentersAPI.updateMyProfile({ review_schedule: savedPrograms }));
                     var timeoutMs = 8000;
                     var timeoutPromise = new Promise(function(resolve, reject) {
                         setTimeout(function() { reject(new Error('timeout')); }, timeoutMs);
                     });
-                    return Promise.race([backendPromise, timeoutPromise])
+                    Promise.race([backendPromise, timeoutPromise])
                         .then(function(resp) {
                             if (resp && resp.review_schedule) {
                                 window._reviewSchedule = resp.review_schedule;
                             }
-                            doneRenderAndReset();
-                            showSaveStatus('Schedule saved successfully.');
-                            return resp;
+                            showSaveStatus('Schedule synced to server.');
+                            console.log('[persistPrograms] backend save succeeded', resp);
                         })
                         .catch(function(err) {
-                            doneRenderAndReset();
                             if (err && err.message === 'timeout') {
                                 showSaveStatus('Saving timed out — saved locally.', 'error');
                             } else {
                                 showSaveStatus('Failed to save to server — saved locally.', 'error');
                                 console.warn('Failed to save review_schedule', err);
                             }
-                            throw err;
                         });
                 } catch (e) {
-                    doneRenderAndReset();
-                    showSaveStatus('Failed to save to server — saved locally.', 'error');
+                    showSaveStatus('Failed to sync to server — saved locally.', 'error');
                     console.warn('Failed to call updateMyProfile', e);
-                    return Promise.reject(e);
                 }
             } else {
-                doneRenderAndReset();
                 showSaveStatus('Schedule saved locally.');
                 return Promise.resolve({ local: true });
             }

@@ -1631,11 +1631,7 @@
                 bankRadio.checked = selectedMethod === 'bank';
                 otcRadio.checked = selectedMethod === 'over_the_counter';
             }
-            // Disable booking when the schedule source is the Operating Schedule.
-            if (_centerScheduleData && _centerScheduleData.__source === 'operating') {
-                alert('Booking via the Operating Schedule is disabled for this center. Please contact the center or select a program with a review schedule.');
-                return;
-            }
+            // Booking is always allowed, even if using the operating schedule.
 
             // ENHANCED: Show calendar for selected program
             setTimeout(function(){

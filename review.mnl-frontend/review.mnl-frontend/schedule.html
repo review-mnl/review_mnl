@@ -595,16 +595,21 @@
                 };
                 pill.appendChild(labelSpan);
 
-                // If Hybrid and open, show type selector (NOT inside label, not clickable for toggle)
+                // If Hybrid and open, show type selector (NOT inside label)
                 if (modality === 'Hybrid' && s.open) {
                     var typeSel = document.createElement('select');
                     typeSel.style.marginLeft = '0px';
                     typeSel.style.fontSize = '12px';
                     typeSel.innerHTML = '<option value="Face-to-face">Face-to-face</option><option value="Online">Online</option>';
                     typeSel.value = s.type || 'Face-to-face';
+                    // Update data on change only
                     typeSel.onchange = function(e) {
                         s.type = typeSel.value;
                     };
+                    // Prevent clicks on the select from bubbling to label/pill
+                    ['pointerdown','mousedown','click','focus','touchstart'].forEach(function(ev){
+                        typeSel.addEventListener(ev, function(ev2){ ev2.stopPropagation(); });
+                    });
                     pill.appendChild(typeSel);
                 } else {
                     s.type = undefined;
@@ -700,30 +705,41 @@
                 const dayIndex = active.schedule.indexOf(s);
                 const pill = document.createElement('div');
                 pill.className = 'ec-day-pill ' + (s.open ? 'open' : 'closed');
-                pill.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
-                pill.title = 'Click to toggle review day';
-                pill.style.cursor = 'pointer';
-                pill.onclick = function() {
+                pill.style.display = 'flex';
+                pill.style.alignItems = 'center';
+                pill.style.gap = '8px';
+
+                // Label for toggling
+                var label = document.createElement('span');
+                label.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
+                label.style.cursor = 'pointer';
+                label.title = 'Click to toggle review day';
+                label.onclick = function(e) {
                     s.open = !s.open;
                     active.schedulePattern = 'Custom';
                     updateReviewPatternSelect();
                     showReviewDayDetails(dayIndex);
                     renderReviewSchedule();
                     updateReviewSaveButton();
+                    e.stopPropagation();
                 };
-                pillsEl.appendChild(pill);
-                // If Hybrid and open, show type
+                pill.appendChild(label);
+
+                // If Hybrid and open, show type selector (prevent bubbling)
                 if (active.modality === 'Hybrid' && s.open) {
                     var typeSel = document.createElement('select');
                     typeSel.style.marginLeft = '8px';
                     typeSel.style.fontSize = '12px';
                     typeSel.innerHTML = '<option value="Face-to-face">Face-to-face</option><option value="Online">Online</option>';
                     typeSel.value = s.type || 'Face-to-face';
-                    typeSel.onchange = function(e) {
-                        s.type = typeSel.value;
-                    };
+                    typeSel.onchange = function(e) { s.type = typeSel.value; };
+                    ['pointerdown','mousedown','click','focus','touchstart'].forEach(function(ev){
+                        typeSel.addEventListener(ev, function(ev2){ ev2.stopPropagation(); });
+                    });
                     pill.appendChild(typeSel);
                 }
+
+                pillsEl.appendChild(pill);
             });
             updateReviewSaveButton();
         }

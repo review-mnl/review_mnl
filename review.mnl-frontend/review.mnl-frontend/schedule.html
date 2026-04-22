@@ -361,6 +361,16 @@
                 programs = savedPrograms.map(function(p) {
                     return JSON.parse(JSON.stringify(p));
                 });
+                // Ensure programs that use a pattern have their per-day sessions set from the primary template
+                try {
+                    programs.forEach(function(pr){
+                        if (!pr || !Array.isArray(pr.schedule)) return;
+                        var pat = pr.schedulePattern || 'Custom';
+                        if (pat === 'MWF' || pat === 'TTH') {
+                            applyPatternToSchedule(pr.schedule, pat, pr.session_templates);
+                        }
+                    });
+                } catch (e) { /* ignore */ }
             } catch (e) {
                 savedPrograms = [];
             }
@@ -589,7 +599,7 @@
                 patEl.onchange = function() {
                     var pattern = patEl.value;
                     if (pattern === 'MWF' || pattern === 'TTH') {
-                        applyPatternToSchedule(_editProgramTempSchedule, pattern);
+                        applyPatternToSchedule(_editProgramTempSchedule, pattern, _editProgramTempSessions);
                     }
                     renderEditProgramDayPills();
                 };
@@ -760,8 +770,8 @@
             return programs[_activeReviewIndex];
         }
 
-        function applyPatternToSchedule(schedule, pattern) {
-            if (!schedule) return;
+        function applyPatternToSchedule(schedule, pattern, sessionTemplates) {
+            if (!Array.isArray(schedule)) return;
             let openDays = [];
             if (pattern === 'MWF') openDays = [1, 3, 5];
             if (pattern === 'TTH') openDays = [2, 4];
@@ -769,6 +779,20 @@
             schedule.forEach(function(item, idx) {
                 item.open = openDays.indexOf(idx) !== -1;
             });
+            // If a primary session template exists, apply it to the pattern days
+            try {
+                if (Array.isArray(sessionTemplates) && sessionTemplates.length) {
+                    var primary = sessionTemplates[0];
+                    if (primary && primary.from && primary.to) {
+                        var base = { from: String(primary.from || '').trim(), to: String(primary.to || '').trim() };
+                        schedule.forEach(function(item, idx) {
+                            if (openDays.indexOf(idx) !== -1) {
+                                item.session = { from: base.from, to: base.to };
+                            }
+                        });
+                    }
+                }
+            } catch (e) { /* ignore */ }
         }
 
         function renderPrograms() {
@@ -1149,7 +1173,7 @@
                 const pattern = select.value;
                 active.schedulePattern = pattern;
                 if (pattern === 'MWF' || pattern === 'TTH') {
-                    applyPatternToSchedule(active.schedule, pattern);
+                    applyPatternToSchedule(active.schedule, pattern, active.session_templates);
                 }
                 showReviewDayDetails(0);
                 // Don't auto-persist here; require explicit Save. Update Save button state.

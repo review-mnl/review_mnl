@@ -218,7 +218,10 @@
                                 <span class="rse-sep">to</span>
                                 <input id="reviewSessionTo" type="time" />
                             </div>
-                            <button id="reviewSessionSaveBtn" type="button" class="program-ticket-btn rse-save">Save</button>
+                            <div class="rse-actions" style="display:flex;gap:8px;">
+                                <button id="reviewSessionAddBtn" type="button" class="program-ticket-btn rse-add">+ Add</button>
+                                <button id="reviewSessionSaveBtn" type="button" class="program-ticket-btn rse-save">Save</button>
+                            </div>
                         </div>
                     </div>
                     <div class="review-schedule-selector">
@@ -231,7 +234,6 @@
                     </div>
                     <!-- Weekly day pills -->
                     <div class="ec-day-pills review-day-pills" id="reviewDayPills"></div>
-                    <div class="review-day-details" id="reviewDayDetails">Click a day to see details.</div>
                     <button type="button" id="reviewSaveBtn" class="review-save-btn">Save Schedule</button>
                 </div>
 
@@ -306,6 +308,7 @@
                     + '.review-session-editor .rse-sep{font-size:13px;color:#5b6b8a;padding:0 6px;}\n'
                     + '.review-schedule-selector{display:flex;flex-direction:column;gap:6px;}\n'
                     + '#reviewSessionEditor{z-index:1;}\n'
+                    + '.rse-add{padding:8px 12px;border-radius:999px;background:#eef2ff;color:#0a4cff;border:1px solid #dce8ff;white-space:nowrap;}\n'
                     + '.rse-save{padding:8px 14px;border-radius:999px;white-space:nowrap;}\n'
                     + '@media (max-width:900px){ .review-session-editor{flex-direction:column;align-items:stretch;} .review-session-editor .rse-inputs{width:100%;} .review-session-editor input[type=time]{width:100%;} .rse-save{align-self:flex-end;} }\n';
                 var s = document.createElement('style'); s.type = 'text/css'; s.appendChild(document.createTextNode(css)); document.head.appendChild(s);
@@ -1127,16 +1130,45 @@
             var toEl = document.getElementById('reviewSessionTo');
             var saveBtn = document.getElementById('reviewSessionSaveBtn');
             var select = document.getElementById('reviewSessionSelect');
+            var addBtn = document.getElementById('reviewSessionAddBtn');
             var active = getActiveProgram();
             if (!fromEl || !toEl || !saveBtn || !select) return;
-            if (!active) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; return; }
+            if (!active) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; if (addBtn) addBtn.disabled = true; return; }
             var sessions = Array.isArray(active.session_templates) ? active.session_templates : [];
-            if (!sessions.length) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; return; }
+            // If no sessions exist yet, allow Add but disable Save
+            if (!sessions.length) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; if (addBtn) { addBtn.disabled = false; addBtn.onclick = function() {
+                        try {
+                            if (!active) return;
+                            if (!Array.isArray(active.session_templates)) active.session_templates = [];
+                            active.session_templates.push({ from: '08:00', to: '12:00' });
+                            var newIndex = active.session_templates.length - 1;
+                            _activeSessionIndex = newIndex;
+                            updateReviewSessionSelect();
+                            try { persistPrograms(); } catch(e) { }
+                            setTimeout(function(){ updateSessionEditor(); showReviewDayDetails(_lastShownReviewDayIndex); }, 80);
+                        } catch(e) { console.warn('Failed to add session', e); }
+                    }; } return; }
             var idx = Number(select.value) || 0;
+            if (idx >= sessions.length) idx = 0;
             var sess = sessions[idx] || sessions[0];
             fromEl.value = sess && sess.from ? sess.from : '';
             toEl.value = sess && sess.to ? sess.to : '';
             saveBtn.disabled = false;
+            if (addBtn) {
+                addBtn.disabled = false;
+                addBtn.onclick = function() {
+                    try {
+                        if (!active) return;
+                        if (!Array.isArray(active.session_templates)) active.session_templates = [];
+                        active.session_templates.push({ from: '08:00', to: '12:00' });
+                        var newIndex = active.session_templates.length - 1;
+                        _activeSessionIndex = newIndex;
+                        updateReviewSessionSelect();
+                        try { persistPrograms(); } catch(e) { }
+                        setTimeout(function(){ updateSessionEditor(); showReviewDayDetails(_lastShownReviewDayIndex); }, 80);
+                    } catch(e) { console.warn('Failed to add session', e); }
+                };
+            }
             saveBtn.onclick = function() {
                 var f = String(fromEl.value || '').trim();
                 var t = String(toEl.value || '').trim();

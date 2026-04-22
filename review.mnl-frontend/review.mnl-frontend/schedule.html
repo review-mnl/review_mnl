@@ -822,8 +822,14 @@
                 var label = document.createElement('span');
                 label.innerHTML = '<span class="ec-day-pill-dot"></span>' + s.day;
                 label.style.cursor = 'pointer';
-                label.title = 'Click to toggle review day';
+                label.title = 'Double-click to toggle review day';
+                // Single click: show details for the day
                 label.onclick = function(e) {
+                    showReviewDayDetails(dayIndex);
+                    e.stopPropagation();
+                };
+                // Double click: toggle open/closed
+                label.ondblclick = function(e) {
                     s.open = !s.open;
                     active.schedulePattern = 'Custom';
                     updateReviewPatternSelect();
@@ -903,7 +909,91 @@
                 }
             } catch (e) { /* ignore */ }
 
-            details.textContent = prefix + day.day + ': ' + status + typeText + ' • ' + programText + ' • Pattern: ' + pattern + (sessionText || '');
+            // Build interactive details + session editor
+            details.innerHTML = '';
+
+            var hdr = document.createElement('div');
+            hdr.style.marginBottom = '8px';
+            hdr.textContent = prefix + day.day + ': ' + status + typeText + ' • ' + programText + ' • Pattern: ' + pattern + (sessionText || '');
+            details.appendChild(hdr);
+
+            // Session editor (timeframe-only)
+            var sessWrap = document.createElement('div');
+            sessWrap.style.display = 'flex';
+            sessWrap.style.flexDirection = 'column';
+            sessWrap.style.gap = '8px';
+
+            var row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '8px';
+            row.style.alignItems = 'center';
+
+            var existingFrom = (day && day.session && day.session.from) ? day.session.from : '';
+            var existingTo = (day && day.session && day.session.to) ? day.session.to : '';
+
+            var fromInput = document.createElement('input');
+            fromInput.type = 'time';
+            fromInput.value = existingFrom || '';
+            fromInput.style.width = '120px';
+
+            var toInput = document.createElement('input');
+            toInput.type = 'time';
+            toInput.value = existingTo || '';
+            toInput.style.width = '120px';
+
+            row.appendChild(fromInput);
+            row.appendChild(toInput);
+
+            var applyRow = document.createElement('div');
+            applyRow.style.display = 'flex';
+            applyRow.style.alignItems = 'center';
+            applyRow.style.gap = '8px';
+
+            var applyChk = document.createElement('input');
+            applyChk.type = 'checkbox';
+            applyChk.id = 'reviewDayApplyAll';
+            var applyLbl = document.createElement('label');
+            applyLbl.htmlFor = 'reviewDayApplyAll';
+            applyLbl.style.fontSize = '13px';
+            applyLbl.textContent = 'Apply to all selected days';
+            applyRow.appendChild(applyChk);
+            applyRow.appendChild(applyLbl);
+
+            var btnRow = document.createElement('div');
+            btnRow.style.display = 'flex';
+            btnRow.style.gap = '8px';
+
+            var saveSessBtn = document.createElement('button');
+            saveSessBtn.type = 'button';
+            saveSessBtn.className = 'program-ticket-btn';
+            saveSessBtn.textContent = 'Save Session';
+            saveSessBtn.onclick = function() {
+                var f = String(fromInput.value || '').trim();
+                var t = String(toInput.value || '').trim();
+                if (!f || !t) { alert('Please set both From and To times.'); return; }
+                // Save to the active program schedule (per-day)
+                try {
+                    if (!Array.isArray(active.schedule)) active.schedule = cloneDefaultSchedule();
+                    active.schedule[dayIndex] = active.schedule[dayIndex] || { day: (DEFAULT_REVIEW_SCHEDULE[dayIndex]||{}).day || '' };
+                    active.schedule[dayIndex].session = { from: f, to: t };
+                    // If apply to all, set for every open day
+                    if (applyChk.checked) {
+                        active.schedule.forEach(function(d, i){ if (d.open) d.session = { from: f, to: t }; });
+                    }
+                } catch (e) { console.warn('Failed to save session', e); }
+                // Re-render UI and persist
+                try { renderReviewDayPills(); renderReviewCalendar(); updateReviewSaveButton(); } catch (e){}
+                try { persistPrograms(); } catch (e) { console.warn('Persist failed', e); }
+                // Refresh details
+                setTimeout(function(){ showReviewDayDetails(dayIndex); }, 80);
+            };
+
+            btnRow.appendChild(saveSessBtn);
+
+            sessWrap.appendChild(row);
+            sessWrap.appendChild(applyRow);
+            sessWrap.appendChild(btnRow);
+            details.appendChild(sessWrap);
         }
 
         function renderReviewCalendar() {
@@ -1012,15 +1102,14 @@
             if (!active) {
                 const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No sessions'; select.appendChild(opt); select.disabled = true; return;
             }
-            // Prefer sessions from a matching savedPrograms entry when available, fallback to active
-            var sp = active;
-            if (Array.isArray(savedPrograms) && savedPrograms.length) {
+            // Prefer active program's session_templates first, then fallback to savedPrograms match
+            var sessions = Array.isArray(active && active.session_templates) && active.session_templates.length ? active.session_templates : [];
+            if ((!sessions || !sessions.length) && Array.isArray(savedPrograms) && savedPrograms.length) {
                 var found = savedPrograms.find(function(s) {
                     return s && s.name === active.name && s.track === active.track && s.modality === active.modality;
                 });
-                if (found) sp = found;
+                if (found && Array.isArray(found.session_templates)) sessions = found.session_templates;
             }
-            var sessions = Array.isArray(sp && sp.session_templates) ? sp.session_templates : [];
             if (!sessions.length) {
                 const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No sessions'; select.appendChild(opt); select.disabled = true; return;
             }

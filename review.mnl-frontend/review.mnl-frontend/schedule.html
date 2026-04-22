@@ -46,170 +46,8 @@
                 const dd = document.getElementById('profileDropdown');
                 const logout = document.getElementById('logoutBtn');
                 if(!btn || !dd) return;
-                btn.addEventListener('click', function(e){
-                    e.stopPropagation();
-                    const isOpen = dd.style.display === 'block';
-                    dd.style.display = isOpen ? 'none' : 'block';
-                    btn.setAttribute('aria-expanded', String(!isOpen));
-                });
-                logout.addEventListener('click', function(){
-                    clearSession();
-                    window.location.href = 'index.html';
-                });
-                document.addEventListener('click', function(){ dd.style.display='none'; btn.setAttribute('aria-expanded','false'); });
-            })();
-
-            initReviewCenterMessageSlider();
-
-            function escHtml(str) {
-                return String(str || '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;');
-            }
-
-            function starText(rating) {
-                const r = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
-                return '★'.repeat(r) + '☆'.repeat(5 - r);
-            }
-
-            function renderCenterTestimonials(items) {
-                const listEl = document.getElementById('centerTestimonialsList');
-                if (!listEl) return;
-                if (!items || items.length === 0) {
-                    listEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">No feedback yet for your review center.</p>';
-                    return;
-                }
-
-                listEl.innerHTML = '';
-                items.forEach(function(t) {
-                    const fallbackName = [t.first_name || '', t.last_name || ''].join(' ').trim();
-                    const name = (t.username || fallbackName || 'Anonymous').trim();
-                    const date = t.created_at ? new Date(t.created_at) : new Date();
-                    const dateText = date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-                    const card = document.createElement('div');
-                    card.className = 'testimonial-card';
-                    card.style.marginBottom = '10px';
-                    card.innerHTML =
-                        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;">' +
-                            '<strong style="color:#0d1b4b;">' + escHtml(name) + '</strong>' +
-                            '<span style="font-size:12px;color:#6b7280;">' + escHtml(dateText) + '</span>' +
-                        '</div>' +
-                        '<div style="color:#f59e0b;margin-bottom:8px;">' + starText(t.rating) + '</div>' +
-                        '<p style="color:#555;font-size:0.92rem;margin:0;">' + escHtml(t.content || '') + '</p>';
-                    listEl.appendChild(card);
-                });
-            }
-
-            async function loadCenterTestimonials() {
-                const listEl = document.getElementById('centerTestimonialsList');
-                const sortEl = document.getElementById('centerFeedbackSort');
-                if (!listEl) return;
-                listEl.innerHTML = '<p style="color:#6b7280;font-size:0.95rem;">Loading feedback...</p>';
-                try {
-                    const sort = sortEl ? sortEl.value : 'latest';
-                    const resp = await CentersAPI.getMyTestimonials(sort);
-                    const items = Array.isArray(resp) ? resp : (resp.testimonials || []);
-                    renderCenterTestimonials(items);
-                } catch (e) {
-                    listEl.innerHTML = '<p style="color:#d32f2f;font-size:0.95rem;">Failed to load feedback.</p>';
-                }
-            }
-
-            // Load center profile from API
-            (async function(){
-                function parseArrayField(raw) {
-                    if (!raw) return [];
-                    if (Array.isArray(raw)) return raw;
-                    if (typeof raw === 'object') {
-                        // Defensive: handle rare cases where JSON arrays are returned as objects.
-                        try {
-                            var values = Object.values(raw);
-                            if (Array.isArray(values) && values.length) {
-                                return values.map(function(v) { return String(v || '').trim(); }).filter(Boolean);
-                            }
-                        } catch (e) {}
-                        return [];
-                    }
-                    if (typeof raw === 'string') {
-                        var trimmed = raw.trim();
-                        if (!trimmed) return [];
-                        // Handle nested/double-encoded JSON like "[\"A\",\"B\"]".
-                        for (var i = 0; i < 3; i++) {
-                            try {
-                                var parsed = JSON.parse(trimmed);
-                                if (Array.isArray(parsed)) return parsed;
-                                if (typeof parsed === 'string') {
-                                    trimmed = parsed.trim();
-                                    if (!trimmed) return [];
-                                    continue;
-                                }
-                                break;
-                            } catch (e) {
-                                break;
-                            }
-                        }
-                        return trimmed.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
-                    }
-                    return [];
-                }
-
-                try {
-                    const center = await CentersAPI.getMyProfile();
-                    if (center.business_name) {
-                        document.getElementById('centerNameDisplay').textContent = center.business_name;
-                        // Use center business name for welcome if present
-                        try { if (document.getElementById('welcomeName')) document.getElementById('welcomeName').textContent = center.business_name; } catch(e){}
-                    }
-                    if (center.address) {
-                        document.getElementById('centerDescDisplay').textContent = center.address;
-                    }
-                    if (center.logo_url) {
-                        const logo = document.getElementById('centerLogoPreview');
-                        if (logo) {
-                            logo.style.backgroundImage = 'url(' + center.logo_url + ')';
-                            logo.style.backgroundSize = 'cover';
-                            logo.style.backgroundPosition = 'center';
-                        }
-                    }
-                    if (center.description) {
-                        document.getElementById('aboutDisplay').textContent = center.description;
-                    }
-
-                    // Cache programs for teacher role picker even on pages
-                    // that don't render the Programs Offered section.
-                    const programs = parseArrayField(center.programs);
-                    window._centerPrograms = Array.isArray(programs) ? programs.slice() : [];
-
-                    if (center.review_schedule) {
-                        try {
-                            window._reviewSchedule = typeof center.review_schedule === 'string'
-                                ? JSON.parse(center.review_schedule)
-                                : center.review_schedule;
-                        } catch (e) {
-                            window._reviewSchedule = [];
-                        }
-                        if (typeof window._refreshReviewSchedule === 'function') {
-                            window._refreshReviewSchedule();
-                        }
-                    }
-
-                    const programTagsEl = document.getElementById('programTagsDisplay');
-                    if (programTagsEl) {
-                        programTagsEl.innerHTML = '';
-                        if (programs.length > 0) {
-                            programs.forEach(function(program) {
-                                const btn = document.createElement('button');
-                                btn.className = 'program-tag';
-                                btn.textContent = String(program).trim();
-                                programTagsEl.appendChild(btn);
-                            });
-                        } else {
-                            programTagsEl.innerHTML = '<button class="program-tag">No programs listed yet</button>';
-                        }
-                    }
-
+                // Teachers removed: related functions and data handling removed.
+                function updateTeacherSelects() { /* noop - teachers removed */ }
                     if (typeof window._refreshTeacherProgramPills === 'function') {
                         window._refreshTeacherProgramPills();
                     }
@@ -265,28 +103,7 @@
                     </div>
                 </div>
 
-                <div class="ec-teacher-card">
-                    <div class="ec-teacher-head">
-                        <div>
-                            <h4>Teachers</h4>
-                            <p>Add teachers so you can assign them to schedule shifts.</p>
-                        </div>
-                        <button type="button" id="ecTeacherToggleBtn" class="ec-teacher-toggle">+ Add</button>
-                    </div>
-                    <div class="ec-teacher-form">
-                        <input id="ecTeacherName" type="text" placeholder="Full name">
-                        <input id="ecTeacherProgram" type="hidden" value="">
-                        <div class="ec-teacher-program">
-                            <div class="ec-teacher-program-label">Program</div>
-                            <div id="ecTeacherProgramPills" class="ec-teacher-program-pills"></div>
-                        </div>
-                        <input id="ecTeacherSubject" type="text" placeholder="Subject / Specialty">
-                        <input id="ecTeacherEmail" type="email" placeholder="Email">
-                        <textarea id="ecTeacherNotes" placeholder="Notes (optional)"></textarea>
-                        <button type="button" id="ecTeacherAddBtn">Add Teacher</button>
-                    </div>
-                    <div id="ecTeacherList" class="ec-teacher-list"></div>
-                </div>
+                        <!-- Teachers removed per request -->
             </div>
 
             <div class="ec-schedule-body">
@@ -1919,11 +1736,9 @@ var FULL_SCHEDULE = {
         { day: "Sat", open: true,  shifts: [{from:"09:00", to:"15:00", teacher:""}] }
     ],
     specific: {},
-    dateOverrides: {},
-    teachers: []
+    dateOverrides: {}
 };
 var EC_SCHEDULE = [];
-var TEACHER_LIST = [];
 var _ecYear, _ecMonth;
 (function(){
     var now = new Date();
@@ -1948,42 +1763,6 @@ function normalizeShiftTeacher(shift) {
     if (typeof shift.teacher !== "string") shift.teacher = String(shift.teacher);
 }
 
-function normalizeTeacherName(raw) {
-    return String(raw || "").trim();
-}
-
-function normalizeTeacherItem(item) {
-    if (!item) return null;
-    if (typeof item === "string") {
-        var rawName = normalizeTeacherName(item);
-        return rawName ? { name: rawName, program: "", subject: "", email: "", notes: "" } : null;
-    }
-    if (typeof item !== "object") return null;
-    var name = normalizeTeacherName(item.name || item.full_name || "");
-    if (!name) return null;
-    return {
-        name: name,
-        program: normalizeTeacherName(item.program || item.course || item.program_name || ""),
-        subject: normalizeTeacherName(item.subject || item.specialty || ""),
-        email: normalizeTeacherName(item.email || ""),
-        notes: normalizeTeacherName(item.notes || ""),
-    };
-}
-
-function normalizeTeacherList(list) {
-    if (!Array.isArray(list)) return [];
-    var seen = {};
-    return list
-        .map(normalizeTeacherItem)
-        .filter(Boolean)
-        .filter(function(teacher) {
-            var key = teacher.name.toLowerCase();
-            if (seen[key]) return false;
-            seen[key] = true;
-            return true;
-        });
-}
-
 function normalizeScheduleArray(arr) {
     if (!Array.isArray(arr)) return;
     arr.forEach(function(day) {
@@ -1998,7 +1777,7 @@ function normalizeScheduleContainer(container) {
         normalizeScheduleArray(container);
         return;
     }
-    if (container.teachers) container.teachers = normalizeTeacherList(container.teachers);
+    // teachers removed from schedule container
     if (container.default) normalizeScheduleArray(container.default);
     if (container.specific) {
         Object.keys(container.specific).forEach(function(key) {
@@ -2013,138 +1792,7 @@ function normalizeScheduleContainer(container) {
     }
 }
 
-function buildTeacherOptions(selected) {
-    var current = normalizeTeacherName(selected);
-    var options = ['<option value="">Unassigned</option>'];
-    TEACHER_LIST.forEach(function(teacher) {
-        var name = teacher.name;
-        var label = name;
-        if (teacher.program) label = name + ' · ' + teacher.program;
-        else if (teacher.subject) label = name + ' · ' + teacher.subject;
-        var isSelected = current && name.toLowerCase() === current.toLowerCase();
-        options.push('<option value="' + name + '"' + (isSelected ? ' selected' : '') + '>' + label + '</option>');
-    });
-    if (current && !TEACHER_LIST.some(function(teacher){ return teacher.name.toLowerCase() === current.toLowerCase(); })) {
-        options.push('<option value="' + current + '" selected>' + current + '</option>');
-    }
-    return options.join('');
-}
-
-function updateTeacherSelects() {
-    var selects = document.querySelectorAll('.rmnl-teacher-select');
-    selects.forEach(function(select) {
-        var current = select.value;
-        select.innerHTML = buildTeacherOptions(current);
-        select.value = current || '';
-    });
-}
-
-function renderTeacherList() {
-    var listEl = document.getElementById('ecTeacherList');
-    if (!listEl) return;
-    if (!TEACHER_LIST.length) {
-        listEl.innerHTML = '<span style="font-size:12px;color:#94a3b8;">No teachers added yet.</span>';
-        updateTeacherSelects();
-        return;
-    }
-    listEl.innerHTML = TEACHER_LIST.map(function(teacher) {
-        var metaParts = [];
-        if (teacher.program) metaParts.push(teacher.program);
-        if (teacher.subject) metaParts.push(teacher.subject);
-        if (teacher.email) metaParts.push(teacher.email);
-        if (teacher.notes) metaParts.push(teacher.notes);
-        var meta = metaParts.join(' · ');
-        return ''
-            + '<div class="ec-teacher-item">'
-            + '  <div class="ec-teacher-info">'
-            + '    <div class="ec-teacher-name">' + teacher.name + '</div>'
-            + '    <div class="ec-teacher-meta">' + (meta || 'No additional details') + '</div>'
-            + '  </div>'
-            + '  <button type="button" class="ec-teacher-remove" data-teacher-remove="' + teacher.name + '">Remove</button>'
-            + '</div>';
-    }).join('');
-    listEl.querySelectorAll('[data-teacher-remove]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var name = btn.getAttribute('data-teacher-remove');
-            removeTeacher(name);
-        });
-    });
-    updateTeacherSelects();
-}
-
-function clearTeacherAssignments(name) {
-    var target = normalizeTeacherName(name).toLowerCase();
-    if (!target) return;
-    var clearInSchedule = function(arr) {
-        if (!Array.isArray(arr)) return;
-        arr.forEach(function(day) {
-            if (!day.shifts) return;
-            day.shifts.forEach(function(shift) {
-                if (!shift || !shift.teacher) return;
-                if (String(shift.teacher).toLowerCase() === target) shift.teacher = '';
-            });
-        });
-    };
-
-    clearInSchedule(FULL_SCHEDULE.default);
-    if (FULL_SCHEDULE.specific) {
-        Object.keys(FULL_SCHEDULE.specific).forEach(function(key) {
-            clearInSchedule(FULL_SCHEDULE.specific[key]);
-        });
-    }
-    if (FULL_SCHEDULE.dateOverrides) {
-        Object.keys(FULL_SCHEDULE.dateOverrides).forEach(function(key) {
-            var item = FULL_SCHEDULE.dateOverrides[key];
-            if (item && item.shifts) {
-                item.shifts.forEach(function(shift) {
-                    if (!shift || !shift.teacher) return;
-                    if (String(shift.teacher).toLowerCase() === target) shift.teacher = '';
-                });
-            }
-        });
-    }
-}
-
-async function persistTeacherList() {
-    try {
-        FULL_SCHEDULE.teachers = TEACHER_LIST.slice();
-        await CentersAPI.updateMyProfile({ schedule: FULL_SCHEDULE });
-    } catch (err) {
-        alert("Failed to save teachers.");
-    }
-}
-
-function addTeacher(raw) {
-    var teacher = normalizeTeacherItem(raw);
-    if (!teacher) {
-        alert('Teacher name is required.');
-        return false;
-    }
-    var exists = TEACHER_LIST.some(function(item){ return item.name.toLowerCase() === teacher.name.toLowerCase(); });
-    if (exists) return false;
-    TEACHER_LIST.push(teacher);
-    TEACHER_LIST = normalizeTeacherList(TEACHER_LIST);
-    renderTeacherList();
-    persistTeacherList();
-    return true;
-}
-
-function removeTeacher(name) {
-    var target = normalizeTeacherName(name);
-    if (!target) return;
-    TEACHER_LIST = TEACHER_LIST.filter(function(item) {
-        return normalizeTeacherName(item && item.name).toLowerCase() !== target.toLowerCase();
-    });
-    clearTeacherAssignments(target);
-    renderTeacherList();
-    persistTeacherList();
-}
-
-function syncTeacherListFromSchedule() {
-    TEACHER_LIST = normalizeTeacherList(FULL_SCHEDULE.teachers || []);
-    FULL_SCHEDULE.teachers = TEACHER_LIST.slice();
-    renderTeacherList();
-}
+// Teacher-related helpers removed
 
 function updateScheduleView() {
     var key = _ecYear + "-" + _ecMonth;
@@ -2160,10 +1808,22 @@ function renderEcSchedule() {
     var pillsEl = document.getElementById("ecDayPills");
     if(pillsEl) {
         pillsEl.innerHTML = "";
-        EC_SCHEDULE.forEach(function(s) {
+        EC_SCHEDULE.forEach(function(s, idx) {
             var pill = document.createElement("div");
             pill.className = "ec-day-pill " + (s.open ? "open" : "closed");
             pill.innerHTML = "<span class=\"ec-day-pill-dot\"></span>" + s.day;
+            pill.title = 'Click to toggle operating day';
+            pill.style.cursor = 'pointer';
+            pill.onclick = async function() {
+                s.open = !s.open;
+                try {
+                    await CentersAPI.updateMyProfile({ schedule: FULL_SCHEDULE });
+                } catch (err) {
+                    alert('Failed to save operating schedule.');
+                }
+                updateScheduleView();
+                renderEcSchedule();
+            };
             pillsEl.appendChild(pill);
         });
     }
@@ -2275,8 +1935,7 @@ window.wSchedToggle = function(d, cb) {
     window.renderWorkingShifts(d);
 };
 window.wSchedAddShift = function(d) {
-    var defaultTeacher = TEACHER_LIST.length ? TEACHER_LIST[0] : "";
-    _workingSchedule[d].shifts.push({ from: "08:00", to: "17:00", teacher: defaultTeacher });
+    _workingSchedule[d].shifts.push({ from: "08:00", to: "17:00", teacher: "" });
     window.renderWorkingShifts(d);
 };
 window.wSchedRemoveShift = function(d, shIdx) {
@@ -2302,12 +1961,10 @@ window.renderWorkingShifts = function(d) {
     s.shifts.forEach(function(sh, shIdx) {
         var shiftDiv = document.createElement("div");
         shiftDiv.style.cssText = "display:flex; flex-wrap:wrap; gap:8px; align-items:center;";
-        var teacherOptions = buildTeacherOptions(sh.teacher || "");
         shiftDiv.innerHTML = 
             "<input type=\"time\" style=\"flex:1 1 110px; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.from + "\" onchange=\"wSchedUpdate(" + d + ", " + shIdx + ", 'from', this.value)\">" +
             "<span style=\"color:#666; font-size:12px;\">to</span>" +
             "<input type=\"time\" style=\"flex:1 1 110px; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.to + "\" onchange=\"wSchedUpdate(" + d + ", " + shIdx + ", 'to', this.value)\">" +
-            "<select class=\"rmnl-teacher-select\" style=\"flex:1 1 150px; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" onchange=\"wSchedUpdate(" + d + ", " + shIdx + ", 'teacher', this.value)\">" + teacherOptions + "</select>" +
             "<button type=\"button\" style=\"background:#ffe8e8; color:#d32f2f; border:none; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;\" onclick=\"wSchedRemoveShift(" + d + ", " + shIdx + ")\">&times;</button>";
         cont.appendChild(shiftDiv);
     });
@@ -2414,8 +2071,7 @@ window.dSchedToggle = function(cb) {
     renderDateWorkingShifts();
 };
 window.dSchedAddShift = function() {
-    var defaultTeacher = TEACHER_LIST.length ? TEACHER_LIST[0] : "";
-    _workingDateSched.shifts.push({ from: "08:00", to: "17:00", teacher: defaultTeacher });
+    _workingDateSched.shifts.push({ from: "08:00", to: "17:00", teacher: "" });
     renderDateWorkingShifts();
 };
 window.dSchedRemoveShift = function(shIdx) {
@@ -2441,12 +2097,10 @@ window.renderDateWorkingShifts = function() {
     s.shifts.forEach(function(sh, shIdx) {
         var shiftDiv = document.createElement("div");
         shiftDiv.style.cssText = "display:flex; flex-wrap:wrap; gap:8px; align-items:center;";
-        var teacherOptions = buildTeacherOptions(sh.teacher || "");
         shiftDiv.innerHTML = 
             "<input type=\"time\" style=\"flex:1 1 110px; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.from + "\" onchange=\"dSchedUpdate(" + shIdx + ", 'from', this.value)\">" +
             "<span style=\"color:#666; font-size:12px;\">to</span>" +
             "<input type=\"time\" style=\"flex:1 1 110px; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" value=\"" + sh.to + "\" onchange=\"dSchedUpdate(" + shIdx + ", 'to', this.value)\">" +
-            "<select class=\"rmnl-teacher-select\" style=\"flex:1 1 150px; border:1px solid #dde3f0; border-radius:6px; padding:5px 8px; font-size:12px;\" onchange=\"dSchedUpdate(" + shIdx + ", 'teacher', this.value)\">" + teacherOptions + "</select>" +
             "<button type=\"button\" style=\"background:#ffe8e8; color:#d32f2f; border:none; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;\" onclick=\"dSchedRemoveShift(" + shIdx + ")\">&times;</button>";
         cont.appendChild(shiftDiv);
     });
@@ -2508,158 +2162,9 @@ window.dSchedSaveBackend = async function() {
         }
     } catch(e) {}
     normalizeScheduleContainer(FULL_SCHEDULE);
-    syncTeacherListFromSchedule();
     updateScheduleView();
 })();
-
-(function bindTeacherControls() {
-    var nameInput = document.getElementById('ecTeacherName');
-    var programInput = document.getElementById('ecTeacherProgram');
-    var programPillsEl = document.getElementById('ecTeacherProgramPills');
-    var subjectInput = document.getElementById('ecTeacherSubject');
-    var emailInput = document.getElementById('ecTeacherEmail');
-    var notesInput = document.getElementById('ecTeacherNotes');
-    var btn = document.getElementById('ecTeacherAddBtn');
-    var toggleBtn = document.getElementById('ecTeacherToggleBtn');
-    var form = document.querySelector('.ec-teacher-form');
-
-    function getCenterProgramsFromTags() {
-        var tags = document.querySelectorAll('#programTagsDisplay .program-tag');
-        var fromTags = (!tags || !tags.length) ? [] : Array.from(tags)
-            .map(function(t) { return String(t && t.textContent || '').trim(); })
-            .filter(Boolean)
-            .filter(function(p) { return p.toLowerCase() !== 'no programs listed yet'; });
-        if (fromTags.length) return fromTags;
-        var cached = window._centerPrograms;
-        if (Array.isArray(cached) && cached.length) {
-            return cached.map(function(p) { return String(p || '').trim(); }).filter(Boolean);
-        }
-        try {
-            var u = (typeof getUser === 'function') ? getUser() : null;
-            if (u && Array.isArray(u.programs) && u.programs.length) {
-                return u.programs.map(function(p) { return String(p || '').trim(); }).filter(Boolean);
-            }
-        } catch (e) {}
-        return [];
-    }
-
-    function setTeacherProgramValue(value) {
-        if (programInput) programInput.value = String(value || '').trim();
-        if (!programPillsEl) return;
-        var selected = String((programInput && programInput.value) || '').trim().toLowerCase();
-        Array.from(programPillsEl.querySelectorAll('button.ec-prog-pill')).forEach(function(btn) {
-            var val = String(btn.getAttribute('data-program') || '').trim().toLowerCase();
-            btn.classList.toggle('active', Boolean(selected) && val === selected);
-        });
-    }
-
-    function renderTeacherProgramPills() {
-        if (!programPillsEl) return;
-        var programs = getCenterProgramsFromTags();
-        programPillsEl.innerHTML = '';
-        if (!programs.length) {
-            var hint = document.createElement('div');
-            hint.className = 'ec-prog-pill-disabled';
-            hint.textContent = 'Set programs first to pick a teacher role.';
-            programPillsEl.appendChild(hint);
-            return;
-        }
-        programs.forEach(function(program) {
-            var label = String(program || '').trim();
-            if (!label) return;
-            var pill = document.createElement('button');
-            pill.type = 'button';
-            pill.className = 'ec-prog-pill';
-            pill.textContent = label;
-            pill.setAttribute('data-program', label);
-            pill.addEventListener('click', function() {
-                setTeacherProgramValue(label);
-            });
-            programPillsEl.appendChild(pill);
-        });
-        if (!String((programInput && programInput.value) || '').trim()) {
-            setTeacherProgramValue(programs[0]);
-        } else {
-            setTeacherProgramValue(programInput.value);
-        }
-    }
-
-    // Allow program pills to refresh after async center load.
-    window._refreshTeacherProgramPills = function() {
-        if (!programPillsEl) return;
-        renderTeacherProgramPills();
-    };
-
-    function setTeacherFormOpen(isOpen) {
-        if (!form) return;
-        form.classList.toggle('active', Boolean(isOpen));
-        if (toggleBtn) toggleBtn.textContent = isOpen ? 'Close' : '+ Add';
-        if (isOpen && nameInput) {
-            try { nameInput.focus(); } catch (e) {}
-        }
-        if (isOpen) {
-            renderTeacherProgramPills();
-        }
-    }
-
-    function readTeacherForm() {
-        var programs = getCenterProgramsFromTags();
-        var selectedProgram = String((programInput && programInput.value) || '').trim();
-        if (programs.length && !selectedProgram) selectedProgram = String(programs[0] || '').trim();
-        return {
-            name: nameInput ? nameInput.value : '',
-            program: selectedProgram,
-            subject: subjectInput ? subjectInput.value : '',
-            email: emailInput ? emailInput.value : '',
-            notes: notesInput ? notesInput.value : '',
-        };
-    }
-
-    function clearTeacherForm() {
-        if (nameInput) nameInput.value = '';
-        if (programInput) programInput.value = '';
-        if (subjectInput) subjectInput.value = '';
-        if (emailInput) emailInput.value = '';
-        if (notesInput) notesInput.value = '';
-        if (programPillsEl) {
-            Array.from(programPillsEl.querySelectorAll('button.ec-prog-pill')).forEach(function(btn) {
-                btn.classList.remove('active');
-            });
-        }
-    }
-
-    if (btn) {
-        btn.addEventListener('click', function() {
-            var added = addTeacher(readTeacherForm());
-            if (added) {
-                clearTeacherForm();
-                setTeacherFormOpen(false);
-            }
-        });
-    }
-
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', function() {
-            var isOpen = form && form.classList.contains('active');
-            setTeacherFormOpen(!isOpen);
-        });
-    }
-
-    if (nameInput) {
-        nameInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                var added = addTeacher(readTeacherForm());
-                if (added) {
-                    clearTeacherForm();
-                    setTeacherFormOpen(false);
-                }
-            }
-        });
-    }
-
-    setTeacherFormOpen(false);
-})();
+// Teacher controls removed
 </script>
         
         

@@ -389,10 +389,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="sch-label">Professor / Teacher <span style="color:#aaa;font-weight:400;">(optional)</span></label>
-                                <select id="schTeacher" class="sch-input">
-                                    <option value="">Auto-assign (Any available)</option>
-                                </select>
+                                <!-- Professor/Teacher selector removed per UX decision -->
                             </div>
                             <div>
                                 <label class="sch-label">Additional Notes <span style="color:#aaa;font-weight:400;">(optional)</span></label>
@@ -419,7 +416,7 @@
                             <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Date</span><span id="summDate" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="summName" style="font-weight:600;color:#0d1b4b;"></span></div>
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Professor</span><span id="summTeacher" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <!-- Professor summary removed -->
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="summProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="border-top:1px solid #e2e8f5;margin:4px 0;"></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Enrollment Price</span><span id="summEnrollmentPrice" style="font-weight:600;color:#0d1b4b;">₱ 1,550.00</span></div>
@@ -569,7 +566,7 @@
                                         <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Student</span><span id="confStudentName" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                         <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Schedule Date</span><span id="confScheduleDate" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                         <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Professor</span><span id="confTeacher" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                        <!-- Professor on receipt removed -->
                                         <div style="border-top:1px solid #e2e8f5;margin:4px 0;"></div>
                                         <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Payment Method</span><span id="confPaymentMethod" style="font-weight:600;color:#0d1b4b;text-align:right;">GCash</span></div>
                                         <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Reference No</span><span id="confReferenceNumber" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
@@ -862,7 +859,9 @@
             var venue = session.type === 'online'
                 ? (session.meeting_link ? ('Link: ' + session.meeting_link) : 'Link not set')
                 : (session.location ? ('Location: ' + session.location) : 'Location not set');
-            return typeLabel + ' · ' + timeLabel + ' · ' + venue;
+            var activeProgram = getActiveReviewProgram();
+            var pattern = activeProgram && activeProgram.schedulePattern ? String(activeProgram.schedulePattern) : 'Custom';
+            return (pattern ? (pattern + ' · ') : '') + typeLabel + ' · ' + timeLabel + ' · ' + venue;
         }
 
         function refreshSessionPickerForDate() {
@@ -908,10 +907,15 @@
             placeholder.textContent = 'Select a session...';
             picker.appendChild(placeholder);
 
+            var pattern = activeProgram && activeProgram.schedulePattern ? String(activeProgram.schedulePattern) : 'Custom';
             templates.forEach(function(session) {
                 var option = document.createElement('option');
                 option.value = JSON.stringify(session);
-                option.textContent = getSessionDisplayLine(session);
+                var timeLabel = '';
+                if (session && session.from && session.to) timeLabel = fmt12(session.from) + ' - ' + fmt12(session.to);
+                else if (session && session.from) timeLabel = fmt12(session.from);
+                else if (session && session.to) timeLabel = fmt12(session.to);
+                option.textContent = (pattern ? (pattern + ' · ') : '') + (timeLabel || getSessionDisplayLine(session) || 'Session');
                 picker.appendChild(option);
             });
             picker.disabled = false;
@@ -1674,7 +1678,6 @@
                 var selectedSession = getSelectedSession();
                 document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
                 document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
-                document.getElementById('summTeacher').textContent = getSelectedTeacherSelection().display;
                 document.getElementById('summProgram').textContent = getSelectedProgramValue() || '—';
                 var details = document.getElementById('schSessionDetails');
                 if (details && selectedSession) details.textContent = getSessionDisplayLine(selectedSession);
@@ -1691,7 +1694,6 @@
                 var confIssuedAt = document.getElementById('confIssuedAt');
                 var confStudentName = document.getElementById('confStudentName');
                 var confScheduleDate = document.getElementById('confScheduleDate');
-                var confTeacher = document.getElementById('confTeacher');
 
                 var programValue = (_schEnrollmentResp && _schEnrollmentResp.program_enrolled)
                     || getSelectedProgramValue()
@@ -1702,7 +1704,8 @@
                 var amountValue = Number((_schEnrollmentResp && _schEnrollmentResp.amount) || _centerEnrollmentPrice || 0);
                 var enrollmentStatus = String((_schEnrollmentResp && _schEnrollmentResp.enrollment_status) || 'pending').toLowerCase();
 
-                var teacherValue = getSelectedTeacherSelection().display;
+                // teacher selection removed; show placeholder if needed
+                var teacherValue = '—';
                 var scheduleDateValue = _schSelectedDate ? schFmtDate(_schSelectedDate) : '—';
                 var studentNameValue = (document.getElementById('schName').value || '').trim() || '—';
                 var centerNameValue = (function(){
@@ -2605,7 +2608,7 @@
                 if (!_schSelectedDate || !selectedSession) {
                     throw new Error('Please select an available date and session before submitting payment.');
                 }
-                var teacherSel = getSelectedTeacherSelection();
+                // teacher selection removed; payload will not include teacher fields
                 if (payBtn) {
                     payBtn.disabled = true;
                     payBtn.textContent = 'Processing...';
@@ -2628,12 +2631,7 @@
                     schedule_time_to: selectedSession.to || '',
                     schedule_location: selectedSession.location || '',
                     schedule_meeting_link: selectedSession.meeting_link || '',
-                    teacher: teacherSel.mode === 'manual' ? String(teacherSel.teacher_name || '').trim() : '',
-                    teacher_name: teacherSel.mode === 'manual' ? String(teacherSel.teacher_name || '').trim() : '',
-                    teacher_program: teacherSel.mode === 'manual' ? (teacherSel.teacher_program || '') : '',
-                    teacher_from: teacherSel.mode === 'manual' ? (teacherSel.teacher_from || '') : '',
-                    teacher_to: teacherSel.mode === 'manual' ? (teacherSel.teacher_to || '') : '',
-                    teacher_label: teacherSel.mode === 'manual' ? (teacherSel.display || '') : 'Auto-assign',
+                    // teacher fields removed from payload
                     payment_proof: paymentProofFile,
                 };
                 console.log('[Enrollment] Sending enrollment payload', {

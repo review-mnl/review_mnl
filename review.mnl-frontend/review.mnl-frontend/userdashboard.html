@@ -1046,9 +1046,13 @@
 
                 window.promptDeleteEnrollment = function(enrollmentId) {
                     var id = Number(enrollmentId);
-                    var item = window._enrollmentMap[String(id)];
-                    if (!item || !canDeleteEnrollment(item)) {
-                        showEnrollmentActionMessage('error', 'Cannot delete current or upcoming enrollment.');
+                    var item = (window._enrollmentMap && window._enrollmentMap[String(id)]) || null;
+                    if (!item) {
+                        showEnrollmentActionMessage('error', 'Enrollment details not available.');
+                        return;
+                    }
+                    if (!canDeleteEnrollment(item)) {
+                        showEnrollmentActionMessage('error', 'Only past enrollments can be deleted.');
                         return;
                     }
                     openDeleteEnrollmentModal(id);
@@ -1128,21 +1132,18 @@
 
                     grid.innerHTML = validEnrollments.map(function(item) {
                         var logo = resolveCenterLogo(item.review_center_logo);
-                        var paymentStatus = String(item.payment_status || 'pending').toLowerCase();
-                        var statusColor = paymentStatus === 'paid' ? '#d7ffe6' : (paymentStatus === 'failed' ? '#ffe0e0' : '#e6f0ff');
-                        var statusText = paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1);
+                        var paymentMethod = (item.payment && (item.payment.method || item.payment_method)) || item.payment_method || item.provider || '';
                         var reviewText = formatReviewStatusLabel(item.review_status || item.review_status_display || item.status);
                         var reviewColor = getReviewStatusBadgeColor(item.review_status || item.review_status_display || item.status);
                         var enrollmentId = Number(item.id || item.enrollment_id || 0);
-                        var deleteButton = canDeleteEnrollment(item)
-                            ? ('<button type="button" onclick="event.stopPropagation(); promptDeleteEnrollment(' + enrollmentId + ')" style="margin-top:10px;background:#ffe5e5;border:1px solid #ffb4b4;color:#991b1b;font-size:0.74rem;font-weight:700;border-radius:8px;padding:6px 10px;cursor:pointer;">Delete</button>')
-                            : '';
+                        var canDelete = canDeleteEnrollment(item);
+                        var deleteButton = canDelete ? ('<button type="button" onclick="event.stopPropagation(); promptDeleteEnrollment(' + enrollmentId + ')" style="margin-top:10px;background:#ffe5e5;border:1px solid #ffb4b4;color:#991b1b;font-size:0.74rem;font-weight:700;border-radius:8px;padding:6px 10px;cursor:pointer;">Delete</button>') : '';
                         return '<div class="recent-card" onclick="openEnrollmentSummary(' + enrollmentId + ')">'
                             + '<div class="recent-img" style="' + (logo ? ('background-image:url(' + logo + ');background-size:cover;background-position:center;') : '') + '"></div>'
                             + '<h4>' + escHtml(item.review_center_name || 'Review Center') + '</h4>'
                             + '<p>' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
                             + '<p style="font-size:0.75rem;color:rgba(255,255,255,0.92);opacity:1;margin:4px 0;">Enrolled: ' + escHtml(formatDate(item.enrollment_date || item.created_at)) + '</p>'
-                            + '<span style="font-size:0.77rem;color:' + statusColor + ';font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.28);">Payment: ' + escHtml(statusText) + '</span>'
+                            + '<p style="margin:4px 0 0;color:#475569;font-size:12px;font-weight:700;">Payment: ' + escHtml(paymentMethod) + '</p>'
                             + '<p style="font-size:0.7rem;color:#0f172a;font-weight:800;background:' + reviewColor + ';display:inline-block;padding:4px 8px;border-radius:999px;margin:8px 0 0;">Status: ' + escHtml(reviewText) + '</p>'
                             + deleteButton
                             + '</div>';
@@ -1167,24 +1168,24 @@
                     var body = document.getElementById('enrollmentSummaryBody');
                     if (!body) return;
                     var user = getUser() || {};
-                    var studentName = escHtml(item.student_name || item.studentName || (user && (user.first_name || user.name) ? (user.first_name || user.name) : 'You'));
+                    var studentName = escHtml(item.student_name || item.studentName || item.student_full_name || item.full_name || (user && (user.first_name || user.name) ? (user.first_name || user.name) : 'You'));
+                    var email = escHtml(item.student_email || item.email || (item.user && item.user.email) || '');
+                    var phone = escHtml(item.student_phone || item.phone || (item.user && item.user.phone) || '');
                     var program = escHtml(item.program_enrolled || item.program || 'Program not specified');
                     var enrollmentDate = escHtml(formatDate(item.enrollment_date || item.created_at || item.enrollment_created_at));
-                    var paymentMethod = escHtml(item.payment_method || item.provider || '');
+                    var paymentMethod = escHtml(item.payment_method || (item.payment && (item.payment.method || item.paymentMethod)) || item.provider || '');
                     var amount = (typeof item.amount === 'number') ? ('₱ ' + Number(item.amount).toFixed(2)) : escHtml(item.amount || '₱ 0.00');
-                    var paymentStatus = escHtml(String(item.payment_status || item.paymentStatus || '').charAt(0).toUpperCase() + String(item.payment_status || item.paymentStatus || '').slice(1) || 'Pending');
                     var reference = escHtml(item.student_reference_number || item.reference_number || item.site_reference || '—');
                     var html = '';
-                    html += '<div style="display:flex;flex-direction:column;gap:10px;">';
-                    html += '<div><strong>Student</strong><div style="margin-top:4px;">' + studentName + '</div></div>';
-                    html += '<div><strong>Program Enrolled</strong><div style="margin-top:4px;">' + program + '</div></div>';
-                    html += '<div style="display:flex;gap:12px;"><div><strong>Enrollment Date</strong><div style="margin-top:4px;">' + enrollmentDate + '</div></div>';
-                    html += '<div><strong>Amount</strong><div style="margin-top:4px;">' + amount + '</div></div></div>';
-                    html += '<div><strong>Payment</strong><div style="margin-top:4px;">' + paymentMethod + ' — ' + paymentStatus + '</div></div>';
-                    html += '<div><strong>Reference No.</strong><div style="margin-top:4px;word-break:break-word;">' + reference + '</div></div>';
-                    if (item.latest_notification) {
-                        html += '<div><strong>Latest Note</strong><div style="margin-top:4px;">' + escHtml(item.latest_notification || '') + '</div></div>';
-                    }
+                    html += '<div style="display:flex;flex-direction:column;gap:12px;">';
+                    html += '<div><strong>Student</strong><div style="margin-top:6px;">' + studentName + '</div></div>';
+                    if (email) html += '<div><strong>Email</strong><div style="margin-top:6px;">' + email + '</div></div>';
+                    if (phone) html += '<div><strong>Contact Number</strong><div style="margin-top:6px;">' + phone + '</div></div>';
+                    html += '<div><strong>Program Enrolled</strong><div style="margin-top:6px;">' + program + '</div></div>';
+                    html += '<div style="display:flex;gap:18px;margin-top:6px;"><div><strong>Enrollment Date</strong><div style="margin-top:6px;">' + enrollmentDate + '</div></div>';
+                    html += '<div><strong>Amount</strong><div style="margin-top:6px;">' + amount + '</div></div></div>';
+                    html += '<div><strong>Payment Method</strong><div style="margin-top:6px;">' + paymentMethod + '</div></div>';
+                    html += '<div><strong>Reference No.</strong><div style="margin-top:6px;word-break:break-word;">' + reference + '</div></div>';
                     html += '</div>';
                     body.innerHTML = html;
                     var modal = document.getElementById('enrollmentSummaryModal');

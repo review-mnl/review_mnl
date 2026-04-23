@@ -271,7 +271,33 @@ const updateCenterProfile = async (req, res) => {
     if (programs !== undefined) { updates.push('programs = ?'); vals.push(JSON.stringify(programs)); }
     if (achievements !== undefined) { updates.push('achievements = ?'); vals.push(JSON.stringify(achievements)); }
     if (schedule !== undefined) { updates.push('schedule = ?'); vals.push(JSON.stringify(schedule)); }
-    if (review_schedule !== undefined) { updates.push('review_schedule = ?'); vals.push(JSON.stringify(review_schedule)); }
+    if (review_schedule !== undefined) {
+      // Sanitize incoming review_schedule: ensure it's an array of objects and remove any center-scoped or sensitive fields
+      try {
+        var cleaned = [];
+        var rawArr = [];
+        if (Array.isArray(review_schedule)) rawArr = review_schedule;
+        else if (typeof review_schedule === 'string') {
+          try { rawArr = JSON.parse(review_schedule); } catch (e) { rawArr = []; }
+        }
+        if (!Array.isArray(rawArr)) rawArr = [];
+        rawArr.forEach(function(item) {
+          if (!item || typeof item !== 'object') return;
+          // shallow clone and remove internal fields
+          var copy = JSON.parse(JSON.stringify(item));
+          try { delete copy.center_id; } catch(e) {}
+          try { delete copy.id; } catch(e) {}
+          try { delete copy._id; } catch(e) {}
+          cleaned.push(copy);
+        });
+        updates.push('review_schedule = ?');
+        vals.push(JSON.stringify(cleaned));
+      } catch (e) {
+        // Fallback: store empty array
+        updates.push('review_schedule = ?');
+        vals.push(JSON.stringify([]));
+      }
+    }
     if (payment_methods !== undefined) {
       updates.push('payment_methods = ?');
       vals.push(JSON.stringify(normalizePaymentMethods(payment_methods)));

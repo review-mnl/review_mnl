@@ -259,39 +259,61 @@
             _centerReviewPrograms.forEach(function(p, idx) {
                 var opt = document.createElement('option');
                 opt.value = String(idx);
-                opt.textContent = p.name || (p.track || 'Program');
-                sel.appendChild(opt);
-            });
-            if (_centerReviewPrograms.length) {
-                _centerActiveProgramIndex = 0;
-                sel.value = String(_centerActiveProgramIndex);
-            } else {
-                _centerActiveProgramIndex = -1;
-                sel.value = '-1';
+                }).join('');
             }
-            sel.onchange = function() {
-                _centerActiveProgramIndex = Number(sel.value);
-                var todayKey = toDateKey(new Date());
-                if (_centerActiveProgramIndex >= 0) {
-                    // find first date in current month where the program is open and has enrollments
-                    var mDate = _centerCalendarState.monthDate || new Date();
-                    var year = mDate.getFullYear();
-                    var month = mDate.getMonth();
-                    var daysInMonth = new Date(year, month + 1, 0).getDate();
-                    var firstKey = null;
-                    for (var d = 1; d <= daysInMonth; d++) {
-                        var k = toDateKey(new Date(year, month, d));
-                        if ((getEnrollmentsForDateAndProgram(k) || []).length > 0) { firstKey = k; break; }
-                    }
-                    _centerCalendarState.selectedDateKey = firstKey || todayKey;
-                } else {
-                    var allKeys = Object.keys(_centerCalendarState.enrollmentsByDate).sort();
-                    _centerCalendarState.selectedDateKey = allKeys.length ? allKeys[0] : todayKey;
-                }
-                renderCenterCalendar();
-                renderCenterDailyEnrolledList();
+
+            // Enrollment Summary Modal logic (Admin) — expose globally for inline onclick handlers
+            window.closeEnrollmentSummaryModal = function() {
+                var modal = document.getElementById('enrollmentSummaryModal');
+                if (modal) modal.style.display = 'none';
+                var body = document.getElementById('enrollmentSummaryBody');
+                if (body) body.innerHTML = '';
             };
-        }
+
+            window.openEnrollmentSummaryModal = function(enrollmentId) {
+                var id = Number(enrollmentId || 0);
+                if (!id) { alert('Invalid enrollment id'); return; }
+                var item = (_centerAllEnrollments || []).find(function(e) {
+                    return Number(e.id || e.enrollment_id || e.enrollmentId || 0) === id;
+                });
+                // Fallback: try current day's list
+                if (!item) {
+                    var key = _centerCalendarState.selectedDateKey;
+                    var data = getEnrollmentsForDateAndProgram(key) || [];
+                    item = data.find(function(e) { return Number(e.id || e.enrollment_id || e.enrollmentId || 0) === id; });
+                }
+                if (!item) { alert('Enrollment details not available.'); return; }
+                var body = document.getElementById('enrollmentSummaryBody');
+                if (!body) return;
+                var studentName = escHtml(item.student_name || item.studentName || (item.user && (item.user.first_name || item.user.name)) || 'Student');
+                var email = escHtml(item.student_email || item.email || (item.user && item.user.email) || '');
+                var phone = escHtml(item.student_phone || item.phone || (item.user && item.user.phone) || '');
+                var program = escHtml(item.program_enrolled || item.program || 'Program not specified');
+                var enrollmentDate = escHtml(formatDate(item.enrollment_date || item.created_at || item.enrollment_created_at));
+                var paymentMethod = escHtml(item.payment_method || (item.payment && item.payment.method) || item.provider || '');
+                var amount = (typeof item.amount === 'number') ? ('₱ ' + Number(item.amount).toFixed(2)) : escHtml(item.amount || '₱ 0.00');
+                var reference = escHtml(item.student_reference_number || item.reference_number || item.site_reference || '—');
+                var html = '';
+                html += '<div style="display:flex;flex-direction:column;gap:16px;padding:6px 0;">';
+                html += '<div style="display:flex;flex-direction:column;gap:6px;">';
+                html += '<div style="font-size:16px;font-weight:800;color:#0d1b4b;">' + studentName + '</div>';
+                if (email) html += '<div style="font-size:13px;color:#475569;">' + email + '</div>';
+                if (phone) html += '<div style="font-size:13px;color:#475569;">' + phone + '</div>';
+                html += '</div>';
+                html += '<div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:8px;">'
+                    + '<div><strong>Program</strong><div style="margin-top:4px;">' + program + '</div></div>'
+                    + '<div><strong>Enrollment Date</strong><div style="margin-top:4px;">' + enrollmentDate + '</div></div>'
+                    + '</div>';
+                html += '<div style="display:flex;gap:18px;margin-top:4px;">'
+                    + '<div><strong>Amount</strong><div style="margin-top:4px;">' + amount + '</div></div>'
+                    + '<div><strong>Payment Method</strong><div style="margin-top:4px;">' + paymentMethod + '</div></div>'
+                    + '</div>';
+                html += '<div style="margin-top:6px;"><strong>Reference No.</strong><div style="margin-top:4px;word-break:break-word;">' + reference + '</div></div>';
+                html += '</div>';
+                body.innerHTML = html;
+                var modal = document.getElementById('enrollmentSummaryModal');
+                if (modal) modal.style.display = 'flex';
+            };
 
         function getEnrollmentsForDateAndProgram(dateKey) {
             // If no program filter active, return enrollments by their enrollment_date (existing behavior)

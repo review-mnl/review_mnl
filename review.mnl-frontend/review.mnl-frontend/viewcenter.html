@@ -2255,11 +2255,40 @@
                     });
                 }).filter(function(program) { return !!program.name; });
                 // Combine review schedule programs (detailed) with plain program names from center.programs
-                // Deduplicate by program.key so every program added by the center is visible.
+                // Also merge any locally-saved programs for this center (from localStorage) while avoiding cross-center leakage.
                 var effectiveReviewPrograms = [];
                 try {
                     var seenKeys = {};
                     (reviewPrograms || []).forEach(function(p){ if (p && p.key && !seenKeys[p.key]) { seenKeys[p.key]=true; effectiveReviewPrograms.push(p); } });
+
+                    // Load local saved programs and include only those that belong to this center.
+                    var localPrograms = [];
+                    try {
+                        var rawLocal = localStorage.getItem('reviewmnl_review_schedule_v1');
+                        if (rawLocal) {
+                            var parsedLocal = JSON.parse(rawLocal) || [];
+                            // Build a set of known keys for this center (server + fallback)
+                            var knownKeys = {};
+                            (reviewPrograms || []).forEach(function(p){ if (p && p.key) knownKeys[p.key]=true; });
+                            (fallbackReviewPrograms || []).forEach(function(p){ if (p && p.key) knownKeys[p.key]=true; });
+                            parsedLocal.forEach(function(lp){
+                                if (!lp || !lp.key) return;
+                                // If center_id is present, include only when it matches this center
+                                if (lp.center_id !== undefined && lp.center_id !== null) {
+                                    if (String(lp.center_id) === String(centerId)) {
+                                        localPrograms.push(normalizeReviewProgram(lp));
+                                    }
+                                } else {
+                                    // Legacy entry without center_id: include it only if its key matches one of this center's known programs
+                                    if (knownKeys[lp.key]) {
+                                        localPrograms.push(normalizeReviewProgram(lp));
+                                    }
+                                }
+                            });
+                        }
+                    } catch(e) {}
+
+                    (localPrograms || []).forEach(function(p){ if (p && p.key && !seenKeys[p.key]) { seenKeys[p.key]=true; effectiveReviewPrograms.push(p); } });
                     (fallbackReviewPrograms || []).forEach(function(p){ if (p && p.key && !seenKeys[p.key]) { seenKeys[p.key]=true; effectiveReviewPrograms.push(p); } });
                 } catch (e) { effectiveReviewPrograms = reviewPrograms.length ? reviewPrograms : fallbackReviewPrograms; }
 

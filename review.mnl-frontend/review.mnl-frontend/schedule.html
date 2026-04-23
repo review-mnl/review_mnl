@@ -414,6 +414,16 @@
                 saveBtn.setAttribute('aria-disabled', 'true');
             }
             try {
+                // Tag saved programs with the current center id (if available)
+                try {
+                    var centerIdRaw = (new URLSearchParams(window.location.search).get('id')) || window._myCenterId || null;
+                    var centerIdNum = (centerIdRaw !== null && centerIdRaw !== undefined && centerIdRaw !== '') ? Number(centerIdRaw) : null;
+                    savedPrograms.forEach(function(p){
+                        try {
+                            p.center_id = (centerIdNum !== null) ? centerIdNum : (p.center_id || null);
+                        } catch(e) {}
+                    });
+                } catch(e) {}
                 localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(savedPrograms));
             } catch (e) {}
             function doneRenderAndReset() {
@@ -2741,9 +2751,11 @@ window.dSchedSaveBackend = async function() {
 };
 
 (async function() {
-    try {
-        var center = await CentersAPI.getMyProfile();
-        if (center && center.schedule) {
+            try {
+                var center = await CentersAPI.getMyProfile();
+                // persist center id for use when tagging local saved programs
+                try { if (center && (center.id || center.center_id)) window._myCenterId = Number(center.id || center.center_id); } catch(e) {}
+                if (center && center.schedule) {
             var parsed = typeof center.schedule === "string" ? JSON.parse(center.schedule) : center.schedule;
             
             // Detect old array format

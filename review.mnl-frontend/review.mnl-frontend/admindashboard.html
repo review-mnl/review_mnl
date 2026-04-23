@@ -79,6 +79,22 @@
             </div>
         </section>
 
+        <!-- Modal: Student Transaction History -->
+        <div class="modal-overlay" id="studentTransactionsModal" style="display:none;">
+            <div class="modal-box" style="max-width:640px;">
+                <div class="modal-header">
+                    <h3>Student Transaction History</h3>
+                    <button class="modal-close" onclick="closeStudentTransactionsModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="studentTransactionsBody" style="max-height:60vh;overflow:auto;">
+                    <!-- Filled dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-save-btn" onclick="closeStudentTransactionsModal()">Close</button>
+                </div>
+            </div>
+        </div>
+
         <section class="admin-dashboard">
             <div class="admin-container">
 
@@ -346,11 +362,15 @@
                 var program = item.program_enrolled || item.program || 'Program not specified';
                 var paymentMethod = (item.payment && item.payment.method) || item.payment_method || 'Not set';
                 var submittedAt = item.date_submitted ? new Date(item.date_submitted).toLocaleString() : 'N/A';
+                var sid = item.user_id || item.studentId || item.student_id || 0;
                 return '<div style="border:1px solid #dbe7ff;border-radius:10px;background:#fff;padding:10px 12px;">'
                     + '<p style="margin:0;color:#0d1b4b;font-size:13px;font-weight:700;">' + escHtml(studentName) + '</p>'
                     + '<p style="margin:4px 0 0;color:#475569;font-size:12px;">Program: ' + escHtml(program) + '</p>'
                     + '<p style="margin:2px 0 0;color:#475569;font-size:12px;">Payment: ' + escHtml(paymentMethod) + '</p>'
                     + '<p style="margin:2px 0 0;color:#64748b;font-size:11px;">Submitted: ' + escHtml(submittedAt) + '</p>'
+                    + '<div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;">'
+                        + '<button type="button" onclick="openStudentTransactions(' + Number(sid) + ')" style="padding:6px 10px;background:#0a4cff;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">View</button>'
+                    + '</div>'
                     + '</div>';
             }).join('');
         }
@@ -686,6 +706,65 @@
             var d = new Date(value);
             if (isNaN(d.getTime())) return String(value);
             return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Open student transaction history modal (filters center enrollments)
+        function openStudentTransactions(studentId) {
+            try {
+                var id = Number(studentId) || 0;
+            } catch (e) { var id = 0; }
+            var body = document.getElementById('studentTransactionsBody');
+            var modal = document.getElementById('studentTransactionsModal');
+            if (!body || !modal) return;
+            var enrolls = Array.isArray(window._centerAllEnrollments) ? window._centerAllEnrollments.slice() : [];
+            var items = enrolls.filter(function(en) {
+                return Number(en.user_id || en.studentId || en.student_id || 0) === id;
+            }).sort(function(a,b){
+                var ta = new Date(a.payment && a.payment.uploaded_at || a.createdAt || a.date_submitted || 0).getTime() || 0;
+                var tb = new Date(b.payment && b.payment.uploaded_at || b.createdAt || b.date_submitted || 0).getTime() || 0;
+                return tb - ta;
+            });
+
+            if (!items.length) {
+                body.innerHTML = '<p style="color:#64748b;font-size:13px;margin:0;">No transactions found for this student.</p>';
+                modal.style.display = '';
+                return;
+            }
+
+            var html = items.map(function(e){
+                var prog = e.program_enrolled || e.program || 'Program not specified';
+                var when = formatDateTime(e.payment && e.payment.uploaded_at || e.createdAt || e.date_submitted || '');
+                var amount = (e.payment && (Number(e.payment.amount) || 0)) || 0;
+                var method = (e.payment && e.payment.method) || e.payment_method || 'Not set';
+                var status = (e.payment && e.payment.status) || e.paymentStatus || 'pending';
+                var ref = (e.payment && (e.payment.reference_number || e.payment.student_reference_number || e.payment.site_reference)) || '';
+                var proof = (e.payment && e.payment.payment_screenshot_url) || '';
+                var uploadedAt = e.payment && e.payment.uploaded_at ? formatDateTime(e.payment.uploaded_at) : '';
+                return '<div style="border:1px solid #eef6ff;border-radius:10px;padding:10px;background:#fff;">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">'
+                        + '<div style="flex:1;">'
+                            + '<div style="font-weight:700;color:#0d1b4b;">' + escHtml(prog) + '</div>'
+                            + '<div style="color:#64748b;font-size:12px;margin-top:6px;">' + escHtml(when) + (uploadedAt ? ' · ' + escHtml(uploadedAt) : '') + '</div>'
+                        + '</div>'
+                        + '<div style="text-align:right;min-width:140px;">'
+                            + '<div style="font-weight:800;color:#0a4cff;">₱ ' + escHtml((amount).toFixed(2)) + '</div>'
+                            + '<div style="color:#475569;font-size:12px;margin-top:6px;">' + escHtml(method) + ' · ' + escHtml(status) + '</div>'
+                        + '</div>'
+                    + '</div>'
+                    + (ref ? ('<div style="margin-top:8px;font-size:13px;color:#334155;">Reference: ' + escHtml(ref) + '</div>') : '')
+                    + (proof ? ('<div style="margin-top:8px;"><a href="' + escAttr(proof) + '" target="_blank" rel="noopener noreferrer" style="color:#0a4cff;font-weight:700;text-decoration:none;">View payment proof</a></div>') : '')
+                + '</div>';
+            }).join('<div style="height:8px;"></div>');
+
+            body.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' + html + '</div>';
+            modal.style.display = '';
+        }
+
+        function closeStudentTransactionsModal() {
+            var modal = document.getElementById('studentTransactionsModal');
+            var body = document.getElementById('studentTransactionsBody');
+            if (body) body.innerHTML = '';
+            if (modal) modal.style.display = 'none';
         }
 
         function toggleSidebar() {

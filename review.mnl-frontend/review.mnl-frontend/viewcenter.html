@@ -1377,7 +1377,9 @@
                 items.forEach(function(program) {
                     var option = document.createElement('option');
                     option.value = program.key;
-                    option.textContent = program.name + ' (' + program.track + ' - ' + program.modality + ')';
+                    var badge = '';
+                    try { if (program && program.center_id !== undefined && program.center_id !== null && String(program.center_id) === String(centerId)) badge = ' — Saved by this center'; } catch(e) {}
+                    option.textContent = program.name + ' (' + program.track + ' - ' + program.modality + ')' + badge;
                     selectEl.appendChild(option);
                 });
                 selectEl.disabled = false;
@@ -2271,6 +2273,7 @@
                             var knownKeys = {};
                             (reviewPrograms || []).forEach(function(p){ if (p && p.key) knownKeys[p.key]=true; });
                             (fallbackReviewPrograms || []).forEach(function(p){ if (p && p.key) knownKeys[p.key]=true; });
+                            var _localMigrated = false;
                             parsedLocal.forEach(function(lp){
                                 if (!lp || !lp.key) return;
                                 // If center_id is present, include only when it matches this center
@@ -2281,10 +2284,18 @@
                                 } else {
                                     // Legacy entry without center_id: include it only if its key matches one of this center's known programs
                                     if (knownKeys[lp.key]) {
+                                        // Migrate: tag this local entry with current centerId for future clarity
+                                        try { lp.center_id = centerId; _localMigrated = true; } catch(e) {}
                                         localPrograms.push(normalizeReviewProgram(lp));
                                     }
                                 }
                             });
+                            // If we updated any legacy entries, write back the migration to localStorage so future loads are scoped
+                            try {
+                                if (_localMigrated) {
+                                    localStorage.setItem('reviewmnl_review_schedule_v1', JSON.stringify(parsedLocal));
+                                }
+                            } catch(e) {}
                         }
                     } catch(e) {}
 

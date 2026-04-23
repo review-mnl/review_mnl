@@ -346,22 +346,7 @@
                                 <p id="schSessionDetails" style="margin:8px 0 0;font-size:12px;color:#475569;"></p>
                             </div>
                         </div>
-                        <p style="font-size:13px;color:#555;margin-bottom:16px;">Select an available date. Greyed-out days are closed.</p>
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                            <button onclick="schCalPrev()" class="sch-nav-btn"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>
-                            <span id="schCalLabel" style="font-weight:700;font-size:14px;color:#0d1b4b;"></span>
-                            <button onclick="schCalNext()" class="sch-nav-btn"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>
-                        </div>
-                        <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;">
-                            <span class="sch-wd">Su</span><span class="sch-wd">Mo</span><span class="sch-wd">Tu</span><span class="sch-wd">We</span><span class="sch-wd">Th</span><span class="sch-wd">Fr</span><span class="sch-wd">Sa</span>
-                        </div>
-                        <div id="schCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
-                        <div style="display:flex;gap:16px;margin-top:14px;font-size:11px;color:#888;align-items:center;">
-                            <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#e8eeff;border:1.5px solid #0a4cff;vertical-align:middle;margin-right:4px;"></span>Available</span>
-                            <span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#0a4cff;vertical-align:middle;margin-right:4px;"></span>Today</span>
-                            <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#f0f2f8;border:1.5px solid #e2e8f5;vertical-align:middle;margin-right:4px;"></span>Closed</span>
-                        </div>
-                        <p id="schSelectedDateLabel" style="display:none;margin-top:14px;padding:10px 14px;background:#e8eeff;border-radius:8px;font-size:13px;font-weight:600;color:#0a4cff;"></p>
+                        <p style="font-size:13px;color:#555;margin-bottom:16px;">This is a program enrollment — pick a session time. Enrollment covers the full program.</p>
                         <div style="display:flex;justify-content:flex-end;margin-top:18px;">
                             <button id="schStep1Next" onclick="schGoStep(2)" disabled class="sch-btn-primary">Next &rarr;</button>
                         </div>
@@ -417,7 +402,8 @@
                         <div style="background:#f8f9fc;border-radius:10px;padding:16px 18px;margin-bottom:18px;">
                             <h4 style="font-size:13px;font-weight:700;color:#0d1b4b;margin-bottom:12px;">Booking Summary</h4>
                             <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
-                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Date</span><span id="summDate" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Start Date</span><span id="summDate" style="font-weight:600;color:#0d1b4b;"></span></div>
+                                <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Enrollment</span><span id="summEnrollmentPeriod" style="font-weight:600;color:#0d1b4b;">Full program</span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Name</span><span id="summName" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Professor</span><span id="summTeacher" style="font-weight:600;color:#0d1b4b;"></span></div>
                                 <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Program</span><span id="summProgram" style="font-weight:600;color:#0d1b4b;"></span></div>
@@ -567,7 +553,8 @@
                                 <div style="padding:14px 16px;">
                                     <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
                                         <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Student</span><span id="confStudentName" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
-                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Schedule Date</span><span id="confScheduleDate" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Start Date</span><span id="confScheduleDate" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
+                                        <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Enrollment</span><span id="confEnrollment" style="font-weight:600;color:#0d1b4b;text-align:right;">Full program</span></div>
                                         <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Program</span><span id="confProgram" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                         <div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:#6b7280;">Professor</span><span id="confTeacher" style="font-weight:600;color:#0d1b4b;text-align:right;">—</span></div>
                                         <div style="border-top:1px solid #e2e8f5;margin:4px 0;"></div>
@@ -879,22 +866,6 @@
                 return;
             }
 
-            if (!_schSelectedDate) {
-                picker.disabled = true;
-                picker.innerHTML = '<option value="">Pick a date first</option>';
-                if (details) details.textContent = '';
-                return;
-            }
-
-            var dow = _schSelectedDate.getDay();
-            var dayItem = activeProgram.schedule[dow];
-            if (!(dayItem && dayItem.open)) {
-                picker.disabled = true;
-                picker.innerHTML = '<option value="">No sessions on selected date</option>';
-                if (details) details.textContent = '';
-                return;
-            }
-
             var templates = Array.isArray(activeProgram.session_templates) ? activeProgram.session_templates : [];
             if (!templates.length) {
                 picker.disabled = true;
@@ -911,19 +882,23 @@
             templates.forEach(function(session) {
                 var option = document.createElement('option');
                 option.value = JSON.stringify(session);
-                option.textContent = getSessionDisplayLine(session);
+                var timeLabel = '';
+                if (session && session.from && session.to) timeLabel = fmt12(session.from) + ' - ' + fmt12(session.to);
+                else if (session && session.from) timeLabel = fmt12(session.from);
+                else if (session && session.to) timeLabel = fmt12(session.to);
+                option.textContent = timeLabel || 'Session';
                 picker.appendChild(option);
             });
             picker.disabled = false;
             picker.onchange = function() {
                 var selected = getSelectedSession();
-                if (details) details.textContent = getSessionDisplayLine(selected);
-                var canProceed = !!(_schSelectedDate && selected && getActiveReviewProgram());
+                if (details) details.textContent = '';
+                var canProceed = !!(selected && getActiveReviewProgram());
                 var nextBtn = document.getElementById('schStep1Next');
                 if (nextBtn) nextBtn.disabled = !canProceed;
             };
 
-            if (details) details.textContent = 'Select the specific session for this date.';
+            if (details) details.textContent = 'Select the session time for this program.';
         }
 
         function normalizeTeacherName(raw) {
@@ -1669,7 +1644,7 @@
                     line.className = 'sch-step-line' + (i < n ? ' active' : '');
                 }
             });
-            var titles = ['Choose a Date', 'Your Details', 'Payment', 'Confirmed!'];
+            var titles = ['Choose a Session', 'Your Details', 'Payment', 'Confirmed!'];
             var subs   = ['Step 1 of 4', 'Step 2 of 4', 'Step 3 of 4', 'Booking Complete'];
             document.getElementById('schModalTitle').textContent = 'Schedule a Review — ' + titles[n-1];
             document.getElementById('schModalSub').textContent   = subs[n-1];
@@ -1678,7 +1653,12 @@
         function schGoStep(n) {
             if (n === 3) {
                 var selectedSession = getSelectedSession();
-                document.getElementById('summDate').textContent    = schFmtDate(_schSelectedDate);
+                var startDate = _schSelectedDate ? _schSelectedDate : new Date();
+                var startLabel = schFmtDate(startDate);
+                var summDateEl = document.getElementById('summDate');
+                var summEnrollEl = document.getElementById('summEnrollmentPeriod');
+                if (summDateEl) summDateEl.textContent = startLabel;
+                if (summEnrollEl) summEnrollEl.textContent = 'Full program';
                 document.getElementById('summName').textContent    = document.getElementById('schName').value.trim() || '—';
                 document.getElementById('summTeacher').textContent = getSelectedTeacherSelection().display;
                 document.getElementById('summProgram').textContent = getSelectedProgramValue() || '—';
@@ -1709,7 +1689,9 @@
                 var enrollmentStatus = String((_schEnrollmentResp && _schEnrollmentResp.enrollment_status) || 'pending').toLowerCase();
 
                 var teacherValue = getSelectedTeacherSelection().display;
-                var scheduleDateValue = _schSelectedDate ? schFmtDate(_schSelectedDate) : '—';
+                var startDate = _schSelectedDate ? _schSelectedDate : new Date();
+                var scheduleDateValue = schFmtDate(startDate);
+                var confEnrollEl = document.getElementById('confEnrollment');
                 var studentNameValue = (document.getElementById('schName').value || '').trim() || '—';
                 var centerNameValue = (function(){
                     var el = document.getElementById('centerName');
@@ -1720,6 +1702,7 @@
                 if (confIssuedAt) confIssuedAt.textContent = new Date().toLocaleString();
                 if (confStudentName) confStudentName.textContent = studentNameValue;
                 if (confScheduleDate) confScheduleDate.textContent = scheduleDateValue;
+                if (confEnrollEl) confEnrollEl.textContent = 'Full program';
                 if (confTeacher) confTeacher.textContent = teacherValue;
                 if (confProgram) confProgram.textContent = programValue;
                 if (confPaymentMethod) confPaymentMethod.textContent = paymentMethodValue;
@@ -2109,8 +2092,8 @@
                 alert('This review center has no available programs yet. Please contact the center first.');
                 return;
             }
-            if (!_schSelectedDate || !selectedSession) {
-                alert('Please select a date and session first.');
+            if (!selectedSession) {
+                alert('Please select a session first.');
                 schSetStep(1);
                 return;
             }
@@ -2123,8 +2106,10 @@
 
         // ── Calendar ──────────────────────────────────────────────────────
         function renderSchCal() {
-            document.getElementById('schCalLabel').textContent = SCH_MONTHS[_schMonth] + ' ' + _schYear;
+            var labelEl = document.getElementById('schCalLabel');
             var grid = document.getElementById('schCalGrid');
+            if (!labelEl || !grid) return; // calendar removed in simplified booking flow
+            labelEl.textContent = SCH_MONTHS[_schMonth] + ' ' + _schYear;
             grid.innerHTML = '';
             var firstDow = new Date(_schYear, _schMonth, 1).getDay();
             var daysInMonth = new Date(_schYear, _schMonth + 1, 0).getDate();
@@ -2626,8 +2611,8 @@
                     ? _schSelectedDate.toISOString().slice(0, 10)
                     : new Date().toISOString().slice(0, 10);
                 const selectedSession = getSelectedSession();
-                if (!_schSelectedDate || !selectedSession) {
-                    throw new Error('Please select an available date and session before submitting payment.');
+                if (!selectedSession) {
+                    throw new Error('Please select a session before submitting payment.');
                 }
                 var teacherSel = getSelectedTeacherSelection();
                 if (payBtn) {

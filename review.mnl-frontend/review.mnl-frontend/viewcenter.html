@@ -798,9 +798,26 @@
                     { day: 'Wed', open: true }, { day: 'Thu', open: true }, { day: 'Fri', open: true }, { day: 'Sat', open: false }
                 ];
             }
-            var templates = parseJsonArray(raw && raw.session_templates)
-                .map(normalizeSessionTemplate)
-                .filter(Boolean);
+            var templates = [];
+            try {
+                var rawTemplates = parseJsonArray(raw && raw.session_templates);
+                rawTemplates.forEach(function(rt){
+                    if (!rt || typeof rt !== 'object') return;
+                    var tmp = Object.assign({}, rt);
+                    try {
+                        if (!tmp.type || !String(tmp.type).trim()) {
+                            var modL = String(modality || '').toLowerCase();
+                            if (tmp.meeting_link) tmp.type = 'online';
+                            else if (modL.indexOf('online') >= 0) tmp.type = 'online';
+                            else if (modL.indexOf('hybrid') >= 0) tmp.type = (tmp.location ? 'ftof' : (tmp.meeting_link ? 'online' : 'ftof'));
+                            else tmp.type = 'ftof';
+                        }
+                        tmp.type = String(tmp.type).trim().toLowerCase();
+                    } catch (e) {}
+                    var norm = normalizeSessionTemplate(tmp);
+                    if (norm) templates.push(norm);
+                });
+            } catch (e) {}
             if (!templates.length) {
                 templates = buildDefaultSessionTemplates(modality, raw && raw.ftf_location, raw && raw.online_link);
             }

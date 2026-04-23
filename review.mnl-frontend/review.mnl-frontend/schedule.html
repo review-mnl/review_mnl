@@ -418,6 +418,29 @@
                 saveBtn.setAttribute('aria-disabled', 'true');
             }
             try {
+                // Ensure session templates have a `type` so clients can recognize them
+                try {
+                    savedPrograms.forEach(function(p){
+                        try {
+                            var mod = String(p && (p.modality || p.mode) ? (p.modality || p.mode) : '').toLowerCase();
+                            if (!Array.isArray(p.session_templates)) return;
+                            p.session_templates.forEach(function(t){
+                                if (!t) return;
+                                try {
+                                    if (!t.type || !String(t.type).trim()) {
+                                        // Deduce type from meeting_link or program modality
+                                        if (t.meeting_link) t.type = 'online';
+                                        else if (mod.indexOf('online') >= 0) t.type = 'online';
+                                        else if (mod.indexOf('hybrid') >= 0) t.type = (t.location ? 'ftof' : (t.meeting_link ? 'online' : 'ftof'));
+                                        else t.type = 'ftof';
+                                    }
+                                    t.type = String(t.type).trim().toLowerCase();
+                                } catch(e) {}
+                            });
+                        } catch(e) {}
+                    });
+                } catch(e) {}
+
                 // Tag saved programs with the current center id (if available)
                 try {
                     var centerIdRaw = (new URLSearchParams(window.location.search).get('id')) || window._myCenterId || null;
@@ -446,9 +469,20 @@
             try { doneRenderAndReset(); } catch (e) {}
 
             // Fire-and-forget backend sync with timeout; UI is already reset above.
-            if (typeof CentersAPI !== 'undefined' && CentersAPI.updateMyProfile) {
+                if (typeof CentersAPI !== 'undefined' && CentersAPI.updateMyProfile) {
                 try {
-                    var backendPromise = Promise.resolve(CentersAPI.updateMyProfile({ review_schedule: savedPrograms }));
+                    // Prepare a cleaned payload for the backend (do not send center-scoped/internal fields)
+                    var cleanedForBackend = (Array.isArray(savedPrograms) ? savedPrograms : []).map(function(item){
+                        try {
+                            var copy = JSON.parse(JSON.stringify(item || {}));
+                            try { delete copy.center_id; } catch(e) {}
+                            try { delete copy.id; } catch(e) {}
+                            try { delete copy._id; } catch(e) {}
+                            return copy;
+                        } catch(e) { return null; }
+                    }).filter(Boolean);
+
+                    var backendPromise = Promise.resolve(CentersAPI.updateMyProfile({ review_schedule: cleanedForBackend }));
                     var timeoutMs = 8000;
                     var timeoutPromise = new Promise(function(resolve, reject) {
                         setTimeout(function() { reject(new Error('timeout')); }, timeoutMs);

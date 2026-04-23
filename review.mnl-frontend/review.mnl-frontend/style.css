@@ -3007,6 +3007,7 @@ nav img{
     display: flex;
     gap: 20px;
     margin-top: 15px;
+    flex-wrap: wrap;
 }
 
 #enrolledCentersGrid {
@@ -3040,6 +3041,30 @@ nav img{
     width: 200px;
     color: #fff;
     box-shadow: 0 10px 20px rgba(6, 29, 94, 0.30);
+}
+
+/* Enrolled card responsive sizing (cards use inline visuals but sizing is controlled here) */
+.enrolled-card {
+    box-sizing: border-box;
+    flex: 0 0 260px;
+    width: 260px;
+}
+
+@media (max-width: 900px) {
+    .enrolled-card {
+        flex: 0 0 180px;
+        width: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .enrolled-card {
+        flex: 1 1 100%;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        padding: 14px;
+    }
 }
 
 .recent-img {

@@ -136,7 +136,7 @@
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:14px;">
                             <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Student Name</p><p id="pvStudentName" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
                             <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Program</p><p id="pvProgram" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
-                            <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Professor</p><p id="pvTeacher" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
+                            <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Session</p><p id="pvSession" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
                             <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Date Uploaded</p><p id="pvUploadedAt" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
                             <div><p style="margin:0;font-size:11px;color:#888;text-transform:uppercase;font-weight:700;">Payment Status</p><p id="pvPaymentStatus" style="margin:2px 0 0;color:#0d1b4b;font-weight:600;">—</p></div>
                         </div>
@@ -915,7 +915,19 @@
             _activePaymentEnrollment = enrollment;
             document.getElementById('pvStudentName').textContent = enrollment.student_name || 'Student';
             document.getElementById('pvProgram').textContent = enrollment.program_enrolled || 'Program not specified';
-            document.getElementById('pvTeacher').textContent = enrollment.teacher_name || enrollment.teacher || '—';
+            // Build a session summary from enrollment metadata (type, time, location/link)
+            try {
+                var _sessParts = [];
+                if (enrollment.schedule_type) _sessParts.push(enrollment.schedule_type === 'online' ? 'Online' : 'FTF');
+                if (enrollment.schedule_time_from && enrollment.schedule_time_to) _sessParts.push((enrollment.schedule_time_from || '') + ' - ' + (enrollment.schedule_time_to || ''));
+                else if (enrollment.schedule_time_from) _sessParts.push(enrollment.schedule_time_from);
+                if (enrollment.schedule_meeting_link) _sessParts.push('Link: ' + enrollment.schedule_meeting_link);
+                if (enrollment.schedule_location) _sessParts.push('Location: ' + enrollment.schedule_location);
+                var _sessText = _sessParts.length ? _sessParts.join(' · ') : '—';
+                document.getElementById('pvSession').textContent = _sessText;
+            } catch (e) {
+                document.getElementById('pvSession').textContent = '—';
+            }
             document.getElementById('pvUploadedAt').textContent = enrollment.payment && enrollment.payment.uploaded_at
                 ? new Date(enrollment.payment.uploaded_at).toLocaleString()
                 : '—';
@@ -976,15 +988,22 @@
                 }
                 var combinedRefs = refHtmlParts.join(' ');
 
+                // Build session summary HTML (replaces professor display)
+                var sessionPartsList = [];
+                if (item.schedule_type) sessionPartsList.push(item.schedule_type === 'online' ? 'Online' : 'FTF');
+                if (item.schedule_time_from && item.schedule_time_to) sessionPartsList.push((item.schedule_time_from || '') + ' - ' + (item.schedule_time_to || ''));
+                else if (item.schedule_time_from) sessionPartsList.push(item.schedule_time_from);
+                if (item.schedule_meeting_link) sessionPartsList.push('Link: ' + item.schedule_meeting_link);
+                if (item.schedule_location) sessionPartsList.push('Location: ' + item.schedule_location);
+                var sessionHtml = sessionPartsList.length ? '<p style="margin:3px 0 0;color:#666;font-size:12px;">Session: ' + escHtml(sessionPartsList.join(' · ')) + '</p>' : '';
+
                 return '<div style="background:#f9fafb;border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid #e7ecf7;">'
                     + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">'
                     + '<div>'
                     + '<strong style="color:#0d1b4b;font-size:14px;">' + escHtml(item.student_name || 'Student') + '</strong>'
                     + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Email: ' + escHtml(item.student_email || 'N/A') + '</p>'
                     + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Program: ' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
-                    + ((item.teacher_name || item.teacher)
-                        ? '<p style="margin:3px 0 0;color:#666;font-size:12px;">Professor: ' + escHtml(item.teacher_name || item.teacher) + '</p>'
-                        : '')
+                    + sessionHtml
                     + '<p style="margin:3px 0 0;color:#666;font-size:12px;">Submitted: ' + escHtml(new Date(item.date_submitted).toLocaleString()) + '</p>'
                     + '</div>'
                     + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">'

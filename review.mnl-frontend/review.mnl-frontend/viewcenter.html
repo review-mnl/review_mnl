@@ -242,8 +242,7 @@
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(savedList));
                         }
                     } catch(e) {}
-                            (localPrograms || []).forEach(function(p){ if (p && p.key && !seenKeys[p.key]) { seenKeys[p.key]=true; effectiveReviewPrograms.push(p); } });
-                        } catch (e) { effectiveReviewPrograms = reviewPrograms.length ? reviewPrograms : []; }
+                    };
 
                 function getSaved() {
                     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
@@ -366,12 +365,7 @@
                                 <label class="sch-label">Contact Number</label>
                                 <input id="schContact" type="tel" class="sch-input" placeholder="09XXXXXXXXX">
                             </div>
-                            <div>
-                                <label class="sch-label">Program / Course of Interest</label>
-                                <select id="schProgram" class="sch-input" disabled>
-                                    <option value="">Select a program...</option>
-                                </select>
-                            </div>
+                            <!-- Program / Course of Interest removed as per requirements -->
                             <!-- Professor/Teacher selector removed per UX decision -->
                             <div>
                                 <label class="sch-label">Additional Notes <span style="color:#aaa;font-weight:400;">(optional)</span></label>

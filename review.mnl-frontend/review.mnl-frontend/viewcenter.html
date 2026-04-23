@@ -242,9 +242,8 @@
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(savedList));
                         }
                     } catch(e) {}
-
-                    updateBtn();
-                };
+                            (localPrograms || []).forEach(function(p){ if (p && p.key && !seenKeys[p.key]) { seenKeys[p.key]=true; effectiveReviewPrograms.push(p); } });
+                        } catch (e) { effectiveReviewPrograms = reviewPrograms.length ? reviewPrograms : []; }
 
                 function getSaved() {
                     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
@@ -2260,21 +2259,6 @@
                 const reviewPrograms = reviewProgramsRaw.map(normalizeReviewProgram).filter(function(program) {
                     return !!(program && program.name);
                 });
-                const fallbackReviewPrograms = programs.map(function(name) {
-                    return normalizeReviewProgram({
-                        name: String(name || '').trim(),
-                        modality: 'Face-to-face',
-                        schedule: [
-                            { day: 'Sun', open: false },
-                            { day: 'Mon', open: true },
-                            { day: 'Tue', open: true },
-                            { day: 'Wed', open: true },
-                            { day: 'Thu', open: true },
-                            { day: 'Fri', open: true },
-                            { day: 'Sat', open: false }
-                        ]
-                    });
-                }).filter(function(program) { return !!program.name; });
                 // Combine review schedule programs (detailed) with plain program names from center.programs
                 // Also merge any locally-saved programs for this center (from localStorage) while avoiding cross-center leakage.
                 var effectiveReviewPrograms = [];
@@ -2288,10 +2272,9 @@
                         var rawLocal = localStorage.getItem('reviewmnl_review_schedule_v1');
                         if (rawLocal) {
                             var parsedLocal = JSON.parse(rawLocal) || [];
-                            // Build a set of known keys for this center (server + fallback)
-                            var knownKeys = {};
-                            (reviewPrograms || []).forEach(function(p){ if (p && p.key) knownKeys[p.key]=true; });
-                            (fallbackReviewPrograms || []).forEach(function(p){ if (p && p.key) knownKeys[p.key]=true; });
+                                    // Build a set of known keys for this center (server only)
+                                    var knownKeys = {};
+                                    (reviewPrograms || []).forEach(function(p){ if (p && p.key) knownKeys[p.key]=true; });
                             var _localMigrated = false;
                             parsedLocal.forEach(function(lp){
                                 if (!lp) return;
@@ -2323,7 +2306,6 @@
                     } catch(e) {}
 
                     (localPrograms || []).forEach(function(p){ if (p && p.key && !seenKeys[p.key]) { seenKeys[p.key]=true; effectiveReviewPrograms.push(p); } });
-                    (fallbackReviewPrograms || []).forEach(function(p){ if (p && p.key && !seenKeys[p.key]) { seenKeys[p.key]=true; effectiveReviewPrograms.push(p); } });
                 } catch (e) { effectiveReviewPrograms = reviewPrograms.length ? reviewPrograms : fallbackReviewPrograms; }
 
                 _centerPaymentMethods = normalizeCenterPaymentMethods(center.payment_methods);

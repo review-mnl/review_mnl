@@ -671,7 +671,7 @@
                 var addBtnOnce = document.getElementById('addEditProgramSessionBtn');
                 if (addBtnOnce) addBtnOnce.onclick = function(){
                     _editProgramTempSessions = Array.isArray(_editProgramTempSessions) ? _editProgramTempSessions : [];
-                    _editProgramTempSessions.push({ from: '08:00', to: '12:00' });
+                    _editProgramTempSessions.push({ from: '', to: '' });
                     renderEditProgramSessions();
                 };
             } catch (e) { /* ignore */ }
@@ -789,7 +789,7 @@
             var addBtn = document.getElementById('addEditProgramSessionBtn');
             if (addBtn) addBtn.onclick = function(){
                 _editProgramTempSessions = Array.isArray(_editProgramTempSessions) ? _editProgramTempSessions : [];
-                _editProgramTempSessions.push({ from: '08:00', to: '12:00' });
+                _editProgramTempSessions.push({ from: '', to: '' });
                 renderEditProgramSessions();
             };
         })();
@@ -1197,11 +1197,11 @@
                 if (m.indexOf('online') !== -1) defType = 'online';
             } catch (e) {}
             // If no sessions exist yet, allow Add but disable Save
-            if (!sessions.length) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; if (addBtn) { addBtn.disabled = false; addBtn.onclick = function() {
+                    if (!sessions.length) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; if (addBtn) { addBtn.disabled = false; addBtn.onclick = function() {
                         try {
                             if (!active) return;
                             if (!Array.isArray(active.session_templates)) active.session_templates = [];
-                            active.session_templates.push({ type: defType, from: '08:00', to: '12:00' });
+                            active.session_templates.push({ type: defType, from: '', to: '' });
                             var newIndex = active.session_templates.length - 1;
                             _activeSessionIndex = newIndex;
                             updateReviewSessionSelect();
@@ -1215,13 +1215,13 @@
             fromEl.value = sess && sess.from ? sess.from : '';
             toEl.value = sess && sess.to ? sess.to : '';
             saveBtn.disabled = false;
-            if (addBtn) {
+                    if (addBtn) {
                 addBtn.disabled = false;
                 addBtn.onclick = function() {
                     try {
                         if (!active) return;
                         if (!Array.isArray(active.session_templates)) active.session_templates = [];
-                        active.session_templates.push({ type: defType, from: '08:00', to: '12:00' });
+                        active.session_templates.push({ type: defType, from: '', to: '' });
                         var newIndex = active.session_templates.length - 1;
                         _activeSessionIndex = newIndex;
                         updateReviewSessionSelect();

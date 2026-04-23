@@ -468,11 +468,17 @@
                 ticket.className = 'program-ticket';
                 const sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
                 const sessionSummary = sessions.map(function(session) {
-                    if (session.type === 'online') {
-                        return 'Online: ' + (session.meeting_link || 'Link not set');
-                    }
-                    return 'FTF: ' + (session.location || 'Location not set');
-                }).join(' | ');
+                    var typeLabel = (session.type === 'online') ? 'Online' : 'FTF';
+                    var timeLabel = (session.from && session.to) ? (fmt12(session.from) + ' - ' + fmt12(session.to)) : '';
+                    var venue = '';
+                    if (session.type === 'online' && session.meeting_link) venue = 'Link: ' + session.meeting_link;
+                    if (session.type !== 'online' && session.location) venue = 'Location: ' + session.location;
+                    var parts = [];
+                    parts.push(typeLabel);
+                    if (timeLabel) parts.push(timeLabel);
+                    if (venue) parts.push(venue);
+                    return parts.join(' · ');
+                }).filter(Boolean).join(' | ');
                 ticket.innerHTML =
                     '<div class="program-ticket-top">' +
                         '<div>' +

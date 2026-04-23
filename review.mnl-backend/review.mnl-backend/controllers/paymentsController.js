@@ -262,9 +262,6 @@ const createGcashEnrollment = async (req, res) => {
     if (programEnrolled && normalizedPrograms.length && !selectedProgram) {
       return res.status(400).json({ message: 'Selected program does not exist for this review center schedule.' });
     }
-    if (selectedProgram && !isProgramOpenOnDate(selectedProgram, enrollmentDate)) {
-      return res.status(400).json({ message: 'Selected enrollment date is not available for the chosen program schedule.' });
-    }
 
     const programTemplates = Array.isArray(selectedProgram && selectedProgram.session_templates) ? selectedProgram.session_templates : [];
     let selectedTemplate = null;

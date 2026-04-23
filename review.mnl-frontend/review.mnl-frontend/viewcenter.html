@@ -887,12 +887,17 @@
             if (!session) return 'No session selected yet.';
             var typeLabel = session.type === 'online' ? 'Online' : 'FTF';
             var timeLabel = (session.from && session.to) ? (fmt12(session.from) + ' - ' + fmt12(session.to)) : 'Time not set';
-            var venue = session.type === 'online'
-                ? (session.meeting_link ? ('Link: ' + session.meeting_link) : 'Link not set')
-                : (session.location ? ('Location: ' + session.location) : 'Location not set');
+            var venueText = '';
+            if (session.type === 'online' && session.meeting_link) venueText = 'Link: ' + session.meeting_link;
+            if (session.type !== 'online' && session.location) venueText = 'Location: ' + session.location;
             var activeProgram = getActiveReviewProgram();
-            var pattern = activeProgram && activeProgram.schedulePattern ? String(activeProgram.schedulePattern) : 'Custom';
-            return (pattern ? (pattern + ' · ') : '') + typeLabel + ' · ' + timeLabel + ' · ' + venue;
+            var pattern = activeProgram && activeProgram.schedulePattern ? String(activeProgram.schedulePattern) : '';
+            var parts = [];
+            if (pattern) parts.push(pattern);
+            parts.push(typeLabel);
+            parts.push(timeLabel);
+            if (venueText) parts.push(venueText);
+            return parts.join(' · ');
         }
 
         function refreshSessionPickerForDate() {

@@ -351,7 +351,11 @@
                 online_link: onlineLink,
                 schedule: schedule,
                 schedulePattern: schedulePattern,
-                session_templates: sessionTemplates.length ? sessionTemplates : buildSessionTemplates(modality, ftfLocation, onlineLink)
+                session_templates: sessionTemplates.length ? sessionTemplates : buildSessionTemplates(modality, ftfLocation, onlineLink),
+                // Add a stable key so the student view can match/merge local programs
+                key: (name + '|' + track).toLowerCase(),
+                // preserve center scoping when present
+                center_id: (raw && (raw.center_id !== undefined)) ? raw.center_id : null
             };
         }
 

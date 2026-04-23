@@ -813,6 +813,8 @@
                 session_templates: templates,
                 has_open_days: hasOpen,
                 key: (name + '|' + track).toLowerCase(),
+                // preserve origin center scoping when available
+                center_id: (raw && (raw.center_id !== undefined)) ? raw.center_id : null,
             };
         }
 
@@ -2275,7 +2277,11 @@
                             (fallbackReviewPrograms || []).forEach(function(p){ if (p && p.key) knownKeys[p.key]=true; });
                             var _localMigrated = false;
                             parsedLocal.forEach(function(lp){
-                                if (!lp || !lp.key) return;
+                                if (!lp) return;
+                                // Ensure a stable key exists for legacy entries
+                                var computedKey = lp.key || ((String(lp.name || '').trim() + '|' + String(lp.track || 'Regular Review Classes')).toLowerCase());
+                                if (!lp.key) { try { lp.key = computedKey; _localMigrated = true; } catch(e) {} }
+
                                 // If center_id is present, include only when it matches this center
                                 if (lp.center_id !== undefined && lp.center_id !== null) {
                                     if (String(lp.center_id) === String(centerId)) {
@@ -2283,7 +2289,7 @@
                                     }
                                 } else {
                                     // Legacy entry without center_id: include it only if its key matches one of this center's known programs
-                                    if (knownKeys[lp.key]) {
+                                    if (knownKeys[computedKey]) {
                                         // Migrate: tag this local entry with current centerId for future clarity
                                         try { lp.center_id = centerId; _localMigrated = true; } catch(e) {}
                                         localPrograms.push(normalizeReviewProgram(lp));

@@ -816,11 +816,39 @@
                 templates = buildDefaultSessionTemplates(modality, raw && raw.ftf_location, raw && raw.online_link);
             }
             var hasOpen = schedule.some(function(item) { return !!item.open; });
+
+            // Derive a human-friendly schedule pattern if not provided
+            var schedulePattern = '';
+            try {
+                schedulePattern = String((raw && raw.schedulePattern) || '').trim();
+            } catch (e) { schedulePattern = ''; }
+            if (!schedulePattern) {
+                try {
+                    var openIdx = [];
+                    for (var i = 0; i < (schedule && schedule.length ? schedule.length : 0); i++) {
+                        if (schedule[i] && schedule[i].open) openIdx.push(i);
+                    }
+                    // Typical patterns: MWF => Mon(1),Wed(3),Fri(5); TTh => Tue(2),Thu(4); M-F => Mon-Fri (1..5)
+                    var isMWF = (openIdx.length === 3 && openIdx[0] === 1 && openIdx[1] === 3 && openIdx[2] === 5);
+                    var isTTh = (openIdx.length === 2 && openIdx[0] === 2 && openIdx[1] === 4);
+                    var isMonToFri = (openIdx.length === 5 && openIdx[0] === 1 && openIdx[4] === 5 && openIdx.join(',') === '1,2,3,4,5');
+                    if (isMWF) schedulePattern = 'MWF';
+                    else if (isTTh) schedulePattern = 'TTh';
+                    else if (isMonToFri) schedulePattern = 'M-F';
+                    else {
+                        var dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+                        var dayLabels = openIdx.map(function(i){ return (dayShort[i] || '').trim(); }).filter(Boolean);
+                        schedulePattern = dayLabels.length ? dayLabels.join(', ') : 'Custom';
+                    }
+                } catch (e) { schedulePattern = 'Custom'; }
+            }
+
             return {
                 name: name,
                 track: track,
                 modality: modality,
                 schedule: schedule,
+                schedulePattern: schedulePattern,
                 session_templates: templates,
                 has_open_days: hasOpen,
                 key: (name + '|' + track).toLowerCase(),

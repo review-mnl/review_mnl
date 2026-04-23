@@ -245,6 +245,22 @@
             </div>
         </div>
 
+        <!-- Modal: Enrollment Summary -->
+        <div class="modal-overlay" id="enrollmentSummaryModal" style="display:none;">
+            <div class="modal-box" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3>Enrollment Summary</h3>
+                    <button class="modal-close" onclick="closeEnrollmentSummaryModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="enrollmentSummaryBody" style="line-height:1.5;color:#0f172a;font-size:14px;">
+                    <!-- Filled dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-save-btn" onclick="closeEnrollmentSummaryModal()">Close</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal: Edit User Profile -->
         <div class="modal-overlay" id="userProfileModal">
             <div class="modal-box">
@@ -1119,9 +1135,9 @@
                         var reviewColor = getReviewStatusBadgeColor(item.review_status || item.review_status_display || item.status);
                         var enrollmentId = Number(item.id || item.enrollment_id || 0);
                         var deleteButton = canDeleteEnrollment(item)
-                            ? ('<button type="button" onclick="promptDeleteEnrollment(' + enrollmentId + ')" style="margin-top:10px;background:#ffe5e5;border:1px solid #ffb4b4;color:#991b1b;font-size:0.74rem;font-weight:700;border-radius:8px;padding:6px 10px;cursor:pointer;">Delete</button>')
+                            ? ('<button type="button" onclick="event.stopPropagation(); promptDeleteEnrollment(' + enrollmentId + ')" style="margin-top:10px;background:#ffe5e5;border:1px solid #ffb4b4;color:#991b1b;font-size:0.74rem;font-weight:700;border-radius:8px;padding:6px 10px;cursor:pointer;">Delete</button>')
                             : '';
-                        return '<div class="recent-card">'
+                        return '<div class="recent-card" onclick="openEnrollmentSummary(' + enrollmentId + ')">'
                             + '<div class="recent-img" style="' + (logo ? ('background-image:url(' + logo + ');background-size:cover;background-position:center;') : '') + '"></div>'
                             + '<h4>' + escHtml(item.review_center_name || 'Review Center') + '</h4>'
                             + '<p>' + escHtml(item.program_enrolled || 'Program not specified') + '</p>'
@@ -1132,6 +1148,51 @@
                             + '</div>';
                     }).join('');
                 }
+
+                function closeEnrollmentSummaryModal() {
+                    var modal = document.getElementById('enrollmentSummaryModal');
+                    if (modal) modal.style.display = 'none';
+                    var body = document.getElementById('enrollmentSummaryBody');
+                    if (body) body.innerHTML = '';
+                }
+
+                function openEnrollmentSummary(enrollmentId) {
+                    var id = Number(enrollmentId || 0);
+                    if (!id) return;
+                    var item = window._enrollmentMap && window._enrollmentMap[String(id)];
+                    if (!item) {
+                        alert('Enrollment details not available.');
+                        return;
+                    }
+                    var body = document.getElementById('enrollmentSummaryBody');
+                    if (!body) return;
+                    var user = getUser() || {};
+                    var studentName = escHtml(item.student_name || item.studentName || (user && (user.first_name || user.name) ? (user.first_name || user.name) : 'You'));
+                    var program = escHtml(item.program_enrolled || item.program || 'Program not specified');
+                    var enrollmentDate = escHtml(formatDate(item.enrollment_date || item.created_at || item.enrollment_created_at));
+                    var paymentMethod = escHtml(item.payment_method || item.provider || '');
+                    var amount = (typeof item.amount === 'number') ? ('₱ ' + Number(item.amount).toFixed(2)) : escHtml(item.amount || '₱ 0.00');
+                    var paymentStatus = escHtml(String(item.payment_status || item.paymentStatus || '').charAt(0).toUpperCase() + String(item.payment_status || item.paymentStatus || '').slice(1) || 'Pending');
+                    var reference = escHtml(item.student_reference_number || item.reference_number || item.site_reference || '—');
+                    var html = '';
+                    html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+                    html += '<div><strong>Student</strong><div style="margin-top:4px;">' + studentName + '</div></div>';
+                    html += '<div><strong>Program Enrolled</strong><div style="margin-top:4px;">' + program + '</div></div>';
+                    html += '<div style="display:flex;gap:12px;"><div><strong>Enrollment Date</strong><div style="margin-top:4px;">' + enrollmentDate + '</div></div>';
+                    html += '<div><strong>Amount</strong><div style="margin-top:4px;">' + amount + '</div></div></div>';
+                    html += '<div><strong>Payment</strong><div style="margin-top:4px;">' + paymentMethod + ' — ' + paymentStatus + '</div></div>';
+                    html += '<div><strong>Reference No.</strong><div style="margin-top:4px;word-break:break-word;">' + reference + '</div></div>';
+                    if (item.latest_notification) {
+                        html += '<div><strong>Latest Note</strong><div style="margin-top:4px;">' + escHtml(item.latest_notification || '') + '</div></div>';
+                    }
+                    html += '</div>';
+                    body.innerHTML = html;
+                    var modal = document.getElementById('enrollmentSummaryModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                window.openEnrollmentSummary = openEnrollmentSummary;
+                window.closeEnrollmentSummaryModal = closeEnrollmentSummaryModal;
 
                 async function loadMyEnrollments() {
                     try {

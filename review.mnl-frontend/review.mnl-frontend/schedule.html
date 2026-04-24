@@ -1185,15 +1185,9 @@
                 if (isOpen && active && active.modality === 'Hybrid' && active.schedule && active.schedule[scheduleIdx] && active.schedule[scheduleIdx].type) {
                     inner += '<div style="font-size:10px;color:#0d1b4b;">' + active.schedule[scheduleIdx].type + '</div>';
                 }
+                // Session time intentionally hidden from calendar cells (show only day number/type)
                 if (isOpen && active && active.schedule && active.schedule[scheduleIdx]) {
-                    var calDay = active.schedule[scheduleIdx];
-                    var calRange = '';
-                    if (calDay && calDay.session && (calDay.session.from || calDay.session.to)) {
-                        calRange = formatTimeRange(calDay.session.from, calDay.session.to);
-                    } else if (Array.isArray(active.session_templates) && active.session_templates[_activeSessionIndex]) {
-                        calRange = formatTimeRange(active.session_templates[_activeSessionIndex].from, active.session_templates[_activeSessionIndex].to);
-                    }
-                    if (calRange) inner += '<div class="ec-cal-session-time" title="' + escHtml(calRange) + '">' + escHtml(calRange) + '</div>';
+                    // no-op: session times removed from cell display
                 }
                 cell.innerHTML = inner;
                 cell.style.cursor = 'pointer';

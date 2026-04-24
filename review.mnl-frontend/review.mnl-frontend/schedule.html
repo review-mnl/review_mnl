@@ -1121,14 +1121,8 @@
                 if (isOpen && active && active.modality === 'Hybrid' && active.schedule && active.schedule[scheduleIdx] && active.schedule[scheduleIdx].type) {
                     inner += '<div style="font-size:10px;color:#0d1b4b;">' + active.schedule[scheduleIdx].type + '</div>';
                 }
-<<<<<<< HEAD
-                // Session time intentionally hidden from calendar cells (show only day number/type)
-                if (isOpen && active && active.schedule && active.schedule[scheduleIdx]) {
-                    // no-op: session times removed from cell display
-                }
-=======
-                // Only show day number and (if Hybrid) type; session times are controlled by the Session selector
->>>>>>> 5b144b33be130eb13c15a230347cb317f3c0cacc
+                // Session time intentionally hidden from calendar cells — show only day number/type.
+                // Session times are controlled by the Session selector; do not render timeframe here.
                 cell.innerHTML = inner;
                 cell.style.cursor = 'pointer';
                 cell.title = 'Click to view day details';

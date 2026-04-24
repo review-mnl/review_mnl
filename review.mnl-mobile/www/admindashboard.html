@@ -223,20 +223,33 @@
             var sel = document.getElementById('centerProgramSelect');
             if (!sel) return;
             sel.innerHTML = '<option value="-1">All programs</option>';
-            _centerReviewPrograms.forEach(function(p, idx) {
+            // Use only saved review-schedule programs (dedupe by name)
+            var seen = {};
+            var display = [];
+            (_centerReviewPrograms || []).forEach(function(p, idx) {
+                var name = String((p && (p.name || p.program)) || '').trim();
+                if (!name) return;
+                var key = name.toLowerCase();
+                if (seen[key]) return;
+                seen[key] = true;
+                display.push({ origIndex: idx, name: name });
+            });
+
+            display.forEach(function(item) {
                 var opt = document.createElement('option');
-                opt.value = String(idx);
-                opt.textContent = p.name || (p.track || 'Program');
+                opt.value = String(item.origIndex);
+                opt.textContent = item.name;
                 sel.appendChild(opt);
             });
-            if (_centerReviewPrograms.length) {
-                _centerActiveProgramIndex = 0;
-                sel.value = String(_centerActiveProgramIndex);
-            } else {
-                _centerActiveProgramIndex = -1;
-                sel.value = '-1';
-            }
-            sel.onchange = function() {
+
+            try {
+                var desired = _centerActiveProgramIndex >= 0 ? String(_centerActiveProgramIndex) : '-1';
+                sel.value = desired;
+                if (!Array.prototype.some.call(sel.options, function(o){ return o.value === sel.value; })) sel.value = '-1';
+            } catch (e) {}
+
+            if (sel._rmListener) sel.removeEventListener('change', sel._rmListener);
+            sel._rmListener = function() {
                 _centerActiveProgramIndex = Number(sel.value);
                 var todayKey = toDateKey(new Date());
                 if (_centerActiveProgramIndex >= 0) {
@@ -251,12 +264,13 @@
                     }
                     _centerCalendarState.selectedDateKey = firstKey || todayKey;
                 } else {
-                    var allKeys = Object.keys(_centerCalendarState.enrollmentsByDate).sort();
+                    var allKeys = Object.keys(_centerCalendarState.enrollmentsByDate || {}).sort();
                     _centerCalendarState.selectedDateKey = allKeys.length ? allKeys[0] : todayKey;
                 }
                 renderCenterCalendar();
                 renderCenterDailyEnrolledList();
             };
+            sel.addEventListener('change', sel._rmListener);
         }
 
         function getEnrollmentsForDateAndProgram(dateKey) {

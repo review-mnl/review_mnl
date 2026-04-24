@@ -256,20 +256,55 @@
             var sel = document.getElementById('centerProgramSelect');
             if (!sel) return;
             sel.innerHTML = '<option value="-1">All programs</option>';
+            // Build a display list from saved review programs only (dedupe by name)
+            var seen = {};
+            var display = [];
             (_centerReviewPrograms || []).forEach(function(p, idx) {
+                var name = String((p && (p.name || p.program)) || '').trim();
+                if (!name) return;
+                var key = name.toLowerCase();
+                if (seen[key]) return;
+                seen[key] = true;
+                display.push({ origIndex: idx, name: name });
+            });
+
+            display.forEach(function(item) {
                 var opt = document.createElement('option');
-                opt.value = String(idx);
-                var label = String((p && (p.name || p.program)) || ('Program ' + (idx + 1)));
-                opt.textContent = label;
+                opt.value = String(item.origIndex);
+                opt.textContent = item.name;
                 sel.appendChild(opt);
             });
 
-            // restore current selection and wire change handler to filter by program
-            try { sel.value = String(_centerActiveProgramIndex >= 0 ? _centerActiveProgramIndex : -1); } catch (e) {}
-            sel.removeEventListener && sel.removeEventListener('change', sel._rmListener || function(){});
+            // restore current selection if still valid
+            try {
+                var desired = _centerActiveProgramIndex >= 0 ? String(_centerActiveProgramIndex) : '-1';
+                sel.value = desired;
+                if (!Array.prototype.some.call(sel.options, function(o){ return o.value === sel.value; })) {
+                    sel.value = '-1';
+                }
+            } catch (e) {}
+
+            // change handler: update active program and re-render calendar/list
+            if (sel._rmListener) sel.removeEventListener('change', sel._rmListener);
             var onChange = function() {
                 var v = Number(this.value);
                 _centerActiveProgramIndex = (!isNaN(v) && v >= 0) ? v : -1;
+                var todayKey = toDateKey(new Date());
+                if (_centerActiveProgramIndex >= 0) {
+                    var mDate = _centerCalendarState.monthDate || new Date();
+                    var year = mDate.getFullYear();
+                    var month = mDate.getMonth();
+                    var daysInMonth = new Date(year, month + 1, 0).getDate();
+                    var firstKey = null;
+                    for (var d = 1; d <= daysInMonth; d++) {
+                        var k = toDateKey(new Date(year, month, d));
+                        if ((getEnrollmentsForDateAndProgram(k) || []).length > 0) { firstKey = k; break; }
+                    }
+                    _centerCalendarState.selectedDateKey = firstKey || todayKey;
+                } else {
+                    var allKeys = Object.keys(_centerCalendarState.enrollmentsByDate || {}).sort();
+                    _centerCalendarState.selectedDateKey = allKeys.length ? allKeys[0] : todayKey;
+                }
                 renderCenterCalendar();
                 renderCenterDailyEnrolledList();
             };

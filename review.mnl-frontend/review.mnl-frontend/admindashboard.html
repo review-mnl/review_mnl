@@ -368,7 +368,20 @@
         function getEnrollmentsForDateAndProgram(dateKey) {
             // If no program filter active, return enrollments by their enrollment_date (existing behavior)
             var listByDate = (_centerCalendarState.enrollmentsByDate && _centerCalendarState.enrollmentsByDate[dateKey]) || [];
-            if (_centerActiveProgramIndex < 0) return listByDate;
+            if (_centerActiveProgramIndex < 0) {
+                // If saved review programs exist, limit the "All programs" view
+                // to enrollments that belong to those saved programs only.
+                if (Array.isArray(_centerReviewPrograms) && _centerReviewPrograms.length) {
+                    var allowed = _centerReviewPrograms.map(function(p){ return String((p && (p.name || p.program) || '')).trim().toLowerCase(); }).filter(Boolean);
+                    if (!allowed.length) return [];
+                    return (listByDate || []).filter(function(item) {
+                        var p = String((item.program_enrolled || item.program || '')).trim().toLowerCase();
+                        if (!p) return false;
+                        return allowed.some(function(a){ return p === a || p.indexOf(a) !== -1; });
+                    });
+                }
+                return listByDate;
+            }
 
             // For program-aware view, map enrollments to the program schedule:
             // If the selected program is not open on the date's weekday, return empty.

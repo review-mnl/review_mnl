@@ -230,7 +230,6 @@
                                 <button id="reviewSessionAddBtn" type="button" class="program-ticket-btn rse-add">+ Add</button>
                                 <button id="reviewSessionSaveBtn" type="button" class="program-ticket-btn rse-save">Save</button>
                             </div>
-                            <div id="reviewSessionDisplay" class="rse-display" aria-live="polite"></div>
                         </div>
                     </div>
                     <div class="review-schedule-selector">
@@ -308,77 +307,17 @@
                 .replace(/'/g, '&#39;');
         }
 
-        function normalizeTo24HourTime(raw) {
-            if (raw === null || raw === undefined) return '';
-            if (typeof raw === 'number' && isFinite(raw)) {
-                if (raw < 0 || raw > 23) return '';
-                return String(raw).padStart(2, '0') + ':00';
-            }
-
-            var text = String(raw).trim();
-            if (!text) return '';
-
-            var hourOnly = text.match(/^(\d{1,2})$/);
-            if (hourOnly) {
-                var hOnly = Number(hourOnly[1]);
-                if (hOnly < 0 || hOnly > 23) return '';
-                return String(hOnly).padStart(2, '0') + ':00';
-            }
-
-            var hhmMatch = text.match(/^(\d{1,2}):(\d{1,2})$/);
-            if (hhmMatch) {
-                var hh = Number(hhmMatch[1]);
-                var mm = Number(hhmMatch[2]);
-                if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return '';
-                return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
-            }
-
-            var ampmMatch = text.match(/^(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)$/i);
-            if (ampmMatch) {
-                var h12 = Number(ampmMatch[1]);
-                var m12 = Number(ampmMatch[2] || '0');
-                var period = String(ampmMatch[3] || '').toLowerCase();
-                if (h12 < 1 || h12 > 12 || m12 < 0 || m12 > 59) return '';
-                var h24 = h12 % 12;
-                if (period === 'pm') h24 += 12;
-                return String(h24).padStart(2, '0') + ':' + String(m12).padStart(2, '0');
-            }
-
-            return '';
-        }
-
-        function formatTime12(raw) {
-            var normalized = normalizeTo24HourTime(raw);
-            if (!normalized) return '';
-            var parts = normalized.split(':');
-            var hour24 = Number(parts[0]);
-            var minute = parts[1];
-            var suffix = hour24 >= 12 ? 'PM' : 'AM';
-            var hour12 = hour24 % 12;
-            if (hour12 === 0) hour12 = 12;
-            return String(hour12).padStart(2, '0') + ':' + minute + ' ' + suffix;
-        }
-
-        function formatTimeRange(fromRaw, toRaw) {
-            var fromText = formatTime12(fromRaw);
-            var toText = formatTime12(toRaw);
-            if (fromText && toText) return fromText + ' - ' + toText;
-            return fromText || toText || '';
-        }
-
         /* Session editor styles (local override to modernize look and avoid overlap) */
         (function(){
             try {
                 var css = '\n.review-session-editor{display:flex;flex-direction:row;align-items:center;gap:10px;margin-top:8px;padding:8px;border-radius:10px;background:#fff;border:1px solid rgba(13,27,75,0.06);box-shadow:0 1px 0 rgba(13,27,75,0.03);width:100%;box-sizing:border-box;flex-wrap:wrap;}\n'
                     + '.review-session-editor .rse-inputs{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}\n'
-                    + '.review-session-editor input[type=time]{border:1px solid #c4d1ea;background:#ffffff;padding:8px 10px;border-radius:8px;color:#0d1b4b;font-size:14px;font-weight:600;box-sizing:border-box;min-width:0;width:132px;line-height:1.2;}\n'
-                    + '.review-session-editor .rse-sep{font-size:13px;color:#334155;font-weight:600;padding:0 6px;}\n'
-                    + '.review-session-editor .rse-display{width:100%;font-size:13px;font-weight:600;color:#0f172a;background:#f5f8ff;border:1px solid #d6e2ff;border-radius:8px;padding:7px 10px;line-height:1.35;}\n'
+                    + '.review-session-editor input[type=time]{border:1px solid #d6dbe8;background:#fbfdff;padding:8px 10px;border-radius:8px;color:#0d1b4b;font-size:14px;box-sizing:border-box;min-width:0;width:120px;}\n'
+                    + '.review-session-editor .rse-sep{font-size:13px;color:#5b6b8a;padding:0 6px;}\n'
                     + '.review-schedule-selector{display:flex;flex-direction:column;gap:6px;}\n'
                     + '#reviewSessionEditor{z-index:1;}\n'
                     + '.rse-add{padding:8px 12px;border-radius:999px;background:#eef2ff;color:#0a4cff;border:1px solid #dce8ff;white-space:nowrap;}\n'
                     + '.rse-save{padding:8px 14px;border-radius:999px;white-space:nowrap;}\n'
-                    + '.ec-cal-cell .ec-cal-session-time{display:block;margin-top:3px;font-size:10px;line-height:1.2;color:#1e3a8a;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n'
                     + '@media (max-width:900px){ .review-session-editor{flex-direction:column;align-items:stretch;} .review-session-editor .rse-inputs{width:100%;} .review-session-editor input[type=time]{width:100%;} .rse-save{align-self:flex-end;} }\n';
                 var s = document.createElement('style'); s.type = 'text/css'; s.appendChild(document.createTextNode(css)); document.head.appendChild(s);
             } catch(e) { /* ignore */ }
@@ -660,19 +599,10 @@
                 var sessionSummary = '';
                 if (sessions && sessions.length) {
                     sessionSummary = sessions.map(function(s){
-                        if (s && (s.from || s.to)) {
-                            var formattedRange = formatTimeRange(s.from, s.to);
-                            return formattedRange ? escHtml(formattedRange) : '';
-                        }
+                        if (s && s.from && s.to) return escHtml(s.from + '–' + s.to);
                         var t = String(s && s.type ? s.type : '').toLowerCase();
-                        if (t === 'ftof') {
-                            var ftofRange = formatTimeRange(s.from, s.to);
-                            return 'FTF ' + escHtml(ftofRange || 'Not set');
-                        }
-                        if (t === 'online') {
-                            var onlineRange = formatTimeRange(s.from, s.to);
-                            return 'Online ' + escHtml(onlineRange || (s.meeting_link || 'Not set'));
-                        }
+                        if (t === 'ftof') return 'FTF ' + escHtml((s.from || '') + '–' + (s.to || ''));
+                        if (t === 'online') return 'Online ' + escHtml((s.meeting_link || s.from || '') + (s.to ? '–'+s.to : ''));
                         return '';
                     }).filter(Boolean).join(', ');
                 }
@@ -1095,7 +1025,7 @@
                 // Prefer day-level session (explicitly set on schedule)
                 if (active && Array.isArray(active.schedule) && active.schedule[dayIndex] && active.schedule[dayIndex].session && active.schedule[dayIndex].session.from && active.schedule[dayIndex].session.to) {
                     var ds = active.schedule[dayIndex].session;
-                    sessionText = ' • Session: ' + escHtml(formatTimeRange(ds.from, ds.to) || 'Not set');
+                    sessionText = ' • Session: ' + escHtml(ds.from) + '–' + escHtml(ds.to);
                 } else {
                     // Prefer saved program entry if available, then fallback to active
                     var sp = active;
@@ -1109,22 +1039,14 @@
                     if (sessions && sessions.length && typeof _activeSessionIndex === 'number' && sessions[_activeSessionIndex]) {
                         var s = sessions[_activeSessionIndex];
                         if (s && s.from && s.to) {
-                            sessionText = ' • Session: ' + escHtml(formatTimeRange(s.from, s.to));
+                            sessionText = ' • Session: ' + escHtml(s.from) + '–' + escHtml(s.to);
                         } else {
                             var t = String(s && s.type ? s.type : '').toLowerCase();
                             var typeLabel = t === 'ftof' ? 'Face-to-face' : (t === 'online' ? 'Online' : escHtml(t || 'Session'));
-                            var fallbackRange = s && (s.from || s.to) ? formatTimeRange(s.from, s.to) : '';
-                            sessionText = ' • Session: ' + typeLabel + (fallbackRange ? (' ' + escHtml(fallbackRange)) : '');
+                            sessionText = ' • Session: ' + typeLabel + (s && (s.from || s.to) ? ' ' + escHtml((s.from || '') + '–' + (s.to || '')) : '');
                         }
                     }
                 }
-            } catch (e) { /* ignore */ }
-            try {
-                console.log('[review-schedule] day-details-time', {
-                    dayIndex: dayIndex,
-                    rawDaySession: (active && active.schedule && active.schedule[dayIndex] && active.schedule[dayIndex].session) ? active.schedule[dayIndex].session : null,
-                    formattedDisplay: sessionText
-                });
             } catch (e) { /* ignore */ }
 
             // Build interactive details + session editor
@@ -1185,16 +1107,7 @@
                 if (isOpen && active && active.modality === 'Hybrid' && active.schedule && active.schedule[scheduleIdx] && active.schedule[scheduleIdx].type) {
                     inner += '<div style="font-size:10px;color:#0d1b4b;">' + active.schedule[scheduleIdx].type + '</div>';
                 }
-                if (isOpen && active && active.schedule && active.schedule[scheduleIdx]) {
-                    var calDay = active.schedule[scheduleIdx];
-                    var calRange = '';
-                    if (calDay && calDay.session && (calDay.session.from || calDay.session.to)) {
-                        calRange = formatTimeRange(calDay.session.from, calDay.session.to);
-                    } else if (Array.isArray(active.session_templates) && active.session_templates[_activeSessionIndex]) {
-                        calRange = formatTimeRange(active.session_templates[_activeSessionIndex].from, active.session_templates[_activeSessionIndex].to);
-                    }
-                    if (calRange) inner += '<div class="ec-cal-session-time" title="' + escHtml(calRange) + '">' + escHtml(calRange) + '</div>';
-                }
+                // Only show day number and (if Hybrid) type; session times are controlled by the Session selector
                 cell.innerHTML = inner;
                 cell.style.cursor = 'pointer';
                 cell.title = 'Click to view day details';
@@ -1282,18 +1195,10 @@
                 const opt = document.createElement('option');
                 var t = String(sess.type || '').toLowerCase();
                 var typeLabel = t === 'ftof' ? 'Face-to-face' : (t === 'online' ? 'Online' : '');
-                var timeframe = formatTimeRange(sess.from, sess.to) || 'Set time range';
+                var timeframe = (sess.from || '') + (sess.to ? ' to ' + sess.to : '');
                 opt.value = String(idx);
                 opt.textContent = (typeLabel ? (typeLabel + ' — ') : '') + timeframe;
                 select.appendChild(opt);
-                try {
-                    console.log('[review-schedule] session-option-render', {
-                        index: idx,
-                        rawFrom: sess && sess.from,
-                        rawTo: sess && sess.to,
-                        formatted: timeframe
-                    });
-                } catch (e) { /* ignore */ }
             });
             if (_activeSessionIndex >= sessions.length) _activeSessionIndex = 0;
             select.value = String(_activeSessionIndex);
@@ -1327,17 +1232,9 @@
             var saveBtn = document.getElementById('reviewSessionSaveBtn');
             var select = document.getElementById('reviewSessionSelect');
             var addBtn = document.getElementById('reviewSessionAddBtn');
-            var previewEl = document.getElementById('reviewSessionDisplay');
             var active = getActiveProgram();
             if (!fromEl || !toEl || !saveBtn || !select) return;
-            if (!active) {
-                fromEl.value = '';
-                toEl.value = '';
-                saveBtn.disabled = true;
-                if (addBtn) addBtn.disabled = true;
-                if (previewEl) previewEl.textContent = 'Selected session: Not set';
-                return;
-            }
+            if (!active) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; if (addBtn) addBtn.disabled = true; return; }
             var sessions = Array.isArray(active.session_templates) ? active.session_templates : [];
             var defType = 'ftof';
             try {
@@ -1345,7 +1242,7 @@
                 if (m.indexOf('online') !== -1) defType = 'online';
             } catch (e) {}
             // If no sessions exist yet, allow Add but disable Save
-                    if (!sessions.length) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; if (previewEl) previewEl.textContent = 'Selected session: Not set'; if (addBtn) { addBtn.disabled = false; addBtn.onclick = function() {
+                    if (!sessions.length) { fromEl.value = ''; toEl.value = ''; saveBtn.disabled = true; if (addBtn) { addBtn.disabled = false; addBtn.onclick = function() {
                         try {
                             if (!active) return;
                             if (!Array.isArray(active.session_templates)) active.session_templates = [];
@@ -1360,25 +1257,9 @@
             var idx = Number(select.value) || 0;
             if (idx >= sessions.length) idx = 0;
             var sess = sessions[idx] || sessions[0];
-            var fromNormalized = sess && sess.from ? normalizeTo24HourTime(sess.from) : '';
-            var toNormalized = sess && sess.to ? normalizeTo24HourTime(sess.to) : '';
-            fromEl.value = fromNormalized;
-            toEl.value = toNormalized;
+            fromEl.value = sess && sess.from ? sess.from : '';
+            toEl.value = sess && sess.to ? sess.to : '';
             saveBtn.disabled = false;
-            if (previewEl) {
-                var displayRange = formatTimeRange(fromNormalized, toNormalized);
-                previewEl.textContent = 'Selected session: ' + (displayRange || 'Not set');
-            }
-            try {
-                console.log('[review-schedule] session-editor-load', {
-                    selectedIndex: idx,
-                    rawFrom: sess && sess.from,
-                    rawTo: sess && sess.to,
-                    normalizedFrom: fromNormalized,
-                    normalizedTo: toNormalized,
-                    formatted: formatTimeRange(fromNormalized, toNormalized)
-                });
-            } catch (e) { /* ignore */ }
                     if (addBtn) {
                 addBtn.disabled = false;
                 addBtn.onclick = function() {
@@ -1395,10 +1276,8 @@
                 };
             }
             saveBtn.onclick = function() {
-                var rawFromInput = String(fromEl.value || '').trim();
-                var rawToInput = String(toEl.value || '').trim();
-                var f = normalizeTo24HourTime(rawFromInput);
-                var t = normalizeTo24HourTime(rawToInput);
+                var f = String(fromEl.value || '').trim();
+                var t = String(toEl.value || '').trim();
                 if (!f || !t) { alert('Please fill both From and To times.'); return; }
                 try {
                     // update template
@@ -1420,15 +1299,6 @@
                         active.schedule[_lastShownReviewDayIndex].session = { from: f, to: t };
                     }
                 } catch (e) { console.warn('Failed to save session template', e); }
-                try {
-                    console.log('[review-schedule] session-save', {
-                        rawFrom: rawFromInput,
-                        rawTo: rawToInput,
-                        normalizedFrom: f,
-                        normalizedTo: t,
-                        formatted: formatTimeRange(f, t)
-                    });
-                } catch (e) { /* ignore */ }
                 try { renderReviewDayPills(); renderReviewCalendar(); updateReviewSaveButton(); } catch (e) {}
                 try { persistPrograms(); } catch (e) { console.warn('Persist failed', e); }
                 // refresh editor and details

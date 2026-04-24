@@ -344,7 +344,8 @@
                                 <p id="schSessionDetails" style="margin:8px 0 0;font-size:12px;color:#475569;"></p>
                             </div>
                         </div>
-                        <p style="font-size:13px;color:#555;margin-bottom:16px;">This is a program enrollment — pick a session time. Enrollment covers the full program.</p>
+                        <hr style="border:none;border-top:1px dashed #e5e7eb;margin:12px 0 8px;">
+                        <p id="schProgramDescription" style="font-size:13px;color:#555;margin:6px 0 16px;">This is a program enrollment — pick a session time. Enrollment covers the full program.</p>
                         <div style="display:flex;justify-content:flex-end;margin-top:18px;">
                             <button id="schStep1Next" onclick="schGoStep(2)" disabled class="sch-btn-primary">Next &rarr;</button>
                         </div>
@@ -814,6 +815,27 @@
             }
             var hasOpen = schedule.some(function(item) { return !!item.open; });
 
+            // Support legacy `subjects` but prefer `description` string when present
+            var description = '';
+            try {
+                if (raw && typeof raw.description === 'string' && raw.description.trim()) {
+                    description = raw.description.trim();
+                } else if (raw && Array.isArray(raw.subjects)) {
+                    description = raw.subjects.map(function(it){ return String(it || '').trim(); }).filter(Boolean).join(', ');
+                } else if (raw && typeof raw.subjects === 'string') {
+                    var trimmed = String(raw.subjects || '').trim();
+                    if (trimmed) {
+                        try {
+                            var parsed = JSON.parse(trimmed);
+                            if (Array.isArray(parsed)) description = parsed.map(function(it){ return String(it||'').trim(); }).filter(Boolean).join(', ');
+                            else description = trimmed;
+                        } catch (e) {
+                            description = trimmed.split(',').map(function(it){ return String(it||'').trim(); }).filter(Boolean).join(', ');
+                        }
+                    }
+                }
+            } catch (e) { description = '' }
+
             // Derive a human-friendly schedule pattern if not provided
             var schedulePattern = '';
             try {
@@ -849,7 +871,8 @@
                 session_templates: templates,
                 has_open_days: hasOpen,
                 key: (name + '|' + track).toLowerCase(),
-                // preserve origin center scoping when available
+                // prefer description; preserve origin center scoping when available
+                description: description,
                 center_id: (raw && (raw.center_id !== undefined)) ? raw.center_id : null,
             };
         }
@@ -1448,6 +1471,18 @@
                 renderSchCal();
                 refreshSessionPickerForDate();
                 updateScheduleTeacherOptions();
+                // Update the step-1 program description paragraph (use description or fall back to legacy subjects)
+                try {
+                    var descEl = document.getElementById('schProgramDescription');
+                    var activeProgram = getActiveReviewProgram();
+                    var descText = '';
+                    if (activeProgram) {
+                        if (typeof activeProgram.description === 'string' && activeProgram.description.trim()) descText = activeProgram.description.trim();
+                        else if (Array.isArray(activeProgram.subjects) && activeProgram.subjects.length) descText = activeProgram.subjects.join(', ');
+                        else if (activeProgram.subjects) descText = String(activeProgram.subjects).trim();
+                    }
+                    if (descEl) descEl.textContent = descText || 'This is a program enrollment — pick a session time. Enrollment covers the full program.';
+                } catch(e) { /* ignore */ }
             }
 
             if (pickerStep1 && !pickerStep1.dataset.boundProgramPicker) {

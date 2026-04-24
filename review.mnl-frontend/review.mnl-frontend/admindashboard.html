@@ -252,10 +252,48 @@
             return { name: name, track: track, modality: modality, schedule: schedule, schedulePattern: schedulePattern };
         }
 
+        // Helpers to compute schedule coverage labels and combined open days
+        function getProgramShortLabel(program) {
+            var open = getOpenDows(program || {});
+            open = Array.isArray(open) ? open.slice().sort() : [];
+            function eq(a,b){ if(a.length!==b.length) return false; for(var i=0;i<a.length;i++){ if(a[i]!==b[i]) return false; } return true; }
+            if (eq(open, [1,3,5])) return 'MWF';
+            if (eq(open, [2,4])) return 'TTh';
+            if (eq(open, [1,2,3,4,5])) return 'Weekdays';
+            if (open.length === 7) return 'Daily';
+            return 'Custom';
+        }
+
+        function computeCombinedScheduleLabel(programs) {
+            var set = {};
+            (Array.isArray(programs) ? programs : []).forEach(function(p){ set[getProgramShortLabel(p)] = true; });
+            var keys = Object.keys(set);
+            if (!keys.length) return 'Custom';
+            return keys.join(', ');
+        }
+
+        function getCombinedOpenDows(programs) {
+            var s = {};
+            (Array.isArray(programs) ? programs : []).forEach(function(p){
+                var o = getOpenDows(p || {});
+                (Array.isArray(o) ? o : []).forEach(function(i){ s[i] = true; });
+            });
+            var res = Object.keys(s).map(function(k){ return Number(k); }).filter(function(n){ return !isNaN(n); }).sort(function(a,b){ return a-b; });
+            return res;
+        }
+
         function populateCenterProgramSelect() {
             var sel = document.getElementById('centerProgramSelect');
             if (!sel) return;
-            sel.innerHTML = '<option value="-1">All programs</option>';
+            // Show combined schedule coverage for the "All programs" option when available
+            var allLabel = 'All programs';
+            try {
+                if (Array.isArray(_centerReviewPrograms) && _centerReviewPrograms.length) {
+                    var coverage = computeCombinedScheduleLabel(_centerReviewPrograms);
+                    if (coverage) allLabel += ' (' + coverage + ')';
+                }
+            } catch (e) {}
+            sel.innerHTML = '<option value="-1">' + escHtml(allLabel) + '</option>';
             // Build a display list from saved review programs only (dedupe by name)
             var seen = {};
             var display = [];
@@ -368,7 +406,44 @@
         function getEnrollmentsForDateAndProgram(dateKey) {
             // If no program filter active, return enrollments by their enrollment_date (existing behavior)
             var listByDate = (_centerCalendarState.enrollmentsByDate && _centerCalendarState.enrollmentsByDate[dateKey]) || [];
-            if (_centerActiveProgramIndex < 0) return listByDate;
+            if (_centerActiveProgramIndex < 0) {
+                // When viewing "All programs" and saved review programs exist,
+                // aggregate enrollments for programs that are scheduled/open on that date.
+                if (Array.isArray(_centerReviewPrograms) && _centerReviewPrograms.length) {
+                    var d = new Date(dateKey + 'T00:00:00');
+                    if (isNaN(d.getTime())) return [];
+                    var dow = d.getDay();
+                    var openPrograms = _centerReviewPrograms.filter(function(p){
+                        var o = getOpenDows(p || {});
+                        return Array.isArray(o) && o.indexOf(dow) !== -1;
+                    });
+                    if (!openPrograms.length) return [];
+                    var allowed = openPrograms.map(function(p){ return String((p && (p.name || p.program) || '')).trim().toLowerCase(); }).filter(Boolean);
+                    if (!allowed.length) return [];
+                    var byAll = (_centerAllEnrollments || []).filter(function(item){
+                        var p = String((item.program_enrolled || item.program || '')).trim().toLowerCase();
+                        if (!p) return false;
+                        return allowed.some(function(a){ return p === a || p.indexOf(a) !== -1; });
+                    });
+                    // Ensure we include any enrollments specifically dated on this day (dedupe by id)
+                    var byDate = (listByDate || []).filter(function(item){
+                        var p = String((item.program_enrolled || item.program || '')).trim().toLowerCase();
+                        if (!p) return false;
+                        return allowed.some(function(a){ return p === a || p.indexOf(a) !== -1; });
+                    });
+                    var seenIds = {};
+                    var merged = [];
+                    byAll.concat(byDate).forEach(function(it){
+                        var id = String(it.id || it.enrollment_id || it.enrollmentId || '');
+                        if (!id) return;
+                        if (seenIds[id]) return;
+                        seenIds[id] = true;
+                        merged.push(it);
+                    });
+                    return merged;
+                }
+                return listByDate;
+            }
 
             // For program-aware view, map enrollments to the program schedule:
             // If the selected program is not open on the date's weekday, return empty.
@@ -539,7 +614,14 @@
             }
 
             var activeProgram = (_centerActiveProgramIndex >= 0 && _centerReviewPrograms[_centerActiveProgramIndex]) ? _centerReviewPrograms[_centerActiveProgramIndex] : null;
-            var openDows = getOpenDows(activeProgram);
+            var openDows;
+            if (activeProgram) {
+                openDows = getOpenDows(activeProgram);
+            } else if (Array.isArray(_centerReviewPrograms) && _centerReviewPrograms.length) {
+                openDows = getCombinedOpenDows(_centerReviewPrograms);
+            } else {
+                openDows = []; // empty => treat as all-open
+            }
 
             for (var day = 1; day <= daysInMonth; day++) {
                 var date = new Date(year, month, day);
@@ -549,7 +631,7 @@
                 var isSelected = dateKey === _centerCalendarState.selectedDateKey;
                 var isToday = dateKey === todayKey;
                 var dow = date.getDay();
-                var isOpen = activeProgram ? (openDows.indexOf(dow) !== -1) : true;
+                var isOpen = (Array.isArray(openDows) && openDows.length) ? (openDows.indexOf(dow) !== -1) : true;
 
                 var btn = document.createElement('button');
                 btn.type = 'button';

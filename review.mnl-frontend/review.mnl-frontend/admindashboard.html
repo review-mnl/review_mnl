@@ -256,11 +256,26 @@
             var sel = document.getElementById('centerProgramSelect');
             if (!sel) return;
             sel.innerHTML = '<option value="-1">All programs</option>';
-            _centerReviewPrograms.forEach(function(p, idx) {
+            (_centerReviewPrograms || []).forEach(function(p, idx) {
                 var opt = document.createElement('option');
                 opt.value = String(idx);
-                }).join('');
-            }
+                var label = String((p && (p.name || p.program)) || ('Program ' + (idx + 1)));
+                opt.textContent = label;
+                sel.appendChild(opt);
+            });
+
+            // restore current selection and wire change handler to filter by program
+            try { sel.value = String(_centerActiveProgramIndex >= 0 ? _centerActiveProgramIndex : -1); } catch (e) {}
+            sel.removeEventListener && sel.removeEventListener('change', sel._rmListener || function(){});
+            var onChange = function() {
+                var v = Number(this.value);
+                _centerActiveProgramIndex = (!isNaN(v) && v >= 0) ? v : -1;
+                renderCenterCalendar();
+                renderCenterDailyEnrolledList();
+            };
+            sel._rmListener = onChange;
+            sel.addEventListener('change', onChange);
+        }
 
             // Enrollment Summary Modal logic (Admin) — expose globally for inline onclick handlers
             window.closeEnrollmentSummaryModal = function() {

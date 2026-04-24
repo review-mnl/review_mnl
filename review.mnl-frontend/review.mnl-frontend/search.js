@@ -24,7 +24,14 @@ function starString(rating) {
 
 function parsePrograms(raw) {
     if (!raw) return [];
-    if (Array.isArray(raw)) return raw.map(function(x){ return String(x || '').trim(); }).filter(Boolean);
+    if (Array.isArray(raw)) {
+        return raw.map(function(item) {
+            if (item && typeof item === 'object') {
+                return String(item.name || item.program || item.title || '').trim();
+            }
+            return String(item || '').trim();
+        }).filter(Boolean);
+    }
     if (typeof raw === 'string') {
         const trimmed = raw.trim();
         if (!trimmed) return [];
@@ -55,20 +62,58 @@ function normalizeCategory(text) {
     return String(text || '').trim().toLowerCase();
 }
 
+function normalizeProgramLabel(text) {
+    return String(text || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function getCenterProgramLabels(center) {
+    const labels = [];
+
+    parsePrograms(center && center.programs).forEach(function(program) {
+        const clean = String(program || '').trim();
+        if (clean) labels.push(clean);
+    });
+
+    const reviewSchedule = Array.isArray(center && center.review_schedule)
+        ? center.review_schedule
+        : [];
+    reviewSchedule.forEach(function(program) {
+        const clean = String((program && (program.name || program.program || program.title)) || '').trim();
+        if (clean) labels.push(clean);
+    });
+
+    return labels;
+}
+
 function centerSearchText(center) {
     return [
         center.business_name || center.name || '',
         center.address || '',
         center.description || '',
-        parsePrograms(center.programs).join(' ')
+        getCenterProgramLabels(center).join(' ')
     ].join(' ').toLowerCase();
 }
 
 function centerMatchesCategories(center) {
     if (_appliedCategories.length === 0) return true;
-    const haystack = centerSearchText(center);
+    const centerPrograms = getCenterProgramLabels(center).map(normalizeProgramLabel).filter(Boolean);
+    if (!centerPrograms.length) return false;
+
     return _appliedCategories.some(function(category) {
-        return haystack.includes(normalizeCategory(category));
+        const needle = normalizeProgramLabel(category);
+        if (!needle) return false;
+        return centerPrograms.some(function(programLabel) {
+            return (
+                programLabel === needle ||
+                programLabel.indexOf(needle) >= 0 ||
+                needle.indexOf(programLabel) >= 0
+            );
+        });
     });
 }
 
@@ -304,9 +349,10 @@ async function loadCenters() {
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const q = urlParams.get('q') || '';
+        const category = urlParams.get('category') || '';
         let centers;
-        if (q) centers = await CentersAPI.search(q);
-        else centers = await CentersAPI.getAll();
+        if (q) centers = await CentersAPI.search(q, category);
+        else centers = await CentersAPI.getAll(category);
         _allCenters = Array.isArray(centers) ? centers : (centers.centers || []);
     } catch (err) {
         if (loadingMsg) loadingMsg.textContent = 'Failed to load centers. Is the server running?';
@@ -333,9 +379,10 @@ function displaySearchResults() {
         _searchQuery = searchQuery;
     }
 
-    if (categoryParam && !_selectedCategories.includes(categoryParam)) {
-        _selectedCategories.push(categoryParam);
-        _appliedCategories = _selectedCategories.slice();
+    if (categoryParam) {
+        // A direct program-card click should take precedence over previously saved multi-filters.
+        _selectedCategories = [categoryParam];
+        _appliedCategories = [categoryParam];
         saveFilterState();
     }
 

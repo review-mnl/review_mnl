@@ -547,11 +547,17 @@ const AuthAPI = {
 // Centers API
 // ---------------------------------------------------------------------------
 const CentersAPI = {
-    getAll: () =>
-        apiRequest('GET', '/api/centers'),
+    getAll: (program) => {
+        var qs = [];
+        if (program) qs.push('program=' + encodeURIComponent(String(program).trim()));
+        return apiRequest('GET', '/api/centers' + (qs.length ? ('?' + qs.join('&')) : ''));
+    },
 
-    search: (q) =>
-        apiRequest('GET', '/api/centers/search?q=' + encodeURIComponent(q)),
+    search: (q, program) => {
+        var qs = ['q=' + encodeURIComponent(q)];
+        if (program) qs.push('program=' + encodeURIComponent(String(program).trim()));
+        return apiRequest('GET', '/api/centers/search?' + qs.join('&'));
+    },
 
     getById: (id) =>
         apiRequest('GET', '/api/centers/' + id),

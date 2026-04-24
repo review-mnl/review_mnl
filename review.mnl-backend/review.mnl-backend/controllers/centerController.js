@@ -45,6 +45,18 @@ const parseJsonObject = (raw) => {
   return {};
 };
 
+const normalizeProgramFilter = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+const escapeSqlLike = (value) => String(value || '').replace(/[\\%_]/g, '\\$&');
+
+const toProgramLikePattern = (value) => {
+  const normalized = normalizeProgramFilter(value);
+  if (!normalized) return '';
+  const tokens = normalized.split(' ').filter(Boolean).map((token) => escapeSqlLike(token));
+  if (!tokens.length) return '';
+  return `%${tokens.join('%')}%`;
+};
+
 const normalizeProgramSubjects = (value) => {
   if (Array.isArray(value)) {
     return value
@@ -177,16 +189,29 @@ const toPaymentMethodLabel = (provider, metadata) => {
 };
 
 const getApprovedCenters = async (req, res) => {
+  const { program } = req.query;
+  const programPattern = toProgramLikePattern(program);
   try {
-    const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url, rc.description, rc.programs,
+    let sql = `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url, rc.description, rc.programs,
               IFNULL(AVG(t.rating), 0) AS avg_rating,
               COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
-       WHERE rc.status = 'approved'
-       GROUP BY rc.id ORDER BY avg_rating DESC`
-    );
+       WHERE rc.status = 'approved'`;
+    const params = [];
+
+    if (programPattern) {
+      sql += `
+       AND (
+         LOWER(CAST(rc.programs AS CHAR)) LIKE ? ESCAPE '\\\\'
+         OR LOWER(CAST(rc.review_schedule AS CHAR)) LIKE ? ESCAPE '\\\\'
+       )`;
+      params.push(programPattern, programPattern);
+    }
+
+    sql += '\n       GROUP BY rc.id ORDER BY avg_rating DESC';
+
+    const [rows] = await db.query(sql, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
@@ -258,18 +283,29 @@ const getCentersNearby = async (req, res) => {
 };
 
 const searchCenters = async (req, res) => {
-  const { q } = req.query;
+  const { q, program } = req.query;
   if (!q) return res.status(400).json({ message: 'Search query is required.' });
+  const programPattern = toProgramLikePattern(program);
   try {
-    const [rows] = await db.query(
-      `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url, rc.description, rc.programs,
+    let sql = `SELECT rc.id, rc.business_name, rc.address, rc.latitude, rc.longitude, rc.logo_url, rc.description, rc.programs,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
-       WHERE rc.status = 'approved' AND rc.business_name LIKE ?
-       GROUP BY rc.id ORDER BY avg_rating DESC`,
-      [`%${q}%`]
-    );
+       WHERE rc.status = 'approved' AND rc.business_name LIKE ?`;
+    const params = [`%${q}%`];
+
+    if (programPattern) {
+      sql += `
+       AND (
+         LOWER(CAST(rc.programs AS CHAR)) LIKE ? ESCAPE '\\\\'
+         OR LOWER(CAST(rc.review_schedule AS CHAR)) LIKE ? ESCAPE '\\\\'
+       )`;
+      params.push(programPattern, programPattern);
+    }
+
+    sql += '\n       GROUP BY rc.id ORDER BY avg_rating DESC';
+
+    const [rows] = await db.query(sql, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });

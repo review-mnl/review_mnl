@@ -23,9 +23,6 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:5501',
   'http://127.0.0.1:5501',
-  'http://localhost',
-  'https://localhost',
-  'capacitor://localhost',
 ].filter(Boolean); // Remove undefined values
 
 function isAllowedOrigin(origin) {
@@ -69,11 +66,9 @@ app.use('/api/admin',   require('./routes/admin'));
 app.use('/api/centers', require('./routes/centers'));
 app.use('/api/users',   require('./routes/users'));
 app.use('/api/payments', require('./routes/payments'));
-app.use('/api/enrollments', require('./routes/enrollments'));
-app.use('/api/enrollment', require('./routes/enrollments'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/messages', require('./routes/messages'));
-app.use('/api/reports', require('./routes/reports'));
+app.use('/api/activity-logs', require('./routes/activityLogs'));
 
 // Optional debug route to inspect which database the app is connected to.
 // Enable by setting environment variable `ENABLE_DEBUG_ROUTE=1` (temporary).

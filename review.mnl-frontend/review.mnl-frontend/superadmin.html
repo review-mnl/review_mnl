@@ -111,8 +111,6 @@
         /* Stats: translucent rounded cards matching screenshots */
         .sa-stats { display:flex; gap:22px; flex-wrap:wrap; margin-bottom: 26px; align-items:flex-start; max-width:1100px; }
         .sa-stat-card { background: rgba(10,18,40,0.6); padding: 20px 22px; border-radius: 12px; min-width: 180px; flex: 0 0 220px; border:1px solid rgba(255,255,255,0.03); backdrop-filter: blur(6px); }
-        .sa-stat-card.clickable { cursor: pointer; transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease; }
-        .sa-stat-card.clickable:hover { transform: translateY(-2px); border-color: rgba(77,127,255,0.4); box-shadow: 0 10px 24px rgba(10,40,140,0.25); }
         .sa-stat-card .sa-stat-value { font-size: 2rem; }
         .sa-stat-card .sa-stat-label { color:#9fb0e6; }
         
@@ -246,41 +244,6 @@
             background: #0d1533; border: 1px solid #1e2d5a; border-radius: 16px;
             padding: 32px; max-width: 420px; width: 90%; text-align: center;
         }
-        .sa-report-modal-box {
-            max-width: 760px;
-            width: 94%;
-            padding: 0;
-            text-align: left;
-            box-shadow: 0 24px 60px rgba(3, 10, 30, 0.6);
-        }
-        .sa-report-modal-head {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 18px 24px; border-bottom: 1px solid #1e2d5a;
-            background: linear-gradient(90deg, rgba(77,127,255,0.18), rgba(13,21,51,0.95));
-        }
-        .sa-report-modal-head h3 { font-size: 1.05rem; font-weight: 700; color: #e6eefc; letter-spacing: 0.2px; }
-        .sa-report-modal-body {
-            padding: 22px 24px 26px;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-        }
-        .sa-report-field {
-            background: rgba(20, 28, 56, 0.75); border: 1px solid #1e2d5a; border-radius: 12px; padding: 12px 14px;
-        }
-        .sa-report-field.span-2 { grid-column: 1 / -1; }
-        .sa-report-field label { font-size: 0.68rem; color: #91a4cc; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 6px; }
-        .sa-report-field p { font-size: 0.87rem; color: #e0e6f0; margin: 0; line-height: 1.55; white-space: pre-wrap; }
-        .sa-report-attachments { display: flex; flex-wrap: wrap; gap: 10px; }
-        .sa-report-attachment {
-            background: #0f1938; border: 1px solid #1e2d5a; border-radius: 10px; padding: 10px; min-width: 140px;
-            display: flex; flex-direction: column; gap: 6px;
-        }
-        .sa-report-attachment img { width: 140px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid #1f2f5c; }
-        .sa-report-attachment a { color: #9fb0e6; font-size: 0.8rem; text-decoration: none; }
-        .sa-report-attachment a:hover { color: #c9d6ff; }
-        .sa-report-attachment span { font-size: 0.72rem; color: #6b7fa8; }
-        .sa-report-actions { padding: 16px 24px; border-top: 1px solid #1e2d5a; display: flex; gap: 10px; justify-content: flex-end; }
         .sa-modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
         .sa-modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
         .sa-modal-msg { font-size: 0.85rem; color: #6b7fa8; margin-bottom: 24px; line-height: 1.6; }
@@ -298,252 +261,6 @@
             background: #182040; border: 1px solid #1e2d5a; color: #ccd6f6;
             padding: 12px 24px; border-radius: 10px; font-size: 0.85rem;
             box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none; z-index: 9999;
-        }
-
-        @media (max-width: 1100px) {
-            body {
-                background-attachment: scroll;
-                background-position: top center;
-            }
-
-            .sa-topbar {
-                padding: 0 18px;
-            }
-
-            .sa-topbar-right {
-                gap: 10px;
-                flex-wrap: wrap;
-                justify-content: flex-end;
-            }
-
-            .sa-layout {
-                flex-direction: column;
-                padding: 12px;
-                gap: 14px;
-            }
-
-            .sa-nav {
-                width: 100%;
-                flex: none;
-                margin: 0;
-                height: auto;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                overflow: visible;
-                padding: 16px;
-            }
-
-            .sa-nav-section {
-                width: 100%;
-                margin-bottom: 4px;
-            }
-
-            .sa-nav-item {
-                flex: 1 1 calc(50% - 8px);
-                margin-bottom: 0;
-            }
-
-            .sa-main {
-                padding: 0;
-            }
-
-            .sa-stats {
-                gap: 12px;
-            }
-
-            .sa-stat-card {
-                flex: 1 1 calc(50% - 12px);
-                min-width: 0;
-            }
-
-            .sa-table-card {
-                max-width: 100%;
-            }
-
-            .sa-table-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .sa-search-input {
-                width: 100%;
-                max-width: 100%;
-            }
-
-            table {
-                min-width: 720px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .gate-box {
-                width: calc(100% - 24px);
-                padding: 32px 22px;
-                border-radius: 18px;
-            }
-
-            .sa-topbar {
-                height: auto;
-                min-height: 60px;
-                padding: 12px 16px;
-                align-items: flex-start;
-                gap: 10px;
-                flex-direction: column;
-            }
-
-            .sa-topbar-right {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .sa-nav-item {
-                flex: 1 1 100%;
-            }
-
-            .sa-panel {
-                padding: 8px 0 24px;
-            }
-
-            .sa-page-title {
-                font-size: 1.1rem;
-            }
-
-            .sa-page-sub {
-                font-size: 0.85rem;
-                margin-bottom: 14px;
-            }
-
-            .sa-stats {
-                flex-direction: column;
-                margin-bottom: 18px;
-            }
-
-            .sa-stat-card {
-                width: 100%;
-                flex: 1 1 100%;
-                padding: 18px;
-            }
-
-            .sa-stat-card .sa-stat-value,
-            .sa-stat-value {
-                font-size: 1.7rem;
-            }
-
-            .sa-table-card,
-            .sa-doc-modal-box,
-            .sa-modal-box {
-                border-radius: 12px;
-            }
-
-            .sa-table-header {
-                padding: 16px;
-            }
-
-            .sa-table-card table {
-                min-width: 680px;
-            }
-
-            tbody td,
-            thead th {
-                padding: 11px 12px;
-            }
-
-            .sa-doc-modal-body {
-                padding: 18px;
-            }
-
-            .sa-doc-info-row {
-                flex-direction: column;
-            }
-
-            .sa-doc-modal-actions,
-            .sa-modal-actions {
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-
-            .sa-doc-modal-actions > *,
-            .sa-modal-actions > * {
-                flex: 1 1 100%;
-            }
-
-            #saToast {
-                width: calc(100% - 24px);
-                left: 12px;
-                transform: none;
-                text-align: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .gate-box {
-                width: calc(100% - 16px);
-                padding: 28px 18px;
-            }
-
-            .sa-topbar {
-                padding: 10px 12px;
-            }
-
-            .sa-layout {
-                padding: 10px;
-            }
-
-            .sa-nav {
-                padding: 12px;
-            }
-
-            .sa-nav-item {
-                font-size: 0.9rem;
-                padding: 11px 12px;
-            }
-
-            .sa-main {
-                padding: 0;
-            }
-
-            .sa-page-title {
-                font-size: 1rem;
-            }
-
-            .sa-page-sub {
-                font-size: 0.8rem;
-            }
-
-            .sa-stat-card {
-                padding: 16px;
-            }
-
-            .sa-stat-card .sa-stat-value,
-            .sa-stat-value {
-                font-size: 1.5rem;
-            }
-
-            .sa-table-card {
-                margin-bottom: 20px;
-            }
-
-            .sa-table-header h3 {
-                font-size: 0.9rem;
-            }
-
-            .sa-search-input {
-                font-size: 0.78rem;
-            }
-
-            .sa-modal-box {
-                padding: 24px 18px;
-            }
-
-            .sa-modal-title {
-                font-size: 1rem;
-            }
-
-            .sa-modal-msg {
-                font-size: 0.8rem;
-            }
         }
     </style>
 </head>
@@ -581,28 +298,28 @@
         <div class="sa-layout">
         <nav class="sa-nav">
             <div class="sa-nav-section">Content</div>
-            <div class="sa-nav-item active" data-panel="overview" onclick="showPanel('overview', this)">
+            <div class="sa-nav-item active" onclick="showPanel('overview', this)">
                 <span class="material-symbols-outlined">dashboard</span> Overview
             </div>
-            <div class="sa-nav-item" data-panel="activity" onclick="showPanel('activity', this)">
+            <div class="sa-nav-item" onclick="showPanel('activity', this)">
                 <span class="material-symbols-outlined">history</span> Activity
             </div>
-            <div class="sa-nav-item" data-panel="centers" onclick="showPanel('centers', this)">
+            <div class="sa-nav-item" onclick="showPanel('centers', this)">
                 <span class="material-symbols-outlined">school</span> Admissions
             </div>
-            <div class="sa-nav-item" data-panel="students" onclick="showPanel('students', this)">
+            <div class="sa-nav-item" onclick="showPanel('students', this)">
                 <span class="material-symbols-outlined">people</span> Students
             </div>
-            <div class="sa-nav-item" data-panel="admins" onclick="showPanel('admins', this)">
+            <div class="sa-nav-item" onclick="showPanel('admins', this)">
                 <span class="material-symbols-outlined">admin_panel_settings</span> Review Centers
             </div>
-            <div class="sa-nav-item" data-panel="docs" onclick="showPanel('docs', this)">
+            <div class="sa-nav-item" onclick="showPanel('docs', this)">
                 <span class="material-symbols-outlined">description</span> Document Submissions
             </div>
-            <div class="sa-nav-item" data-panel="reports" onclick="showPanel('reports', this)">
+            <div class="sa-nav-item" onclick="showPanel('reports', this)">
                 <span class="material-symbols-outlined">flag</span> Reports
             </div>
-            <div class="sa-nav-item" data-panel="settings" onclick="showPanel('settings', this)">
+            <div class="sa-nav-item" onclick="showPanel('settings', this)">
                 <span class="material-symbols-outlined">settings</span> Site Settings
             </div>
         </nav>
@@ -616,21 +333,39 @@
                 <div class="sa-page-sub">Welcome back. Here's a summary of Review.MNL.</div>
 
                 <div class="sa-stats">
-                    <div class="sa-stat-card clickable" data-panel="admins">
+                    <div class="sa-stat-card">
                         <div class="sa-stat-label">Review Centers</div>
                         <div class="sa-stat-value" id="statCenters">12</div>
-                        <div class="sa-stat-note">Manage centers</div>
+                        <div class="sa-stat-note"><span id="statPending">3</span> pending approval</div>
                     </div>
-                    <div class="sa-stat-card clickable" data-panel="students">
+                    <div class="sa-stat-card">
                         <div class="sa-stat-label">Students</div>
                         <div class="sa-stat-value" id="statStudents">248</div>
-                        <div class="sa-stat-note">View student list</div>
+                        <div class="sa-stat-note">+14 this week</div>
                     </div>
-                    <div class="sa-stat-card clickable" data-panel="reports">
+                    <div class="sa-stat-card">
+                        <div class="sa-stat-label">Admins</div>
+                        <div class="sa-stat-value" id="statAdmins">12</div>
+                        <div class="sa-stat-note">All active</div>
+                    </div>
+                    <div class="sa-stat-card">
                         <div class="sa-stat-label">Active Reports</div>
                         <div class="sa-stat-value" id="statReports">5</div>
-                        <div class="sa-stat-note">Needs attention</div>
+                        <div class="sa-stat-note">2 need review</div>
                     </div>
+                </div>
+
+                <div class="sa-table-card">
+                    <div class="sa-table-header">
+                        <h3>Pending Center Approvals</h3>
+                        <span style="font-size:0.78rem;color:#6b7fa8;">Review Centers awaiting activation</span>
+                    </div>
+                    <table>
+                        <thead><tr><th>Center Name</th><th>Email</th><th>Submitted</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td colspan="4" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -640,12 +375,7 @@
                 <div class="sa-page-sub">All system actions are recorded here.</div>
                 <div class="sa-table-card">
                     <div class="sa-log-list" id="activityLog">
-                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">check_circle</span></div><div><div class="sa-log-text">Review center <strong>ERC Manila</strong> was approved.</div><div class="sa-log-time">Mar 5, 2026 — 10:22 AM</div></div></div>
-                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">person_add</span></div><div><div class="sa-log-text">New student <strong>Juan Dela Cruz</strong> registered.</div><div class="sa-log-time">Mar 5, 2026 — 9:48 AM</div></div></div>
-                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">flag</span></div><div><div class="sa-log-text">Report filed against <strong>Metro Review Center</strong> for misleading description.</div><div class="sa-log-time">Mar 4, 2026 — 4:15 PM</div></div></div>
-                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">block</span></div><div><div class="sa-log-text">Student <strong>Maria Santos</strong> account suspended.</div><div class="sa-log-time">Mar 4, 2026 — 2:30 PM</div></div></div>
-                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">settings</span></div><div><div class="sa-log-text">Site settings updated by <strong>superadmin</strong>.</div><div class="sa-log-time">Mar 3, 2026 — 11:00 AM</div></div></div>
-                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">school</span></div><div><div class="sa-log-text">Review center <strong>Legarda Review Hub</strong> submitted for approval.</div><div class="sa-log-time">Mar 3, 2026 — 8:55 AM</div></div></div>
+                        <div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">sync</span></div><div><div class="sa-log-text">Loading latest activity logs...</div><div class="sa-log-time">Please wait</div></div></div>
                     </div>
                 </div>
             </div>
@@ -735,9 +465,12 @@
                         <input class="sa-search-input" placeholder="Search reports..." oninput="filterTable('reportsTable', this.value)">
                     </div>
                     <table id="reportsTable">
-                        <thead><tr><th>Reported By</th><th>Against</th><th>Type</th><th>Reason</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Reported By</th><th>Against</th><th>Reason</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>
-                            <tr><td colspan="7" style="text-align:center;color:#6b7fa8;">Loading...</td></tr>
+                            <tr><td>Juan Dela Cruz</td><td>Metro Review Center</td><td>Misleading description</td><td>Mar 4, 2026</td><td><span class="sa-status pending">Open</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('resolve','this report')">Resolve</button><button class="sa-action-btn danger" onclick="confirmAction('dismiss','this report')">Dismiss</button></td></tr>
+                            <tr><td>Ana Lim</td><td>ERC Review Center</td><td>Incorrect program info</td><td>Mar 3, 2026</td><td><span class="sa-status pending">Open</span></td><td><button class="sa-action-btn approve" onclick="confirmAction('resolve','this report')">Resolve</button><button class="sa-action-btn danger" onclick="confirmAction('dismiss','this report')">Dismiss</button></td></tr>
+                            <tr><td>Carlo Reyes</td><td>Old Manila Review</td><td>Fake achievements listed</td><td>Feb 28, 2026</td><td><span class="sa-status active">Resolved</span></td><td><button class="sa-action-btn" onclick="saToast('Report already resolved.')">View</button></td></tr>
+                            <tr><td>Maria Santos</td><td>Legarda Review Hub</td><td>No response from admin</td><td>Feb 25, 2026</td><td><span class="sa-status active">Resolved</span></td><td><button class="sa-action-btn" onclick="saToast('Report already resolved.')">View</button></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -750,31 +483,31 @@
                 <div class="sa-table-card" style="padding: 28px 32px; display: flex; flex-direction: column; gap: 22px;">
                     <div>
                         <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Site Name</label>
-                        <input type="text" id="siteNameInput" value="Review.MNL" style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:360px;outline:none;" onfocus="this.style.borderColor='#0a4cff'" onblur="this.style.borderColor='#1e2d5a'">
+                        <input type="text" value="Review.MNL" style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:360px;outline:none;" onfocus="this.style.borderColor='#0a4cff'" onblur="this.style.borderColor='#1e2d5a'">
                     </div>
                     <div>
                         <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Maintenance Mode</label>
-                        <select id="maintenanceSelect" style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
                             <option>Off</option>
                             <option>On</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">New Center Registrations</label>
-                        <select id="centerRegSelect" style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
                             <option>Open</option>
                             <option>Closed</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size:0.78rem;font-weight:600;color:#8898c4;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Student Signups</label>
-                        <select id="studentRegSelect" style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
+                        <select style="padding:11px 16px;background:#141c38;border:1.5px solid #1e2d5a;border-radius:10px;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.9rem;width:220px;outline:none;">
                             <option>Open</option>
                             <option>Closed</option>
                         </select>
                     </div>
                     <div>
-                        <button id="saveSettingsBtn" onclick="saveSiteSettings()" style="padding:11px 28px;background:#0a4cff;color:#fff;border:none;border-radius:10px;font-family:Poppins,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">Save Settings</button>
+                        <button onclick="saveSiteSettings()" style="padding:11px 28px;background:#0a4cff;color:#fff;border:none;border-radius:10px;font-family:Poppins,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">Save Settings</button>
                     </div>
                 </div>
             </div>
@@ -819,79 +552,6 @@
             <button class="sa-modal-cancel" onclick="closeDocModal()">Close</button>
             <button class="sa-action-btn" onclick="previewDoc()">Preview</button>
             <button class="sa-modal-confirm green" onclick="downloadDoc()">Download</button>
-        </div>
-    </div>
-</div>
-
-<!-- Report Viewer Modal -->
-<div class="sa-modal-overlay" id="saReportModal">
-    <div class="sa-modal-box sa-report-modal-box">
-        <div class="sa-report-modal-head">
-            <h3>Report Details</h3>
-            <button class="sa-doc-modal-close" onclick="closeReportModal()">&times;</button>
-        </div>
-        <div class="sa-report-modal-body">
-            <div class="sa-report-field">
-                <label>Reported By</label>
-                <p id="reportModalReporter">—</p>
-            </div>
-            <div class="sa-report-field">
-                <label>Reported User / Center</label>
-                <p id="reportModalTarget">—</p>
-            </div>
-            <div class="sa-report-field">
-                <label>Type</label>
-                <p id="reportModalType">—</p>
-            </div>
-            <div class="sa-report-field">
-                <label>Reason</label>
-                <p id="reportModalReason">—</p>
-            </div>
-            <div class="sa-report-field span-2">
-                <label>Details</label>
-                <p id="reportModalDetails">—</p>
-            </div>
-            <div class="sa-report-field span-2">
-                <label>Attachments</label>
-                <div id="reportModalAttachments" class="sa-report-attachments"></div>
-            </div>
-            <div class="sa-report-field">
-                <label>Date</label>
-                <p id="reportModalDate">—</p>
-            </div>
-            <div class="sa-report-field">
-                <label>Status</label>
-                <p id="reportModalStatus">—</p>
-            </div>
-        </div>
-        <div class="sa-report-actions">
-            <button class="sa-modal-cancel" onclick="closeReportModal()">Close</button>
-        </div>
-    </div>
-</div>
-
-<!-- Warning Modal -->
-<div class="sa-modal-overlay" id="saWarnModal">
-    <div class="sa-modal-box sa-report-modal-box">
-        <div class="sa-report-modal-head">
-            <h3>Send Warning</h3>
-            <button class="sa-doc-modal-close" onclick="closeWarnModal()">&times;</button>
-        </div>
-        <div class="sa-report-modal-body">
-            <div class="sa-report-field">
-                <label>To</label>
-                <p id="warnModalTarget">—</p>
-            </div>
-            <div class="sa-report-field">
-                <label>Message</label>
-                <textarea id="warnModalMessage" rows="4" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #1e2d5a;background:#0d1533;color:#e0e6f0;font-family:Poppins,sans-serif;font-size:0.85rem;outline:none;"></textarea>
-                <p style="font-size:0.72rem;color:#6b7fa8;margin-top:8px;">This warning will appear in the user's notifications.</p>
-            </div>
-            <p id="warnModalError" style="display:none;color:#e53935;font-size:0.8rem;"></p>
-        </div>
-        <div class="sa-report-actions">
-            <button class="sa-modal-cancel" onclick="closeWarnModal()">Cancel</button>
-            <button class="sa-modal-confirm" id="warnModalSendBtn" onclick="sendWarningFromModal()">Send Warning</button>
         </div>
     </div>
 </div>
@@ -962,10 +622,6 @@
     }
     var _saDocModalEl = document.getElementById('saDocModal');
     if (_saDocModalEl) _saDocModalEl.addEventListener('click', function(e){ if (e.target === this) closeDocModal(); });
-    var _saReportModalEl = document.getElementById('saReportModal');
-    if (_saReportModalEl) _saReportModalEl.addEventListener('click', function(e){ if (e.target === this) closeReportModal(); });
-    var _saWarnModalEl = document.getElementById('saWarnModal');
-    if (_saWarnModalEl) _saWarnModalEl.addEventListener('click', function(e){ if (e.target === this) closeWarnModal(); });
 
     // ── Credentials (creator-only) ──
     const SA_SESSION_KEY = 'rmnl_sa_session';
@@ -1069,22 +725,9 @@
     function showPanel(id, el) {
         document.querySelectorAll('.sa-panel').forEach(function(p){ p.classList.remove('active'); });
         document.querySelectorAll('.sa-nav-item').forEach(function(n){ n.classList.remove('active'); });
-        var panel = document.getElementById('panel-' + id);
-        if (panel) panel.classList.add('active');
-        var navItem = el || document.querySelector('.sa-nav-item[data-panel="' + id + '"]');
-        if (navItem) navItem.classList.add('active');
+        document.getElementById('panel-' + id).classList.add('active');
+        el.classList.add('active');
     }
-
-    (function bindOverviewCards() {
-        var cards = document.querySelectorAll('.sa-stat-card.clickable');
-        cards.forEach(function(card) {
-            card.addEventListener('click', function() {
-                var target = card.getAttribute('data-panel');
-                if (!target) return;
-                showPanel(target);
-            });
-        });
-    })();
 
     // ── Table live filter ──
     function filterTable(tableId, query) {
@@ -1134,7 +777,11 @@
             dismiss:  'Report dismissed.',
         };
         saToast(messages[_pendingAction] || 'Action completed.');
-        logActivity(_pendingAction, _pendingTarget);
+        logActivity(
+            'admin_action_' + String(_pendingAction || 'unknown'),
+            'Admin action ' + String(_pendingAction || 'unknown') + ' executed for ' + String(_pendingTarget || 'target') + '.',
+            _pendingTarget || ''
+        );
     }
     document.getElementById('saConfirmModal').addEventListener('click', function(e){
         if (e.target === this) closeConfirm();
@@ -1151,18 +798,87 @@
     }
 
     // ── Activity log ──
-    var actionLabels = { approve:'approved', reject:'rejected', suspend:'suspended', restore:'restored', delete:'deleted', resolve:'resolved report for', dismiss:'dismissed report for' };
-    function logActivity(action, target) {
-        var log = document.getElementById('activityLog');
-        var now = new Date();
-        var timeStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + ' — '
-            + now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-        var item = document.createElement('div');
-        item.className = 'sa-log-item';
-        item.innerHTML = '<div class="sa-log-icon"><span class="material-symbols-outlined">admin_panel_settings</span></div>'
-            + '<div><div class="sa-log-text">Superadmin <strong>' + (actionLabels[action]||action) + '</strong> <strong>' + target + '</strong>.</div>'
-            + '<div class="sa-log-time">' + timeStr + '</div></div>';
-        log.insertBefore(item, log.firstChild);
+    function escHtml(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function activityIcon(actionType) {
+        var t = String(actionType || '').toLowerCase();
+        if (t.indexOf('approve') >= 0) return 'check_circle';
+        if (t.indexOf('reject') >= 0) return 'cancel';
+        if (t.indexOf('student_registration') >= 0 || t.indexOf('registration') >= 0) return 'person_add';
+        if (t.indexOf('submission') >= 0 || t.indexOf('document') >= 0) return 'upload_file';
+        if (t.indexOf('report') >= 0) return 'flag';
+        if (t.indexOf('suspend') >= 0 || t.indexOf('ban') >= 0 || t.indexOf('deleted') >= 0) return 'block';
+        if (t.indexOf('settings') >= 0) return 'settings';
+        return 'history';
+    }
+
+    function formatDateTime(dateStr) {
+        if (!dateStr) return '—';
+        var d = new Date(dateStr);
+        if (isNaN(d.getTime())) return String(dateStr);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            + ' — '
+            + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function renderActivityLogs(logs) {
+        var wrap = document.getElementById('activityLog');
+        if (!wrap) return;
+        var list = Array.isArray(logs) ? logs : [];
+        if (!list.length) {
+            wrap.innerHTML = '<div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">history</span></div><div><div class="sa-log-text">No activity logs yet.</div><div class="sa-log-time">Waiting for system events</div></div></div>';
+            return;
+        }
+
+        wrap.innerHTML = list.map(function(log) {
+            var actor = escHtml(log.actor_name || 'System');
+            var target = escHtml(log.target_entity || '—');
+            var description = escHtml(log.description || '');
+            var icon = activityIcon(log.action_type);
+            var when = formatDateTime(log.created_at);
+            return '<div class="sa-log-item">'
+                + '<div class="sa-log-icon"><span class="material-symbols-outlined">' + icon + '</span></div>'
+                + '<div>'
+                + '<div class="sa-log-text">' + description + '</div>'
+                + '<div class="sa-log-time">Actor: ' + actor + ' | Target: ' + target + ' | ' + escHtml(when) + '</div>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    function loadActivityLogs() {
+        return AdminAPI.getActivityLogs().then(function(payload) {
+            var logs = Array.isArray(payload) ? payload : (payload.logs || []);
+            renderActivityLogs(logs);
+        }).catch(function(err) {
+            console.error('Failed to load activity logs:', err);
+            var wrap = document.getElementById('activityLog');
+            if (wrap) {
+                wrap.innerHTML = '<div class="sa-log-item"><div class="sa-log-icon"><span class="material-symbols-outlined">warning</span></div><div><div class="sa-log-text">Unable to load activity logs.</div><div class="sa-log-time">' + escHtml(err.message || 'Unknown error') + '</div></div></div>';
+            }
+        });
+    }
+
+    function logActivity(actionType, description, targetEntity) {
+        var user = getActiveUser() || {};
+        var actor = user.name || user.email || 'Admin';
+        return AdminAPI.createActivityLog({
+            action_type: actionType,
+            description: description,
+            actor_name: actor,
+            target_entity: targetEntity || '',
+        }).then(function() {
+            return loadActivityLogs();
+        }).catch(function(err) {
+            console.warn('Failed to write activity log:', err && err.message);
+        });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -1171,31 +887,11 @@
     
     var allCenters = [];
     var allStudents = [];
-    var allReports = [];
-    var reportIndex = {};
-    var _warnReportId = null;
 
     function loadDashboardData() {
         loadCenters();
         loadStudents();
-        loadReports();
-        loadSettings();
-    }
-
-    function loadReports() {
-        AdminAPI.getReports().then(function(resp) {
-            var rows = Array.isArray(resp) ? resp : (resp.reports || []);
-            allReports = rows;
-            reportIndex = {};
-            rows.forEach(function(item) {
-                if (item && item.id != null) reportIndex[String(item.id)] = item;
-            });
-            renderReportsTable(rows);
-            updateStats();
-        }).catch(function(err) {
-            console.error('Failed to load reports:', err);
-            renderReportsTable([]);
-        });
+        loadActivityLogs();
     }
 
     function loadCenters() {
@@ -1203,6 +899,7 @@
             allCenters = centers;
             // Admissions should only show incoming (pending) applications
             renderCentersTable(centers.filter(function(c){ return c.status === 'pending'; }));
+            renderPendingCenters(centers.filter(c => c.status === 'pending'));
             // fetch pending centers separately because the `getAllCenters` response
             // does not include file fields (business_permit, dti_sec_reg)
             AdminAPI.getPendingCenters().then(function(pendingCenters) {
@@ -1211,8 +908,8 @@
                 console.warn('Failed to load pending centers for documents:', err);
                 renderDocSubmissions([]);
             });
-            // Render approved and suspended centers into the Review Centers panel
-            try { renderReviewCentersTable(centers.filter(c => c.status === 'approved' || c.status === 'suspended')); } catch (e) { console.warn('renderReviewCentersTable failed', e); }
+            // Render approved centers into the Review Centers panel
+            try { renderReviewCentersTable(centers.filter(c => c.status === 'approved')); } catch (e) { console.warn('renderReviewCentersTable failed', e); }
             updateStats();
         }).catch(function(err) {
             console.error('Failed to load centers:', err);
@@ -1234,242 +931,14 @@
     function updateStats() {
         try {
             var elCenters = document.getElementById('statCenters');
+            var elPending = document.getElementById('statPending');
             var elStudents = document.getElementById('statStudents');
-            var elReports = document.getElementById('statReports');
             if (elCenters) elCenters.textContent = allCenters.length;
+            if (elPending) elPending.textContent = allCenters.filter(c => c.status === 'pending').length;
             if (elStudents) elStudents.textContent = allStudents.length;
-            if (elReports) elReports.textContent = allReports.filter(function(r){ return String(r.status || '').toLowerCase() === 'open'; }).length;
         } catch (e) {
             // suppressed debug: safe-guard prevents uncaught exceptions in older clients
         }
-    }
-
-    function renderReportsTable(reports) {
-        var tbody = document.querySelector('#reportsTable tbody');
-        if (!tbody) return;
-        if (!reports || !reports.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7fa8;">No reports yet</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = reports.map(function(r) {
-            var status = String(r.status || 'open').toLowerCase();
-            var statusClass = status === 'open' ? 'pending' : (status === 'dismissed' ? 'inactive' : 'active');
-            var reporter = (r.reporter_name || '').trim() || 'Unknown';
-            var against = (r.center_name || '').trim() || (r.reported_name || '').trim() || 'Unknown';
-            var reason = (r.reason || '').trim() || '—';
-            var reportTypeRaw = (r.report_type || '').trim();
-            var reportType = reportTypeRaw ? (reportTypeRaw.charAt(0).toUpperCase() + reportTypeRaw.slice(1)) : '—';
-            var date = formatDate(r.created_at);
-            var actions = '<button class="sa-action-btn" data-action="view" data-id="' + r.id + '">View</button>';
-            if (status === 'open') {
-                if (Number(r.reported_user_id || 0) > 0) {
-                    actions += '<button class="sa-action-btn" data-action="warn" data-id="' + r.id + '">Send Warning</button>';
-                }
-                actions += '<button class="sa-action-btn approve" data-action="resolve" data-id="' + r.id + '">Resolve</button>'
-                    + '<button class="sa-action-btn danger" data-action="dismiss" data-id="' + r.id + '">Dismiss</button>';
-            }
-            return '<tr>'
-                + '<td>' + reporter + '</td>'
-                + '<td>' + against + '</td>'
-                + '<td>' + reportType + '</td>'
-                + '<td>' + reason + '</td>'
-                + '<td>' + date + '</td>'
-                + '<td><span class="sa-status ' + statusClass + '">' + (status === 'open' ? 'Open' : (status === 'dismissed' ? 'Dismissed' : 'Resolved')) + '</span></td>'
-                + '<td>' + actions + '</td>'
-                + '</tr>';
-        }).join('');
-
-        tbody.querySelectorAll('button[data-action="resolve"]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var id = Number(btn.getAttribute('data-id')) || 0;
-                if (!id) return;
-                if (!confirm('Resolve this report?')) return;
-                AdminAPI.updateReportStatus(id, 'resolved').then(function() {
-                    saToast('Report resolved.');
-                    loadReports();
-                }).catch(function(err) {
-                    saToast(err.message || 'Failed to resolve report.');
-                });
-            });
-        });
-
-        tbody.querySelectorAll('button[data-action="dismiss"]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var id = Number(btn.getAttribute('data-id')) || 0;
-                if (!id) return;
-                if (!confirm('Dismiss this report?')) return;
-                AdminAPI.updateReportStatus(id, 'dismissed').then(function() {
-                    saToast('Report dismissed.');
-                    loadReports();
-                }).catch(function(err) {
-                    saToast(err.message || 'Failed to dismiss report.');
-                });
-            });
-        });
-
-        tbody.querySelectorAll('button[data-action="view"]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var id = Number(btn.getAttribute('data-id')) || 0;
-                if (!id) return;
-                openReportModal(id);
-            });
-        });
-
-        tbody.querySelectorAll('button[data-action="warn"]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var id = Number(btn.getAttribute('data-id')) || 0;
-                if (!id) return;
-                openWarnModal(id);
-            });
-        });
-    }
-
-    function normalizeAttachmentUrl(rawUrl) {
-        if (!rawUrl) return '';
-        var url = String(rawUrl).trim();
-        if (!url) return '';
-        if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
-        if (url.charAt(0) === '/') return API_BASE + url;
-        return API_BASE + '/' + url.replace(/^\/+/, '');
-    }
-
-    function isImageAttachment(mimeType, fileName, url) {
-        var mime = String(mimeType || '').toLowerCase();
-        if (mime.indexOf('image/') === 0) return true;
-        var extSource = String(fileName || url || '').toLowerCase();
-        return /\.(jpg|jpeg|png|gif|webp)(\?|#|$)/.test(extSource);
-    }
-
-    function renderReportAttachments(list) {
-        var wrap = document.getElementById('reportModalAttachments');
-        if (!wrap) return;
-        var items = Array.isArray(list) ? list : [];
-        if (!items.length) {
-            wrap.innerHTML = '<p style="color:#6b7fa8;font-size:0.85rem;margin:0;">No files uploaded.</p>';
-            return;
-        }
-
-        wrap.innerHTML = items.map(function(item) {
-            var url = normalizeAttachmentUrl(item && (item.url || item.file_url));
-            var name = String((item && (item.name || item.file_name)) || 'Attachment');
-            var mime = String((item && (item.mime_type || item.mime)) || '');
-            var isImage = isImageAttachment(mime, name, url);
-            var preview = isImage && url ? '<img src="' + url + '" alt="' + name + '">' : '';
-            var size = Number(item && (item.size || item.file_size) || 0);
-            var sizeLabel = size ? (Math.round(size / 1024) + ' KB') : 'File';
-            return ''
-                + '<div class="sa-report-attachment">'
-                + preview
-                + '<a href="' + (url || '#') + '" target="_blank" rel="noopener">' + name + '</a>'
-                + '<span>' + sizeLabel + '</span>'
-                + '</div>';
-        }).join('');
-    }
-
-    function openReportModal(reportId) {
-        var report = reportIndex[String(reportId)];
-        if (!report) return saToast('Report not found.');
-
-        var reporter = (report.reporter_name || '').trim() || 'Unknown';
-        var target = (report.center_name || '').trim() || (report.reported_name || '').trim() || 'Unknown';
-        var type = (report.report_type || '').trim() || '—';
-        var reason = (report.reason || '').trim() || '—';
-        var details = (report.details || '').trim() || '—';
-        var date = formatDate(report.created_at);
-        var status = String(report.status || 'open').toLowerCase();
-
-        var setText = function(id, value) {
-            var el = document.getElementById(id);
-            if (el) el.textContent = value;
-        };
-
-        setText('reportModalReporter', reporter);
-        setText('reportModalTarget', target);
-        setText('reportModalType', type);
-        setText('reportModalReason', reason);
-        setText('reportModalDetails', details);
-        setText('reportModalDate', date);
-        setText('reportModalStatus', status.charAt(0).toUpperCase() + status.slice(1));
-        renderReportAttachments(report.attachments || []);
-
-        var modal = document.getElementById('saReportModal');
-        if (modal) modal.classList.add('open');
-    }
-
-    function closeReportModal() {
-        var modal = document.getElementById('saReportModal');
-        if (modal) modal.classList.remove('open');
-    }
-
-    function openWarnModal(reportId) {
-        var report = reportIndex[String(reportId)];
-        if (!report) return saToast('Report not found.');
-        var target = (report.center_name || '').trim() || (report.reported_name || '').trim() || 'Unknown';
-        var defaultMsg = 'Warning: Your account has been reported.'
-            + (report.reason ? (' Reason: ' + report.reason + '.') : '');
-
-        _warnReportId = reportId;
-        var targetEl = document.getElementById('warnModalTarget');
-        var msgEl = document.getElementById('warnModalMessage');
-        var errEl = document.getElementById('warnModalError');
-        if (targetEl) targetEl.textContent = target;
-        if (msgEl) msgEl.value = defaultMsg;
-        if (errEl) {
-            errEl.textContent = '';
-            errEl.style.display = 'none';
-        }
-        var modal = document.getElementById('saWarnModal');
-        if (modal) modal.classList.add('open');
-    }
-
-    function closeWarnModal() {
-        var modal = document.getElementById('saWarnModal');
-        if (modal) modal.classList.remove('open');
-        _warnReportId = null;
-    }
-
-    function sendWarningFromModal() {
-        var reportId = Number(_warnReportId || 0);
-        var msgEl = document.getElementById('warnModalMessage');
-        var errEl = document.getElementById('warnModalError');
-        var btn = document.getElementById('warnModalSendBtn');
-        var message = msgEl ? String(msgEl.value || '').trim() : '';
-
-        if (!reportId) return;
-        if (!message) {
-            if (errEl) {
-                errEl.textContent = 'Please enter a warning message.';
-                errEl.style.display = 'block';
-            }
-            return;
-        }
-
-        if (errEl) {
-            errEl.textContent = '';
-            errEl.style.display = 'none';
-        }
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = 'Sending...';
-        }
-
-        AdminAPI.sendReportWarning(reportId, message).then(function() {
-            saToast('Warning sent.');
-            closeWarnModal();
-        }).catch(function(err) {
-            if (errEl) {
-                errEl.textContent = err.message || 'Failed to send warning.';
-                errEl.style.display = 'block';
-            } else {
-                saToast(err.message || 'Failed to send warning.');
-            }
-        }).finally(function() {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Send Warning';
-            }
-        });
     }
 
     function formatDate(dateStr) {
@@ -1478,57 +947,31 @@
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    function loadSettings() {
-        if (!AdminAPI || typeof AdminAPI.getSiteSettings !== 'function') return;
-        AdminAPI.getSiteSettings().then(function(settings) {
-            var siteName = settings && settings.site_name ? settings.site_name : 'Review.MNL';
-            var maintenance = settings && Number(settings.maintenance_mode) === 1;
-            var allowCenters = settings && Number(settings.allow_center_registrations) === 1;
-            var allowStudents = settings && Number(settings.allow_student_registrations) === 1;
-
-            var nameInput = document.getElementById('siteNameInput');
-            var maintenanceSelect = document.getElementById('maintenanceSelect');
-            var centerSelect = document.getElementById('centerRegSelect');
-            var studentSelect = document.getElementById('studentRegSelect');
-
-            if (nameInput) nameInput.value = siteName;
-            if (maintenanceSelect) maintenanceSelect.value = maintenance ? 'On' : 'Off';
-            if (centerSelect) centerSelect.value = allowCenters ? 'Open' : 'Closed';
-            if (studentSelect) studentSelect.value = allowStudents ? 'Open' : 'Closed';
-        }).catch(function(err) {
-            console.warn('Failed to load settings', err);
-        });
-    }
-
-    function saveSiteSettings() {
-        var nameInput = document.getElementById('siteNameInput');
-        var maintenanceSelect = document.getElementById('maintenanceSelect');
-        var centerSelect = document.getElementById('centerRegSelect');
-        var studentSelect = document.getElementById('studentRegSelect');
-        var btn = document.getElementById('saveSettingsBtn');
-
-        var payload = {
-            site_name: nameInput ? String(nameInput.value || '').trim() : 'Review.MNL',
-            maintenance_mode: maintenanceSelect ? (maintenanceSelect.value === 'On') : false,
-            allow_center_registrations: centerSelect ? (centerSelect.value === 'Open') : true,
-            allow_student_registrations: studentSelect ? (studentSelect.value === 'Open') : true,
-        };
-
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
+    function renderPendingCenters(centers) {
+        // Find the Pending Center Approvals table in the Overview panel
+        var overviewPanel = document.getElementById('panel-overview');
+        if (!overviewPanel) return;
+        var tableCard = overviewPanel.querySelector('.sa-table-card');
+        if (!tableCard) return;
+        var tbody = tableCard.querySelector('tbody');
+        if (!tbody) return;
+        if (centers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7fa8;">No pending approvals</td></tr>';
+            return;
         }
-
-        AdminAPI.updateSiteSettings(payload).then(function() {
-            saToast('Settings saved successfully.');
-        }).catch(function(err) {
-            saToast(err.message || 'Failed to save settings.');
-        }).finally(function() {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Save Settings';
-            }
-        });
+        tbody.innerHTML = centers.map(function(c) {
+            var name = (c.business_name || '').replace(/'/g, "\\'");
+            return `
+                <tr data-center-id="${c.id}">
+                    <td>${c.business_name}</td>
+                    <td>${c.email}</td>
+                    <td>${formatDate(c.created_at)}</td>
+                    <td>
+                        <button class="sa-action-btn approve" onclick="approveCenter(${c.id}, '${name}')">Approve</button>
+                        <button class="sa-action-btn danger" onclick="rejectCenter(${c.id}, '${name}')">Reject</button>
+                    </td>
+                </tr>`;
+        }).join('');
     }
 
     // Render all centers into the Admissions / Centers table
@@ -1543,10 +986,10 @@
             var safeName = (c.business_name || '').replace(/'/g, "\\'");
             var email = c.email || '';
             var date = formatDate(c.created_at);
-            // Map backend statuses and choose actions
+            // Map backend statuses to Active/Inactive and choose actions
             var isActive = (c.status === 'approved');
-            var statusClass = isActive ? 'active' : (c.status === 'suspended' ? 'suspended' : (c.status === 'pending' ? 'pending' : 'inactive'));
-            var statusText = isActive ? 'Active' : (c.status === 'suspended' ? 'Suspended' : (c.status === 'pending' ? 'Pending' : 'Inactive'));
+            var statusClass = isActive ? 'active' : 'inactive';
+            var statusText = isActive ? 'Active' : 'Inactive';
             var actions = '';
             if (isActive) {
                 actions = `<button class="sa-action-btn" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
@@ -1576,7 +1019,7 @@
         }
         tbody.innerHTML = centers.map(function(c) {
             var isActive = (c.status === 'approved');
-            var statusClass = isActive ? 'active' : (c.status === 'suspended' ? 'suspended' : (c.status === 'pending' ? 'pending' : 'inactive'));
+            var statusClass = isActive ? 'active' : 'inactive';
             var date = formatDate(c.created_at);
             var safeName = (c.business_name || '').replace(/'/g, "\\'");
             var actions = '';
@@ -1603,7 +1046,7 @@
                 `<td>${c.business_name || ''}</td>` +
                 `<td>${c.email || ''}</td>` +
                 `<td>${date}</td>` +
-                `<td><span class="sa-status ${statusClass}">${isActive ? 'Active' : (c.status === 'suspended' ? 'Suspended' : (c.status === 'pending' ? 'Pending' : 'Inactive'))}</span></td>` +
+                `<td><span class="sa-status ${statusClass}">${isActive ? 'Active' : (c.status === 'suspended' ? 'Suspended' : 'Inactive')}</span></td>` +
                 `<td>${actions}</td>` +
                 `</tr>`;
         }).join('');
@@ -1731,7 +1174,7 @@
         if (!confirm('Approve ' + name + '?')) return;
         AdminAPI.updateCenterStatus(id, 'approved').then(function() {
             saToast(name + ' has been approved!');
-            logActivity('approve', name);
+            logActivity('review_center_approved', 'Review center ' + name + ' was approved.', name);
             // animate removal from Admissions table if present
             var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
             if (row) {
@@ -1749,7 +1192,7 @@
         if (!confirm('Reject ' + name + '? This will deny their application.')) return;
         AdminAPI.updateCenterStatus(id, 'rejected').then(function() {
             saToast(name + ' has been rejected.');
-            logActivity('reject', name);
+            logActivity('review_center_rejected', 'Review center ' + name + ' was rejected.', name);
             var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
             if (row) {
                 row.classList.add('row-removing');
@@ -1765,17 +1208,8 @@
     function suspendCenter(id, name) {
         if (!confirm('Suspend ' + name + '? This will disable their access.')) return;
         AdminAPI.updateCenterStatus(id, 'suspended').then(function() {
-            try {
-                allCenters = (allCenters || []).map(function(c) {
-                    if (Number(c.id) === Number(id)) return Object.assign({}, c, { status: 'suspended' });
-                    return c;
-                });
-                renderReviewCentersTable(allCenters.filter(function(c){ return c.status === 'approved' || c.status === 'suspended'; }));
-                renderCentersTable(allCenters);
-                updateStats();
-            } catch (e) { console.warn('Local suspend render failed', e); }
             saToast(name + ' has been suspended.');
-            logActivity('suspend', name);
+            logActivity('review_center_suspended', 'Review center ' + name + ' was suspended.', name);
             var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
             if (row) {
                 row.classList.add('row-removing');
@@ -1792,7 +1226,7 @@
         if (!confirm('DELETE ' + name + '? This action cannot be undone!')) return;
         AdminAPI.deleteCenter(id).then(function() {
             saToast(name + ' has been deleted.');
-            logActivity('delete', name);
+            logActivity('review_center_deleted', 'Review center ' + name + ' was deleted.', name);
             var row = document.querySelector('#centersTable tbody tr[data-center-id="' + id + '"], #docsTable tbody tr[data-center-id="' + id + '"] , #adminsTable tbody tr[data-center-id="' + id + '"]');
             if (row) {
                 row.classList.add('row-removing');
@@ -1809,7 +1243,7 @@
         if (!confirm('DELETE student ' + name + '? This action cannot be undone!')) return;
         AdminAPI.deleteUser(id).then(function() {
             saToast(name + ' has been deleted.');
-            logActivity('delete', name);
+            logActivity('student_banned', 'Student account ' + name + ' was banned by admin.', name);
             var row = document.querySelector('#studentsTable tbody tr[data-user-id="' + id + '"]');
             if (row) {
                 row.classList.add('row-removing');
@@ -1820,6 +1254,17 @@
         }).catch(function(err) {
             saToast('Error: ' + err.message);
         });
+    }
+
+    function saveSiteSettings() {
+        saToast('Settings saved successfully.');
+        var user = getActiveUser() || {};
+        var actor = user.name || user.email || 'superadmin';
+        logActivity(
+            'site_settings_updated',
+            'Site settings updated by ' + actor + '.',
+            'platform_settings'
+        );
     }
 
     // Live update interval handles automatic refresh without full page reload.

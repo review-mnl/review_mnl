@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { sendCenterStatusEmail } = require('../config/mailer');
+const { logActivity } = require('../utils/activityLogger');
 
 const getPendingCenters = async (req, res) => {
   try {
@@ -28,21 +29,28 @@ const getAllCenters = async (req, res) => {
 const updateCenterStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const normalizedStatus = String(status || '').trim().toLowerCase();
-  if (!['approved', 'rejected', 'suspended'].includes(normalizedStatus))
-    return res.status(400).json({ message: 'Status must be approved, rejected, or suspended.' });
+  if (!['approved', 'rejected'].includes(status))
+    return res.status(400).json({ message: 'Status must be approved or rejected.' });
   try {
     const [rows] = await db.query('SELECT * FROM review_centers WHERE id = ?', [id]);
     if (rows.length === 0)
       return res.status(404).json({ message: 'Review center not found.' });
-    await db.query('UPDATE review_centers SET status = ? WHERE id = ?', [normalizedStatus, id]);
+    await db.query('UPDATE review_centers SET status = ? WHERE id = ?', [status, id]);
+
+    await logActivity({
+      actionType: status === 'approved' ? 'review_center_approved' : 'review_center_rejected',
+      description: `Review center ${rows[0].business_name} was ${status}.`,
+      actorName: (req.user && (req.user.email || req.user.role)) || 'Admin',
+      targetEntity: rows[0].business_name,
+    });
+
     // Try to send email notification but don't fail if it errors
     try {
-      await sendCenterStatusEmail(rows[0].email, rows[0].business_name, normalizedStatus);
+      await sendCenterStatusEmail(rows[0].email, rows[0].business_name, status);
     } catch (emailErr) {
       console.log('Email notification skipped (not configured):', emailErr.message);
     }
-    res.json({ message: `Review center ${normalizedStatus} successfully.`, status: normalizedStatus });
+    res.json({ message: `Review center ${status} successfully.` });
   } catch (err) {
     console.error('Update center status error:', err);
     res.status(500).json({ message: 'Server error.' });
@@ -95,9 +103,28 @@ const deleteUser = async (req, res) => {
     } catch (e) { /* ignore */ }
 
     // Finally delete the user row
+    const [targetUsers] = await conn.query(
+      'SELECT first_name, last_name, email, role FROM users WHERE id = ? LIMIT 1',
+      [id]
+    );
+
     await conn.query('DELETE FROM users WHERE id = ?', [id]);
 
     await conn.commit();
+
+    const targetUser = (targetUsers && targetUsers[0]) || null;
+    if (targetUser) {
+      const fullName = `${targetUser.first_name || ''} ${targetUser.last_name || ''}`.trim() || targetUser.email;
+      await logActivity({
+        actionType: targetUser.role === 'student' ? 'student_banned' : 'user_deleted',
+        description: targetUser.role === 'student'
+          ? `Student account ${fullName} was banned by admin.`
+          : `User account ${fullName} was deleted by admin.`,
+        actorName: (req.user && (req.user.email || req.user.role)) || 'Admin',
+        targetEntity: fullName,
+      });
+    }
+
     res.json({ message: 'User deleted successfully.' });
   } catch (err) {
     if (conn) try { await conn.rollback(); } catch (e) {}
@@ -144,77 +171,6 @@ const deleteCenter = async (req, res) => {
   }
 };
 
-const getSiteSettings = async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      'SELECT id, site_name, maintenance_mode, allow_center_registrations, allow_student_registrations, updated_at FROM site_settings ORDER BY id ASC LIMIT 1'
-    );
-
-    if (rows.length) {
-      return res.json(rows[0]);
-    }
-
-    const defaults = {
-      site_name: 'Review.MNL',
-      maintenance_mode: 0,
-      allow_center_registrations: 1,
-      allow_student_registrations: 1,
-    };
-
-    const [result] = await db.query(
-      'INSERT INTO site_settings (site_name, maintenance_mode, allow_center_registrations, allow_student_registrations) VALUES (?, ?, ?, ?)',
-      [defaults.site_name, defaults.maintenance_mode, defaults.allow_center_registrations, defaults.allow_student_registrations]
-    );
-
-    return res.json(Object.assign({ id: result.insertId }, defaults));
-  } catch (err) {
-    console.error('Get site settings error:', err);
-    return res.status(500).json({ message: 'Server error.' });
-  }
-};
-
-const updateSiteSettings = async (req, res) => {
-  try {
-    const payload = req.body || {};
-    const siteName = String(payload.site_name || '').trim() || 'Review.MNL';
-    const maintenanceMode = payload.maintenance_mode ? 1 : 0;
-    const allowCenters = payload.allow_center_registrations ? 1 : 0;
-    const allowStudents = payload.allow_student_registrations ? 1 : 0;
-
-    const [rows] = await db.query('SELECT id FROM site_settings ORDER BY id ASC LIMIT 1');
-    if (!rows.length) {
-      const [result] = await db.query(
-        'INSERT INTO site_settings (site_name, maintenance_mode, allow_center_registrations, allow_student_registrations) VALUES (?, ?, ?, ?)',
-        [siteName, maintenanceMode, allowCenters, allowStudents]
-      );
-      return res.json({
-        id: result.insertId,
-        site_name: siteName,
-        maintenance_mode: maintenanceMode,
-        allow_center_registrations: allowCenters,
-        allow_student_registrations: allowStudents,
-      });
-    }
-
-    const settingsId = rows[0].id;
-    await db.query(
-      'UPDATE site_settings SET site_name = ?, maintenance_mode = ?, allow_center_registrations = ?, allow_student_registrations = ? WHERE id = ?',
-      [siteName, maintenanceMode, allowCenters, allowStudents, settingsId]
-    );
-
-    return res.json({
-      id: settingsId,
-      site_name: siteName,
-      maintenance_mode: maintenanceMode,
-      allow_center_registrations: allowCenters,
-      allow_student_registrations: allowStudents,
-    });
-  } catch (err) {
-    console.error('Update site settings error:', err);
-    return res.status(500).json({ message: 'Server error.' });
-  }
-};
-
 const getCenterDocuments = async (req, res) => {
   const { id } = req.params;
   try {
@@ -234,14 +190,4 @@ const getCenterDocuments = async (req, res) => {
   }
 };
 
-module.exports = {
-  getPendingCenters,
-  getAllCenters,
-  updateCenterStatus,
-  getAllStudents,
-  deleteUser,
-  deleteCenter,
-  getCenterDocuments,
-  getSiteSettings,
-  updateSiteSettings,
-};
+module.exports = { getPendingCenters, getAllCenters, updateCenterStatus, getAllStudents, deleteUser, deleteCenter, getCenterDocuments };

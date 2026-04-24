@@ -22,6 +22,7 @@ const jwt      = require('jsonwebtoken');
 const crypto   = require('crypto');
 const path     = require('path');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/mailer');
+const { logActivity } = require('../utils/activityLogger');
 require('dotenv').config();
 
 const getRequiredNoDefaultColumns = async (conn, tableName) => {
@@ -131,6 +132,14 @@ const registerStudent = async (req, res) => {
        VALUES (?, ?, ?, ?, 'student', ?)`,
       [first_name, last_name, normalizedEmail, hashed, token]
     );
+
+    await logActivity({
+      actionType: 'student_registration',
+      description: `New student ${first_name} ${last_name}`.trim() + ' registered.',
+      actorName: `${first_name} ${last_name}`.trim() || normalizedEmail,
+      targetEntity: normalizedEmail,
+    });
+
     await sendVerificationEmail(normalizedEmail, token, first_name);
     res.status(201).json({ message: 'Account created! Please check your email to verify.' });
   } catch (err) {
@@ -256,6 +265,21 @@ const registerCenter = async (req, res) => {
     });
 
     await conn.commit();
+
+    await logActivity({
+      actionType: 'review_center_submission',
+      description: `Review center ${business_name.trim()} submitted for approval.`,
+      actorName: business_name.trim(),
+      targetEntity: business_name.trim(),
+    });
+
+    await logActivity({
+      actionType: 'document_submission',
+      description: `Documents submitted by ${business_name.trim()} for verification.`,
+      actorName: business_name.trim(),
+      targetEntity: business_name.trim(),
+    });
+
     res.status(201).json({ message: 'Application submitted! Admin will review your documents.' });
   } catch (err) {
     console.error('registerCenter error:', {

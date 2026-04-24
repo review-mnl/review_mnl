@@ -704,10 +704,13 @@
             { dow: 4, open: true  }, { dow: 5, open: true },
             { dow: 6, open: true  }
         ];
+        var SCH_CONFIRMATION_MIN_VISIBLE_MS = 6000;
         var _schYear, _schMonth, _schSelectedDate = null, _schStep = 1;
         var _schPaymentMethod = 'GCash', _schPaymentStatus = 'Pending';
         var _schEnrollmentResp = null;
         var _schReferenceNumber = '';
+        var _schConfirmationShownAt = 0;
+        var _schCloseDelayTimer = null;
         var SCH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         var _centerPaymentMethods = ['GCash'];
         var _centerPaymentDetails = {
@@ -1629,6 +1632,11 @@
             _schPaymentStatus = 'Pending';
             _schEnrollmentResp = null;
             _schReferenceNumber = '';
+            _schConfirmationShownAt = 0;
+            if (_schCloseDelayTimer) {
+                clearTimeout(_schCloseDelayTimer);
+                _schCloseDelayTimer = null;
+            }
             var teacherSelect = document.getElementById('schTeacher');
             if (teacherSelect && !teacherSelect.disabled) teacherSelect.value = '';
             var gcashRadio = document.getElementById('schPayGcash');
@@ -1669,7 +1677,22 @@
             updatePaymentMethodUI();
         }
 
-        function closeScheduleModal() {
+        function closeScheduleModal(forceClose) {
+            if (!forceClose && _schStep === 4 && _schConfirmationShownAt) {
+                var elapsedMs = Date.now() - _schConfirmationShownAt;
+                if (elapsedMs < SCH_CONFIRMATION_MIN_VISIBLE_MS) {
+                    var remainingMs = SCH_CONFIRMATION_MIN_VISIBLE_MS - elapsedMs;
+                    if (_schCloseDelayTimer) clearTimeout(_schCloseDelayTimer);
+                    _schCloseDelayTimer = setTimeout(function() {
+                        closeScheduleModal(true);
+                    }, remainingMs);
+                    return;
+                }
+            }
+            if (_schCloseDelayTimer) {
+                clearTimeout(_schCloseDelayTimer);
+                _schCloseDelayTimer = null;
+            }
             document.getElementById('scheduleOverlay').style.display = 'none';
             document.body.style.overflow = '';
         }
@@ -1680,6 +1703,7 @@
 
         function schSetStep(n) {
             _schStep = n;
+            if (n === 4) _schConfirmationShownAt = Date.now();
             [1,2,3,4].forEach(function(i){
                 document.getElementById('schStep' + i).style.display = i === n ? 'block' : 'none';
                 var dot = document.getElementById('sd' + i);

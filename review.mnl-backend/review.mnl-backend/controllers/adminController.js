@@ -28,20 +28,21 @@ const getAllCenters = async (req, res) => {
 const updateCenterStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  if (!['approved', 'rejected', 'suspended'].includes(status))
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+  if (!['approved', 'rejected', 'suspended'].includes(normalizedStatus))
     return res.status(400).json({ message: 'Status must be approved, rejected, or suspended.' });
   try {
     const [rows] = await db.query('SELECT * FROM review_centers WHERE id = ?', [id]);
     if (rows.length === 0)
       return res.status(404).json({ message: 'Review center not found.' });
-    await db.query('UPDATE review_centers SET status = ? WHERE id = ?', [status, id]);
+    await db.query('UPDATE review_centers SET status = ? WHERE id = ?', [normalizedStatus, id]);
     // Try to send email notification but don't fail if it errors
     try {
-      await sendCenterStatusEmail(rows[0].email, rows[0].business_name, status);
+      await sendCenterStatusEmail(rows[0].email, rows[0].business_name, normalizedStatus);
     } catch (emailErr) {
       console.log('Email notification skipped (not configured):', emailErr.message);
     }
-    res.json({ message: `Review center ${status} successfully.` });
+    res.json({ message: `Review center ${normalizedStatus} successfully.`, status: normalizedStatus });
   } catch (err) {
     console.error('Update center status error:', err);
     res.status(500).json({ message: 'Server error.' });

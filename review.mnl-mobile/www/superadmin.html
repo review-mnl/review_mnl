@@ -1211,8 +1211,8 @@
                 console.warn('Failed to load pending centers for documents:', err);
                 renderDocSubmissions([]);
             });
-            // Render approved centers into the Review Centers panel
-            try { renderReviewCentersTable(centers.filter(c => c.status === 'approved')); } catch (e) { console.warn('renderReviewCentersTable failed', e); }
+            // Render approved and suspended centers into the Review Centers panel
+            try { renderReviewCentersTable(centers.filter(c => c.status === 'approved' || c.status === 'suspended')); } catch (e) { console.warn('renderReviewCentersTable failed', e); }
             updateStats();
         }).catch(function(err) {
             console.error('Failed to load centers:', err);
@@ -1543,10 +1543,10 @@
             var safeName = (c.business_name || '').replace(/'/g, "\\'");
             var email = c.email || '';
             var date = formatDate(c.created_at);
-            // Map backend statuses to Active/Inactive and choose actions
+            // Map backend statuses and choose actions
             var isActive = (c.status === 'approved');
-            var statusClass = isActive ? 'active' : 'inactive';
-            var statusText = isActive ? 'Active' : 'Inactive';
+            var statusClass = isActive ? 'active' : (c.status === 'suspended' ? 'suspended' : (c.status === 'pending' ? 'pending' : 'inactive'));
+            var statusText = isActive ? 'Active' : (c.status === 'suspended' ? 'Suspended' : (c.status === 'pending' ? 'Pending' : 'Inactive'));
             var actions = '';
             if (isActive) {
                 actions = `<button class="sa-action-btn" onclick="suspendCenter(${c.id}, '${safeName}')">Suspend</button> <button class="sa-action-btn danger" onclick="deleteCenterConfirm(${c.id}, '${safeName}')">Delete</button>`;
@@ -1576,7 +1576,7 @@
         }
         tbody.innerHTML = centers.map(function(c) {
             var isActive = (c.status === 'approved');
-            var statusClass = isActive ? 'active' : 'inactive';
+            var statusClass = isActive ? 'active' : (c.status === 'suspended' ? 'suspended' : (c.status === 'pending' ? 'pending' : 'inactive'));
             var date = formatDate(c.created_at);
             var safeName = (c.business_name || '').replace(/'/g, "\\'");
             var actions = '';
@@ -1603,7 +1603,7 @@
                 `<td>${c.business_name || ''}</td>` +
                 `<td>${c.email || ''}</td>` +
                 `<td>${date}</td>` +
-                `<td><span class="sa-status ${statusClass}">${isActive ? 'Active' : (c.status === 'suspended' ? 'Suspended' : 'Inactive')}</span></td>` +
+                `<td><span class="sa-status ${statusClass}">${isActive ? 'Active' : (c.status === 'suspended' ? 'Suspended' : (c.status === 'pending' ? 'Pending' : 'Inactive'))}</span></td>` +
                 `<td>${actions}</td>` +
                 `</tr>`;
         }).join('');

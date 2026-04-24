@@ -312,11 +312,13 @@ const login = async (req, res) => {
     const user = rows[0];
     if (!user.is_verified)
       return res.status(403).json({ message: 'Please verify your email first.' });
+    var centerStatus = null;
     if (user.role === 'review_center') {
       const [center] = await db.query('SELECT status FROM review_centers WHERE user_id = ?', [user.id]);
-      if (center[0]?.status === 'pending')
+      centerStatus = center[0]?.status || null;
+      if (centerStatus === 'pending')
         return res.status(403).json({ message: 'Your account is still pending admin approval.' });
-      if (center[0]?.status === 'rejected')
+      if (centerStatus === 'rejected')
         return res.status(403).json({ message: 'Your application was rejected.' });
     }
     try {
@@ -364,18 +366,27 @@ const login = async (req, res) => {
     // If this is a review center, include center logo/business_name if available
     if (user.role === 'review_center') {
       try {
-        const [centerRows] = await db.query('SELECT business_name, logo_url FROM review_centers WHERE user_id = ?', [user.id]);
+        const [centerRows] = await db.query('SELECT business_name, logo_url, status FROM review_centers WHERE user_id = ?', [user.id]);
         if (centerRows && centerRows.length > 0) {
           userPayload.logo_url = centerRows[0].logo_url || null;
           userPayload.business_name = centerRows[0].business_name || userPayload.name;
+          userPayload.status = centerRows[0].status || null;
+          centerStatus = centerRows[0].status || centerStatus;
         }
       } catch (e) {
         // ignore center fetching errors
       }
+      if (!('status' in userPayload)) userPayload.status = centerStatus || null;
     }
 
+    const suspended = (user.role === 'review_center' && String(centerStatus || '').toLowerCase() === 'suspended');
+
     res.json({
-      message: 'Login successful.',
+      message: suspended
+        ? 'Your account is currently suspended by the administrator.'
+        : 'Login successful.',
+      success: true,
+      suspended,
       token,
       user: userPayload,
     });

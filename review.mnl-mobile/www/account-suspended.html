@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Suspended - review.mnl</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at top right, #12254f 0%, #0a1635 42%, #050a18 100%);
+            color: #eaf1ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            width: 100%;
+            max-width: 620px;
+            background: rgba(10, 18, 42, 0.86);
+            border: 1px solid #223a73;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 20px 48px rgba(3, 8, 20, 0.5);
+        }
+        .badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #ff9a9a;
+            background: rgba(229, 57, 53, 0.18);
+            border: 1px solid rgba(229, 57, 53, 0.45);
+            border-radius: 999px;
+            padding: 6px 12px;
+            margin-bottom: 14px;
+        }
+        h1 {
+            margin: 0 0 12px;
+            font-size: 32px;
+            line-height: 1.2;
+        }
+        p {
+            margin: 0;
+            color: #b9c8ea;
+            line-height: 1.65;
+            font-size: 15px;
+        }
+        .reason {
+            margin-top: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+            color: #d7e3ff;
+            display: none;
+        }
+        .actions {
+            margin-top: 22px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: 1px solid #3258a3;
+            background: #0f2f73;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .btn.secondary {
+            background: transparent;
+            color: #b8c8eb;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <span class="badge">Account Disabled</span>
+        <h1>Your account has been suspended</h1>
+        <p>Your review center account is currently disabled by the administrator. You can still sign in, but system features are blocked while your account is suspended.</p>
+        <div class="reason" id="suspensionReason"></div>
+        <div class="actions">
+            <a class="btn" href="contact.html">Contact Support</a>
+            <button class="btn secondary" id="logoutBtn" type="button">Log out</button>
+        </div>
+    </main>
+
+    <script src="api.js"></script>
+    <script>
+        (function() {
+            var user = getActiveUser();
+            if (!user) {
+                window.location.replace('login.html');
+                return;
+            }
+            if (user.role !== 'review_center' || String(user.status || '').toLowerCase() !== 'suspended') {
+                if (user.role === 'superadmin') window.location.replace('superadmin.html');
+                else if (user.role === 'admin' || user.role === 'review_center') window.location.replace('admindashboard.html');
+                else window.location.replace('loggedin.html');
+                return;
+            }
+
+            var reason = user.suspension_reason || user.suspensionReason || '';
+            var box = document.getElementById('suspensionReason');
+            if (reason) {
+                box.style.display = 'block';
+                box.textContent = 'Reason: ' + reason;
+            }
+        })();
+
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            try { clearSession(true); } catch (e) { try { clearSession(); } catch (err) {} }
+            window.location.replace('login.html');
+        });
+    </script>
+</body>
+</html>

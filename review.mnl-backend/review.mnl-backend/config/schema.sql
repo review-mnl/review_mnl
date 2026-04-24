@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS review_centers (
   password        VARCHAR(255) NOT NULL,
   business_permit VARCHAR(500),
   dti_sec_reg     VARCHAR(500),
-  status          ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  status          ENUM('pending', 'approved', 'rejected', 'suspended') DEFAULT 'pending',
   latitude        DECIMAL(10, 8),
   longitude       DECIMAL(11, 8),
   address         VARCHAR(500),

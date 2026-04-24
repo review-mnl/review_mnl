@@ -25,7 +25,10 @@ ALTER TABLE review_centers ADD COLUMN business_permit VARCHAR(500);
 ALTER TABLE review_centers ADD COLUMN dti_sec_reg VARCHAR(500);
 
 -- Ensure status column exists for approval workflow
-ALTER TABLE review_centers ADD COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending';
+ALTER TABLE review_centers ADD COLUMN status ENUM('pending', 'approved', 'rejected', 'suspended') DEFAULT 'pending';
+
+-- Ensure status enum supports suspension for approved centers
+ALTER TABLE review_centers MODIFY COLUMN status ENUM('pending', 'approved', 'rejected', 'suspended') DEFAULT 'pending';
 
 -- Add description column to review_centers if it doesn't exist
 ALTER TABLE review_centers ADD COLUMN description TEXT;

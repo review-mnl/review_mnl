@@ -28,8 +28,8 @@ const getAllCenters = async (req, res) => {
 const updateCenterStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  if (!['approved', 'rejected'].includes(status))
-    return res.status(400).json({ message: 'Status must be approved or rejected.' });
+  if (!['approved', 'rejected', 'suspended'].includes(status))
+    return res.status(400).json({ message: 'Status must be approved, rejected, or suspended.' });
   try {
     const [rows] = await db.query('SELECT * FROM review_centers WHERE id = ?', [id]);
     if (rows.length === 0)

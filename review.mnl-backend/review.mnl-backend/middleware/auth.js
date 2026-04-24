@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 require('dotenv').config();
 
 const optionalAuth = (req, res, next) => {
@@ -14,7 +15,7 @@ const optionalAuth = (req, res, next) => {
   next();
 };
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const queryToken = String((req.query && req.query.token) || '').trim();
   const headerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : '';
@@ -24,6 +25,19 @@ const protect = (req, res, next) => {
   }
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Enforce account suspension for review centers on every protected request.
+    if (req.user && req.user.role === 'review_center') {
+      const [rows] = await db.query('SELECT status FROM review_centers WHERE user_id = ? LIMIT 1', [req.user.id]);
+      const centerStatus = rows && rows.length ? String(rows[0].status || '').toLowerCase() : '';
+      if (centerStatus === 'suspended') {
+        return res.status(403).json({
+          message: 'Your account is suspended. Please contact the administrator.',
+          suspended: true,
+        });
+      }
+    }
+
     next();
   } catch (err) {
     // Distinguish between expired and invalid tokens

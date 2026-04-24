@@ -258,6 +258,42 @@ function getLastSuperadminEmail() {
     try { return localStorage.getItem('rmnl_last_superadmin_email') || null; } catch(e) { return null; }
 }
 
+function isSuspendedReviewCenter(user) {
+    if (!user || user.role !== 'review_center') return false;
+    return String(user.status || '').toLowerCase() === 'suspended';
+}
+
+function getDefaultHomeForRole(user) {
+    var role = user && user.role ? String(user.role) : '';
+    if (role === 'superadmin') return 'superadmin.html';
+    if (role === 'admin' || role === 'review_center') return 'admindashboard.html';
+    return 'loggedin.html';
+}
+
+function enforceSuspendedRouteGuard() {
+    try {
+        var user = getActiveUser();
+        if (!user) return;
+
+        var path = window.location.pathname.split('/').pop() || 'index.html';
+        var onSuspendedPage = path === 'account-suspended.html';
+        var suspended = isSuspendedReviewCenter(user);
+
+        if (suspended && !onSuspendedPage) {
+            window.location.replace('account-suspended.html');
+            return;
+        }
+
+        if (!suspended && onSuspendedPage) {
+            window.location.replace(getDefaultHomeForRole(user));
+        }
+    } catch (e) {}
+}
+
+(function initSuspendedRouteGuard() {
+    try { enforceSuspendedRouteGuard(); } catch (e) {}
+})();
+
 // ---------------------------------------------------------------------------
 // Generic request wrapper
 // ---------------------------------------------------------------------------
@@ -294,6 +330,16 @@ async function apiRequest(method, path, body, isFormData) {
     
     // Handle authorization errors
     if (res.status === 403) {
+        if (json && json.suspended) {
+            try {
+                var active = getActiveUser() || {};
+                active.status = 'suspended';
+                setSessionUser(active, true);
+            } catch (e) {}
+            if (!window.location.pathname.includes('account-suspended.html')) {
+                setTimeout(function() { window.location.href = 'account-suspended.html'; }, 200);
+            }
+        }
         const errorMsg = json.message || 'You do not have permission to access this resource.';
         console.warn('API returned 403 for', path, json);
         throw new Error(errorMsg);

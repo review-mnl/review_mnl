@@ -9,7 +9,15 @@
             (function() {
                 var user = getActiveUser();
                 if (user) {
-                    window.location.replace(user.role === 'admin' ? 'admindashboard.html' : 'loggedin.html');
+                    if (user.role === 'review_center' && String(user.status || '').toLowerCase() === 'suspended') {
+                        window.location.replace('account-suspended.html');
+                    } else if (user.role === 'superadmin') {
+                        window.location.replace('superadmin.html');
+                    } else if (user.role === 'admin' || user.role === 'review_center') {
+                        window.location.replace('admindashboard.html');
+                    } else {
+                        window.location.replace('loggedin.html');
+                    }
                 }
             })();
         </script>

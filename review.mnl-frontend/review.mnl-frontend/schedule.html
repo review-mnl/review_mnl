@@ -170,6 +170,10 @@
                             <label for="reviewOnlineLinkMain">Online Meeting Link</label>
                             <input id="reviewOnlineLinkMain" type="url" placeholder="https://meet.example.com/session-link">
                         </div>
+                        <div class="review-form-row">
+                            <label for="reviewSubjectsMain">Subjects (Optional)</label>
+                            <input id="reviewSubjectsMain" type="text" placeholder="e.g., Mathematics, Hydraulics, Structural Design">
+                        </div>
                         <button type="button" id="addMainProgramBtn" class="review-add-btn">+ Add Program</button>
                     </div>
 
@@ -191,6 +195,10 @@
                         <div class="review-form-row" id="reviewOnlineRowRefresher" style="display:none;">
                             <label for="reviewOnlineLinkRefresher">Online Meeting Link</label>
                             <input id="reviewOnlineLinkRefresher" type="url" placeholder="https://meet.example.com/refresher-link">
+                        </div>
+                        <div class="review-form-row">
+                            <label for="reviewSubjectsRefresher">Subjects (Optional)</label>
+                            <input id="reviewSubjectsRefresher" type="text" placeholder="e.g., Reinforced Concrete, Surveying">
                         </div>
                         <button type="button" id="addRefresherProgramBtn" class="review-add-btn review-add-secondary">+ Add Refresher Program</button>
                     </div>
@@ -331,6 +339,7 @@
                 return sched;
             }) : cloneDefaultSchedule();
             const schedulePattern = String(raw && raw.schedulePattern ? raw.schedulePattern : 'Custom');
+            const subjects = normalizeSubjectList(raw && raw.subjects);
             const sessionTemplates = Array.isArray(raw && raw.session_templates)
                 ? raw.session_templates.map(function(item) {
                     return {
@@ -349,6 +358,7 @@
                 modality: modality,
                 ftf_location: ftfLocation,
                 online_link: onlineLink,
+                subjects: subjects,
                 schedule: schedule,
                 schedulePattern: schedulePattern,
                 session_templates: sessionTemplates.length ? sessionTemplates : buildSessionTemplates(modality, ftfLocation, onlineLink),
@@ -357,6 +367,33 @@
                 // preserve center scoping when present
                 center_id: (raw && (raw.center_id !== undefined)) ? raw.center_id : null
             };
+        }
+
+        function normalizeSubjectList(value) {
+            var list = [];
+            if (Array.isArray(value)) {
+                list = value;
+            } else if (typeof value === 'string') {
+                var trimmed = String(value || '').trim();
+                if (!trimmed) return [];
+                try {
+                    var parsed = JSON.parse(trimmed);
+                    if (Array.isArray(parsed)) list = parsed;
+                    else list = trimmed.split(',');
+                } catch (e) {
+                    list = trimmed.split(',');
+                }
+            }
+            var seen = {};
+            return list
+                .map(function(item) { return String(item || '').trim(); })
+                .filter(Boolean)
+                .filter(function(item) {
+                    var key = item.toLowerCase();
+                    if (seen[key]) return false;
+                    seen[key] = true;
+                    return true;
+                });
         }
 
         function buildSessionTemplates(modality, ftfLocation, onlineLink) {
@@ -556,6 +593,7 @@
                     : '';
                 const ticket = document.createElement('div');
                 ticket.className = 'program-ticket';
+                const subjects = normalizeSubjectList(program.subjects);
                 const sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
                 // Only show session timeframe/meeting info. FTF location removed from saved cards per request.
                 var sessionSummary = '';
@@ -590,6 +628,9 @@
                     '</div>' +
                     '<div class="program-ticket-meta" style="margin-top:6px;">' +
                         '<span>Sessions: ' + escHtml((sessionSummary && sessionSummary.length) ? sessionSummary : 'Not set') + '</span>' +
+                    '</div>' +
+                    '<div class="program-ticket-meta" style="margin-top:6px;">' +
+                        '<span>Subjects: ' + escHtml(subjects.length ? subjects.join(', ') : 'None') + '</span>' +
                     '</div>' +
                     '<div class="program-ticket-actions">' +
                         '<button type="button" class="program-ticket-btn" onclick="openEditProgramModal(' + idx + ')">Edit</button>' +
@@ -656,10 +697,12 @@
             var nameEl = document.getElementById('editProgramName');
             var modEl = document.getElementById('editProgramModality');
             var onlineEl = document.getElementById('editProgramOnlineLink');
+            var subjectsEl = document.getElementById('editProgramSubjects');
             var patEl = document.getElementById('editProgramPattern');
             if (nameEl) nameEl.value = p.name || '';
             if (modEl) modEl.value = p.modality || 'Face-to-face';
             if (onlineEl) onlineEl.value = p.online_link || '';
+            if (subjectsEl) subjectsEl.value = normalizeSubjectList(p.subjects).join(', ');
             if (patEl) patEl.value = p.schedulePattern || 'Custom';
 
             // prepare editable sessions (timeframe-only rows)
@@ -800,6 +843,7 @@
             var modality = String((document.getElementById('editProgramModality')||{}).value || '').trim();
             var ftfLocation = String((document.getElementById('editProgramFtfLocation')||{}).value || '').trim();
             var onlineLink = String((document.getElementById('editProgramOnlineLink')||{}).value || '').trim();
+            var subjects = normalizeSubjectList((document.getElementById('editProgramSubjects')||{}).value || '');
             var schedulePattern = String((document.getElementById('editProgramPattern')||{}).value || 'Custom');
             var schedule = Array.isArray(_editProgramTempSchedule)
                 ? _editProgramTempSchedule.map(function(it){
@@ -816,6 +860,7 @@
                 modality: modality || 'N/A',
                 ftf_location: ftfLocation,
                 online_link: onlineLink,
+                subjects: subjects,
                 schedule: schedule,
                 schedulePattern: schedulePattern,
                 session_templates: buildSessionTemplates(modality, ftfLocation, onlineLink)
@@ -1290,10 +1335,12 @@
             const modalitySelect = document.getElementById('reviewModalitySelectMain');
             const ftfLocationInput = document.getElementById('reviewFtfLocationMain');
             const onlineLinkInput = document.getElementById('reviewOnlineLinkMain');
+            const subjectsInput = document.getElementById('reviewSubjectsMain');
             const name = nameInput ? String(nameInput.value || '').trim() : '';
             const modality = modalitySelect ? String(modalitySelect.value || '').trim() : '';
             const ftfLocation = ftfLocationInput ? String(ftfLocationInput.value || '').trim() : '';
             const onlineLink = onlineLinkInput ? String(onlineLinkInput.value || '').trim() : '';
+            const subjects = subjectsInput ? normalizeSubjectList(subjectsInput.value || '') : [];
             if (!name) {
                 alert('Please enter a program name.');
                 return;
@@ -1310,6 +1357,7 @@
                 modality: modality,
                 ftf_location: ftfLocation,
                 online_link: onlineLink,
+                subjects: subjects,
                 topics: [],
                 schedule: newSchedule,
                 schedulePattern: 'Custom',
@@ -1319,6 +1367,7 @@
             if (nameInput) nameInput.value = '';
             if (ftfLocationInput) ftfLocationInput.value = '';
             if (onlineLinkInput) onlineLinkInput.value = '';
+            if (subjectsInput) subjectsInput.value = '';
             // Don't persist immediately; require the user to choose days then click Save
             renderPrograms();
             renderSavedPrograms();
@@ -1335,10 +1384,12 @@
             const modalitySelect = document.getElementById('reviewModalitySelectRefresher');
             const ftfLocationInput = document.getElementById('reviewFtfLocationRefresher');
             const onlineLinkInput = document.getElementById('reviewOnlineLinkRefresher');
+            const subjectsInput = document.getElementById('reviewSubjectsRefresher');
             const name = nameInput ? String(nameInput.value || '').trim() : '';
             const modality = modalitySelect ? String(modalitySelect.value || '').trim() : '';
             const ftfLocation = ftfLocationInput ? String(ftfLocationInput.value || '').trim() : '';
             const onlineLink = onlineLinkInput ? String(onlineLinkInput.value || '').trim() : '';
+            const subjects = subjectsInput ? normalizeSubjectList(subjectsInput.value || '') : [];
             if (!name) {
                 alert('Please enter a program name.');
                 return;
@@ -1355,6 +1406,7 @@
                 modality: modality,
                 ftf_location: ftfLocation,
                 online_link: onlineLink,
+                subjects: subjects,
                 topics: [],
                 schedule: newSchedule,
                 schedulePattern: 'Custom',
@@ -1364,6 +1416,7 @@
             if (nameInput) nameInput.value = '';
             if (ftfLocationInput) ftfLocationInput.value = '';
             if (onlineLinkInput) onlineLinkInput.value = '';
+            if (subjectsInput) subjectsInput.value = '';
             // Don't persist immediately; require the user to choose days then click Save
             renderPrograms();
             renderSavedPrograms();
@@ -1471,6 +1524,9 @@
                             <label for="editProgramOnlineLink">Online Meeting Link</label>
                             <input id="editProgramOnlineLink" type="url" placeholder="https://...">
                         </div>
+
+                        <label for="editProgramSubjects">Subjects (Optional)</label>
+                        <input id="editProgramSubjects" type="text" placeholder="Comma-separated subject names">
 
                         <label for="editProgramPattern">Day Pattern</label>
                         <select id="editProgramPattern">

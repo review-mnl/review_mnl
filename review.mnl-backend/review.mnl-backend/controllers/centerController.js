@@ -45,6 +45,45 @@ const parseJsonObject = (raw) => {
   return {};
 };
 
+const normalizeProgramSubjects = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item || '').trim())
+      .filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item || '').trim())
+          .filter(Boolean);
+      }
+    } catch (e) {
+      // Fall through to comma-delimited parsing.
+    }
+    return trimmed
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const normalizeReviewSchedulePrograms = (value) => {
+  const list = parseJsonArray(value);
+  if (!list.length) return [];
+  return list.map((program) => {
+    if (!program || typeof program !== 'object') return program;
+    return {
+      ...program,
+      subjects: normalizeProgramSubjects(program.subjects),
+    };
+  });
+};
+
 const clipText = (value, maxLen) => String(value || '').trim().slice(0, maxLen);
 
 const getUploadedFileUrl = (file) => {
@@ -159,7 +198,7 @@ const getCenterById = async (req, res) => {
   try {
     const [center] = await db.query(
             `SELECT rc.id, rc.business_name, rc.email, rc.address, rc.latitude, rc.longitude, rc.logo_url,
-              rc.description, rc.programs, rc.achievements, rc.schedule, rc.payment_methods, rc.payment_details,
+              rc.description, rc.programs, rc.achievements, rc.schedule, rc.review_schedule, rc.payment_methods, rc.payment_details,
               IFNULL(AVG(t.rating), 0) AS avg_rating, COUNT(t.id) AS review_count
        FROM review_centers rc
        LEFT JOIN testimonials t ON t.center_id = rc.id AND t.is_approved = 1
@@ -183,6 +222,7 @@ const getCenterById = async (req, res) => {
     }
 
     const payload = { ...center[0], testimonials, isEnrolled };
+    payload.review_schedule = normalizeReviewSchedulePrograms(payload.review_schedule);
     payload.payment_methods = normalizePaymentMethods(payload.payment_methods);
     payload.payment_details = normalizePaymentDetails(payload.payment_details);
 
@@ -344,6 +384,7 @@ const updateCenterProfile = async (req, res) => {
     if (center.review_schedule && typeof center.review_schedule === 'string') {
       try { center.review_schedule = JSON.parse(center.review_schedule); } catch(e) { center.review_schedule = []; }
     }
+    center.review_schedule = normalizeReviewSchedulePrograms(center.review_schedule);
     center.payment_methods = normalizePaymentMethods(center.payment_methods);
     center.payment_details = normalizePaymentDetails(center.payment_details);
     res.json(center);
@@ -419,6 +460,7 @@ const getMyCenterProfile = async (req, res) => {
     if (center.review_schedule && typeof center.review_schedule === 'string') {
       try { center.review_schedule = JSON.parse(center.review_schedule); } catch(e) { center.review_schedule = []; }
     }
+    center.review_schedule = normalizeReviewSchedulePrograms(center.review_schedule);
     center.payment_methods = normalizePaymentMethods(center.payment_methods);
     center.payment_details = normalizePaymentDetails(center.payment_details);
     res.json(center);

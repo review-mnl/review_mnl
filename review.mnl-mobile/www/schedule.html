@@ -174,8 +174,8 @@
                             <input id="reviewOnlineLinkMain" type="url" placeholder="https://meet.example.com/session-link">
                         </div>
                         <div class="review-form-row">
-                            <label for="reviewSubjectsMain">Subjects (Optional)</label>
-                            <input id="reviewSubjectsMain" type="text" placeholder="e.g., Mathematics, Hydraulics, Structural Design">
+                            <label for="reviewDescriptionMain">Description (Optional)</label>
+                            <input id="reviewDescriptionMain" type="text" placeholder="Brief description of the program">
                         </div>
                         <button type="button" id="addMainProgramBtn" class="review-add-btn">+ Add Program</button>
                     </div>
@@ -203,8 +203,8 @@
                             <input id="reviewOnlineLinkRefresher" type="url" placeholder="https://meet.example.com/refresher-link">
                         </div>
                         <div class="review-form-row">
-                            <label for="reviewSubjectsRefresher">Subjects (Optional)</label>
-                            <input id="reviewSubjectsRefresher" type="text" placeholder="e.g., Reinforced Concrete, Surveying">
+                            <label for="reviewDescriptionRefresher">Description (Optional)</label>
+                            <input id="reviewDescriptionRefresher" type="text" placeholder="Brief description of the refresher program">
                         </div>
                         <button type="button" id="addRefresherProgramBtn" class="review-add-btn review-add-secondary">+ Add Refresher Program</button>
                     </div>
@@ -308,7 +308,11 @@
                 return { day: label, open: !!(item && item.open) };
             }) : cloneDefaultSchedule();
             const schedulePattern = String(raw && raw.schedulePattern ? raw.schedulePattern : 'Custom');
-            const subjects = normalizeSubjectList(raw && raw.subjects);
+            // Prefer `description` string; fall back to legacy `subjects` list/string
+            var description = '';
+            if (raw && typeof raw.description === 'string' && raw.description.trim()) description = raw.description.trim();
+            else if (raw && Array.isArray(raw.subjects)) description = normalizeSubjectList(raw.subjects).join(', ');
+            else if (raw && raw.subjects) description = String(raw.subjects || '').trim();
             const sessionTemplates = Array.isArray(raw && raw.session_templates)
                 ? raw.session_templates.map(function(item) {
                     return {
@@ -326,7 +330,7 @@
                 modality: modality,
                 ftf_location: ftfLocation,
                 online_link: onlineLink,
-                subjects: subjects,
+                description: description,
                 schedule: schedule,
                 schedulePattern: schedulePattern,
                 session_templates: sessionTemplates.length ? sessionTemplates : buildSessionTemplates(modality, ftfLocation, onlineLink)
@@ -503,7 +507,10 @@
                     : '';
                 const ticket = document.createElement('div');
                 ticket.className = 'program-ticket';
-                const subjects = normalizeSubjectList(program.subjects);
+                var description = '';
+                if (program && typeof program.description === 'string' && program.description.trim()) description = program.description.trim();
+                else if (Array.isArray(program.subjects)) description = normalizeSubjectList(program.subjects).join(', ');
+                else description = String(program.subjects || '').trim();
                 const sessions = Array.isArray(program.session_templates) ? program.session_templates : [];
                 const sessionSummary = sessions.map(function(session) {
                     var typeLabel = (session.type === 'online') ? 'Online' : 'FTF';
@@ -533,7 +540,7 @@
                         '<span>Sessions: ' + escHtml(sessionSummary || 'Not set') + '</span>' +
                     '</div>' +
                     '<div class="program-ticket-meta" style="margin-top:6px;">' +
-                        '<span>Subjects: ' + escHtml(subjects.length ? subjects.join(', ') : 'None') + '</span>' +
+                        '<span>Description: ' + escHtml(description || 'Not set') + '</span>' +
                     '</div>' +
                     '<div class="program-ticket-actions">' +
                         '<button type="button" class="program-ticket-btn" onclick="openEditProgramModal(' + idx + ')">Edit</button>' +
@@ -591,13 +598,13 @@
             var modEl = document.getElementById('editProgramModality');
             var ftfEl = document.getElementById('editProgramFtfLocation');
             var onlineEl = document.getElementById('editProgramOnlineLink');
-            var subjectsEl = document.getElementById('editProgramSubjects');
+            var descriptionEl = document.getElementById('editProgramDescription');
             var patEl = document.getElementById('editProgramPattern');
             if (nameEl) nameEl.value = p.name || '';
             if (modEl) modEl.value = p.modality || 'Face-to-face';
             if (ftfEl) ftfEl.value = p.ftf_location || '';
             if (onlineEl) onlineEl.value = p.online_link || '';
-            if (subjectsEl) subjectsEl.value = normalizeSubjectList(p.subjects).join(', ');
+            if (descriptionEl) descriptionEl.value = (p && typeof p.description === 'string') ? (p.description || '') : (Array.isArray(p.subjects) ? normalizeSubjectList(p.subjects).join(', ') : (p.subjects || ''));
             if (patEl) patEl.value = p.schedulePattern || 'Custom';
 
             renderEditProgramDayPills();
@@ -643,7 +650,7 @@
             var modality = String((document.getElementById('editProgramModality')||{}).value || '').trim();
             var ftfLocation = String((document.getElementById('editProgramFtfLocation')||{}).value || '').trim();
             var onlineLink = String((document.getElementById('editProgramOnlineLink')||{}).value || '').trim();
-            var subjects = normalizeSubjectList((document.getElementById('editProgramSubjects')||{}).value || '');
+            var description = String((document.getElementById('editProgramDescription')||{}).value || '').trim();
             var schedulePattern = String((document.getElementById('editProgramPattern')||{}).value || 'Custom');
             var schedule = Array.isArray(_editProgramTempSchedule) ? _editProgramTempSchedule.map(function(it){ return { day: it.day, open: !!it.open }; }) : cloneDefaultSchedule();
             var track = (savedPrograms[_editProgramIndex] && savedPrograms[_editProgramIndex].track) ? savedPrograms[_editProgramIndex].track : ((programs[_editProgramIndex] && programs[_editProgramIndex].track) ? programs[_editProgramIndex].track : 'Regular Review Classes');
@@ -654,7 +661,7 @@
                 modality: modality || 'N/A',
                 ftf_location: ftfLocation,
                 online_link: onlineLink,
-                subjects: subjects,
+                description: description,
                 schedule: schedule,
                 schedulePattern: schedulePattern,
                 session_templates: buildSessionTemplates(modality, ftfLocation, onlineLink)
@@ -869,12 +876,12 @@
             const modalitySelect = document.getElementById('reviewModalitySelectMain');
             const ftfLocationInput = document.getElementById('reviewFtfLocationMain');
             const onlineLinkInput = document.getElementById('reviewOnlineLinkMain');
-            const subjectsInput = document.getElementById('reviewSubjectsMain');
+            const descriptionInput = document.getElementById('reviewDescriptionMain');
             const name = nameInput ? String(nameInput.value || '').trim() : '';
             const modality = modalitySelect ? String(modalitySelect.value || '').trim() : '';
             const ftfLocation = ftfLocationInput ? String(ftfLocationInput.value || '').trim() : '';
             const onlineLink = onlineLinkInput ? String(onlineLinkInput.value || '').trim() : '';
-            const subjects = subjectsInput ? normalizeSubjectList(subjectsInput.value || '') : [];
+            const description = descriptionInput ? String(descriptionInput.value || '').trim() : '';
             if (!name) {
                 alert('Please enter a program name.');
                 return;
@@ -891,7 +898,7 @@
                 modality: modality,
                 ftf_location: ftfLocation,
                 online_link: onlineLink,
-                subjects: subjects,
+                description: description,
                 topics: [],
                 schedule: newSchedule,
                 schedulePattern: 'Custom',
@@ -901,7 +908,7 @@
             if (nameInput) nameInput.value = '';
             if (ftfLocationInput) ftfLocationInput.value = '';
             if (onlineLinkInput) onlineLinkInput.value = '';
-            if (subjectsInput) subjectsInput.value = '';
+            if (descriptionInput) descriptionInput.value = '';
             // Don't persist immediately; require the user to choose days then click Save
             renderPrograms();
             renderSavedPrograms();
@@ -918,12 +925,12 @@
             const modalitySelect = document.getElementById('reviewModalitySelectRefresher');
             const ftfLocationInput = document.getElementById('reviewFtfLocationRefresher');
             const onlineLinkInput = document.getElementById('reviewOnlineLinkRefresher');
-            const subjectsInput = document.getElementById('reviewSubjectsRefresher');
+            const descriptionInput = document.getElementById('reviewDescriptionRefresher');
             const name = nameInput ? String(nameInput.value || '').trim() : '';
             const modality = modalitySelect ? String(modalitySelect.value || '').trim() : '';
             const ftfLocation = ftfLocationInput ? String(ftfLocationInput.value || '').trim() : '';
             const onlineLink = onlineLinkInput ? String(onlineLinkInput.value || '').trim() : '';
-            const subjects = subjectsInput ? normalizeSubjectList(subjectsInput.value || '') : [];
+            const description = descriptionInput ? String(descriptionInput.value || '').trim() : '';
             if (!name) {
                 alert('Please enter a program name.');
                 return;
@@ -940,7 +947,7 @@
                 modality: modality,
                 ftf_location: ftfLocation,
                 online_link: onlineLink,
-                subjects: subjects,
+                description: description,
                 topics: [],
                 schedule: newSchedule,
                 schedulePattern: 'Custom',
@@ -950,7 +957,7 @@
             if (nameInput) nameInput.value = '';
             if (ftfLocationInput) ftfLocationInput.value = '';
             if (onlineLinkInput) onlineLinkInput.value = '';
-            if (subjectsInput) subjectsInput.value = '';
+            if (descriptionInput) descriptionInput.value = '';
             // Don't persist immediately; require the user to choose days then click Save
             renderPrograms();
             renderSavedPrograms();
@@ -1040,8 +1047,8 @@
                         <label for="editProgramOnlineLink">Online Meeting Link</label>
                         <input id="editProgramOnlineLink" type="url" placeholder="https://...">
 
-                        <label for="editProgramSubjects">Subjects (Optional)</label>
-                        <input id="editProgramSubjects" type="text" placeholder="Comma-separated subject names">
+                        <label for="editProgramDescription">Description (Optional)</label>
+                        <input id="editProgramDescription" type="text" placeholder="Brief description or topics">
 
                         <label for="editProgramPattern">Day Pattern</label>
                         <select id="editProgramPattern">

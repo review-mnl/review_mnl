@@ -434,8 +434,10 @@
                 syncToggleState();
             })();
 
+
             document.querySelector('.social-btn[title="Login with Google"]').addEventListener('click', function () {
-                window.location.href = API_BASE + '/api/auth/google';
+                const selectedRole = document.getElementById('loginRole').value || 'student';
+                window.location.href = API_BASE + '/api/auth/google?role=' + encodeURIComponent(selectedRole);
             });
 
             document.getElementById('resendLink').addEventListener('click', async function (e) {

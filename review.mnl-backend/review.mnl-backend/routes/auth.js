@@ -22,12 +22,17 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
 // Google OAuth routes
-router.get('/google', 
-  passport.authenticate('google', { 
+// Patch: Capture ?role param and pass to passport via req._rmnlOAuthRole
+router.get('/google', (req, res, next) => {
+  // Accept ?role=student or ?role=admin (review_center)
+  const role = req.query.role === 'admin' || req.query.role === 'review_center' ? 'review_center' : 'student';
+  req._rmnlOAuthRole = role;
+  passport.authenticate('google', {
     scope: ['profile', 'email'],
-    session: false 
-  })
-);
+    session: false,
+    state: JSON.stringify({ role }) // state param for extra safety (optional)
+  })(req, res, next);
+});
 
 router.get('/google/callback',
   passport.authenticate('google', { 

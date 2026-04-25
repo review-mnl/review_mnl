@@ -11,12 +11,29 @@ const postTestimonial = async (req, res) => {
   if (parsedRating < 1 || parsedRating > 5) {
     return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
   }
+  // Only students who are enrolled may submit testimonials
+  try {
+    if (!req.user || String(req.user.role || '').toLowerCase() !== 'student') {
+      return res.status(403).json({ message: 'Only enrolled students can submit reviews.' });
+    }
+  } catch (e) {
+    // continue to regular error handling below
+  }
   try {
     const [center] = await db.query(
       "SELECT id FROM review_centers WHERE id = ? AND status = 'approved'", [center_id]
     );
     if (center.length === 0)
       return res.status(404).json({ message: 'Review center not found.' });
+
+    // Verify enrollment: require an active enrollment or an approved review_status
+    const [enrollRows] = await db.query(
+      'SELECT id FROM enrollments WHERE user_id = ? AND center_id = ? AND (status = "active" OR review_status = "approved")',
+      [student_id, center_id]
+    );
+    if (!enrollRows || enrollRows.length === 0) {
+      return res.status(403).json({ message: 'Only enrolled students can submit reviews for this center.' });
+    }
 
     const [insertResult] = await db.query(
       `INSERT INTO testimonials (student_id, center_id, content, rating, is_approved)

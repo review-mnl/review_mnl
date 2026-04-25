@@ -2635,60 +2635,65 @@
                     testimonialsListEl.innerHTML = '<p id="noTestimonialsMsg" style="color:#6b7280;font-size:0.95rem;">No reviews yet for this review center.</p>';
                 }
 
-                // Simple testimonial form for logged-in students (no approval flow)
+                // Simple testimonial form for logged-in students (only for enrolled students)
                 if (user && user.role === 'student' && writeFeedbackBtn && testimonialFormWrap) {
-                    writeFeedbackBtn.style.display = 'inline-block';
-                    writeFeedbackBtn.addEventListener('click', function() {
-                        testimonialFormWrap.style.display = testimonialFormWrap.style.display === 'none' ? 'block' : 'none';
-                    });
-
-                    const submitBtn = document.getElementById('testiSubmitBtn');
-                    if (submitBtn) {
-                        submitBtn.addEventListener('click', async function() {
-                            const content = document.getElementById('testiContent').value.trim();
-                            const rating = document.getElementById('testiRating').value;
-                            const errEl = document.getElementById('testiError');
-                            const okEl = document.getElementById('testiSuccess');
-                            errEl.style.display = 'none';
-                            okEl.style.display = 'none';
-
-                            if (!content || !rating) {
-                                errEl.textContent = 'Rating and review are required.';
-                                errEl.style.display = 'block';
-                                return;
-                            }
-
-                            submitBtn.disabled = true;
-                            submitBtn.textContent = 'Submitting...';
-                            try {
-                                const resp = await CentersAPI.postTestimonial(centerId, content, parseInt(rating, 10));
-                                okEl.textContent = (resp && resp.message) ? resp.message : 'Review submitted successfully.';
-                                okEl.style.display = 'block';
-
-                                document.getElementById('testiContent').value = '';
-                                document.getElementById('testiRating').value = '';
-
-                                const emptyMsg = document.getElementById('noTestimonialsMsg');
-                                if (emptyMsg) emptyMsg.remove();
-
-                                const firstName = (user.first_name || '').trim();
-                                const lastName = (user.last_name || '').trim();
-                                renderTestimonialItem((resp && resp.testimonial) || {
-                                    first_name: firstName,
-                                    last_name: lastName,
-                                    username: (user.name || user.email || 'You'),
-                                    rating: parseInt(rating, 10),
-                                    content: content,
-                                    created_at: new Date().toISOString(),
-                                }, true);
-                            } catch (err) {
-                                errEl.textContent = err.message || 'Failed to submit review.';
-                                errEl.style.display = 'block';
-                            } finally {
-                                submitBtn.disabled = false;
-                                submitBtn.textContent = 'Submit Review';
-                            }
+                    if (center && center.isEnrolled) {
+                        writeFeedbackBtn.style.display = 'inline-block';
+                        writeFeedbackBtn.addEventListener('click', function() {
+                            testimonialFormWrap.style.display = testimonialFormWrap.style.display === 'none' ? 'block' : 'none';
                         });
+
+                        const submitBtn = document.getElementById('testiSubmitBtn');
+                        if (submitBtn) {
+                            submitBtn.addEventListener('click', async function() {
+                                const content = document.getElementById('testiContent').value.trim();
+                                const rating = document.getElementById('testiRating').value;
+                                const errEl = document.getElementById('testiError');
+                                const okEl = document.getElementById('testiSuccess');
+                                errEl.style.display = 'none';
+                                okEl.style.display = 'none';
+
+                                if (!content || !rating) {
+                                    errEl.textContent = 'Rating and review are required.';
+                                    errEl.style.display = 'block';
+                                    return;
+                                }
+
+                                submitBtn.disabled = true;
+                                submitBtn.textContent = 'Submitting...';
+                                try {
+                                    const resp = await CentersAPI.postTestimonial(centerId, content, parseInt(rating, 10));
+                                    okEl.textContent = (resp && resp.message) ? resp.message : 'Review submitted successfully.';
+                                    okEl.style.display = 'block';
+
+                                    document.getElementById('testiContent').value = '';
+                                    document.getElementById('testiRating').value = '';
+
+                                    const emptyMsg = document.getElementById('noTestimonialsMsg');
+                                    if (emptyMsg) emptyMsg.remove();
+
+                                    const firstName = (user.first_name || '').trim();
+                                    const lastName = (user.last_name || '').trim();
+                                    renderTestimonialItem((resp && resp.testimonial) || {
+                                        first_name: firstName,
+                                        last_name: lastName,
+                                        username: (user.name || user.email || 'You'),
+                                        rating: parseInt(rating, 10),
+                                        content: content,
+                                        created_at: new Date().toISOString(),
+                                    }, true);
+                                } catch (err) {
+                                    errEl.textContent = err.message || 'Failed to submit review.';
+                                    errEl.style.display = 'block';
+                                } finally {
+                                    submitBtn.disabled = false;
+                                    submitBtn.textContent = 'Submit Review';
+                                }
+                            });
+                        }
+                    } else {
+                        // Not enrolled: hide write button (enforced server-side as well)
+                        writeFeedbackBtn.style.display = 'none';
                     }
                 }
 
